@@ -4,34 +4,33 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { Sun, Moon } from 'lucide-react'
 
-export default function ThemeToggle() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light')
-  const [mounted, setMounted] = useState(false)
+function getThemeSnapshot(): 'light' | 'dark' {
+  if (typeof window === 'undefined') return 'light'
+  const saved = localStorage.getItem('portalmaker-theme') as 'light' | 'dark' | null
+  if (saved) return saved
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
 
-  useEffect(() => {
-    setMounted(true)
-    const saved = localStorage.getItem('portalmaker-theme') as 'light' | 'dark' | null
-    if (saved) {
-      setTheme(saved)
-      document.documentElement.setAttribute('data-theme', saved)
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark')
-      document.documentElement.setAttribute('data-theme', 'dark')
-    }
-  }, [])
+function getServerSnapshot(): 'light' | 'dark' {
+  return 'light'
+}
+
+function subscribeToTheme(callback: () => void) {
+  window.addEventListener('storage', callback)
+  return () => window.removeEventListener('storage', callback)
+}
+
+export default function ThemeToggle() {
+  const theme = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, getServerSnapshot)
 
   const toggleTheme = () => {
     const next = theme === 'light' ? 'dark' : 'light'
-    setTheme(next)
     document.documentElement.setAttribute('data-theme', next)
     localStorage.setItem('portalmaker-theme', next)
-  }
-
-  if (!mounted) {
-    return <div className="w-10 h-10" />
+    window.dispatchEvent(new Event('storage'))
   }
 
   return (
