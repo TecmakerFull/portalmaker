@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import ThemeToggle from './theme-toggle'
-import { MessageSquare, Package, Search, ExternalLink, ImageIcon, ArrowRight } from 'lucide-react'
+import { MessageSquare, Package, ImageIcon, ArrowRight } from 'lucide-react'
 
 export default async function TiendaPage() {
   const tenant = await getTenantStore()

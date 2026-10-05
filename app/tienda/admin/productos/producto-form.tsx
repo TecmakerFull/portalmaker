@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { Product, Category, Store } from '@/types/database'
-import { Upload, X, Loader2, ArrowLeft, Plus, Check, AlertCircle, ImageIcon } from 'lucide-react'
+import { Upload, X, Loader2, ArrowLeft, Plus, Check, AlertCircle } from 'lucide-react'
 
 interface ProductoFormProps {
   store: Store
@@ -452,6 +452,21 @@ export default function ProductoForm({
               onChange={(e) => setTiempoFabricacion(e.target.value)}
               placeholder="Ej: 2 a 4 días hábiles"
               className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#6B8F71]"
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-4 rounded-xl border border-black/10 bg-black/[0.02]">
+            <div>
+              <p className="text-sm font-semibold text-black/90">Producto Destacado</p>
+              <p className="text-xs text-black/50">
+                Aparecerá en los primeros lugares de la grilla de tu tienda pública.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={destacado}
+              onChange={(e) => setDestacado(e.target.checked)}
+              className="w-5 h-5 accent-[#6B8F71] rounded cursor-pointer"
             />
           </div>
         </div>

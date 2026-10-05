@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import ThemeToggle from '../../theme-toggle'
-import { ArrowLeft, MessageSquare, Clock, Box, Check, ImageIcon } from 'lucide-react'
+import { ArrowLeft, MessageSquare, Clock, Box, ImageIcon } from 'lucide-react'
 
 interface PageProps {
   params: Promise<{ slug: string }>
