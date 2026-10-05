@@ -1,0 +1,169 @@
+/*
+ * =============================================================================
+ * PORTALMAKER — Design System Global
+ * "El portal del Maker" | portalmaker.com.ar
+ *
+ * Este archivo define las variables CSS base del sistema.
+ * Los colores específicos de cada tienda se inyectan en el layout
+ * de cada tienda (app/(tienda)/layout.tsx) sobreescribiendo las variables
+ * de color con los valores de stores.color_primario, etc.
+ *
+ * Estructura de variables:
+ *   --color-*        → colores del tenant (paleta claro por defecto)
+ *   --font-heading   → tipografía de títulos del tenant
+ *   --font-body      → tipografía de cuerpo del tenant
+ *   --radius-*       → bordes redondeados (constantes del sistema)
+ *   --transition-*   → animaciones (constantes del sistema)
+ * =============================================================================
+ */
+
+@import "tailwindcss";
+
+/* ============================================================
+   VARIABLES GLOBALES DEL SISTEMA (no del tenant)
+   Estas NO cambian por tienda — son constantes de Portalmaker.
+   ============================================================ */
+:root {
+  /* Tipografía del PORTAL (portalmaker.com.ar en sí mismo)
+     Las tiendas individuales inyectan sus propias fuentes. */
+  --font-portal-heading: var(--font-outfit);
+  --font-portal-body: var(--font-inter);
+
+  /* Radios de borde */
+  --radius-sm: 0.375rem;   /* 6px  — inputs, badges */
+  --radius-md: 0.5rem;     /* 8px  — cards, botones */
+  --radius-lg: 0.75rem;    /* 12px — modals, drawers */
+  --radius-xl: 1rem;       /* 16px — cards grandes */
+  --radius-full: 9999px;   /* pastillas, pills */
+
+  /* Transiciones */
+  --transition-fast:   150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow:   400ms ease;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* Z-index layers
+     Evita usar números mágicos en el código — siempre referenciar estas variables. */
+  --z-below:   -1;
+  --z-base:    0;
+  --z-raised:  10;    /* cards que flotan sobre el contenido */
+  --z-dropdown: 100;  /* menús desplegables */
+  --z-sticky:  200;   /* headers fijos */
+  --z-modal:   300;   /* modales y drawers */
+  --z-toast:   400;   /* notificaciones temporales */
+  --z-top:     500;   /* tooltips, popovers */
+}
+
+
+/* ============================================================
+   VARIABLES DE COLOR DEL TENANT
+   Valores por defecto = paleta "Industrial" (preset #1).
+   El layout de cada tienda sobreescribe estos valores con los
+   datos de la BD (stores.color_primario, etc.).
+   El toggle de modo oscuro en el header alterna el atributo
+   data-theme="dark" en el <html>, activando las variables oscuras.
+   ============================================================ */
+
+/* Modo claro (por defecto) */
+:root,
+[data-theme="light"] {
+  --color-primario:   #6B8F71;  /* verde salvia — paleta Industrial */
+  --color-secundario: #2F3336;  /* carbón */
+  --color-fondo:      #F5F4F1;  /* hueso */
+  --color-texto:      #202224;
+
+  /* Derivados automáticos del sistema (no cambian por tenant) */
+  --color-borde:      rgb(from var(--color-texto) r g b / 0.12);
+  --color-superficie: rgb(from var(--color-fondo) r g b / 0.8);
+
+  /* Fuentes del tenant — por defecto Inter para todo */
+  --font-heading: var(--font-inter);
+  --font-body:    var(--font-inter);
+}
+
+/* Modo oscuro */
+[data-theme="dark"] {
+  --color-primario:   #82A889;
+  --color-secundario: #44484A;
+  --color-fondo:      #1C1E1F;
+  --color-texto:      #EDEDEA;
+
+  --color-borde:      rgb(from var(--color-texto) r g b / 0.12);
+  --color-superficie: rgb(from var(--color-fondo) r g b / 0.8);
+}
+
+
+/* ============================================================
+   ESTILOS BASE
+   Aplican a TODO el sitio (portal + tiendas).
+   ============================================================ */
+html {
+  /* Scroll suave para anclas y animaciones de página */
+  scroll-behavior: smooth;
+  /* Prevenir salto de layout al aparecer/desaparecer el scrollbar */
+  scrollbar-gutter: stable;
+}
+
+body {
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  /* La fuente del body se determina por el contexto (portal vs tienda) */
+  font-family: var(--font-body, var(--font-inter)), system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings usan la fuente de título del tenant */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading, var(--font-inter)), system-ui, sans-serif;
+  line-height: 1.25;
+  font-weight: 700;
+  color: var(--color-texto);
+}
+
+/* Focus visible: accesibilidad para navegación por teclado */
+:focus-visible {
+  outline: 2px solid var(--color-primario);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Links base */
+a {
+  color: var(--color-primario);
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+a:hover {
+  opacity: 0.8;
+}
+
+/* Imágenes responsivas por defecto */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Botón reset (los botones estilizados se hacen con las clases de Tailwind) */
+button {
+  cursor: pointer;
+}
+
+
+/* ============================================================
+   CLASE UTILITARIA: area táctil mínima (44×44px)
+   Usar en cualquier elemento interactivo chico en mobile
+   para cumplir con el estándar de accesibilidad táctil.
+   ============================================================ */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

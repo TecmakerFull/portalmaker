@@ -1,0 +1,55 @@
+# =============================================================================
+# PORTALMAKER — Configuración de Cloudflare Pages (Wrangler)
+# "El portal del Maker" | portalmaker.com.ar
+#
+# Documentación: https://developers.cloudflare.com/pages/
+# Para deploy: npm run pages:deploy
+# Para preview local: npm run pages:preview
+# =============================================================================
+
+name = "portalmaker"
+compatibility_date = "2024-09-23"
+
+# Habilitar Node.js compatibility para que las librerías de Supabase funcionen en el Edge
+compatibility_flags = ["nodejs_compat"]
+
+# Cloudflare Pages build settings
+pages_build_output_dir = ".vercel/output/static"
+
+# =============================================================================
+# VARIABLES DE ENTORNO PARA PRODUCCIÓN
+# IMPORTANTE: Los valores sensibles (API keys) se configuran en el Dashboard de
+# Cloudflare Pages → Settings → Environment Variables, NO aquí.
+# Este archivo solo documenta qué variables son necesarias.
+#
+# Variables a configurar en el Dashboard de Cloudflare:
+#   - NEXT_PUBLIC_SUPABASE_URL
+#   - NEXT_PUBLIC_SUPABASE_ANON_KEY
+#   - SUPABASE_SERVICE_ROLE_KEY       (solo en el entorno de producción, no en preview)
+#   - NEXT_PUBLIC_PORTAL_DOMAIN       = portalmaker.com.ar
+#   - NEXT_PUBLIC_APP_URL             = https://portalmaker.com.ar
+#   - NEXT_PUBLIC_AUTH_REDIRECT_URL   = https://portalmaker.com.ar/auth/callback
+#   - NEXT_PUBLIC_STORAGE_BUCKET      = portalmaker-media
+#   - SUPABASE_RECEIPTS_BUCKET        = portalmaker-receipts
+# =============================================================================
+
+# Variables no-secretas (se pueden poner aquí para preview)
+[vars]
+NEXT_PUBLIC_PORTAL_DOMAIN = "portalmaker.com.ar"
+NEXT_PUBLIC_APP_URL = "https://portalmaker.com.ar"
+NEXT_PUBLIC_AUTH_REDIRECT_URL = "https://portalmaker.com.ar/auth/callback"
+NEXT_PUBLIC_STORAGE_BUCKET = "portalmaker-media"
+
+# =============================================================================
+# DOMINIOS PERSONALIZADOS
+# Se configuran en el Dashboard de Cloudflare Pages → Custom Domains.
+# Los wildcards permiten que cada tienda tenga su subdominio automáticamente.
+#
+# Dominios a registrar:
+#   - portalmaker.com.ar          → portal principal
+#   - *.portalmaker.com.ar        → tiendas individuales (wildcard DNS)
+#
+# Nota: El DNS wildcard (*.portalmaker.com.ar) se configura en Cloudflare DNS,
+# no en este archivo. Requiere un registro CNAME de tipo wildcard apuntando
+# al dominio de Cloudflare Pages.
+# =============================================================================
