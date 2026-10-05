@@ -1,140 +1,130 @@
 // =============================================================================
-// PORTALMAKER — Landing page del portal
+// PORTALMAKER — Landing Page del Portal Principal
 // "El portal del Maker" | portalmaker.com.ar
-//
-// Esta es la página principal del portal de Portalmaker.
-// Lo que ve un visitante que llega a portalmaker.com.ar sin estar logueado.
-//
-// ESTADO ACTUAL: Placeholder. La landing completa se construye en Fase 5.
-// Por ahora muestra la estructura básica para que el middleware y el routing
-// funcionen correctamente.
 // =============================================================================
 
-import type { Metadata } from "next";
-import Link from "next/link";
-
-export const metadata: Metadata = {
-  title: "Portalmaker — El portal del Maker",
-  description:
-    "La plataforma e-commerce para talleres maker argentinos. Tu tienda online lista en minutos.",
-};
+import Link from 'next/link'
+import { Sparkles, Store, Palette, MessageSquare, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react'
 
 export default function PortalHomePage() {
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "var(--color-fondo)",
-        color: "var(--color-texto)",
-      }}
-    >
-      {/* ===== HEADER TEMPORAL ===== */}
-      <header
-        style={{
-          padding: "1.25rem 2rem",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: "1px solid var(--color-borde)",
-        }}
-      >
-        <div>
-          <span style={{ fontWeight: 700, fontSize: "1.125rem" }}>Portalmaker</span>
-          <span style={{ color: "var(--color-secundario)", fontSize: "0.875rem", marginLeft: "0.5rem" }}>
-            El portal del Maker
-          </span>
+    <div className="min-h-screen bg-[#F5F4F1] text-[#202224] font-sans">
+      {/* Header */}
+      <header className="border-b border-black/10 sticky top-0 bg-[#F5F4F1]/90 backdrop-blur-md z-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 sm:h-20 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="text-2xl font-extrabold tracking-tight text-[#6B8F71]">
+              Portalmaker
+            </span>
+          </Link>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#6B8F71] text-white text-sm font-semibold hover:bg-[#58775d] active:scale-95 transition-all shadow-sm flex items-center gap-1.5"
+            >
+              <span>Acceso Maker</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
-        <Link
-          href="/login"
-          style={{
-            background: "var(--color-primario)",
-            color: "#fff",
-            padding: "0.5rem 1.25rem",
-            borderRadius: "var(--radius-md)",
-            fontWeight: 600,
-            fontSize: "0.875rem",
-          }}
-        >
-          Ingresar
-        </Link>
       </header>
 
-      {/* ===== HERO TEMPORAL ===== */}
-      <section
-        style={{
-          maxWidth: "60rem",
-          margin: "0 auto",
-          padding: "6rem 2rem",
-          textAlign: "center",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "clamp(2rem, 5vw, 3.5rem)",
-            fontWeight: 800,
-            lineHeight: 1.2,
-            marginBottom: "1.5rem",
-          }}
-        >
-          Tu tienda maker,{" "}
-          <span style={{ color: "var(--color-primario)" }}>lista en minutos</span>
+      {/* Hero Section */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-16 text-center">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#6B8F71]/10 text-[#6B8F71] text-xs font-semibold uppercase tracking-wider mb-6">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>La plataforma e-commerce para creadores y talleres</span>
+        </div>
+
+        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.15] text-black/90 max-w-4xl mx-auto">
+          Tu tienda virtual de fabricación,{' '}
+          <span className="text-[#6B8F71]">lista en minutos.</span>
         </h1>
-        <p
-          style={{
-            fontSize: "1.25rem",
-            color: "var(--color-secundario)",
-            maxWidth: "40rem",
-            margin: "0 auto 2.5rem",
-            lineHeight: 1.6,
-          }}
-        >
-          La plataforma e-commerce pensada para talleres de impresión 3D, grabado
-          láser y corte láser en Argentina.
+
+        <p className="mt-6 text-base sm:text-xl text-black/70 max-w-2xl mx-auto leading-relaxed">
+          Pensada especialmente para talleres de <strong>Impresión 3D</strong>, <strong>Grabado Láser</strong> y <strong>Corte CNC</strong>. Muestra tus productos, personaliza tu marca y recibe pedidos directo por WhatsApp.
         </p>
-        <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
+
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
-            href="/planes"
-            style={{
-              background: "var(--color-primario)",
-              color: "#fff",
-              padding: "0.875rem 2rem",
-              borderRadius: "var(--radius-md)",
-              fontWeight: 700,
-              fontSize: "1rem",
-              display: "inline-block",
-            }}
+            href="/login"
+            className="w-full sm:w-auto min-h-[48px] px-8 py-3.5 rounded-xl bg-[#6B8F71] text-white text-base font-bold hover:bg-[#58775d] active:scale-98 transition-all shadow-md flex items-center justify-center gap-2"
           >
-            Ver planes
-          </Link>
-          <Link
-            href="/contacto"
-            style={{
-              border: "2px solid var(--color-primario)",
-              color: "var(--color-primario)",
-              padding: "0.875rem 2rem",
-              borderRadius: "var(--radius-md)",
-              fontWeight: 700,
-              fontSize: "1rem",
-              display: "inline-block",
-            }}
-          >
-            Consultar
+            <span>Crear mi Tienda Gratis</span>
+            <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
 
-      {/* ===== FOOTER TEMPORAL ===== */}
-      <footer
-        style={{
-          textAlign: "center",
-          padding: "2rem",
-          color: "var(--color-secundario)",
-          fontSize: "0.875rem",
-          borderTop: "1px solid var(--color-borde)",
-        }}
-      >
-        Portalmaker {new Date().getFullYear()} — El portal del Maker
+      {/* Características Destacadas */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card 1 */}
+          <div className="bg-white rounded-2xl border border-black/10 p-6 sm:p-8 shadow-sm space-y-3">
+            <div className="w-12 h-12 rounded-xl bg-[#6B8F71]/10 text-[#6B8F71] flex items-center justify-center">
+              <Store className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-bold text-black/90">Catálogo con Fotos</h3>
+            <p className="text-sm text-black/60 leading-relaxed">
+              Sube tus imágenes en alta resolución con especificaciones técnicas, tiempos de fabricación y variantes.
+            </p>
+          </div>
+
+          {/* Card 2 */}
+          <div className="bg-white rounded-2xl border border-black/10 p-6 sm:p-8 shadow-sm space-y-3">
+            <div className="w-12 h-12 rounded-xl bg-[#6B8F71]/10 text-[#6B8F71] flex items-center justify-center">
+              <Palette className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-bold text-black/90">Colores y Marca Propios</h3>
+            <p className="text-sm text-black/60 leading-relaxed">
+              Elige paletas diseñadas para talleres, tipografías modernas y modo oscuro automático para tus clientes.
+            </p>
+          </div>
+
+          {/* Card 3 */}
+          <div className="bg-white rounded-2xl border border-black/10 p-6 sm:p-8 shadow-sm space-y-3">
+            <div className="w-12 h-12 rounded-xl bg-[#6B8F71]/10 text-[#6B8F71] flex items-center justify-center">
+              <MessageSquare className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-bold text-black/90">Ventas por WhatsApp</h3>
+            <p className="text-sm text-black/60 leading-relaxed">
+              Tus compradores consultan por WhatsApp con el producto y precio precargados, sin comisiones ni intermediarios.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Dominio Propio */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
+        <div className="bg-white rounded-3xl border border-black/10 p-8 sm:p-12 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-8">
+          <div className="space-y-3 text-center sm:text-left">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#6B8F71]">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Escalabilidad Garantizada</span>
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-bold text-black/90">
+              Usa tu propio dominio en cualquier momento
+            </h3>
+            <p className="text-sm text-black/60 max-w-lg">
+              Comienza hoy con tu subdominio gratuito y vincula tu dominio <code>.com.ar</code> cuando quieras sin perder tus productos ni configuraciones.
+            </p>
+          </div>
+
+          <Link
+            href="/login"
+            className="shrink-0 min-h-[48px] px-6 py-3 rounded-xl bg-[#6B8F71] text-white text-sm font-bold hover:bg-[#58775d] transition-all flex items-center gap-2"
+          >
+            <span>Empezar Ahora</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="mt-16 border-t border-black/10 py-10 text-center text-xs text-black/50">
+        <p>© {new Date().getFullYear()} Portalmaker — El portal del Maker</p>
       </footer>
-    </main>
-  );
+    </div>
+  )
 }

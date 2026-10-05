@@ -397,5 +397,5 @@ export interface AuditLog {
 export interface TenantContext {
   store_id: UUID;
   store_slug: string;
-  resolved_by: 'subdomain' | 'custom_domain';
+  resolved_by: 'subdomain' | 'custom_domain' | 'query-param-dev';
 }
