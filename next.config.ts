@@ -39,6 +39,10 @@ const nextConfig: NextConfig = {
     // pero en producción debe ser false.
     ignoreBuildErrors: false,
   },
+  webpack: (config) => {
+    config.resolve.symlinks = false;
+    return config;
+  },
   eslint: {
     ignoreDuringBuilds: false,
   },
