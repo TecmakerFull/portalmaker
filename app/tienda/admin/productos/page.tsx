@@ -36,19 +36,20 @@ export default async function AdminProductosPage() {
       {/* Header de la sección */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black/90">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight font-[var(--font-heading)]">
             Productos
           </h1>
-          <p className="text-sm text-black/60 mt-1">
+          <p className="text-sm opacity-70 mt-1">
             Gestiona el catálogo de productos disponibles en tu tienda.
           </p>
         </div>
 
         <Link
           href={`/tienda/admin/productos/nuevo${tenantQuery}`}
-          className="min-h-[44px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#6B8F71] text-white text-sm font-semibold hover:bg-[#58775d] transition-all shadow-sm"
+          style={{ color: '#1F2937' }}
+          className="min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-extrabold hover:bg-[#eab308] transition-all shadow-sm"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 text-[#1F2937]" />
           <span>Nuevo Producto</span>
         </Link>
       </div>
@@ -62,11 +63,11 @@ export default async function AdminProductosPage() {
             return (
               <div
                 key={product.id}
-                className="bg-white rounded-2xl border border-black/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
+                className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div>
                   {/* Foto del producto */}
-                  <div className="relative aspect-square w-full bg-black/5 flex items-center justify-center overflow-hidden">
+                  <div className="relative aspect-square w-full bg-black/5 dark:bg-white/5 flex items-center justify-center overflow-hidden">
                     {firstImage ? (
                       <img
                         src={firstImage}
@@ -74,7 +75,7 @@ export default async function AdminProductosPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="text-black/30 flex flex-col items-center gap-1">
+                      <div className="opacity-40 flex flex-col items-center gap-1">
                         <ImageIcon className="w-8 h-8" />
                         <span className="text-xs">Sin imagen</span>
                       </div>
@@ -90,22 +91,22 @@ export default async function AdminProductosPage() {
 
                   {/* Datos del producto */}
                   <div className="p-4">
-                    <h3 className="font-bold text-base text-black/90 line-clamp-1 mb-1">
+                    <h3 className="font-bold text-base line-clamp-1 mb-1 font-[var(--font-heading)]">
                       {product.nombre}
                     </h3>
-                    <p className="text-lg font-bold text-[#6B8F71]">
+                    <p className="text-xl font-black text-[#CA8A04] dark:text-[#FACC15]">
                       ${product.precio_base.toLocaleString('es-AR')}
                     </p>
 
-                    <div className="mt-2.5 flex items-center gap-2 text-xs text-black/60">
+                    <div className="mt-2.5 flex items-center gap-2 text-xs opacity-75">
                       {product.gestiona_stock ? (
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-medium ${
-                          (product.stock ?? 0) > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-bold ${
+                          (product.stock ?? 0) > 0 ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300' : 'bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300'
                         }`}>
                           Stock: {product.stock ?? 0}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-medium">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-bold">
                           Modo Vitrina / Consulta
                         </span>
                       )}
@@ -114,10 +115,10 @@ export default async function AdminProductosPage() {
                 </div>
 
                 {/* Acciones */}
-                <div className="p-4 pt-0 border-t border-black/5 flex items-center justify-between gap-2 mt-2">
+                <div className="p-4 pt-0 border-t border-[var(--color-borde)] flex items-center justify-between gap-2 mt-2">
                   <Link
                     href={`/tienda/admin/productos/${product.id}${tenantQuery}`}
-                    className="flex-1 min-h-[38px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl border border-black/15 text-xs font-medium hover:bg-black/5 transition-all text-black/80"
+                    className="flex-1 min-h-[38px] flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--color-borde)] text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all opacity-80 hover:opacity-100"
                   >
                     <Edit className="w-3.5 h-3.5" />
                     <span>Editar</span>
@@ -131,19 +132,20 @@ export default async function AdminProductosPage() {
         </div>
       ) : (
         /* Estado vacío */
-        <div className="bg-white rounded-2xl border border-black/10 p-10 sm:p-14 text-center max-w-lg mx-auto">
-          <div className="w-14 h-14 rounded-2xl bg-[#6B8F71]/10 text-[#6B8F71] mx-auto flex items-center justify-center mb-4">
+        <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-10 sm:p-14 text-center max-w-lg mx-auto shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-[#FACC15]/20 text-[#CA8A04] mx-auto flex items-center justify-center mb-4">
             <Package className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-bold text-black mb-1">Tu catálogo está vacío</h2>
-          <p className="text-sm text-black/60 mb-6">
+          <h2 className="text-xl font-bold mb-1 font-[var(--font-heading)]">Tu catálogo está vacío</h2>
+          <p className="text-sm opacity-70 mb-6">
             Comienza a subir tus productos con fotos, descripciones y precios para mostrarlos en tu tienda.
           </p>
           <Link
             href={`/tienda/admin/productos/nuevo${tenantQuery}`}
-            className="min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#6B8F71] text-white text-sm font-semibold hover:bg-[#58775d] transition-all shadow-sm"
+            style={{ color: '#1F2937' }}
+            className="min-h-[44px] inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-extrabold hover:bg-[#eab308] transition-all shadow-sm"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 text-[#1F2937]" />
             <span>Crear mi primer producto</span>
           </Link>
         </div>

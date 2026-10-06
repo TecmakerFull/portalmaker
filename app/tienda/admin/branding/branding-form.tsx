@@ -170,19 +170,19 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
         </div>
       </div>
 
-      {/* 2. Paletas de Color Preset */}
+      {/* 2. Paletas de Color Preset (10 Opciones Oficiales) */}
       <div className="bg-white rounded-2xl border border-black/10 p-5 sm:p-6 shadow-sm space-y-4">
         <div>
           <h2 className="text-base font-bold text-black/90 flex items-center gap-2">
-            <Palette className="w-4 h-4 text-[#6B8F71]" />
-            <span>Paleta de Colores de la Tienda</span>
+            <Palette className="w-4 h-4 text-[#FACC15]" />
+            <span>Paleta de Colores de la Tienda (10 Opciones)</span>
           </h2>
           <p className="text-xs text-black/50 mt-0.5">
-            Selecciona una de las 6 paletas diseñadas para talleres maker. Se aplican automáticamente en modo claro y oscuro.
+            Selecciona una de las 10 paletas de diseño. Cada una incluye sus versiones automáticas en modo claro y modo oscuro.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {COLOR_PRESETS.map((preset) => {
             const isSelected = colorPrimario === preset.claro.primario && colorSecundario === preset.claro.secundario
 
@@ -191,44 +191,40 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
                 key={preset.id}
                 type="button"
                 onClick={() => handleSelectPreset(preset.id)}
-                className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-3 ${
+                className={`p-4 rounded-xl border text-left transition-all flex flex-col justify-between gap-3 ${
                   isSelected
-                    ? 'border-[#6B8F71] ring-2 ring-[#6B8F71]/30 bg-[#6B8F71]/5'
+                    ? 'border-[#FACC15] ring-2 ring-[#FACC15]/40 bg-[#FACC15]/5 shadow-sm'
                     : 'border-black/10 hover:border-black/25 bg-white'
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-sm text-black/90">{preset.nombre}</span>
-                    {isSelected && <Check className="w-4 h-4 text-[#6B8F71]" />}
+                    {isSelected && (
+                      <span className="flex items-center gap-1 text-[11px] font-bold text-[#CA8A04] bg-[#FDE68A] px-2 py-0.5 rounded-full">
+                        <Check className="w-3 h-3" />
+                        <span>Activa</span>
+                      </span>
+                    )}
                   </div>
-                  <p className="text-[11px] text-black/50 mt-0.5 line-clamp-2">
+                  <p className="text-xs text-black/60 mt-1">
                     {preset.descripcion}
+                  </p>
+                  <p className="text-[10px] text-black/40 mt-0.5 font-mono">
+                    {preset.tags}
                   </p>
                 </div>
 
-                {/* Círculos de color */}
+                {/* Los 5 colores de la paleta */}
                 <div className="flex items-center gap-1.5 pt-1">
-                  <span
-                    className="w-5 h-5 rounded-full border border-black/20 shadow-xs"
-                    style={{ backgroundColor: preset.claro.primario }}
-                    title="Primario Claro"
-                  />
-                  <span
-                    className="w-5 h-5 rounded-full border border-black/20 shadow-xs"
-                    style={{ backgroundColor: preset.claro.secundario }}
-                    title="Secundario Claro"
-                  />
-                  <span
-                    className="w-5 h-5 rounded-full border border-black/20 shadow-xs"
-                    style={{ backgroundColor: preset.oscuro.primario }}
-                    title="Primario Oscuro"
-                  />
-                  <span
-                    className="w-5 h-5 rounded-full border border-black/20 shadow-xs"
-                    style={{ backgroundColor: preset.oscuro.fondo }}
-                    title="Fondo Oscuro"
-                  />
+                  {preset.coloresHex.map((hex, idx) => (
+                    <span
+                      key={idx}
+                      className="flex-1 h-6 rounded-md border border-black/15 shadow-2xs"
+                      style={{ backgroundColor: hex }}
+                      title={hex}
+                    />
+                  ))}
                 </div>
               </button>
             )

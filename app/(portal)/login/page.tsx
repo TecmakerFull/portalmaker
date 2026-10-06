@@ -1,9 +1,5 @@
 // =============================================================================
-// PORTALMAKER — Página de Login y Registro del Portal
-// "El portal del Maker" | portalmaker.com.ar
-//
-// Permite a los makers autenticarse con Email/Password o Google OAuth
-// para acceder a la administración de su tienda o crear una nueva.
+// PORTALMAKER — Página de Login y Registro del Portal (Paleta 06: Yellow & Gray)
 // =============================================================================
 
 'use client'
@@ -12,13 +8,15 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
-import { LogIn, UserPlus, ArrowRight, AlertCircle, Loader2 } from 'lucide-react'
+import ThemeToggle from '@/app/tienda/theme-toggle'
+import { LogIn, UserPlus, ArrowRight, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
   const [isRegister, setIsRegister] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
@@ -46,7 +44,6 @@ export default function LoginPage() {
         if (error) throw error
 
         if (data.session) {
-          // Sesión iniciada automáticamente
           router.push('/dashboard/maker')
           router.refresh()
         } else {
@@ -64,8 +61,8 @@ export default function LoginPage() {
         router.push('/dashboard/maker')
         router.refresh()
       }
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Ocurrió un error al procesar la solicitud.')
+    } catch (err: unknown) {
+      setErrorMsg((err as Error)?.message || 'Ocurrió un error al procesar la solicitud.')
     } finally {
       setLoading(false)
     }
@@ -83,35 +80,49 @@ export default function LoginPage() {
         },
       })
       if (error) throw error
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Error al conectar con Google.')
+    } catch (err: unknown) {
+      setErrorMsg((err as Error)?.message || 'Error al conectar con Google.')
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-[#F5F4F1] text-[#202224] font-sans">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-black/5 p-6 sm:p-8">
-        {/* Header con marca */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-block text-2xl font-bold tracking-tight text-[#6B8F71] hover:opacity-90">
+    <div className="min-h-screen flex flex-col justify-between p-4 sm:p-6 bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-portal-body)] transition-colors duration-200">
+      {/* Barra superior con logo y ThemeToggle */}
+      <div className="max-w-md w-full mx-auto flex items-center justify-between pt-2">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-[#FACC15] flex items-center justify-center font-black text-[#1F2937] text-base shadow-xs">
+            P
+          </div>
+          <span className="text-xl font-black tracking-tight font-[var(--font-portal-heading)]">
             Portalmaker
-          </Link>
-          <p className="text-sm text-[#2F3336]/70 mt-1">
-            {isRegister ? 'Crea tu cuenta de Maker' : 'Ingresa a tu panel de administración'}
+          </span>
+        </Link>
+        <ThemeToggle />
+      </div>
+
+      <div className="w-full max-w-md mx-auto my-auto bg-[var(--color-superficie)] rounded-3xl shadow-xl border border-[var(--color-borde)] p-6 sm:p-8 transition-colors duration-200">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-black tracking-tight font-[var(--font-portal-heading)]">
+            {isRegister ? 'Crear cuenta de Maker' : 'Iniciar Sesión'}
+          </h1>
+          <p className="text-xs sm:text-sm opacity-70 mt-1">
+            {isRegister
+              ? 'Accede a tu panel para crear y personalizar tu tienda'
+              : 'Ingresa con tus credenciales de administrador'}
           </p>
         </div>
 
         {/* Mensajes de Alerta */}
         {errorMsg && (
-          <div className="mb-6 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2.5">
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
+          <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mb-6 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm">
+          <div className="mb-5 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs">
             {successMsg}
           </div>
         )}
@@ -121,7 +132,7 @@ export default function LoginPage() {
           type="button"
           onClick={handleGoogleLogin}
           disabled={loading}
-          className="w-full min-h-[48px] flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-black/15 bg-white text-sm font-medium hover:bg-black/5 active:scale-[0.99] transition-all disabled:opacity-50"
+          className="w-full min-h-[48px] flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-sm font-semibold hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-50 shadow-2xs"
         >
           <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
             <path
@@ -144,11 +155,11 @@ export default function LoginPage() {
           <span>Continuar con Google</span>
         </button>
 
-        <div className="relative my-6 text-center">
+        <div className="relative my-5 text-center">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-black/10" />
+            <div className="w-full border-t border-[var(--color-borde)]" />
           </div>
-          <span className="relative bg-white px-3 text-xs uppercase tracking-wider text-black/40">
+          <span className="relative bg-[var(--color-superficie)] px-3 text-[11px] uppercase tracking-wider opacity-60">
             o con email
           </span>
         </div>
@@ -156,7 +167,7 @@ export default function LoginPage() {
         {/* Formulario Email / Password */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-black/70 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider opacity-70 mb-1.5">
               Email
             </label>
             <input
@@ -165,49 +176,65 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@email.com"
-              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#6B8F71] transition-all"
+              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-black/70 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider opacity-70 mb-1.5">
               Contraseña
             </label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#6B8F71] transition-all"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full min-h-[44px] pl-3.5 pr-12 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                className="absolute right-0 top-0 bottom-0 w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full min-h-[48px] mt-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#6B8F71] text-white text-sm font-semibold hover:bg-[#58775d] active:scale-[0.99] transition-all disabled:opacity-50"
+            style={{ color: '#1F2937' }}
+            className="w-full min-h-[48px] mt-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-extrabold hover:bg-[#eab308] active:scale-[0.99] transition-all disabled:opacity-50 shadow-md"
           >
             {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin text-[#1F2937]" />
             ) : isRegister ? (
               <>
-                <UserPlus className="w-4 h-4" />
+                <UserPlus className="w-4 h-4 text-[#1F2937]" />
                 <span>Crear Cuenta</span>
               </>
             ) : (
               <>
-                <LogIn className="w-4 h-4" />
+                <LogIn className="w-4 h-4 text-[#1F2937]" />
                 <span>Ingresar</span>
-                <ArrowRight className="w-4 h-4 ml-1" />
+                <ArrowRight className="w-4 h-4 text-[#1F2937] ml-1" />
               </>
             )}
           </button>
         </form>
 
         {/* Alternador Login / Registro */}
-        <div className="mt-6 pt-6 border-t border-black/5 text-center">
+        <div className="mt-6 pt-5 border-t border-[var(--color-borde)] text-center">
           <button
             type="button"
             onClick={() => {
@@ -215,13 +242,17 @@ export default function LoginPage() {
               setErrorMsg(null)
               setSuccessMsg(null)
             }}
-            className="text-sm font-medium text-[#6B8F71] hover:underline"
+            className="text-xs sm:text-sm font-bold text-[#CA8A04] dark:text-[#FACC15] hover:underline"
           >
             {isRegister
               ? '¿Ya tienes cuenta? Inicia sesión aquí'
               : '¿No tienes cuenta? Regístrate gratis'}
           </button>
         </div>
+      </div>
+
+      <div className="text-center text-xs opacity-50 pb-2">
+        Portalmaker — El portal del Maker
       </div>
     </div>
   )

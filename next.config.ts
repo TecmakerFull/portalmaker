@@ -39,8 +39,15 @@ const nextConfig: NextConfig = {
     // pero en producción debe ser false.
     ignoreBuildErrors: false,
   },
-  webpack: (config) => {
+  webpack: (config, { dev }) => {
     config.resolve.symlinks = false;
+    if (dev) {
+      config.watchOptions = {
+        poll: 800,
+        aggregateTimeout: 300,
+        ignored: ['**/node_modules/**', '**/.git/**', '**/.next/**'],
+      };
+    }
     return config;
   },
   eslint: {

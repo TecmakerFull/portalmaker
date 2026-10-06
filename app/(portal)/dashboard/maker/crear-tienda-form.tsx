@@ -37,8 +37,8 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
     setLoading(true)
 
     try {
-      // Paleta por defecto: Industrial (preset 1)
-      const defaultPreset = COLOR_PRESETS[0]
+      // Paleta por defecto: 06 Yellow & Gray (preset 6)
+      const defaultPreset = COLOR_PRESETS.find((p) => p.id === 6) ?? COLOR_PRESETS[0]
 
       const { data, error } = await supabase
         .from('stores')
@@ -87,7 +87,7 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
       )}
 
       <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-black/70 mb-1">
+        <label className="block text-xs font-bold uppercase tracking-wider opacity-70 mb-1">
           Nombre de tu Tienda o Taller
         </label>
         <input
@@ -96,15 +96,15 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
           value={nombre}
           onChange={(e) => handleNombreChange(e.target.value)}
           placeholder="Ej: TecMaker 3D"
-          className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#6B8F71]"
+          className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
         />
       </div>
 
       <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-black/70 mb-1">
+        <label className="block text-xs font-bold uppercase tracking-wider opacity-70 mb-1">
           Subdominio (dirección web)
         </label>
-        <div className="flex items-center rounded-xl border border-black/15 overflow-hidden bg-white focus-within:ring-2 focus-within:ring-[#6B8F71]">
+        <div className="flex items-center rounded-xl border border-[var(--color-borde)] overflow-hidden bg-[var(--color-fondo)] focus-within:ring-2 focus-within:ring-[#FACC15]">
           <input
             type="text"
             required
@@ -114,14 +114,14 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
             placeholder="tecmaker"
             className="w-full min-h-[44px] px-3.5 py-2.5 text-sm bg-transparent focus:outline-none"
           />
-          <span className="bg-black/5 px-3 py-2.5 text-xs text-black/50 font-mono shrink-0 border-l border-black/10">
+          <span className="bg-black/5 dark:bg-white/5 px-3 py-2.5 text-xs opacity-60 font-mono shrink-0 border-l border-[var(--color-borde)]">
             .portalmaker.com.ar
           </span>
         </div>
       </div>
 
       <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-black/70 mb-1">
+        <label className="block text-xs font-bold uppercase tracking-wider opacity-70 mb-1">
           Número de WhatsApp para consultas (con código de país)
         </label>
         <input
@@ -129,21 +129,22 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
           value={whatsapp}
           onChange={(e) => setWhatsapp(e.target.value)}
           placeholder="Ej: 5491112345678"
-          className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#6B8F71]"
+          className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
         />
       </div>
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full min-h-[48px] mt-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#6B8F71] text-white text-sm font-semibold hover:bg-[#58775d] transition-all disabled:opacity-50"
+        style={{ color: '#1F2937' }}
+        className="w-full min-h-[48px] mt-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-extrabold hover:bg-[#eab308] transition-all disabled:opacity-50 shadow-md"
       >
         {loading ? (
-          <Loader2 className="w-5 h-5 animate-spin" />
+          <Loader2 className="w-5 h-5 animate-spin text-[#1F2937]" />
         ) : (
           <>
             <span>Crear y Configurar Mi Tienda</span>
-            <ArrowRight className="w-4 h-4 ml-1" />
+            <ArrowRight className="w-4 h-4 text-[#1F2937] ml-1" />
           </>
         )}
       </button>

@@ -1,12 +1,7 @@
 // =============================================================================
 // PORTALMAKER — Constantes globales de la aplicación
 // "El portal del Maker" | portalmaker.com.ar
-//
-// Centraliza todos los valores "hardcodeados" del proyecto en un solo lugar.
-// Para cambiar el dominio, el nombre de la plataforma o los colores por defecto,
-// solo hay que editar este archivo.
 // =============================================================================
-
 
 // =============================================================================
 // PLATAFORMA
@@ -25,48 +20,52 @@ export const PLATFORM = {
 
 
 // =============================================================================
-// COLORES — Paleta por defecto del PORTAL (no de las tiendas)
-// Los colores de las tiendas vienen de la BD (stores.color_primario, etc.)
-// Estos son los colores de portalmaker.com.ar en sí mismo.
+// COLORES — Paleta por defecto del PORTAL (Paleta 06: Yellow & Gray)
 // =============================================================================
 
 export const PORTAL_COLORS = {
-  primario:   '#6B8F71',  // verde salvia — paleta "Industrial"
-  secundario: '#2F3336',  // carbón
-  fondo:      '#F5F4F1',  // hueso
-  texto:      '#202224',
+  claro: {
+    primario:   '#FACC15',  // Amarillo dorado moderno
+    secundario: '#FDE68A',  // Amarillo suave
+    fondo:      '#F3F4F6',  // Gris claro suave
+    texto:      '#1F2937',  // Gris oscuro carbón
+    borde:      '#E5E7EB',
+  },
+  oscuro: {
+    primario:   '#FACC15',  // Amarillo dorado
+    secundario: '#FDE68A',
+    fondo:      '#111827',  // Carbón oscuro profundo
+    texto:      '#F9FAFB',  // Blanco tiza
+    borde:      '#374151',
+  },
 } as const;
 
 
 // =============================================================================
 // TIPOGRAFÍAS — Opciones disponibles para las tiendas
-// Solo fuentes de Google Fonts, seleccionables desde /admin/branding.
-// No se permite texto libre para evitar tipografías que rompan el diseño.
 // =============================================================================
 
 export const AVAILABLE_FONTS = [
-  { label: 'Inter',        value: 'Inter',         style: 'sans-serif' },
-  { label: 'Outfit',       value: 'Outfit',        style: 'sans-serif' },
-  { label: 'Playfair Display', value: 'Playfair Display', style: 'serif' },
-  { label: 'Space Grotesk', value: 'Space Grotesk', style: 'sans-serif' },
-  { label: 'DM Serif Display', value: 'DM Serif Display', style: 'serif' },
+  { label: 'Inter',            value: 'Inter',             style: 'sans-serif' },
+  { label: 'Outfit',           value: 'Outfit',            style: 'sans-serif' },
+  { label: 'Playfair Display', value: 'Playfair Display',  style: 'serif' },
+  { label: 'Space Grotesk',    value: 'Space Grotesk',     style: 'sans-serif' },
+  { label: 'DM Serif Display', value: 'DM Serif Display',  style: 'serif' },
 ] as const;
 
 export type AvailableFont = typeof AVAILABLE_FONTS[number]['value'];
 
 
 // =============================================================================
-// PALETAS DE COLOR PRESET
-// Las 6 paletas predefinidas para tiendas, con sus versiones claro y oscuro.
-// Al seleccionar un preset desde /admin/branding, se cargan los 8 campos
-// (color_primario, color_secundario, color_fondo, color_texto + sus dark).
-// Fuente de verdad: feature_catalog.md secciones 24 y 27.
+// PALETAS DE COLOR PRESET (10 Paletas Oficiales)
 // =============================================================================
 
 export interface ColorPreset {
   id: number;
   nombre: string;
-  descripcion: string;          // a quién está orientada
+  descripcion: string;
+  tags: string;
+  coloresHex: string[]; // los 5 colores de la muestra
   claro: {
     primario: string;
     secundario: string;
@@ -84,53 +83,98 @@ export interface ColorPreset {
 export const COLOR_PRESETS: ColorPreset[] = [
   {
     id: 1,
-    nombre: 'Industrial',
-    descripcion: 'Taller/manufactura — estabilidad y precisión técnica',
-    claro:  { primario: '#6B8F71', secundario: '#2F3336', fondo: '#F5F4F1', texto: '#202224' },
-    oscuro: { primario: '#82A889', secundario: '#44484A', fondo: '#1C1E1F', texto: '#EDEDEA' },
+    nombre: '01 Royal Blue & White',
+    descripcion: 'Corporativo y tecnológico — alta confianza',
+    tags: 'SaaS, Tech, Finance, Corporate',
+    coloresHex: ['#2563EB', '#60A5FA', '#DBEAFE', '#F1F5F9', '#FFFFFF'],
+    claro:  { primario: '#2563EB', secundario: '#60A5FA', fondo: '#FFFFFF', texto: '#0F172A' },
+    oscuro: { primario: '#60A5FA', secundario: '#DBEAFE', fondo: '#0B132B', texto: '#F8FAFC' },
   },
   {
     id: 2,
-    nombre: 'Minimal B/N',
-    descripcion: 'Piezas de diseño — atemporal, máximo contraste',
-    claro:  { primario: '#111111', secundario: '#6B6B6B', fondo: '#FFFFFF', texto: '#111111' },
-    oscuro: { primario: '#F2F2F2', secundario: '#9A9A9A', fondo: '#121212', texto: '#F2F2F2' },
+    nombre: '02 Emerald & White',
+    descripcion: 'Sustentabilidad y precisión — fresco y limpio',
+    tags: 'Health, Finance, Sustainability, Apps',
+    coloresHex: ['#10B981', '#34D399', '#A7F3D0', '#ECFDF5', '#FFFFFF'],
+    claro:  { primario: '#10B981', secundario: '#34D399', fondo: '#FFFFFF', texto: '#064E3B' },
+    oscuro: { primario: '#34D399', secundario: '#A7F3D0', fondo: '#06281F', texto: '#ECFDF5' },
   },
   {
     id: 3,
-    nombre: 'Mahogany Premium',
-    descripcion: 'Trabajos a medida / gama alta — calidad premium',
-    claro:  { primario: '#6B2B2B', secundario: '#3A2C28', fondo: '#F7F3EF', texto: '#241C1A' },
-    oscuro: { primario: '#A85C5C', secundario: '#6B5147', fondo: '#201613', texto: '#F0E7E1' },
+    nombre: '03 Orange & Navy',
+    descripcion: 'Moderno y enérgico — estilo taller y fabricación',
+    tags: 'Startups, Agencies, SaaS, Landing Pages',
+    coloresHex: ['#F97316', '#FDBA74', '#0F172A', '#334155', '#F8FAFC'],
+    claro:  { primario: '#F97316', secundario: '#FDBA74', fondo: '#F8FAFC', texto: '#0F172A' },
+    oscuro: { primario: '#FB923C', secundario: '#FDBA74', fondo: '#0F172A', texto: '#F8FAFC' },
   },
   {
     id: 4,
-    nombre: 'Teal Tecnológico',
-    descripcion: 'Corte y grabado láser — precisión, look tech',
-    claro:  { primario: '#1F6F6B', secundario: '#163A3D', fondo: '#F2F6F5', texto: '#16211F' },
-    oscuro: { primario: '#4FA8A3', secundario: '#2C5C58', fondo: '#0F1E1D', texto: '#E8F1EF' },
+    nombre: '04 Purple & Pink',
+    descripcion: 'Creativo y artístico — piezas de diseño y autor',
+    tags: 'SaaS, Portfolio, Creative, Agency',
+    coloresHex: ['#7C3AED', '#A78BFA', '#EC4899', '#F9A8D4', '#FCE7F3'],
+    claro:  { primario: '#7C3AED', secundario: '#EC4899', fondo: '#FFFFFF', texto: '#1E1B4B' },
+    oscuro: { primario: '#A78BFA', secundario: '#F9A8D4', fondo: '#130924', texto: '#FCE7F3' },
   },
   {
     id: 5,
-    nombre: 'Cálida Natural',
-    descripcion: 'Productos decorativos/hogar — artesanal y sustentable',
-    claro:  { primario: '#A9713F', secundario: '#4A433C', fondo: '#F3EDE4', texto: '#2B2620' },
-    oscuro: { primario: '#C99A63', secundario: '#6B6155', fondo: '#211C16', texto: '#EFE7DC' },
+    nombre: '05 Teal & Dark',
+    descripcion: 'Look tech y láser — sobrio con contrastes cian',
+    tags: 'SaaS, AI Tools, Modern Websites',
+    coloresHex: ['#0D9488', '#2DD4BF', '#0F766E', '#1F2937', '#111827'],
+    claro:  { primario: '#0D9488', secundario: '#2DD4BF', fondo: '#F0FDFA', texto: '#111827' },
+    oscuro: { primario: '#2DD4BF', secundario: '#0F766E', fondo: '#111827', texto: '#F0FDFA' },
   },
   {
     id: 6,
-    nombre: 'Corporate Navy',
-    descripcion: 'Clientes B2B / pedidos corporativos — look formal',
-    claro:  { primario: '#1B3A5C', secundario: '#8E97A3', fondo: '#FAFAF8', texto: '#1A1C1E' },
-    oscuro: { primario: '#4A7BA6', secundario: '#6E7A87', fondo: '#12181F', texto: '#EDEFF2' },
+    nombre: '06 Yellow & Gray',
+    descripcion: 'Alto impacto y calidez — paleta oficial de Portalmaker',
+    tags: 'Business, Portfolio, Creative, Blogs',
+    coloresHex: ['#FACC15', '#FDE68A', '#1F2937', '#6B7280', '#F3F4F6'],
+    claro:  { primario: '#FACC15', secundario: '#FDE68A', fondo: '#F3F4F6', texto: '#1F2937' },
+    oscuro: { primario: '#FACC15', secundario: '#FDE68A', fondo: '#111827', texto: '#F9FAFB' },
+  },
+  {
+    id: 7,
+    nombre: '07 Red & White',
+    descripcion: 'Comercial y vibrante — ideal ofertas y promociones',
+    tags: 'E-commerce, Offers, News, Landing Pages',
+    coloresHex: ['#EF4444', '#F87171', '#FECACA', '#F3F4F6', '#FFFFFF'],
+    claro:  { primario: '#EF4444', secundario: '#F87171', fondo: '#FFFFFF', texto: '#1C1917' },
+    oscuro: { primario: '#F87171', secundario: '#FECACA', fondo: '#180D0D', texto: '#FEF2F2' },
+  },
+  {
+    id: 8,
+    nombre: '08 Blue & Light Gray',
+    descripcion: 'Elegante y limpio — ingeniería y precisión',
+    tags: 'Corporate, SaaS, Education, Tech',
+    coloresHex: ['#3B82F6', '#93C5FD', '#DBEAFE', '#E5E7EB', '#FFFFFF'],
+    claro:  { primario: '#3B82F6', secundario: '#93C5FD', fondo: '#FFFFFF', texto: '#1E293B' },
+    oscuro: { primario: '#60A5FA', secundario: '#DBEAFE', fondo: '#0F172A', texto: '#F8FAFC' },
+  },
+  {
+    id: 9,
+    nombre: '09 Rose & Cream',
+    descripcion: 'Cálido y artesanal — piezas decorativas y hogar',
+    tags: 'Beauty, Fashion, Lifestyle, Blogs',
+    coloresHex: ['#F43F5E', '#FB7185', '#FFF1F2', '#FEF3C7', '#FFFBEB'],
+    claro:  { primario: '#F43F5E', secundario: '#FB7185', fondo: '#FFFBEB', texto: '#1C1917' },
+    oscuro: { primario: '#FB7185', secundario: '#FEF3C7', fondo: '#1F1316', texto: '#FFF1F2' },
+  },
+  {
+    id: 10,
+    nombre: '10 Green & Black',
+    descripcion: 'Look terminal maker / tech — moderno y contrastado',
+    tags: 'SaaS, Finance, Crypto, Technology',
+    coloresHex: ['#22C55E', '#4ADE80', '#16A34A', '#0D1117', '#1F2937'],
+    claro:  { primario: '#16A34A', secundario: '#4ADE80', fondo: '#F0FDF4', texto: '#0D1117' },
+    oscuro: { primario: '#22C55E', secundario: '#4ADE80', fondo: '#0D1117', texto: '#F0FDF4' },
   },
 ];
 
-
 // =============================================================================
 // SLUGS DE PÁGINAS INFORMATIVAS POR DEFECTO
-// Se crean automáticamente al dar de alta una tienda nueva.
-// El contenido inicial es un placeholder que el maker reemplaza desde /admin/paginas.
 // =============================================================================
 
 export const DEFAULT_PAGE_SLUGS = [
@@ -142,75 +186,3 @@ export const DEFAULT_PAGE_SLUGS = [
 ] as const;
 
 export type DefaultPageSlug = typeof DEFAULT_PAGE_SLUGS[number];
-
-// Contenido placeholder inicial por página (HTML simple, apto para el editor WYSIWYG)
-export const DEFAULT_PAGE_CONTENT: Record<DefaultPageSlug, { titulo: string; contenido: string }> = {
-  'sobre-nosotros': {
-    titulo: 'Sobre Nosotros',
-    contenido: `<h2>¿Quiénes somos?</h2>
-<p>Contá aquí la historia de tu taller, tu experiencia y qué te apasiona del mundo maker.</p>
-<h2>Nuestra misión</h2>
-<p>¿Qué querés comunicar sobre tu propuesta de valor? ¿Qué te diferencia de otros talleres?</p>`,
-  },
-  'contacto': {
-    titulo: 'Contacto',
-    contenido: `<p>Escribinos para consultas, pedidos personalizados o presupuestos. Respondemos en menos de 24hs.</p>`,
-  },
-  'preguntas-frecuentes': {
-    titulo: 'Preguntas Frecuentes',
-    contenido: `<h3>¿Cuánto tarda un pedido?</h3>
-<p>Completá con los tiempos reales de fabricación y entrega.</p>
-<h3>¿Hacen pedidos personalizados?</h3>
-<p>Describí aquí tu política de personalización.</p>
-<h3>¿Cómo puedo pagar?</h3>
-<p>Listá los métodos de pago disponibles.</p>`,
-  },
-  'envios-y-devoluciones': {
-    titulo: 'Envíos y Devoluciones',
-    contenido: `<h2>Opciones de envío</h2>
-<p>Describí tus zonas de cobertura y tiempos estimados de entrega.</p>
-<h2>Política de devoluciones</h2>
-<p>Explicá en qué casos aceptás devoluciones o cambios.</p>`,
-  },
-  'terminos-y-condiciones': {
-    titulo: 'Términos y Condiciones',
-    contenido: `<p>Al realizar una compra en esta tienda, aceptás los siguientes términos y condiciones.</p>
-<h2>Productos</h2>
-<p>Describí las condiciones de venta de tus productos.</p>`,
-  },
-};
-
-
-// =============================================================================
-// PAGINACIÓN
-// =============================================================================
-
-export const PAGINATION = {
-  productosPorPagina: 24,
-  pedidosPorPagina: 20,
-  movimientosPorPagina: 30,
-} as const;
-
-
-// =============================================================================
-// MÉTRICAS — Períodos disponibles para los filtros del dashboard
-// =============================================================================
-
-export const METRIC_PERIODS = [
-  { label: 'Últimos 7 días',  value: 7   },
-  { label: 'Últimos 30 días', value: 30  },
-  { label: 'Últimos 90 días', value: 90  },
-] as const;
-
-export type MetricPeriod = typeof METRIC_PERIODS[number]['value'];
-
-
-// =============================================================================
-// SUSCRIPCIÓN — Umbrales visuales (semáforo de estado)
-// Se usan en /admin/suscripcion y en el panel del developer.
-// =============================================================================
-
-export const SUBSCRIPTION_THRESHOLDS = {
-  /** Días restantes para mostrar alerta amarilla */
-  alertaAmarilla: 7,
-} as const;
