@@ -8,6 +8,7 @@ import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import ThemeToggle from '../../theme-toggle'
 import ProductGallery from './product-gallery'
+import { renderMarkdown } from '@/lib/markdown'
 import { ArrowLeft, MessageSquare, Clock, Box } from 'lucide-react'
 
 interface PageProps {
@@ -145,15 +146,15 @@ export default async function ProductoDetallePage({ params }: PageProps) {
               )}
             </div>
 
-            {/* Descripción */}
+            {/* Descripción con formato enriquecido */}
             {product.descripcion && (
-              <div className="pt-4 border-t border-black/10 dark:border-white/10 space-y-2">
-                <h3 className="text-sm font-bold uppercase tracking-wider opacity-70">
+              <div className="pt-5 border-t border-black/10 dark:border-white/10 space-y-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider opacity-60">
                   Descripción del Producto
                 </h3>
-                <p className="text-sm leading-relaxed opacity-85 whitespace-pre-line">
-                  {product.descripcion}
-                </p>
+                <div className="space-y-2 text-[var(--color-texto)] font-[var(--font-body)]">
+                  {renderMarkdown(product.descripcion)}
+                </div>
               </div>
             )}
           </div>
