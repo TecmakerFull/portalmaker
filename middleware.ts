@@ -2,35 +2,34 @@
 // PORTALMAKER — Middleware de enrutamiento multi-tenant
 // "El portal del Maker" | portalmaker.com.ar
 //
-// Este middleware maneja dos mundos:
-//   MUNDO 1: Portal (portalmaker.com.ar / localhost)
-//     → Páginas de marketing, login, dashboards por rol
-//     → Rutas normales en app/(portal)/...
-//
-//   MUNDO 2: Tienda individual ([slug].portalmaker.com.ar o dominio propio)
-//     → Catálogo público del maker + /admin de su tienda
-//     → Reescribe internamente a /tienda/... manteniendo la URL limpia en el browser
+// Detecta de forma inteligente si la petición corresponde a:
+//   1. Portal principal (portalmaker.com.ar, portalmaker.vercel.app, localhost)
+//   2. Tienda simulada por parámetro (?tenant=slug)
+//   3. Tienda por subdominio (ej: tecmaker.portalmaker.com.ar)
+//   4. Tienda por dominio propio (ej: mitaller3d.com.ar)
 // =============================================================================
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const PORTAL_DOMAIN = process.env.NEXT_PUBLIC_PORTAL_DOMAIN ?? 'portalmaker.com.ar'
+const PORTAL_DOMAIN = (process.env.NEXT_PUBLIC_PORTAL_DOMAIN ?? 'portalmaker.com.ar').split(':')[0].toLowerCase()
 
 export function middleware(request: NextRequest) {
   const { nextUrl, headers } = request
 
-  // Obtener hostname sin puerto
+  // Host actual sin puerto (ej: "portalmaker.vercel.app", "localhost", "tecmaker.portalmaker.com.ar")
   const hostHeader = headers.get('host') ?? ''
   const host = hostHeader.split(':')[0].toLowerCase()
 
-  // Detección de entorno
+  // Flags de entorno
   const isLocalhost = host === 'localhost' || host === '127.0.0.1'
-  const isPortal = host === PORTAL_DOMAIN.split(':')[0] || host === `www.${PORTAL_DOMAIN.split(':')[0]}` || isLocalhost
+  const isVercelDomain = host.endsWith('.vercel.app')
+  const isBasePortalDomain = host === PORTAL_DOMAIN || host === `www.${PORTAL_DOMAIN}`
 
-  // Simulación en desarrollo con ?tenant=slug
+  // 1. Simulación de tienda mediante query param (?tenant=slug)
+  // Permite probar cualquier tienda en localhost o en Vercel (ej: portalmaker.vercel.app?tenant=tecmaker)
   const tenantParam = nextUrl.searchParams.get('tenant')
-  if (tenantParam && isLocalhost) {
+  if (tenantParam) {
     const rewriteUrl = new URL(`/tienda${nextUrl.pathname}`, request.url)
     nextUrl.searchParams.forEach((val, key) => {
       rewriteUrl.searchParams.set(key, val)
@@ -41,15 +40,19 @@ export function middleware(request: NextRequest) {
     return response
   }
 
-  // Si es el portal principal (y no es subdominio)
-  if (isPortal && !host.endsWith(`.${PORTAL_DOMAIN.split(':')[0]}`)) {
+  // 2. Si el host es el portal principal (localhost, dominio de vercel, o el dominio base configurado)
+  if (isLocalhost || isVercelDomain || isBasePortalDomain) {
+    // Si la ruta ya apunta explícitamente a /tienda
+    if (nextUrl.pathname.startsWith('/tienda')) {
+      return NextResponse.next()
+    }
+    // Dejar pasar al portal principal (app/(portal)/...)
     return NextResponse.next()
   }
 
-  // Detección de subdominio o dominio propio
-  const baseDomain = PORTAL_DOMAIN.split(':')[0]
-  const isSubdomain = host.endsWith(`.${baseDomain}`)
-  const subdomain = isSubdomain ? host.slice(0, -(baseDomain.length + 1)) : null
+  // 3. Detección de subdominio en producción (ej: tecmaker.portalmaker.com.ar)
+  const isSubdomain = host.endsWith(`.${PORTAL_DOMAIN}`)
+  const subdomain = isSubdomain ? host.slice(0, -(PORTAL_DOMAIN.length + 1)) : null
 
   // Reescribir internamente a la ruta de la tienda
   const rewriteUrl = new URL(`/tienda${nextUrl.pathname}`, request.url)
@@ -59,10 +62,11 @@ export function middleware(request: NextRequest) {
 
   const response = NextResponse.rewrite(rewriteUrl)
 
-  if (subdomain) {
+  if (subdomain && subdomain !== 'www') {
     response.headers.set('x-store-slug', subdomain)
     response.headers.set('x-tenant-source', 'subdomain')
   } else {
+    // 4. Dominio propio del maker (ej: tecmaker3d.com.ar)
     response.headers.set('x-store-domain', host)
     response.headers.set('x-tenant-source', 'custom-domain')
   }
