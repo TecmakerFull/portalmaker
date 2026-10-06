@@ -4,12 +4,28 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { COLOR_PRESETS, AVAILABLE_FONTS } from '@/lib/constants'
 import type { Store } from '@/types/database'
-import { Check, Palette, Type, MessageSquare, Loader2, AlertCircle, Sparkles } from 'lucide-react'
+import {
+  Check,
+  Palette,
+  Type,
+  MessageSquare,
+  Loader2,
+  AlertCircle,
+  Sparkles,
+  Sun,
+  Moon,
+  Laptop,
+  Upload,
+  Image as ImageIcon,
+  Trash2,
+  Link as LinkIcon,
+  Clipboard,
+} from 'lucide-react'
 
 interface BrandingFormProps {
   store: Store
@@ -18,11 +34,19 @@ interface BrandingFormProps {
 
 export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) {
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Datos de Marca
   const [nombre, setNombre] = useState(store.nombre)
   const [slogan, setSlogan] = useState(store.slogan ?? '')
   const [whatsapp, setWhatsapp] = useState(store.whatsapp_numero ?? '')
+  const [logoUrl, setLogoUrl] = useState(store.logo_url ?? '')
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+
+  // Modo por defecto para la tienda pública
+  const [temaPorDefecto, setTemaPorDefecto] = useState<'claro' | 'oscuro' | 'sistema'>(
+    store.tema_por_defecto ?? 'claro'
+  )
 
   // Paleta seleccionada
   const [colorPrimario, setColorPrimario] = useState(store.color_primario)
@@ -45,6 +69,67 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const supabase = createSupabaseBrowserClient()
+
+  // Subir archivo de logo a Supabase Storage
+  const uploadLogoFile = async (file: File) => {
+    setUploadingLogo(true)
+    setErrorMsg(null)
+    try {
+      const bucketName = process.env.NEXT_PUBLIC_STORAGE_BUCKET || 'portalmaker-media'
+      const fileExt = file.name ? file.name.split('.').pop() : 'png'
+      const cleanExt = fileExt ? `.${fileExt}` : '.png'
+      const filePath = `tiendas/${store.id}/branding/logo-${Date.now()}${cleanExt}`
+
+      const { error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(filePath, file, { cacheControl: '3600', upsert: true })
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(filePath)
+
+      setLogoUrl(publicUrl)
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Error al subir el logo. Verifica la conexión a Storage.')
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  // Manejador del input de archivo
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      uploadLogoFile(file)
+    }
+    if (e.target) e.target.value = ''
+  }
+
+  // Manejador para pegar imagen con Ctrl + V
+  const handlePasteLogo = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      if (item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile()
+        if (file) {
+          e.preventDefault()
+          uploadLogoFile(file)
+          return
+        }
+      }
+    }
+
+    // Si pegó una URL de texto
+    const pastedText = e.clipboardData.getData('text')
+    if (pastedText && (pastedText.startsWith('http://') || pastedText.startsWith('https://'))) {
+      setLogoUrl(pastedText.trim())
+    }
+  }
 
   // Aplicar un preset
   const handleSelectPreset = (presetId: number) => {
@@ -76,6 +161,8 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
           nombre: nombre.trim(),
           slogan: slogan.trim() || null,
           whatsapp_numero: whatsapp.trim() || null,
+          logo_url: logoUrl.trim() || null,
+          tema_por_defecto: temaPorDefecto,
           color_primario: colorPrimario,
           color_secundario: colorSecundario,
           color_fondo: colorFondo,
@@ -108,29 +195,29 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
   return (
     <form onSubmit={handleSave} className="space-y-6">
       {successMsg && (
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-2">
-          <Check className="w-5 h-5 text-emerald-600 shrink-0" />
+        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-sm flex items-center gap-2">
+          <Check className="w-5 h-5 text-emerald-500 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {errorMsg && (
-        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
+        <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-400 text-sm flex items-center gap-2">
           <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {/* 1. Información General y WhatsApp */}
-      <div className="bg-white rounded-2xl border border-black/10 p-5 sm:p-6 shadow-sm space-y-4">
-        <h2 className="text-base font-bold text-black/90 flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-[#6B8F71]" />
+      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
+        <h2 className="text-base font-bold flex items-center gap-2">
+          <MessageSquare className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
           <span>Información de la Tienda</span>
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-black/70 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
               Nombre de la Tienda *
             </label>
             <input
@@ -138,12 +225,12 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
               required
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#6B8F71]"
+              className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-black/70 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
               Número de WhatsApp para pedidos
             </label>
             <input
@@ -151,12 +238,12 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
               placeholder="Ej: 5491112345678"
-              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#6B8F71]"
+              className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
             />
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-black/70 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
               Slogan o Frase Destacada
             </label>
             <input
@@ -164,20 +251,228 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
               value={slogan}
               onChange={(e) => setSlogan(e.target.value)}
               placeholder="Ej: Impresiones 3D personalizadas y de alta precisión"
-              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#6B8F71]"
+              className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
             />
           </div>
         </div>
       </div>
 
-      {/* 2. Paletas de Color Preset (10 Opciones Oficiales) */}
-      <div className="bg-white rounded-2xl border border-black/10 p-5 sm:p-6 shadow-sm space-y-4">
+      {/* 2. Logo de la Marca / Taller (Subir Archivo, Ctrl+V o URL) */}
+      <div
+        onPaste={handlePasteLogo}
+        className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4"
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold flex items-center gap-2">
+            <ImageIcon className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+            <span>Logo de la Tienda</span>
+          </h2>
+          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 opacity-70">
+            Soporta Ctrl + V
+          </span>
+        </div>
+
+        <p className="text-xs opacity-70">
+          Sube tu logotipo en formato PNG, JPG, SVG o WEBP. Puedes seleccionarlo desde tu dispositivo, pegarlo directamente con <strong>Ctrl + V</strong> o ingresar un enlace web.
+        </p>
+
+        {/* Preview del Logo Actual */}
+        {logoUrl ? (
+          <div className="p-4 rounded-2xl border border-[var(--color-borde)] bg-black/5 dark:bg-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-xl bg-white/90 dark:bg-slate-950 p-2 border border-black/10 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-xs">
+                <img
+                  src={logoUrl}
+                  alt="Logo de la tienda"
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold font-mono truncate max-w-xs">{logoUrl}</p>
+                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5 flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Logo cargado correctamente
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-center">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="min-h-[40px] px-3.5 py-1.5 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>Reemplazar</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLogoUrl('')}
+                className="min-h-[40px] px-3.5 py-1.5 rounded-xl border border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500/10 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Eliminar</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Zona de Carga / Drag & Drop / Paste */
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="border-2 border-dashed border-[var(--color-borde)] hover:border-[#FACC15] bg-black/[0.01] dark:bg-white/[0.02] hover:bg-black/[0.03] dark:hover:bg-white/[0.05] rounded-2xl p-6 sm:p-8 text-center cursor-pointer transition-all space-y-3 group"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-[#FACC15]/20 text-[#CA8A04] dark:text-[#FACC15] flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+              {uploadingLogo ? (
+                <Loader2 className="w-6 h-6 animate-spin" />
+              ) : (
+                <Upload className="w-6 h-6" />
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm font-bold">
+                {uploadingLogo ? 'Subiendo imagen...' : 'Haz clic para seleccionar un archivo o arrástralo aquí'}
+              </p>
+              <p className="text-xs opacity-60">
+                O presiona <kbd className="px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 font-mono text-[11px]">Ctrl + V</kbd> para pegar una imagen copiada
+              </p>
+            </div>
+          </div>
+        )}
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
+        {/* Opción alternativa: Cargar por URL */}
+        <div className="pt-2">
+          <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5 flex items-center gap-1.5">
+            <LinkIcon className="w-3.5 h-3.5" />
+            <span>O ingresar por URL directa de imagen</span>
+          </label>
+          <input
+            type="url"
+            value={logoUrl}
+            onChange={(e) => setLogoUrl(e.target.value)}
+            placeholder="https://ejemplo.com/imagenes/mi-logo.png"
+            className="w-full min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+          />
+        </div>
+      </div>
+
+      {/* 2. Modo por Defecto de la Tienda */}
+      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
         <div>
-          <h2 className="text-base font-bold text-black/90 flex items-center gap-2">
-            <Palette className="w-4 h-4 text-[#FACC15]" />
+          <h2 className="text-base font-bold flex items-center gap-2">
+            <Sun className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+            <span>Tema por Defecto de tu Tienda</span>
+          </h2>
+          <p className="text-xs opacity-70 mt-0.5">
+            Elige cómo se presentará tu catálogo a los visitantes cuando ingresen por primera vez a tu tienda online.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          {/* Modo Claro */}
+          <button
+            type="button"
+            onClick={() => setTemaPorDefecto('claro')}
+            className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between gap-3 cursor-pointer ${
+              temaPorDefecto === 'claro'
+                ? 'border-[#FACC15] ring-2 ring-[#FACC15]/40 bg-[#FACC15]/10 shadow-xs'
+                : 'border-[var(--color-borde)] hover:border-[var(--color-texto-muted)] bg-[var(--color-fondo)]/40'
+            }`}
+          >
+            <div className="flex items-center justify-between w-full">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <Sun className="w-4 h-4" />
+              </div>
+              {temaPorDefecto === 'claro' && (
+                <span className="flex items-center gap-1 text-[11px] font-bold text-amber-800 dark:text-amber-200 bg-[#FDE68A] px-2 py-0.5 rounded-full">
+                  <Check className="w-3 h-3" />
+                  <span>Activo</span>
+                </span>
+              )}
+            </div>
+            <div>
+              <span className="font-bold text-sm block">Modo Claro</span>
+              <p className="text-xs opacity-70 mt-0.5">
+                Fondo blanco y claro. Ideal para catálogos luminosos y tradicionales.
+              </p>
+            </div>
+          </button>
+
+          {/* Modo Oscuro */}
+          <button
+            type="button"
+            onClick={() => setTemaPorDefecto('oscuro')}
+            className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between gap-3 cursor-pointer ${
+              temaPorDefecto === 'oscuro'
+                ? 'border-[#FACC15] ring-2 ring-[#FACC15]/40 bg-[#FACC15]/10 shadow-xs'
+                : 'border-[var(--color-borde)] hover:border-[var(--color-texto-muted)] bg-[var(--color-fondo)]/40'
+            }`}
+          >
+            <div className="flex items-center justify-between w-full">
+              <div className="w-8 h-8 rounded-xl bg-slate-800 text-slate-100 flex items-center justify-center">
+                <Moon className="w-4 h-4" />
+              </div>
+              {temaPorDefecto === 'oscuro' && (
+                <span className="flex items-center gap-1 text-[11px] font-bold text-amber-800 dark:text-amber-200 bg-[#FDE68A] px-2 py-0.5 rounded-full">
+                  <Check className="w-3 h-3" />
+                  <span>Activo</span>
+                </span>
+              )}
+            </div>
+            <div>
+              <span className="font-bold text-sm block">Modo Oscuro</span>
+              <p className="text-xs opacity-70 mt-0.5">
+                Fondo oscuro y moderno. Destaca piezas tecnológicas y de ingeniería.
+              </p>
+            </div>
+          </button>
+
+          {/* Automático / Sistema */}
+          <button
+            type="button"
+            onClick={() => setTemaPorDefecto('sistema')}
+            className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between gap-3 cursor-pointer ${
+              temaPorDefecto === 'sistema'
+                ? 'border-[#FACC15] ring-2 ring-[#FACC15]/40 bg-[#FACC15]/10 shadow-xs'
+                : 'border-[var(--color-borde)] hover:border-[var(--color-texto-muted)] bg-[var(--color-fondo)]/40'
+            }`}
+          >
+            <div className="flex items-center justify-between w-full">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <Laptop className="w-4 h-4" />
+              </div>
+              {temaPorDefecto === 'sistema' && (
+                <span className="flex items-center gap-1 text-[11px] font-bold text-amber-800 dark:text-amber-200 bg-[#FDE68A] px-2 py-0.5 rounded-full">
+                  <Check className="w-3 h-3" />
+                  <span>Activo</span>
+                </span>
+              )}
+            </div>
+            <div>
+              <span className="font-bold text-sm block">Automático</span>
+              <p className="text-xs opacity-70 mt-0.5">
+                Se ajusta automáticamente según la preferencia del dispositivo del visitante.
+              </p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Paletas de Color Preset (10 Opciones Oficiales) */}
+      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
+        <div>
+          <h2 className="text-base font-bold flex items-center gap-2">
+            <Palette className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
             <span>Paleta de Colores de la Tienda (10 Opciones)</span>
           </h2>
-          <p className="text-xs text-black/50 mt-0.5">
+          <p className="text-xs opacity-70 mt-0.5">
             Selecciona una de las 10 paletas de diseño. Cada una incluye sus versiones automáticas en modo claro y modo oscuro.
           </p>
         </div>
@@ -191,26 +486,26 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
                 key={preset.id}
                 type="button"
                 onClick={() => handleSelectPreset(preset.id)}
-                className={`p-4 rounded-xl border text-left transition-all flex flex-col justify-between gap-3 ${
+                className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between gap-3 cursor-pointer ${
                   isSelected
-                    ? 'border-[#FACC15] ring-2 ring-[#FACC15]/40 bg-[#FACC15]/5 shadow-sm'
-                    : 'border-black/10 hover:border-black/25 bg-white'
+                    ? 'border-[#FACC15] ring-2 ring-[#FACC15]/40 bg-[#FACC15]/10 shadow-xs'
+                    : 'border-[var(--color-borde)] hover:border-[var(--color-texto-muted)] bg-[var(--color-fondo)]/40'
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-black/90">{preset.nombre}</span>
+                    <span className="font-bold text-sm">{preset.nombre}</span>
                     {isSelected && (
-                      <span className="flex items-center gap-1 text-[11px] font-bold text-[#CA8A04] bg-[#FDE68A] px-2 py-0.5 rounded-full">
+                      <span className="flex items-center gap-1 text-[11px] font-bold text-amber-800 dark:text-amber-200 bg-[#FDE68A] px-2 py-0.5 rounded-full">
                         <Check className="w-3 h-3" />
                         <span>Activa</span>
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-black/60 mt-1">
+                  <p className="text-xs opacity-75 mt-1">
                     {preset.descripcion}
                   </p>
-                  <p className="text-[10px] text-black/40 mt-0.5 font-mono">
+                  <p className="text-[10px] opacity-50 mt-0.5 font-mono">
                     {preset.tags}
                   </p>
                 </div>
@@ -220,7 +515,7 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
                   {preset.coloresHex.map((hex, idx) => (
                     <span
                       key={idx}
-                      className="flex-1 h-6 rounded-md border border-black/15 shadow-2xs"
+                      className="flex-1 h-6 rounded-lg border border-black/15 dark:border-white/15 shadow-2xs"
                       style={{ backgroundColor: hex }}
                       title={hex}
                     />
@@ -232,70 +527,184 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
         </div>
       </div>
 
-      {/* 3. Selector de Tipografías */}
-      <div className="bg-white rounded-2xl border border-black/10 p-5 sm:p-6 shadow-sm space-y-4">
-        <h2 className="text-base font-bold text-black/90 flex items-center gap-2">
-          <Type className="w-4 h-4 text-[#6B8F71]" />
+      {/* 4. Selector de Tipografías */}
+      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
+        <h2 className="text-base font-bold flex items-center gap-2">
+          <Type className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
           <span>Tipografías de la Tienda</span>
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {/* Fuente para Títulos */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-black/70 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
               Fuente para Títulos
             </label>
-            <select
-              value={fontHeading}
-              onChange={(e) => setFontHeading(e.target.value)}
-              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#6B8F71]"
+            <div className="relative">
+              <select
+                value={fontHeading}
+                onChange={(e) => setFontHeading(e.target.value)}
+                style={{
+                  fontFamily:
+                    fontHeading === 'Inter'
+                      ? 'var(--font-inter), sans-serif'
+                      : fontHeading === 'Outfit'
+                      ? 'var(--font-outfit), sans-serif'
+                      : fontHeading === 'Playfair Display'
+                      ? 'var(--font-playfair-display), Georgia, serif'
+                      : fontHeading === 'Space Grotesk'
+                      ? 'var(--font-space-grotesk), sans-serif'
+                      : fontHeading === 'DM Serif Display'
+                      ? 'var(--font-dm-serif-display), Georgia, serif'
+                      : 'sans-serif',
+                }}
+                className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FACC15] cursor-pointer"
+              >
+                {AVAILABLE_FONTS.map((f) => (
+                  <option
+                    key={f.value}
+                    value={f.value}
+                    style={{
+                      fontFamily:
+                        f.value === 'Inter'
+                          ? 'var(--font-inter), sans-serif'
+                          : f.value === 'Outfit'
+                          ? 'var(--font-outfit), sans-serif'
+                          : f.value === 'Playfair Display'
+                          ? 'var(--font-playfair-display), Georgia, serif'
+                          : f.value === 'Space Grotesk'
+                          ? 'var(--font-space-grotesk), sans-serif'
+                          : f.value === 'DM Serif Display'
+                          ? 'var(--font-dm-serif-display), Georgia, serif'
+                          : 'sans-serif',
+                    }}
+                    className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)] py-2 text-base"
+                  >
+                    {f.label} ({f.style})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Muestra visual en vivo del título */}
+            <div
+              className="mt-2.5 p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-[var(--color-borde)] text-sm font-bold text-[var(--color-texto)] truncate"
+              style={{
+                fontFamily:
+                  fontHeading === 'Inter'
+                    ? 'var(--font-inter), sans-serif'
+                    : fontHeading === 'Outfit'
+                    ? 'var(--font-outfit), sans-serif'
+                    : fontHeading === 'Playfair Display'
+                    ? 'var(--font-playfair-display), Georgia, serif'
+                    : fontHeading === 'Space Grotesk'
+                    ? 'var(--font-space-grotesk), sans-serif'
+                    : fontHeading === 'DM Serif Display'
+                    ? 'var(--font-dm-serif-display), Georgia, serif'
+                    : 'sans-serif',
+              }}
             >
-              {AVAILABLE_FONTS.map((f) => (
-                <option key={f.value} value={f.value}>
-                  {f.label} ({f.style})
-                </option>
-              ))}
-            </select>
+              {nombre || 'Portalmaker'} — Taller Maker
+            </div>
           </div>
 
+          {/* Fuente para Textos de Cuerpo */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-black/70 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
               Fuente para Textos de Cuerpo
             </label>
-            <select
-              value={fontBody}
-              onChange={(e) => setFontBody(e.target.value)}
-              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#6B8F71]"
+            <div className="relative">
+              <select
+                value={fontBody}
+                onChange={(e) => setFontBody(e.target.value)}
+                style={{
+                  fontFamily:
+                    fontBody === 'Inter'
+                      ? 'var(--font-inter), sans-serif'
+                      : fontBody === 'Outfit'
+                      ? 'var(--font-outfit), sans-serif'
+                      : fontBody === 'Playfair Display'
+                      ? 'var(--font-playfair-display), Georgia, serif'
+                      : fontBody === 'Space Grotesk'
+                      ? 'var(--font-space-grotesk), sans-serif'
+                      : fontBody === 'DM Serif Display'
+                      ? 'var(--font-dm-serif-display), Georgia, serif'
+                      : 'sans-serif',
+                }}
+                className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15] cursor-pointer"
+              >
+                {AVAILABLE_FONTS.map((f) => (
+                  <option
+                    key={f.value}
+                    value={f.value}
+                    style={{
+                      fontFamily:
+                        f.value === 'Inter'
+                          ? 'var(--font-inter), sans-serif'
+                          : f.value === 'Outfit'
+                          ? 'var(--font-outfit), sans-serif'
+                          : f.value === 'Playfair Display'
+                          ? 'var(--font-playfair-display), Georgia, serif'
+                          : f.value === 'Space Grotesk'
+                          ? 'var(--font-space-grotesk), sans-serif'
+                          : f.value === 'DM Serif Display'
+                          ? 'var(--font-dm-serif-display), Georgia, serif'
+                          : 'sans-serif',
+                    }}
+                    className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)] py-2 text-base"
+                  >
+                    {f.label} ({f.style})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Muestra visual en vivo del texto */}
+            <div
+              className="mt-2.5 p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-[var(--color-borde)] text-xs text-[var(--color-texto)] opacity-80 leading-relaxed"
+              style={{
+                fontFamily:
+                  fontBody === 'Inter'
+                    ? 'var(--font-inter), sans-serif'
+                    : fontBody === 'Outfit'
+                    ? 'var(--font-outfit), sans-serif'
+                    : fontBody === 'Playfair Display'
+                    ? 'var(--font-playfair-display), Georgia, serif'
+                    : fontBody === 'Space Grotesk'
+                    ? 'var(--font-space-grotesk), sans-serif'
+                    : fontBody === 'DM Serif Display'
+                    ? 'var(--font-dm-serif-display), Georgia, serif'
+                    : 'sans-serif',
+              }}
             >
-              {AVAILABLE_FONTS.map((f) => (
-                <option key={f.value} value={f.value}>
-                  {f.label} ({f.style})
-                </option>
-              ))}
-            </select>
+              Impresión 3D de alta precisión con filamento PLA premium y corte láser CNC.
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 4. Previsualización en Vivo */}
-      <div className="bg-white rounded-2xl border border-black/10 p-5 sm:p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
+      {/* 5. Previsualización en Vivo */}
+      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-bold text-black/90 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#6B8F71]" />
+            <h2 className="text-base font-bold flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
               <span>Vista Previa en Tiempo Real</span>
             </h2>
-            <p className="text-xs text-black/50">
-              Así lucirá la cabecera y una tarjeta de producto en tu tienda.
+            <p className="text-xs opacity-70 mt-0.5">
+              Así lucirá la cabecera y una tarjeta de producto en tu tienda para tus visitantes.
             </p>
           </div>
 
           {/* Toggle Claro / Oscuro para el preview */}
-          <div className="flex items-center rounded-xl bg-black/5 p-1 border border-black/10 text-xs">
+          <div className="flex items-center rounded-xl bg-black/5 dark:bg-white/10 p-1 border border-[var(--color-borde)] text-xs self-start sm:self-auto">
             <button
               type="button"
               onClick={() => setPreviewMode('claro')}
               className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                previewMode === 'claro' ? 'bg-white shadow-xs text-black' : 'text-black/60'
+                previewMode === 'claro'
+                  ? 'bg-white shadow-xs text-black'
+                  : 'opacity-70 hover:opacity-100'
               }`}
             >
               Modo Claro
@@ -304,7 +713,9 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
               type="button"
               onClick={() => setPreviewMode('oscuro')}
               className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                previewMode === 'oscuro' ? 'bg-black text-white shadow-xs' : 'text-black/60'
+                previewMode === 'oscuro'
+                  ? 'bg-black text-white shadow-xs'
+                  : 'opacity-70 hover:opacity-100'
               }`}
             >
               Modo Oscuro
@@ -314,19 +725,28 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
 
         {/* Caja de Preview con los estilos dinámicos */}
         <div
-          className="rounded-2xl p-6 transition-colors duration-300 border border-black/10 shadow-inner"
+          className="rounded-2xl p-6 transition-colors duration-300 border border-black/10 dark:border-white/10 shadow-inner"
           style={{ backgroundColor: currentFondo, color: currentTexto }}
         >
           {/* Header simulado */}
-          <div className="border-b pb-4 mb-6 flex items-center justify-between" style={{ borderColor: 'rgba(128,128,128,0.2)' }}>
-            <div>
-              <h3 className="text-xl font-bold" style={{ color: currentPrimario }}>
-                {nombre || 'Nombre de la Tienda'}
-              </h3>
-              {slogan && <p className="text-xs opacity-75 mt-0.5">{slogan}</p>}
+          <div className="border-b pb-4 mb-6 flex items-center justify-between gap-3" style={{ borderColor: 'rgba(128,128,128,0.2)' }}>
+            <div className="flex items-center gap-3">
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={nombre}
+                  className="h-10 w-auto max-w-[120px] object-contain rounded-md"
+                />
+              ) : null}
+              <div>
+                <h3 className="text-xl font-bold" style={{ color: currentPrimario }}>
+                  {nombre || 'Nombre de la Tienda'}
+                </h3>
+                {slogan && <p className="text-xs opacity-75 mt-0.5">{slogan}</p>}
+              </div>
             </div>
             <span
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white shadow-xs"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white shadow-xs shrink-0"
               style={{ backgroundColor: currentPrimario }}
             >
               WhatsApp
@@ -335,7 +755,7 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
 
           {/* Card simulada */}
           <div className="max-w-xs mx-auto rounded-xl p-4 border overflow-hidden shadow-sm" style={{ backgroundColor: 'rgba(128,128,128,0.08)', borderColor: 'rgba(128,128,128,0.15)' }}>
-            <div className="aspect-video w-full rounded-lg bg-black/10 flex items-center justify-center text-xs opacity-60 mb-3">
+            <div className="aspect-video w-full rounded-lg bg-black/10 dark:bg-white/10 flex items-center justify-center text-xs opacity-60 mb-3">
               Foto de Producto
             </div>
             <h4 className="font-bold text-sm mb-1">Producto de Ejemplo</h4>
@@ -358,13 +778,13 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
         <button
           type="submit"
           disabled={loading}
-          className="min-h-[48px] px-8 py-3 rounded-xl bg-[#6B8F71] text-white text-sm font-semibold hover:bg-[#58775d] transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
+          className="min-h-[48px] px-8 py-3 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-xs cursor-pointer"
         >
           {loading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
           ) : (
             <>
-              <Check className="w-4 h-4" />
+              <Check className="w-4 h-4 text-[#1F2937]" />
               <span>Guardar Configuración de Marca</span>
             </>
           )}

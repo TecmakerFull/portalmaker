@@ -4,6 +4,7 @@
 // =============================================================================
 
 import Link from 'next/link'
+import Image from 'next/image'
 import ThemeToggle from '@/app/tienda/theme-toggle'
 import { Sparkles, Store, Palette, MessageSquare, ArrowRight, ShieldCheck, Zap } from 'lucide-react'
 
@@ -14,10 +15,14 @@ export default function PortalHomePage() {
       <header className="border-b border-[var(--color-borde)] sticky top-0 bg-[var(--color-fondo)]/90 backdrop-blur-md z-30 transition-colors duration-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#FACC15] flex items-center justify-center font-black text-[#1F2937] text-lg shadow-sm">
-              P
-            </div>
-            <span className="text-2xl font-black tracking-tight font-[var(--font-portal-heading)]">
+            <Image
+              src="/logo.png"
+              alt="Portalmaker"
+              width={38}
+              height={38}
+              className="w-9 h-9 rounded-xl object-contain shadow-xs"
+            />
+            <span className="text-2xl font-bold tracking-tight font-[var(--font-portal-heading)]">
               Portalmaker
             </span>
           </Link>
@@ -29,7 +34,7 @@ export default function PortalHomePage() {
             <Link
               href="/login"
               style={{ color: '#1F2937' }}
-              className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] active:scale-95 transition-all shadow-sm flex items-center gap-1.5"
+              className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-semibold hover:bg-[#eab308] active:scale-95 transition-all shadow-sm flex items-center gap-1.5"
             >
               <span>Acceso Maker</span>
               <ArrowRight className="w-4 h-4 text-[#1F2937]" />
@@ -40,20 +45,20 @@ export default function PortalHomePage() {
 
       {/* Hero Section */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-16 text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FACC15]/20 border border-[#FACC15]/40 text-[var(--color-texto)] text-xs font-bold uppercase tracking-wider mb-6 shadow-xs">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FACC15]/20 border border-[#FACC15]/40 text-[var(--color-texto)] text-xs font-semibold uppercase tracking-wider mb-6 shadow-xs">
           <Zap className="w-3.5 h-3.5 text-[#EAB308]" />
           <span>La plataforma e-commerce para talleres y creadores</span>
         </div>
 
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.12] font-[var(--font-portal-heading)] max-w-4xl mx-auto">
-          Tu tienda virtual de fabricación,{' '}
+        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.12] font-[var(--font-portal-heading)] max-w-4xl mx-auto">
+          El portal de los{' '}
           <span className="text-[#EAB308] underline decoration-[#FACC15]/50 decoration-wavy decoration-2">
-            lista en minutos.
+            makers
           </span>
         </h1>
 
-        <p className="mt-6 text-base sm:text-xl opacity-80 max-w-2xl mx-auto leading-relaxed">
-          Pensada especialmente para talleres de <strong>Impresión 3D</strong>, <strong>Grabado Láser</strong> y <strong>Corte CNC</strong>. Muestra tus productos, personaliza tu marca y recibe pedidos directo por WhatsApp.
+        <p className="mt-6 text-base sm:text-xl opacity-80 max-w-2xl mx-auto leading-relaxed font-normal">
+          La plataforma para mostrar, vender y gestionar tus productos.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">

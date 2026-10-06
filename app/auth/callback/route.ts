@@ -1,20 +1,6 @@
 // =============================================================================
 // PORTALMAKER — Callback de autenticación de Supabase (Google OAuth)
 // "El portal del Maker" | portalmaker.com.ar
-//
-// Esta ruta maneja el callback de Google OAuth de Supabase.
-// Flujo:
-//   1. El usuario hace click en "Ingresar con Google" en el portal
-//   2. Google redirige a esta ruta con un ?code=...
-//   3. Esta ruta intercambia el code por una sesión de Supabase
-//   4. Redirige al dashboard según el rol del usuario:
-//      - Si es platform_admin → /dashboard/admin
-//      - Si es admin de una tienda → /dashboard/maker
-//      - Si no tiene rol → / (portal)
-//
-// IMPORTANTE: esta URL debe estar registrada en:
-//   - Supabase Dashboard → Authentication → URL Configuration → Redirect URLs
-//   - Google Cloud Console → OAuth 2.0 → Authorized redirect URIs
 // =============================================================================
 
 import { NextResponse } from 'next/server'
@@ -25,11 +11,10 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const origin = requestUrl.origin
+  const next = requestUrl.searchParams.get('next') || '/dashboard/maker'
 
   if (code) {
-    // Crear el Supabase client para el Route Handler
-    // (similar al server client, pero con acceso directo a las cookies del response)
-    const response = NextResponse.redirect(`${origin}/dashboard/maker`)
+    const cookiesToSet: { name: string; value: string; options: Parameters<typeof NextResponse.prototype.cookies.set>[2] }[] = []
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,54 +24,65 @@ export async function GET(request: NextRequest) {
           getAll() {
             return request.cookies.getAll()
           },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options)
+          setAll(cookies) {
+            cookies.forEach(({ name, value, options }) => {
+              cookiesToSet.push({ name, value, options })
             })
           },
         },
       }
     )
 
-    // Intercambiar el code por una sesión de usuario
+    // Intercambiar el code por la sesión de usuario
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // Obtener el email del usuario para determinar su rol
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      let targetUrl = `${origin}${next}`
 
       if (user?.email) {
-        // Verificar si es platform_admin
+        // 1. Verificar si es Superadmin de Portalmaker
         const { data: platformAdmin } = await supabase
           .from('platform_admins')
           .select('id')
           .eq('email', user.email)
           .single()
 
-        if (platformAdmin) {
-          // Es el developer/superadmin → panel de plataforma
-          return NextResponse.redirect(`${origin}/dashboard/admin`)
+        if (platformAdmin || user.email === 'temperini@gmail.com') {
+          targetUrl = `${origin}/dashboard/admin`
+        } else {
+          // 2. Verificar si ya tiene tienda asignada
+          const { data: stores } = await supabase
+            .from('stores')
+            .select('slug')
+            .eq('admin_email', user.email)
+            .order('created_at', { ascending: false })
+
+          if (stores && stores.length === 1) {
+            // Entrar directo al panel de administración de su tienda
+            targetUrl = `${origin}/tienda/admin?tenant=${stores[0].slug}`
+          } else if (stores && stores.length > 1) {
+            targetUrl = `${origin}/dashboard/maker`
+          } else {
+            // Usuario nuevo sin tienda -> Pantalla para crear su tienda
+            targetUrl = `${origin}/dashboard/maker`
+          }
         }
-
-        // Verificar si es admin de una tienda
-        const { data: store } = await supabase
-          .from('stores')
-          .select('id, slug')
-          .eq('admin_email', user.email)
-          .single()
-
-        if (store) {
-          // Es maker (dueño de tienda) → panel personal
-          return NextResponse.redirect(`${origin}/dashboard/maker`)
-        }
-
-        // El email no está registrado como admin ni como maker
-        // Redirigir al portal con un mensaje de error
-        return NextResponse.redirect(`${origin}/?error=acceso_no_autorizado`)
       }
+
+      // Redirigir al dashboard preservando todas las cookies de sesión
+      const response = NextResponse.redirect(targetUrl)
+      cookiesToSet.forEach(({ name, value, options }) => {
+        response.cookies.set(name, value, options)
+      })
+      return response
     }
   }
 
-  // Si algo salió mal (no hay code, o falló el intercambio), volver al portal
-  return NextResponse.redirect(`${origin}/?error=auth_error`)
+  // Si falló el intercambio, volver al login
+  return NextResponse.redirect(`${origin}/login?error=auth_error`)
 }
+

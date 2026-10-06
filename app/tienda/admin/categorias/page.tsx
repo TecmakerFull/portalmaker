@@ -1,13 +1,13 @@
 // =============================================================================
-// PORTALMAKER — Panel de Productos del Admin de Tienda
+// PORTALMAKER — Panel de Categorías y Subcategorías de la Tienda
 // =============================================================================
 
 import { notFound } from 'next/navigation'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import ProductosTable from './productos-table'
+import CategoriasManager from './categorias-manager'
 
-export default async function AdminProductosPage() {
+export default async function AdminCategoriasPage() {
   const tenant = await getTenantStore()
 
   if (!tenant) {
@@ -19,32 +19,21 @@ export default async function AdminProductosPage() {
 
   const supabase = await createSupabaseServerClient()
 
-  // 1. Obtener productos de la tienda ordenados por fecha
-  const { data: products } = await supabase
-    .from('products')
-    .select('*, category:categories(nombre)')
-    .eq('store_id', store.id)
-    .order('created_at', { ascending: false })
-
-  // 2. Obtener categorías de la tienda para filtros y edición rápida
+  // Obtener todas las categorías de la tienda ordenadas
   const { data: categories } = await supabase
     .from('categories')
     .select('*')
     .eq('store_id', store.id)
     .order('orden', { ascending: true })
-
-  const productList = products ?? []
-  const categoryList = categories ?? []
+    .order('created_at', { ascending: true })
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <ProductosTable
+    <div className="max-w-4xl mx-auto space-y-6">
+      <CategoriasManager
         store={store}
-        initialProducts={productList}
-        categories={categoryList}
+        initialCategories={categories ?? []}
         tenantQuery={tenantQuery}
       />
     </div>
   )
 }
-

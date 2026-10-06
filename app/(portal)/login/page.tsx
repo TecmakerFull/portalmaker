@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import ThemeToggle from '@/app/tienda/theme-toggle'
 import { LogIn, UserPlus, ArrowRight, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
@@ -90,11 +91,15 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col justify-between p-4 sm:p-6 bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-portal-body)] transition-colors duration-200">
       {/* Barra superior con logo y ThemeToggle */}
       <div className="max-w-md w-full mx-auto flex items-center justify-between pt-2">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-[#FACC15] flex items-center justify-center font-black text-[#1F2937] text-base shadow-xs">
-            P
-          </div>
-          <span className="text-xl font-black tracking-tight font-[var(--font-portal-heading)]">
+        <Link href="/" className="flex items-center gap-2.5">
+          <Image
+            src="/logo.png"
+            alt="Portalmaker"
+            width={34}
+            height={34}
+            className="w-8 h-8 rounded-xl object-contain shadow-2xs"
+          />
+          <span className="text-xl font-bold tracking-tight font-[var(--font-portal-heading)]">
             Portalmaker
           </span>
         </Link>
@@ -103,7 +108,7 @@ export default function LoginPage() {
 
       <div className="w-full max-w-md mx-auto my-auto bg-[var(--color-superficie)] rounded-3xl shadow-xl border border-[var(--color-borde)] p-6 sm:p-8 transition-colors duration-200">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-black tracking-tight font-[var(--font-portal-heading)]">
+          <h1 className="text-2xl font-bold tracking-tight font-[var(--font-portal-heading)]">
             {isRegister ? 'Crear cuenta de Maker' : 'Iniciar Sesión'}
           </h1>
           <p className="text-xs sm:text-sm opacity-70 mt-1">

@@ -29,12 +29,12 @@ export default async function TiendaPage() {
     .eq('store_id', store.id)
     .order('orden', { ascending: true })
 
-  // 2. Obtener productos activos
+  // 2. Obtener productos activos (visibles)
   const { data: products } = await supabase
     .from('products')
     .select('*, category:categories(nombre)')
     .eq('store_id', store.id)
-    .eq('activo', true)
+    .eq('visible', true)
     .order('destacado', { ascending: false })
     .order('created_at', { ascending: false })
 
@@ -47,23 +47,88 @@ export default async function TiendaPage() {
     ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hola ${store.nombre}! Vengo de ver tu tienda online.`)}`
     : null
 
+  // Si la tienda está apagada (modo mantenimiento / en construcción)
+  if (!store.suscripcion_activa) {
+    return (
+      <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] flex flex-col justify-between transition-colors duration-200">
+        <header className="border-b border-black/10 dark:border-white/10 p-4 sm:p-6 flex items-center justify-between max-w-6xl w-full mx-auto">
+          <h1 className="text-xl sm:text-2xl font-bold font-[var(--font-heading)] text-[var(--color-primario)]">
+            {store.nombre}
+          </h1>
+          <ThemeToggle />
+        </header>
+
+        <main className="max-w-lg mx-auto p-6 text-center space-y-6">
+          <div className="w-16 h-16 rounded-3xl bg-[var(--color-primario)]/15 text-[var(--color-primario)] flex items-center justify-center mx-auto shadow-xs">
+            <Package className="w-8 h-8" />
+          </div>
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 mb-3 inline-block">
+              Tienda en Preparación
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-bold font-[var(--font-heading)] mt-1">
+              ¡Volvemos muy pronto!
+            </h2>
+            <p className="text-sm opacity-70 mt-2 leading-relaxed">
+              Estamos actualizando el catálogo, nuevos modelos y piezas de taller.
+              Si precisás realizar un encargo urgente, podés contactarnos directamente por WhatsApp.
+            </p>
+          </div>
+
+          {generalWhatsappUrl && (
+            <a
+              href={generalWhatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="min-h-[48px] px-6 py-3 rounded-2xl bg-[var(--color-primario)] text-white text-sm font-bold hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-2 shadow-sm"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Contactar por WhatsApp</span>
+            </a>
+          )}
+        </main>
+
+        <footer className="border-t border-black/10 dark:border-white/10 py-6 text-center text-xs opacity-50">
+          <p>© {new Date().getFullYear()} {store.nombre} — Desarrollado sobre Portalmaker</p>
+        </footer>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] transition-colors duration-200">
       {/* Header Principal de la Tienda */}
       <header className="border-b border-black/10 dark:border-white/10 sticky top-0 bg-[var(--color-fondo)]/90 backdrop-blur-md z-30 transition-colors duration-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-[var(--font-heading)] text-[var(--color-primario)]">
-              {store.nombre}
-            </h1>
-            {store.slogan && (
-              <p className="text-xs sm:text-sm opacity-70 line-clamp-1 mt-0.5">
-                {store.slogan}
-              </p>
+          <Link href={`/tienda${tenantQuery}`} className="flex items-center gap-3">
+            {store.logo_url && (
+              <img
+                src={store.logo_url}
+                alt={store.nombre}
+                className="h-10 sm:h-12 w-auto max-w-[140px] object-contain rounded-lg"
+              />
             )}
-          </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight font-[var(--font-heading)] text-[var(--color-primario)]">
+                {store.nombre}
+              </h1>
+              {store.slogan && (
+                <p className="text-xs sm:text-sm opacity-70 line-clamp-1 mt-0.5">
+                  {store.slogan}
+                </p>
+              )}
+            </div>
+          </Link>
 
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Enlace a Contacto */}
+            <Link
+              href={`/tienda/contacto${tenantQuery}`}
+              className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5"
+            >
+              <span>Contacto</span>
+            </Link>
+
             {/* Toggle Tema */}
             <ThemeToggle />
 
@@ -76,8 +141,8 @@ export default async function TiendaPage() {
                 className="min-h-[44px] px-4 py-2.5 rounded-xl bg-[var(--color-primario)] text-white text-xs sm:text-sm font-semibold hover:opacity-90 active:scale-95 transition-all flex items-center gap-2 shadow-sm"
               >
                 <MessageSquare className="w-4 h-4" />
-                <span className="hidden sm:inline">Consultar por WhatsApp</span>
-                <span className="sm:hidden">Contacto</span>
+                <span className="hidden sm:inline">WhatsApp</span>
+                <span className="sm:hidden">Consultar</span>
               </a>
             )}
           </div>
@@ -232,8 +297,17 @@ export default async function TiendaPage() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-20 border-t border-black/10 dark:border-white/10 py-8 text-center text-xs opacity-60">
-        <p>© {new Date().getFullYear()} {store.nombre} — Desarrollado sobre Portalmaker</p>
+      <footer className="mt-20 border-t border-black/10 dark:border-white/10 py-8 text-center text-xs opacity-75 space-y-2">
+        <div className="flex items-center justify-center gap-4 text-xs font-semibold">
+          <Link href={`/tienda${tenantQuery}`} className="hover:underline">
+            Catálogo
+          </Link>
+          <span>•</span>
+          <Link href={`/tienda/contacto${tenantQuery}`} className="hover:underline">
+            Contacto & Ubicación
+          </Link>
+        </div>
+        <p className="opacity-60">© {new Date().getFullYear()} {store.nombre} — Desarrollado sobre Portalmaker</p>
       </footer>
     </div>
   )

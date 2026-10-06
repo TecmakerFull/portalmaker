@@ -26,11 +26,23 @@ export function middleware(request: NextRequest) {
   const isVercelDomain = host.endsWith('.vercel.app')
   const isBasePortalDomain = host === PORTAL_DOMAIN || host === `www.${PORTAL_DOMAIN}`
 
+  // Interceptar callbacks de OAuth que lleguen a la raíz u otra ruta con ?code=...
+  if (nextUrl.searchParams.has('code') && !nextUrl.pathname.startsWith('/auth/callback')) {
+    const callbackUrl = new URL('/auth/callback', request.url)
+    nextUrl.searchParams.forEach((val, key) => {
+      callbackUrl.searchParams.set(key, val)
+    })
+    return NextResponse.redirect(callbackUrl)
+  }
+
   // 1. Simulación de tienda mediante query param (?tenant=slug)
   // Permite probar cualquier tienda en localhost o en Vercel (ej: portalmaker.vercel.app?tenant=tecmaker)
   const tenantParam = nextUrl.searchParams.get('tenant')
   if (tenantParam) {
-    const rewriteUrl = new URL(`/tienda${nextUrl.pathname}`, request.url)
+    const targetPath = nextUrl.pathname.startsWith('/tienda')
+      ? nextUrl.pathname
+      : `/tienda${nextUrl.pathname}`
+    const rewriteUrl = new URL(targetPath, request.url)
     nextUrl.searchParams.forEach((val, key) => {
       rewriteUrl.searchParams.set(key, val)
     })

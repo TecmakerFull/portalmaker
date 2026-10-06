@@ -32,7 +32,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
     .select('*, category:categories(nombre)')
     .eq('store_id', store.id)
     .eq('slug', slug)
-    .eq('activo', true)
+    .eq('visible', true)
     .single()
 
   if (!product) {

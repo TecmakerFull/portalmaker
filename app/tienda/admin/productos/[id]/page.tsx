@@ -36,6 +36,20 @@ export default async function EditarProductoPage({ params }: PageProps) {
     notFound()
   }
 
+  // Cargar detalles extendidos (dimensiones, peso)
+  const { data: details } = await supabase
+    .from('product_details')
+    .select('*')
+    .eq('product_id', id)
+    .maybeSingle()
+
+  // Cargar variantes / atributos
+  const { data: variants } = await supabase
+    .from('product_variants')
+    .select('*')
+    .eq('product_id', id)
+    .order('orden', { ascending: true })
+
   // Cargar categorías existentes
   const { data: categories } = await supabase
     .from('categories')
@@ -47,6 +61,8 @@ export default async function EditarProductoPage({ params }: PageProps) {
     <ProductoForm
       store={store}
       initialProduct={product}
+      initialDetails={details}
+      initialVariants={variants ?? []}
       categories={categories ?? []}
       tenantQuery={tenantQuery}
     />

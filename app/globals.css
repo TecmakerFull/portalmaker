@@ -13,6 +13,8 @@
 
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
+
 :root {
   /* Tipografía del PORTAL */
   --font-portal-heading: var(--font-outfit);
@@ -23,6 +25,7 @@
   --radius-md: 0.5rem;     /* 8px */
   --radius-lg: 0.75rem;    /* 12px */
   --radius-xl: 1rem;       /* 16px */
+  --radius-2xl: 1.5rem;    /* 24px */
   --radius-full: 9999px;
 
   /* Transiciones */
@@ -36,16 +39,24 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
-/* Modo claro (por defecto: Paleta 06 Yellow & Gray) */
+/* Modo claro (Paleta 06 Yellow & Gray) */
 :root,
 [data-theme="light"] {
   --color-primario:   #FACC15;  /* Amarillo dorado */
-  --color-secundario: #6B7280;  /* Gris medio */
-  --color-acento:     #FDE68A;  /* Amarillo suave */
-  --color-fondo:      #F3F4F6;  /* Gris claro */
-  --color-superficie: #FFFFFF;  /* Blanco puro */
-  --color-texto:      #1F2937;  /* Gris carbón */
-  --color-borde:      #E5E7EB;
+  --color-secundario: #4B5563;  /* Gris medio */
+  --color-acento:     #FEF08A;  /* Amarillo suave */
+  --color-fondo:      #F3F4F6;  /* Fondo gris claro */
+  --color-superficie: #FFFFFF;  /* Tarjetas blanco puro */
+  --color-texto:      #111827;  /* Carbón oscuro nítido */
+  --color-texto-muted:#4B5563;  /* Texto secundario de alta legibilidad */
+  --color-borde:      #E5E7EB;  /* Bordes suaves */
+
+  /* Inputs de formulario */
+  --color-input-bg:          #FFFFFF;
+  --color-input-bg-muted:    #F9FAFB;
+  --color-input-borde:       #D1D5DB;
+  --color-input-texto:       #111827;
+  --color-input-placeholder: #9CA3AF;
 
   --font-heading: var(--font-outfit);
   --font-body:    var(--font-inter);
@@ -59,7 +70,15 @@
   --color-fondo:      #111827;  /* Carbón profundo */
   --color-superficie: #1F2937;  /* Gris oscuro */
   --color-texto:      #F9FAFB;  /* Blanco tiza */
-  --color-borde:      #374151;
+  --color-texto-muted:#9CA3AF;  /* Texto secundario legible */
+  --color-borde:      #374151;  /* Bordes */
+
+  /* Inputs de formulario */
+  --color-input-bg:          #111827;
+  --color-input-bg-muted:    #1F2937;
+  --color-input-borde:       #374151;
+  --color-input-texto:       #F9FAFB;
+  --color-input-placeholder: #6B7280;
 }
 
 html {
@@ -83,3 +102,20 @@ body {
 .border-portal {
   border-color: var(--color-borde);
 }
+
+/* Variables dinámicas para la tienda del tenant */
+.tienda-root {
+  --color-primario: var(--tenant-primario, #FACC15);
+  --color-secundario: var(--tenant-secundario, #4B5563);
+  --color-fondo: var(--tenant-fondo, #F3F4F6);
+  --color-texto: var(--tenant-texto, #111827);
+}
+
+:root[data-theme="dark"] .tienda-root,
+.dark .tienda-root {
+  --color-primario: var(--tenant-primario-dark, var(--tenant-primario, #FACC15));
+  --color-secundario: var(--tenant-secundario-dark, var(--tenant-secundario, #9CA3AF));
+  --color-fondo: var(--tenant-fondo-dark, #111827);
+  --color-texto: var(--tenant-texto-dark, #F9FAFB);
+}
+

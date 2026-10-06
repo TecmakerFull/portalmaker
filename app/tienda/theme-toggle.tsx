@@ -1,36 +1,46 @@
 // =============================================================================
-// PORTALMAKER — Toggle de Modo Claro / Oscuro para la Tienda Pública
+// PORTALMAKER — Toggle de Modo Claro / Oscuro para la Tienda Pública y Portal
 // =============================================================================
 
 'use client'
 
-import { useSyncExternalStore } from 'react'
+import { useState, useEffect } from 'react'
 import { Sun, Moon } from 'lucide-react'
 
-function getThemeSnapshot(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'light'
-  const saved = localStorage.getItem('portalmaker-theme') as 'light' | 'dark' | null
-  if (saved) return saved
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
-
-function getServerSnapshot(): 'light' | 'dark' {
-  return 'light'
-}
-
-function subscribeToTheme(callback: () => void) {
-  window.addEventListener('storage', callback)
-  return () => window.removeEventListener('storage', callback)
-}
-
 export default function ThemeToggle() {
-  const theme = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, getServerSnapshot)
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    // Leer el tema aplicado actualmente en el DOM por el script del <head>
+    const currentTheme = (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') ||
+      (localStorage.getItem('portalmaker-theme') as 'light' | 'dark') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    
+    setTheme(currentTheme)
+    setMounted(true)
+  }, [])
 
   const toggleTheme = () => {
-    const next = theme === 'light' ? 'dark' : 'light'
+    // Detectar el estado actual del DOM en el instante del clic
+    const current = (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || theme || 'light'
+    const next: 'light' | 'dark' = current === 'dark' ? 'light' : 'dark'
+
     document.documentElement.setAttribute('data-theme', next)
+    if (next === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
     localStorage.setItem('portalmaker-theme', next)
-    window.dispatchEvent(new Event('storage'))
+    setTheme(next)
+  }
+
+  // Prevenir desajuste visual antes del montaje
+  if (!mounted) {
+    return (
+      <div className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2.5 rounded-xl border border-black/10 dark:border-white/15 bg-black/5 dark:bg-white/10 opacity-50" />
+    )
   }
 
   return (
@@ -49,3 +59,4 @@ export default function ThemeToggle() {
     </button>
   )
 }
+

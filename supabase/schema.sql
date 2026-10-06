@@ -817,6 +817,29 @@ grant insert on audit_log to anon, authenticated;
 
 
 -- =============================================================================
+-- STORAGE BUCKETS (portalmaker-media y portalmaker-receipts)
+-- =============================================================================
+insert into storage.buckets (id, name, public)
+values 
+  ('portalmaker-media', 'portalmaker-media', true),
+  ('portalmaker-receipts', 'portalmaker-receipts', false)
+on conflict (id) do update set public = excluded.public;
+
+-- Políticas de acceso para portalmaker-media (imágenes públicas de tiendas y productos)
+create policy "public_read_media" on storage.objects for select
+  using ( bucket_id = 'portalmaker-media' );
+
+create policy "authenticated_insert_media" on storage.objects for insert
+  with check ( bucket_id = 'portalmaker-media' );
+
+create policy "authenticated_update_media" on storage.objects for update
+  using ( bucket_id = 'portalmaker-media' );
+
+create policy "authenticated_delete_media" on storage.objects for delete
+  using ( bucket_id = 'portalmaker-media' );
+
+
+-- =============================================================================
 -- FIN DEL SCHEMA
 -- Próximo paso: ejecutar supabase/seed.sql
 -- =============================================================================

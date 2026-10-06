@@ -12,8 +12,10 @@
 4. [Gestión de Productos e Imágenes](#4-gestión-de-productos-e-imágenes)
 5. [Personalización de Marca, Colores y Fuentes](#5-personalización-de-marca-colores-y-fuentes)
 6. [La Tienda Pública y Ventas por WhatsApp](#6-la-tienda-pública-y-ventas-por-whatsapp)
-7. [Cómo Vincular tu Dominio Propio (.com.ar / .com)](#7-cómo-vincular-tu-dominio-propio-comar--com)
-8. [Preguntas Frecuentes y Soporte](#8-preguntas-frecuentes-y-soporte)
+7. [Formulario de Contacto, Ubicación y Redes Sociales](#7-formulario-de-contacto-ubicación-y-redes-sociales)
+8. [Experiencia Móvil y Administración desde el Celular (Mobile-First)](#8-experiencia-móvil-y-administración-desde-el-celular-mobile-first)
+9. [Cómo Vincular tu Dominio Propio (.com.ar / .com)](#9-cómo-vincular-tu-dominio-propio-comar--com)
+10. [Preguntas Frecuentes y Soporte](#10-preguntas-frecuentes-y-soporte)
 
 ---
 
@@ -86,6 +88,13 @@ Acceso: Desde el menú lateral haz clic en **"Productos"**.
 
 Acceso: Desde el menú lateral haz clic en **"Colores y Marca"**.
 
+### Subida y Gestión de Logotipo
+Puedes cargar el logo de tu taller con cualquiera de estas 3 opciones:
+* **1. Subir archivo / Arrastrar**: Carga imágenes en formato PNG (con o sin transparencia), JPG, SVG o WEBP.
+* **2. Pegar directo con Ctrl + V**: Copia una imagen desde tu editor gráfico o internet y pégala en la zona de carga sin guardarla en disco.
+* **3. Ingresar por URL**: Pega el enlace directo de una imagen alojada en la web.
+* El logo se previsualiza en tiempo real y se muestra en la cabecera de tu tienda pública y de contacto.
+
 ### Paletas de Colores Preset
 Diseñadas específicamente para talleres de fabricación:
 1. **Industrial**: Tonos salvia y carbón técnico.
@@ -105,7 +114,7 @@ Puedes seleccionar fuentes modernas de Google Fonts:
 * **Playfair Display** o **DM Serif Display** (Elegantes y artesanales)
 
 ### Vista Previa en Tiempo Real
-En la parte inferior verás una simulación interactiva con el botón para alternar entre Modo Claro y Modo Oscuro antes de guardar. Haz clic en **"Guardar Configuración de Marca"** para aplicar los cambios en tu tienda pública de inmediato.
+En la parte inferior verás una simulación interactiva con el logo y el botón para alternar entre Modo Claro y Modo Oscuro antes de guardar. Haz clic en **"Guardar Configuración de Marca"** para aplicar los cambios en tu tienda pública de inmediato.
 
 ---
 
@@ -122,19 +131,69 @@ Tu tienda pública está optimizada para celulares y computadoras:
 
 ---
 
-## 7. Cómo Vincular tu Dominio Propio (.com.ar / .com)
+## 7. Formulario de Contacto, Ubicación y Redes Sociales
 
-Si deseas que tu tienda abra con tu propia dirección web (ej: `www.mitienda3d.com.ar`):
+Acceso: Desde el menú lateral en **Mi tienda → Contacto & Ubicación** (`/tienda/admin/contacto`).
 
-1. Adquiere tu dominio en **NIC Argentina** (`nic.ar`) o tu registrador de preferencia.
-2. Contáctate con el administrador de Portalmaker indicando el dominio adquirido y el nombre de tu tienda.
-3. El administrador configurará los registros DNS y enlazará tu dominio a tu tienda.
-4. Tu tienda responderá directamente en tu dirección personalizada manteniendo todos tus productos, imágenes y colores intactos.
+Aquí puedes configurar todos los puntos de encuentro con tus clientes:
+* **Canales de Atención**:
+  * **WhatsApp de Ventas**: Número directo con código de país para recibir pedidos.
+  * **Email de Contacto**: Dirección de correo electrónico pública para presupuestos formales.
+  * **Horarios de Atención**: Plazos y días hábiles de atención y retiro en taller (ej: *Lun a Vie 9 a 18hs - Sáb 10 a 13hs*).
+* **Ubicación del Taller y Punto de Retiro**:
+  * **Dirección Física**: Calle, número, localidad y provincia donde tus clientes pueden retirar piezas impresas o cortadas.
+  * **Google Maps**: Enlace o código embed para que tus clientes abran la ruta en el mapa con un toque.
+* **Redes Sociales**:
+  * Enlaces directos a tu perfil de **Instagram**, página de **Facebook** y cuenta de **TikTok** (se muestran con íconos elegantes en la web pública).
+* **Página Pública de Contacto (`/tienda/contacto`)**:
+  * Incluye un formulario interactivo con selector de motivo (Presupuesto/Cotización, Modelado 3D, Retiro de pedido) que genera un mensaje estructurado y lo envía directamente por WhatsApp.
 
 ---
 
-## 8. Preguntas Frecuentes y Soporte
+## 8. Experiencia Móvil y Administración desde el Celular (Mobile-First)
 
+Tanto la **Tienda Pública** como el **Panel de Administración del Maker** están diseñados bajo una arquitectura *Mobile-First*, permitiéndote gestionar todo tu taller directamente desde tu smartphone:
+
+* **Menú Hamburguesa & Drawer Deslizante**:
+  * En pantallas de celular, el menú se pliega automáticamente detrás del botón de tres líneas (hamburguesa) en la barra superior.
+  * Al tocarlo, se despliega suavemente un panel lateral con acceso a todas las secciones (Productos, Categorías, Diseño, Contacto, Dominio y Mi Cuenta).
+  * Al hacer tap en cualquier enlace o fuera del menú, este se cierra de forma instantánea.
+* **Touch Targets Cómodos (44×44px)**:
+  * Todos los botones, campos interactivos e íconos poseen un tamaño mínimo de **44×44 píxeles**, garantizando una navegación táctil precisa y sin pulsaciones erróneas.
+* **Control Rápido de Estado (Encendida / Apagada)**:
+  * El interruptor de publicación está siempre visible en la parte superior del menú móvil para pausar o reactivar tu tienda con un solo tap.
+* **Subida de Fotos desde la Cámara**:
+  * Puedes tomar fotos de tus piezas impresas o cortadas directamente con la cámara del celular y subirlas al formulario de productos al instante.
+
+---
+
+## 9. Cómo Vincular tu Dominio Propio (.com.ar) directamente en NIC.ar
+
+Puedes conectar tu propio dominio de forma 100% directa sin contratar hosting ni intermediarios:
+
+### Paso 1: Registrar el dominio en NIC Argentina (nic.ar)
+1. Ingresa a [nic.ar](https://nic.ar) con tu CUIT y Clave Fiscal de AFIP.
+2. Busca el nombre de tu marca o taller (ej: `mitaller3d.com.ar`).
+3. Si está disponible, abona el arancel oficial de registro anual.
+
+### Paso 2: Delegar en NIC.ar a los Servidores de Portalmaker
+1. En tu panel de dominios de **NIC.ar**, haz clic en el botón **"Delegar"** al lado de tu dominio.
+2. Pulsa en **"Agregar Servidor"** e ingresa los 2 servidores de Portalmaker:
+   * **Host 1**: `ns1.portalmaker.com.ar`
+   * **Host 2**: `ns2.portalmaker.com.ar`
+3. Guarda los cambios en NIC.ar.
+
+### Paso 3: Guardar el dominio en Portalmaker
+1. Ingresa a tu panel en **Mi tienda → Dominio Propio** (`/tienda/admin/dominio`).
+2. Escribe tu dominio (ej: `www.mitaller3d.com.ar` o `mitaller3d.com.ar`) y pulsa **"Guardar Dominio"**.
+3. ¡Listo! En cuanto finalice la propagación de DNS (2 a 12 horas), tu tienda responderá en tu propio dominio con el certificado SSL (candado verde HTTPS) activado automáticamente.
+
+---
+
+## 10. Preguntas Frecuentes y Soporte
+
+* **¿Puedo administrar mi taller 100% desde el celular?**
+  Sí, todo el panel de administración, la carga de fotos, creación de categorías y control de tienda están preparados para smartphones.
 * **¿Tengo que pagar comisiones por venta?**
   No. Las ventas y consultas se realizan directamente por WhatsApp entre tú y tu cliente.
 * **¿Puedo cambiar las fotos o precios en cualquier momento?**
@@ -145,3 +204,4 @@ Si deseas que tu tienda abra con tu propia dirección web (ej: `www.mitienda3d.c
 ---
 
 *Portalmaker — El portal del Maker*
+
