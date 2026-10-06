@@ -7,7 +7,8 @@ import Link from 'next/link'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import ThemeToggle from '../../theme-toggle'
-import { ArrowLeft, MessageSquare, Clock, Box, ImageIcon } from 'lucide-react'
+import ProductGallery from './product-gallery'
+import { ArrowLeft, MessageSquare, Clock, Box } from 'lucide-react'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -76,36 +77,9 @@ export default async function ProductoDetallePage({ params }: PageProps) {
       {/* Detalle */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start">
-          {/* Columna Izquierda: Galería de Fotos */}
-          <div className="space-y-4">
-            <div className="aspect-square w-full rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 flex items-center justify-center">
-              {imagenes.length > 0 ? (
-                <img
-                  src={imagenes[0]}
-                  alt={product.nombre}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="flex flex-col items-center gap-2 opacity-40">
-                  <ImageIcon className="w-12 h-12" />
-                  <span className="text-xs">Sin fotos disponibles</span>
-                </div>
-              )}
-            </div>
-
-            {/* Miniaturas si hay más de 1 imagen */}
-            {imagenes.length > 1 && (
-              <div className="grid grid-cols-4 gap-2.5">
-                {imagenes.map((url: string, i: number) => (
-                  <div
-                    key={i}
-                    className="aspect-square rounded-xl overflow-hidden border border-black/15 dark:border-white/15 bg-black/5"
-                  >
-                    <img src={url} alt={`Vista ${i + 1}`} className="w-full h-full object-cover" />
-                  </div>
-                ))}
-              </div>
-            )}
+          {/* Columna Izquierda: Galería Interactiva de Fotos */}
+          <div>
+            <ProductGallery images={imagenes} productName={product.nombre} />
           </div>
 
           {/* Columna Derecha: Información y Compra */}

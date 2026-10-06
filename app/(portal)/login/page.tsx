@@ -1,5 +1,6 @@
 // =============================================================================
-// PORTALMAKER — Página de Login y Registro del Portal (Paleta 06: Yellow & Gray)
+// PORTALMAKER — Página de Login, Registro y Recuperación de Cuenta
+// "El portal del Maker" | portalmaker.com.ar
 // =============================================================================
 
 'use client'
@@ -10,21 +11,39 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import ThemeToggle from '@/app/tienda/theme-toggle'
-import { LogIn, UserPlus, ArrowRight, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
+import {
+  LogIn,
+  UserPlus,
+  ArrowRight,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Eye,
+  EyeOff,
+  KeyRound,
+  MailCheck,
+  RotateCcw,
+  ArrowLeft,
+} from 'lucide-react'
+
+type AuthMode = 'login' | 'register' | 'forgot'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [isRegister, setIsRegister] = useState(false)
+  const [mode, setMode] = useState<AuthMode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [resending, setResending] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
+  const [signupPendingVerification, setSignupPendingVerification] = useState(false)
+  const [resetEmailSent, setResetEmailSent] = useState(false)
 
   const supabase = createSupabaseBrowserClient()
 
-  // Manejador de Email/Password
+  // Manejador del Formulario Principal
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg(null)
@@ -32,7 +51,7 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      if (isRegister) {
+      if (mode === 'register') {
         // Registro
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -48,9 +67,9 @@ export default function LoginPage() {
           router.push('/dashboard/maker')
           router.refresh()
         } else {
-          setSuccessMsg('Registro exitoso. Si tu email requiere confirmación, revisa tu casilla de correo.')
+          setSignupPendingVerification(true)
         }
-      } else {
+      } else if (mode === 'login') {
         // Login
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -61,11 +80,60 @@ export default function LoginPage() {
 
         router.push('/dashboard/maker')
         router.refresh()
+      } else if (mode === 'forgot') {
+        // Recuperar Contraseña
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/callback?next=/actualizar-password`,
+        })
+
+        if (error) throw error
+
+        setResetEmailSent(true)
       }
     } catch (err: unknown) {
       setErrorMsg((err as Error)?.message || 'Ocurrió un error al procesar la solicitud.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Reenviar correo de confirmación de registro
+  const handleResendSignupEmail = async () => {
+    if (!email) return
+    setResending(true)
+    setErrorMsg(null)
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
+      if (error) throw error
+      setSuccessMsg('¡Correo de confirmación reenviado! Revisa tu casilla.')
+    } catch (err: unknown) {
+      setErrorMsg((err as Error)?.message || 'No se pudo reenviar el correo.')
+    } finally {
+      setResending(false)
+    }
+  }
+
+  // Reenviar correo de recuperación de contraseña
+  const handleResendResetEmail = async () => {
+    if (!email) return
+    setResending(true)
+    setErrorMsg(null)
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/actualizar-password`,
+      })
+      if (error) throw error
+      setSuccessMsg('¡Enlace de recuperación reenviado! Revisa tu casilla.')
+    } catch (err: unknown) {
+      setErrorMsg((err as Error)?.message || 'No se pudo reenviar el enlace.')
+    } finally {
+      setResending(false)
     }
   }
 
@@ -85,6 +153,14 @@ export default function LoginPage() {
       setErrorMsg((err as Error)?.message || 'Error al conectar con Google.')
       setLoading(false)
     }
+  }
+
+  const resetAllStates = (newMode: AuthMode) => {
+    setMode(newMode)
+    setErrorMsg(null)
+    setSuccessMsg(null)
+    setSignupPendingVerification(false)
+    setResetEmailSent(false)
   }
 
   return (
@@ -107,153 +183,302 @@ export default function LoginPage() {
       </div>
 
       <div className="w-full max-w-md mx-auto my-auto bg-[var(--color-superficie)] rounded-3xl shadow-xl border border-[var(--color-borde)] p-6 sm:p-8 transition-colors duration-200">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold tracking-tight font-[var(--font-portal-heading)]">
-            {isRegister ? 'Crear cuenta de Maker' : 'Iniciar Sesión'}
-          </h1>
-          <p className="text-xs sm:text-sm opacity-70 mt-1">
-            {isRegister
-              ? 'Accede a tu panel para crear y personalizar tu tienda'
-              : 'Ingresa con tus credenciales de administrador'}
-          </p>
-        </div>
+        {/* CASO 1: Registro pendiente de confirmación de email */}
+        {signupPendingVerification ? (
+          <div className="text-center space-y-5 py-2">
+            <div className="w-14 h-14 rounded-3xl bg-[#FACC15]/20 text-[#CA8A04] dark:text-[#FACC15] flex items-center justify-center mx-auto shadow-xs">
+              <MailCheck className="w-7 h-7" />
+            </div>
 
-        {/* Mensajes de Alerta */}
-        {errorMsg && (
-          <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
+            <div className="space-y-2">
+              <h2 className="text-xl sm:text-2xl font-bold font-[var(--font-portal-heading)]">
+                ¡Revisa tu correo!
+              </h2>
+              <p className="text-xs sm:text-sm opacity-80 leading-relaxed">
+                Te enviamos un enlace de confirmación a{' '}
+                <strong className="text-[var(--color-texto)] font-semibold">{email}</strong>.
+              </p>
+              <p className="text-xs opacity-60">
+                Haz clic en el botón del mensaje para activar tu cuenta e ingresar a tu panel.
+                (Si no lo encuentras, revisa la carpeta de spam o promociones).
+              </p>
+            </div>
 
-        {successMsg && (
-          <div className="mb-5 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs">
-            {successMsg}
-          </div>
-        )}
+            {successMsg && (
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs">
+                {successMsg}
+              </div>
+            )}
 
-        {/* Botón de Google OAuth */}
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          className="w-full min-h-[48px] flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-sm font-semibold hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-50 shadow-2xs"
-        >
-          <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-            <path
-              fill="#4285F4"
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            />
-            <path
-              fill="#34A853"
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            />
-            <path
-              fill="#FBBC05"
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-            />
-            <path
-              fill="#EA4335"
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-            />
-          </svg>
-          <span>Continuar con Google</span>
-        </button>
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs">
+                {errorMsg}
+              </div>
+            )}
 
-        <div className="relative my-5 text-center">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-[var(--color-borde)]" />
-          </div>
-          <span className="relative bg-[var(--color-superficie)] px-3 text-[11px] uppercase tracking-wider opacity-60">
-            o con email
-          </span>
-        </div>
-
-        {/* Formulario Email / Password */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider opacity-70 mb-1.5">
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@email.com"
-              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider opacity-70 mb-1.5">
-              Contraseña
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full min-h-[44px] pl-3.5 pr-12 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
-              />
+            <div className="pt-2 space-y-2.5">
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
-                className="absolute right-0 top-0 bottom-0 w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
+                onClick={handleResendSignupEmail}
+                disabled={resending}
+                className="w-full min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
               >
-                {showPassword ? (
-                  <EyeOff className="w-4 h-4" />
+                {resending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Eye className="w-4 h-4" />
+                  <RotateCcw className="w-4 h-4" />
                 )}
+                <span>Reenviar correo de confirmación</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => resetAllStates('login')}
+                className="w-full min-h-[44px] text-xs font-bold text-[#CA8A04] dark:text-[#FACC15] hover:underline"
+              >
+                Volver a Iniciar Sesión
               </button>
             </div>
           </div>
+        ) : resetEmailSent ? (
+          /* CASO 2: Enlace de recuperación de contraseña enviado */
+          <div className="text-center space-y-5 py-2">
+            <div className="w-14 h-14 rounded-3xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-xs">
+              <CheckCircle2 className="w-7 h-7" />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{ color: '#1F2937' }}
-            className="w-full min-h-[48px] mt-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-extrabold hover:bg-[#eab308] active:scale-[0.99] transition-all disabled:opacity-50 shadow-md"
-          >
-            {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin text-[#1F2937]" />
-            ) : isRegister ? (
+            <div className="space-y-2">
+              <h2 className="text-xl sm:text-2xl font-bold font-[var(--font-portal-heading)]">
+                Enlace de recuperación enviado
+              </h2>
+              <p className="text-xs sm:text-sm opacity-80 leading-relaxed">
+                Enviamos las instrucciones a{' '}
+                <strong className="text-[var(--color-texto)] font-semibold">{email}</strong> para restablecer tu contraseña.
+              </p>
+              <p className="text-xs opacity-60">
+                Abre el enlace que recibiste para crear una nueva clave de acceso.
+              </p>
+            </div>
+
+            {successMsg && (
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs">
+                {successMsg}
+              </div>
+            )}
+
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs">
+                {errorMsg}
+              </div>
+            )}
+
+            <div className="pt-2 space-y-2.5">
+              <button
+                type="button"
+                onClick={handleResendResetEmail}
+                disabled={resending}
+                className="w-full min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {resending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-4 h-4" />
+                )}
+                <span>Reenviar enlace de recuperación</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => resetAllStates('login')}
+                className="w-full min-h-[44px] text-xs font-bold text-[#CA8A04] dark:text-[#FACC15] hover:underline"
+              >
+                Volver a Iniciar Sesión
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* CASO 3: Formulario estándar (Login / Registro / Olvidé contraseña) */
+          <>
+            <div className="text-center mb-6">
+              <h1 className="text-2xl font-bold tracking-tight font-[var(--font-portal-heading)]">
+                {mode === 'register'
+                  ? 'Crear cuenta de Maker'
+                  : mode === 'forgot'
+                  ? 'Recuperar Contraseña'
+                  : 'Iniciar Sesión'}
+              </h1>
+              <p className="text-xs sm:text-sm opacity-70 mt-1">
+                {mode === 'register'
+                  ? 'Accede a tu panel para crear y personalizar tu tienda'
+                  : mode === 'forgot'
+                  ? 'Ingresa tu email para recibir el enlace de restablecimiento'
+                  : 'Ingresa con tus credenciales de administrador'}
+              </p>
+            </div>
+
+            {/* Mensajes de Alerta */}
+            {errorMsg && (
+              <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {successMsg && (
+              <div className="mb-5 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs">
+                {successMsg}
+              </div>
+            )}
+
+            {/* Botón de Google OAuth (solo en Login y Registro) */}
+            {mode !== 'forgot' && (
               <>
-                <UserPlus className="w-4 h-4 text-[#1F2937]" />
-                <span>Crear Cuenta</span>
-              </>
-            ) : (
-              <>
-                <LogIn className="w-4 h-4 text-[#1F2937]" />
-                <span>Ingresar</span>
-                <ArrowRight className="w-4 h-4 text-[#1F2937] ml-1" />
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  disabled={loading}
+                  className="w-full min-h-[48px] flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-sm font-semibold hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-50 shadow-2xs cursor-pointer"
+                >
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                    />
+                  </svg>
+                  <span>Continuar con Google</span>
+                </button>
+
+                <div className="relative my-5 text-center">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-[var(--color-borde)]" />
+                  </div>
+                  <span className="relative bg-[var(--color-superficie)] px-3 text-[11px] uppercase tracking-wider opacity-60">
+                    o con email
+                  </span>
+                </div>
               </>
             )}
-          </button>
-        </form>
 
-        {/* Alternador Login / Registro */}
-        <div className="mt-6 pt-5 border-t border-[var(--color-borde)] text-center">
-          <button
-            type="button"
-            onClick={() => {
-              setIsRegister(!isRegister)
-              setErrorMsg(null)
-              setSuccessMsg(null)
-            }}
-            className="text-xs sm:text-sm font-bold text-[#CA8A04] dark:text-[#FACC15] hover:underline"
-          >
-            {isRegister
-              ? '¿Ya tienes cuenta? Inicia sesión aquí'
-              : '¿No tienes cuenta? Regístrate gratis'}
-          </button>
-        </div>
+            {/* Formulario Email / Password */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider opacity-70 mb-1.5">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@email.com"
+                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                />
+              </div>
+
+              {mode !== 'forgot' && (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider opacity-70">
+                      Contraseña
+                    </label>
+                    {mode === 'login' && (
+                      <button
+                        type="button"
+                        onClick={() => resetAllStates('forgot')}
+                        className="text-[11px] font-semibold text-[#CA8A04] dark:text-[#FACC15] hover:underline"
+                      >
+                        ¿Olvidaste tu contraseña?
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full min-h-[44px] pl-3.5 pr-12 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={-1}
+                      aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                      className="absolute right-0 top-0 bottom-0 w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{ color: '#1F2937' }}
+                className="w-full min-h-[48px] mt-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-extrabold hover:bg-[#eab308] active:scale-[0.99] transition-all disabled:opacity-50 shadow-md cursor-pointer"
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-[#1F2937]" />
+                ) : mode === 'register' ? (
+                  <>
+                    <UserPlus className="w-4 h-4 text-[#1F2937]" />
+                    <span>Crear Cuenta</span>
+                  </>
+                ) : mode === 'forgot' ? (
+                  <>
+                    <KeyRound className="w-4 h-4 text-[#1F2937]" />
+                    <span>Enviar enlace de recuperación</span>
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="w-4 h-4 text-[#1F2937]" />
+                    <span>Ingresar</span>
+                    <ArrowRight className="w-4 h-4 text-[#1F2937] ml-1" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Alternadores de Modo */}
+            <div className="mt-6 pt-5 border-t border-[var(--color-borde)] text-center">
+              {mode === 'forgot' ? (
+                <button
+                  type="button"
+                  onClick={() => resetAllStates('login')}
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#CA8A04] dark:text-[#FACC15] hover:underline"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Volver a Iniciar Sesión</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => resetAllStates(mode === 'register' ? 'login' : 'register')}
+                  className="text-xs sm:text-sm font-bold text-[#CA8A04] dark:text-[#FACC15] hover:underline"
+                >
+                  {mode === 'register'
+                    ? '¿Ya tienes cuenta? Inicia sesión aquí'
+                    : '¿No tienes cuenta? Regístrate gratis'}
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="text-center text-xs opacity-50 pb-2">
@@ -262,3 +487,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

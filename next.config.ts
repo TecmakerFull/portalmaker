@@ -5,6 +5,12 @@
 
 import type { NextConfig } from "next";
 
+// Forzar polling para evitar el error EISDIR en unidades de red / WSL / Samba en Windows
+if (process.env.NODE_ENV !== 'production') {
+  process.env.WATCHPACK_POLLING = 'true';
+  process.env.CHOKIDAR_USEPOLLING = '1';
+}
+
 const nextConfig: NextConfig = {
   // ============================================================
   // CLOUDFLARE PAGES COMPATIBILITY

@@ -41,9 +41,10 @@ export async function GET(request: NextRequest) {
         data: { user },
       } = await supabase.auth.getUser()
 
-      let targetUrl = `${origin}${next}`
+      const nextParam = requestUrl.searchParams.get('next')
+      let targetUrl = nextParam ? `${origin}${nextParam}` : `${origin}/dashboard/maker`
 
-      if (user?.email) {
+      if (user?.email && !nextParam) {
         // 1. Verificar si es Superadmin de Portalmaker
         const { data: platformAdmin } = await supabase
           .from('platform_admins')

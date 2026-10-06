@@ -14,17 +14,28 @@ import type { NextRequest } from 'next/server'
 
 const PORTAL_DOMAIN = (process.env.NEXT_PUBLIC_PORTAL_DOMAIN ?? 'portalmaker.com.ar').split(':')[0].toLowerCase()
 
+// Dominios base reconocidos del portal principal
+const BASE_PORTAL_DOMAINS = Array.from(
+  new Set([
+    PORTAL_DOMAIN,
+    'portalmaker.com.ar',
+    'portalmaker.ar',
+  ].filter(Boolean))
+)
+
 export function middleware(request: NextRequest) {
   const { nextUrl, headers } = request
 
-  // Host actual sin puerto (ej: "portalmaker.vercel.app", "localhost", "tecmaker.portalmaker.com.ar")
+  // Host actual sin puerto (ej: "portalmaker.vercel.app", "localhost", "tecmaker3d.portalmaker.ar")
   const hostHeader = headers.get('host') ?? ''
   const host = hostHeader.split(':')[0].toLowerCase()
 
   // Flags de entorno
   const isLocalhost = host === 'localhost' || host === '127.0.0.1'
   const isVercelDomain = host.endsWith('.vercel.app')
-  const isBasePortalDomain = host === PORTAL_DOMAIN || host === `www.${PORTAL_DOMAIN}`
+  const isBasePortalDomain = BASE_PORTAL_DOMAINS.some(
+    (base) => host === base || host === `www.${base}`
+  )
 
   // Interceptar callbacks de OAuth que lleguen a la raíz u otra ruta con ?code=...
   if (nextUrl.searchParams.has('code') && !nextUrl.pathname.startsWith('/auth/callback')) {
@@ -62,19 +73,30 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 3. Detección de subdominio en producción (ej: tecmaker.portalmaker.com.ar)
-  const isSubdomain = host.endsWith(`.${PORTAL_DOMAIN}`)
-  const subdomain = isSubdomain ? host.slice(0, -(PORTAL_DOMAIN.length + 1)) : null
+  // 3. Detección de subdominio en producción (ej: tecmaker3d.portalmaker.ar o tecmaker.portalmaker.com.ar)
+  let subdomain: string | null = null
+  for (const baseDomain of BASE_PORTAL_DOMAINS) {
+    if (host.endsWith(`.${baseDomain}`)) {
+      const candidate = host.slice(0, -(baseDomain.length + 1))
+      if (candidate && candidate !== 'www') {
+        subdomain = candidate
+        break
+      }
+    }
+  }
 
-  // Reescribir internamente a la ruta de la tienda
-  const rewriteUrl = new URL(`/tienda${nextUrl.pathname}`, request.url)
+  // Reescribir internamente a la ruta de la tienda sin duplicar /tienda
+  const targetPath = nextUrl.pathname.startsWith('/tienda')
+    ? nextUrl.pathname
+    : `/tienda${nextUrl.pathname}`
+  const rewriteUrl = new URL(targetPath, request.url)
   nextUrl.searchParams.forEach((val, key) => {
     rewriteUrl.searchParams.set(key, val)
   })
 
   const response = NextResponse.rewrite(rewriteUrl)
 
-  if (subdomain && subdomain !== 'www') {
+  if (subdomain) {
     response.headers.set('x-store-slug', subdomain)
     response.headers.set('x-tenant-source', 'subdomain')
   } else {

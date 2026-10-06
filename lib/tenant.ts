@@ -58,8 +58,9 @@ export async function getTenantStore(): Promise<TenantResult | null> {
     // Tienda por subdominio: tecmaker.portalmaker.com.ar → slug = "tecmaker"
     query = query.eq('slug', storeSlug)
   } else if (storeDomain) {
-    // Tienda por dominio propio: tecmaker3d.com.ar → custom_domain = "tecmaker3d.com.ar"
-    query = query.eq('custom_domain', storeDomain)
+    // Tienda por dominio propio: tecmaker3d.com.ar (soporta con o sin www)
+    const cleanDomain = storeDomain.replace(/^www\./, '')
+    query = query.or(`custom_domain.eq.${storeDomain},custom_domain.eq.${cleanDomain}`)
   }
 
   const { data: store, error } = await query.single()
