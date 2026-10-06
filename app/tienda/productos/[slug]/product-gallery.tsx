@@ -17,21 +17,42 @@ import {
 interface ProductGalleryProps {
   images: string[]
   productName: string
+  selectedImageOverride?: string | null
 }
 
-export default function ProductGallery({ images, productName }: ProductGalleryProps) {
+export default function ProductGallery({
+  images,
+  productName,
+  selectedImageOverride,
+}: ProductGalleryProps) {
+  // Asegurar que si la imagen de la variante no está en el listado base, se incluya al inicio
+  const displayImages =
+    selectedImageOverride && !images.includes(selectedImageOverride)
+      ? [selectedImageOverride, ...images]
+      : images
+
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [isZoomOpen, setIsZoomOpen] = useState(false)
 
-  const hasMultiple = images.length > 1
+  // Sincronizar selección de variante con la imagen activa de la galería
+  useEffect(() => {
+    if (selectedImageOverride) {
+      const idx = displayImages.findIndex((img) => img === selectedImageOverride)
+      if (idx !== -1) {
+        setSelectedIndex(idx)
+      }
+    }
+  }, [selectedImageOverride, displayImages])
+
+  const hasMultiple = displayImages.length > 1
 
   const handlePrev = useCallback(() => {
-    setSelectedIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
-  }, [images.length])
+    setSelectedIndex((prev) => (prev === 0 ? displayImages.length - 1 : prev - 1))
+  }, [displayImages.length])
 
   const handleNext = useCallback(() => {
-    setSelectedIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
-  }, [images.length])
+    setSelectedIndex((prev) => (prev === displayImages.length - 1 ? 0 : prev + 1))
+  }, [displayImages.length])
 
   // Navegación por teclado en modo Zoom
   useEffect(() => {
@@ -48,7 +69,7 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
   }, [isZoomOpen, handlePrev, handleNext])
 
   // Sin imágenes
-  if (!images || images.length === 0) {
+  if (!displayImages || displayImages.length === 0) {
     return (
       <div className="aspect-square w-full max-h-[360px] sm:max-h-[420px] rounded-2xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-2 opacity-40">
         <ImageIcon className="w-12 h-12" />
@@ -57,7 +78,7 @@ export default function ProductGallery({ images, productName }: ProductGalleryPr
     )
   }
 
-  const currentImage = images[selectedIndex] || images[0]
+  const currentImage = displayImages[selectedIndex] || displayImages[0]
 
   return (
     <>

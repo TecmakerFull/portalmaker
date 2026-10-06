@@ -33,13 +33,15 @@ import {
   Package,
   Layers,
   Scale,
+  Image as ImageIcon,
 } from 'lucide-react'
 
 interface LocalVariant {
   id?: string
   nombre: string
-  precio_adicional: string
+  precio_final: string
   stock: string
+  imagen_url: string
 }
 
 interface ProductoFormProps {
@@ -118,15 +120,27 @@ export default function ProductoForm({
   // 7. Atributos / Variantes
   const [variants, setVariants] = useState<LocalVariant[]>(() => {
     if (initialVariants.length > 0) {
-      return initialVariants.map((v) => ({
-        id: v.id,
-        nombre: v.nombre,
-        precio_adicional: v.precio_adicional?.toString() ?? '0',
-        stock: v.stock?.toString() ?? '',
-      }))
+      const base = initialProduct?.precio_base ?? 0
+      return initialVariants.map((v) => {
+        const finalPrice =
+          v.precio_adicional !== 0 && v.precio_adicional !== null && v.precio_adicional !== undefined
+            ? (base + v.precio_adicional).toString()
+            : ''
+        return {
+          id: v.id,
+          nombre: v.nombre,
+          precio_final: finalPrice,
+          stock: v.stock !== null && v.stock !== undefined ? v.stock.toString() : '',
+          imagen_url: v.imagen_url ?? '',
+        }
+      })
     }
     return []
   })
+
+  // Modal para seleccionar foto de variante
+  const [variantPhotoPickerIndex, setVariantPhotoPickerIndex] = useState<number | null>(null)
+  const [customVariantUrl, setCustomVariantUrl] = useState('')
 
   // 8. Creación Rápida de Categoría
   const [showNuevaCatModal, setShowNuevaCatModal] = useState(false)
@@ -289,15 +303,16 @@ export default function ProductoForm({
     }
   }
 
-  // Agregar imagen por URL
-  const handleAddImageUrl = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!inputImageUrl.trim()) return
+  // Agregar imagen por URL (limpia el campo inmediatamente)
+  const handleAddImageUrl = (e?: React.FormEvent | React.KeyboardEvent) => {
+    if (e) e.preventDefault()
+    const cleanUrl = inputImageUrl.trim()
+    if (!cleanUrl) return
     if (imagenes.length >= 10) {
       alert('Máximo 10 imágenes alcanzado.')
       return
     }
-    setImagenes((prev) => [...prev, inputImageUrl.trim()])
+    setImagenes((prev) => [...prev, cleanUrl])
     setInputImageUrl('')
   }
 
@@ -371,8 +386,9 @@ export default function ProductoForm({
       ...prev,
       {
         nombre: '',
-        precio_adicional: '0',
+        precio_final: '',
         stock: '',
+        imagen_url: imagenes[0] || '',
       },
     ])
   }
@@ -476,16 +492,29 @@ export default function ProductoForm({
           .delete()
           .eq('product_id', targetProductId)
 
+        const basePriceNum = numPrecio
         const validVariants = variants
           .filter((v) => v.nombre.trim() !== '')
-          .map((v, idx) => ({
-            product_id: targetProductId,
-            nombre: v.nombre.trim(),
-            precio_adicional: parseFloat(v.precio_adicional) || 0,
-            stock: v.stock ? parseInt(v.stock) || 0 : null,
-            orden: idx,
-            activo: true,
-          }))
+          .map((v, idx) => {
+            let precioAdicional = 0
+            if (v.precio_final && v.precio_final.trim() !== '') {
+              const parsedFinal = parseFloat(v.precio_final)
+              if (!isNaN(parsedFinal)) {
+                // precio_adicional = precioFinal - precioBase (puede ser positivo, cero o negativo)
+                precioAdicional = parsedFinal - basePriceNum
+              }
+            }
+
+            return {
+              product_id: targetProductId,
+              nombre: v.nombre.trim(),
+              precio_adicional: precioAdicional,
+              stock: v.stock && v.stock.trim() !== '' ? parseInt(v.stock) || 0 : null,
+              imagen_url: v.imagen_url && v.imagen_url.trim() !== '' ? v.imagen_url.trim() : null,
+              orden: idx,
+              activo: true,
+            }
+          })
 
         if (validVariants.length > 0) {
           const { error: varError } = await supabase
@@ -867,6 +896,12 @@ export default function ProductoForm({
                   type="url"
                   value={inputImageUrl}
                   onChange={(e) => setInputImageUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleAddImageUrl(e)
+                    }
+                  }}
                   placeholder="https://ejemplo.com/fotos/mi-pieza.jpg"
                   className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
                 />
@@ -1088,7 +1123,7 @@ export default function ProductoForm({
                 <span>Atributos y Variantes</span>
               </h2>
               <p className="text-xs opacity-70 mt-0.5">
-                Los atributos son características como color, material o tamaño que puedes agregar para ofrecer variantes de un mismo producto.
+                Agrega variantes como color, material o tamaño. Puedes asignar una foto a cada variante y definir un precio individual (más caro, más barato o dejar vacío para mantener el precio base).
               </p>
             </div>
 
@@ -1098,7 +1133,7 @@ export default function ProductoForm({
               className="min-h-[40px] px-4 py-2 rounded-xl border border-[var(--color-borde)] hover:border-[#FACC15] hover:bg-[#FACC15]/10 text-xs font-bold transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
             >
               <Plus className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-              <span>Agregar nuevo atributo</span>
+              <span>Agregar variante</span>
             </button>
           </div>
 
@@ -1106,74 +1141,133 @@ export default function ProductoForm({
           {variants.length > 0 && (
             <div className="space-y-3 pt-2">
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 text-xs font-semibold opacity-60 px-2 hidden sm:grid">
-                <span className="sm:col-span-5">Nombre de la variante / combinación</span>
-                <span className="sm:col-span-3">Precio adicional ($)</span>
-                <span className="sm:col-span-3">Stock específico</span>
+                <span className="sm:col-span-2">Foto</span>
+                <span className="sm:col-span-4">Nombre / Opción</span>
+                <span className="sm:col-span-3">Precio variante ($)</span>
+                <span className="sm:col-span-2">Stock</span>
                 <span className="sm:col-span-1 text-center">Quitar</span>
               </div>
 
-              {variants.map((variant, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-1 sm:grid-cols-12 gap-3 p-3.5 rounded-2xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)] items-center"
-                >
-                  <div className="sm:col-span-5">
-                    <label className="text-[11px] font-bold opacity-60 sm:hidden block mb-1">
-                      Nombre de la variante
-                    </label>
-                    <input
-                      type="text"
-                      value={variant.nombre}
-                      onChange={(e) => handleUpdateVariant(index, 'nombre', e.target.value)}
-                      placeholder="Ej: Negro / PLA, Blanco / PETG, Grande"
-                      className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
-                    />
-                  </div>
+              {variants.map((variant, index) => {
+                const basePriceNum = parseFloat(precioBase) || 0
+                const variantFinalNum = parseFloat(variant.precio_final)
+                const hasCustomPrice = variant.precio_final && !isNaN(variantFinalNum)
+                const priceDiff = hasCustomPrice ? variantFinalNum - basePriceNum : 0
 
-                  <div className="sm:col-span-3">
-                    <label className="text-[11px] font-bold opacity-60 sm:hidden block mb-1">
-                      Precio adicional
-                    </label>
-                    <div className="relative flex items-center">
-                      <span className="absolute left-3 text-xs opacity-50 font-bold">+$</span>
+                return (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 sm:grid-cols-12 gap-3 p-3.5 rounded-2xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)] items-center"
+                  >
+                    {/* Foto de la variante */}
+                    <div className="sm:col-span-2 flex items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomVariantUrl(variant.imagen_url || '')
+                          setVariantPhotoPickerIndex(index)
+                        }}
+                        className="relative w-11 h-11 rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-amber-400 flex items-center justify-center shrink-0 transition-all group cursor-pointer shadow-2xs"
+                        title="Asignar foto a esta variante"
+                      >
+                        {variant.imagen_url ? (
+                          <>
+                            <img src={variant.imagen_url} alt="" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                              <ImageIcon className="w-3.5 h-3.5" />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-slate-400 group-hover:text-amber-500">
+                            <ImageIcon className="w-4 h-4" />
+                            <span className="text-[8px] font-bold mt-0.5">+ Foto</span>
+                          </div>
+                        )}
+                      </button>
+                      <div className="text-[11px] sm:hidden font-bold opacity-60">
+                        {variant.imagen_url ? 'Foto asignada (toca para cambiar)' : 'Toca para asociar foto'}
+                      </div>
+                    </div>
+
+                    {/* Nombre de la variante */}
+                    <div className="sm:col-span-4">
+                      <label className="text-[11px] font-bold opacity-60 sm:hidden block mb-1">
+                        Nombre de la variante
+                      </label>
                       <input
-                        type="number"
-                        step="any"
-                        value={variant.precio_adicional}
-                        onChange={(e) =>
-                          handleUpdateVariant(index, 'precio_adicional', e.target.value)
-                        }
-                        placeholder="0"
-                        className="w-full min-h-[42px] pl-8 pr-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
+                        type="text"
+                        value={variant.nombre}
+                        onChange={(e) => handleUpdateVariant(index, 'nombre', e.target.value)}
+                        placeholder="Ej: Negro / PLA, Talle L, 15cm"
+                        className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
                       />
                     </div>
-                  </div>
 
-                  <div className="sm:col-span-3">
-                    <label className="text-[11px] font-bold opacity-60 sm:hidden block mb-1">
-                      Stock específico
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={variant.stock}
-                      onChange={(e) => handleUpdateVariant(index, 'stock', e.target.value)}
-                      placeholder="Opcional"
-                      className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
-                    />
-                  </div>
+                    {/* Precio de la variante (soporta más barato, más caro o mismo precio) */}
+                    <div className="sm:col-span-3">
+                      <div className="flex items-center justify-between mb-1 sm:mb-0.5">
+                        <label className="text-[11px] font-bold opacity-60 sm:hidden block">
+                          Precio ($)
+                        </label>
+                        {hasCustomPrice && (
+                          <span className="text-[10px] font-bold">
+                            {priceDiff > 0 ? (
+                              <span className="text-emerald-600 dark:text-emerald-400">
+                                (+${priceDiff.toLocaleString('es-AR')})
+                              </span>
+                            ) : priceDiff < 0 ? (
+                              <span className="text-sky-600 dark:text-sky-400">
+                                (-${Math.abs(priceDiff).toLocaleString('es-AR')})
+                              </span>
+                            ) : (
+                              <span className="opacity-50">Mismo precio</span>
+                            )}
+                          </span>
+                        )}
+                      </div>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 text-xs opacity-50 font-bold">$</span>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0"
+                          value={variant.precio_final}
+                          onChange={(e) => handleUpdateVariant(index, 'precio_final', e.target.value)}
+                          placeholder={precioBase ? `${precioBase} (mismo)` : 'Mismo precio'}
+                          className="w-full min-h-[42px] pl-7 pr-2 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
+                        />
+                      </div>
+                    </div>
 
-                  <div className="sm:col-span-1 flex justify-end sm:justify-center">
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveVariant(index)}
-                      className="p-2 rounded-xl hover:bg-red-500/10 text-red-600 dark:text-red-400 transition-colors cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {/* Stock específico */}
+                    <div className="sm:col-span-2">
+                      <label className="text-[11px] font-bold opacity-60 sm:hidden block mb-1">
+                        Stock
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={variant.stock}
+                        onChange={(e) => handleUpdateVariant(index, 'stock', e.target.value)}
+                        placeholder="Ilimitado"
+                        className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
+                      />
+                    </div>
+
+                    {/* Quitar */}
+                    <div className="sm:col-span-1 flex justify-end sm:justify-center">
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveVariant(index)}
+                        className="p-2 rounded-xl hover:bg-red-500/10 text-red-600 dark:text-red-400 transition-colors cursor-pointer"
+                        title="Eliminar variante"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -1213,6 +1307,123 @@ export default function ProductoForm({
           </button>
         </div>
       </form>
+
+      {/* Modal Seleccionar Foto para Variante */}
+      {variantPhotoPickerIndex !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div>
+                <h3 className="text-base font-bold font-[var(--font-heading)] text-slate-900 dark:text-white">
+                  Foto para la variante
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {variants[variantPhotoPickerIndex]?.nombre
+                    ? `"${variants[variantPhotoPickerIndex].nombre}"`
+                    : `Variante #${variantPhotoPickerIndex + 1}`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVariantPhotoPickerIndex(null)}
+                className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Galería de fotos del producto para elegir */}
+            <div className="space-y-3">
+              <label className="block text-xs font-semibold uppercase tracking-wider opacity-75">
+                Elige una de las fotos cargadas en este producto:
+              </label>
+              {imagenes.length > 0 ? (
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5 max-h-48 overflow-y-auto p-1">
+                  {imagenes.map((url, i) => {
+                    const isSelected = variants[variantPhotoPickerIndex]?.imagen_url === url
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                          handleUpdateVariant(variantPhotoPickerIndex, 'imagen_url', url)
+                          setVariantPhotoPickerIndex(null)
+                        }}
+                        className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-amber-400 ring-2 ring-amber-400/30 scale-95'
+                            : 'border-slate-200 dark:border-slate-700 hover:border-amber-400 opacity-80 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        {isSelected && (
+                          <div className="absolute inset-0 bg-amber-400/30 flex items-center justify-center text-white">
+                            <Check className="w-5 h-5 stroke-[3] text-amber-500 bg-white rounded-full p-0.5 shadow-sm" />
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 italic">
+                  Aún no has cargado fotos generales en el producto. Puedes ingresar una URL abajo o subir fotos en la sección de imágenes.
+                </p>
+              )}
+            </div>
+
+            {/* O ingresar URL directa */}
+            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <label className="block text-xs font-semibold uppercase tracking-wider opacity-75">
+                O escribe/pega una URL de imagen:
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="url"
+                  value={customVariantUrl}
+                  onChange={(e) => setCustomVariantUrl(e.target.value)}
+                  placeholder="https://ejemplo.com/foto-variante.jpg"
+                  className="flex-1 min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (customVariantUrl.trim()) {
+                      handleUpdateVariant(variantPhotoPickerIndex, 'imagen_url', customVariantUrl.trim())
+                      setVariantPhotoPickerIndex(null)
+                    }
+                  }}
+                  disabled={!customVariantUrl.trim()}
+                  className="min-h-[40px] px-4 py-2 rounded-xl bg-[#FACC15] text-[#1F2937] text-xs font-bold hover:bg-[#eab308] transition-all disabled:opacity-40 cursor-pointer"
+                >
+                  Usar URL
+                </button>
+              </div>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  handleUpdateVariant(variantPhotoPickerIndex, 'imagen_url', '')
+                  setVariantPhotoPickerIndex(null)
+                }}
+                className="text-xs font-semibold text-red-600 dark:text-red-400 hover:underline cursor-pointer"
+              >
+                Quitar foto de esta variante
+              </button>
+              <button
+                type="button"
+                onClick={() => setVariantPhotoPickerIndex(null)}
+                className="min-h-[40px] px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-all cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Crear Categoría Rápida */}
       {showNuevaCatModal && (

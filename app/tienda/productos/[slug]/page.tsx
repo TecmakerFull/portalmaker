@@ -1,15 +1,10 @@
-// =============================================================================
-// PORTALMAKER — Ficha / Detalle de Producto en la Tienda Pública
-// =============================================================================
-
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import ThemeToggle from '../../theme-toggle'
-import ProductGallery from './product-gallery'
-import { renderMarkdown } from '@/lib/markdown'
-import { ArrowLeft, MessageSquare, Clock, Box } from 'lucide-react'
+import ProductDetailView from './product-detail-view'
+import { ArrowLeft } from 'lucide-react'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -41,14 +36,20 @@ export default async function ProductoDetallePage({ params }: PageProps) {
     notFound()
   }
 
-  const cleanPhone = store.whatsapp_numero ? store.whatsapp_numero.replace(/[^0-9]/g, '') : null
-  const whatsappUrl = cleanPhone
-    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-        `Hola ${store.nombre}! Me interesa el producto "${product.nombre}" ($${product.precio_base.toLocaleString('es-AR')}). ¿Podrían darme más información?`
-      )}`
-    : null
+  // Buscar variantes activas del producto
+  const { data: variants } = await supabase
+    .from('product_variants')
+    .select('*')
+    .eq('product_id', product.id)
+    .eq('activo', true)
+    .order('orden', { ascending: true })
 
-  const imagenes = product.imagenes && product.imagenes.length > 0 ? product.imagenes : []
+  // Buscar detalles adicionales (dimensiones, etc.)
+  const { data: details } = await supabase
+    .from('product_details')
+    .select('*')
+    .eq('product_id', product.id)
+    .maybeSingle()
 
   return (
     <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] transition-colors duration-200">
@@ -75,90 +76,14 @@ export default async function ProductoDetallePage({ params }: PageProps) {
         </div>
       </header>
 
-      {/* Detalle */}
+      {/* Detalle del Producto */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start">
-          {/* Columna Izquierda: Galería Interactiva de Fotos */}
-          <div>
-            <ProductGallery images={imagenes} productName={product.nombre} />
-          </div>
-
-          {/* Columna Derecha: Información y Compra */}
-          <div className="space-y-6">
-            <div>
-              {product.category && (
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primario)] block mb-1">
-                  {product.category.nombre}
-                </span>
-              )}
-              <h1 className="text-2xl sm:text-4xl font-extrabold font-[var(--font-heading)] leading-tight">
-                {product.nombre}
-              </h1>
-            </div>
-
-            <div className="flex items-baseline gap-3">
-              <span className="text-3xl sm:text-4xl font-extrabold text-[var(--color-primario)]">
-                ${product.precio_base.toLocaleString('es-AR')}
-              </span>
-            </div>
-
-            {/* Botón WhatsApp Principal */}
-            {whatsappUrl && (
-              <div className="pt-2">
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="min-h-[52px] w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-[var(--color-primario)] text-white text-base font-bold hover:opacity-90 active:scale-98 transition-all shadow-md"
-                >
-                  <MessageSquare className="w-5 h-5" />
-                  <span>
-                    {product.gestiona_stock && (product.stock ?? 0) <= 0
-                      ? 'Consultar Disponibilidad por WhatsApp'
-                      : 'Comprar / Consultar por WhatsApp'}
-                  </span>
-                </a>
-              </div>
-            )}
-
-            {/* Características rápidas */}
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              {product.tiempo_fabricacion_estimado && (
-                <div className="p-3.5 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] flex items-center gap-2.5">
-                  <Clock className="w-4 h-4 text-[var(--color-primario)] shrink-0" />
-                  <div className="text-xs">
-                    <span className="opacity-60 block">Fabricación</span>
-                    <span className="font-semibold">{product.tiempo_fabricacion_estimado}</span>
-                  </div>
-                </div>
-              )}
-
-              {product.gestiona_stock && (
-                <div className="p-3.5 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] flex items-center gap-2.5">
-                  <Box className="w-4 h-4 text-[var(--color-primario)] shrink-0" />
-                  <div className="text-xs">
-                    <span className="opacity-60 block">Stock disponible</span>
-                    <span className="font-semibold">
-                      {(product.stock ?? 0) > 0 ? `${product.stock} unidades` : 'Bajo pedido'}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Descripción con formato enriquecido */}
-            {product.descripcion && (
-              <div className="pt-5 border-t border-black/10 dark:border-white/10 space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider opacity-60">
-                  Descripción del Producto
-                </h3>
-                <div className="space-y-2 text-[var(--color-texto)] font-[var(--font-body)]">
-                  {renderMarkdown(product.descripcion)}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <ProductDetailView
+          product={product}
+          store={store}
+          variants={variants ?? []}
+          details={details}
+        />
       </main>
     </div>
   )
