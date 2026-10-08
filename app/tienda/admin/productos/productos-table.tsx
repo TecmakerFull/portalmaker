@@ -33,7 +33,12 @@ import {
   CornerDownRight,
   PlusCircle,
   AlertCircle,
+  Lock,
+  Sparkles,
+  AlertTriangle,
+  TrendingUp,
 } from 'lucide-react'
+import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 
 export interface ProductWithRelations extends Product {
   category?: {
@@ -76,10 +81,15 @@ export default function ProductosTable({
 
   // Estado del Modal de Edición Completo
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isLimitModalOpen, setIsLimitModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [editingDetails, setEditingDetails] = useState<ProductDetails | null>(null)
   const [editingVariants, setEditingVariants] = useState<ProductVariant[]>([])
   const [loadingModalData, setLoadingModalData] = useState(false)
+
+  // Límite de productos configurado por plan
+  const productLimit = store.limite_productos ?? 50
+  const isLimitReached = products.length >= productLimit
 
   // Estado de feedback de guardado rápido: { [key]: boolean }
   const [savingField, setSavingField] = useState<{ [key: string]: boolean }>({})
@@ -125,6 +135,10 @@ export default function ProductosTable({
 
   // Abrir Modal para Crear Nuevo Producto
   const handleOpenCreateModal = () => {
+    if (isLimitReached) {
+      setIsLimitModalOpen(true)
+      return
+    }
     setEditingProduct(null)
     setEditingDetails(null)
     setEditingVariants([])
@@ -373,6 +387,24 @@ export default function ProductosTable({
   // Contar total de variantes globales
   const totalVariantsCount = products.reduce((acc, p) => acc + (p.variants?.length || 0), 0)
 
+  // Metadatos de plan y cupo
+  const planLabel =
+    store.plan === 'starter'
+      ? 'Plan Starter'
+      : store.plan === 'enterprise'
+      ? 'Plan Enterprise'
+      : store.plan === 'bonificado'
+      ? 'Plan Bonificado'
+      : 'Plan Maker Pro'
+
+  const usagePercent = Math.min(100, Math.round((products.length / productLimit) * 100))
+  const isNearLimit = usagePercent >= 80 && !isLimitReached
+
+  const superadminWaMsg = encodeURIComponent(
+    `Hola Portalmaker! Me comunico desde mi tienda "${store.nombre}" (${store.slug}). Quisiera solicitar una ampliación del límite de productos o cambiar de plan. Actualmente tengo ${products.length}/${productLimit} productos cargados.`
+  )
+  const superadminWaUrl = `https://wa.me/5491136450073?text=${superadminWaMsg}`
+
   return (
     <div className="space-y-6">
       {/* Barra de Estadísticas y Botón Principal */}
@@ -400,11 +432,90 @@ export default function ProductosTable({
           type="button"
           onClick={handleOpenCreateModal}
           style={{ color: '#1F2937' }}
-          className="min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] active:scale-98 transition-all shadow-xs cursor-pointer self-start sm:self-auto"
+          className={`min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold active:scale-98 transition-all shadow-xs cursor-pointer self-start sm:self-auto ${
+            isLimitReached
+              ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300'
+              : 'bg-[#FACC15] text-[#1F2937] hover:bg-[#eab308]'
+          }`}
         >
-          <Plus className="w-4 h-4 text-[#1F2937]" />
-          <span>Nuevo Producto</span>
+          {isLimitReached ? (
+            <Lock className="w-4 h-4" />
+          ) : (
+            <Plus className="w-4 h-4 text-[#1F2937]" />
+          )}
+          <span>{isLimitReached ? 'Límite Alcanzado (+)' : 'Nuevo Producto'}</span>
         </button>
+      </div>
+
+      {/* TARJETA DE CAPACIDAD Y BARRA DE PROGRESO */}
+      <div className={`p-4 sm:p-5 rounded-2xl border transition-all ${
+        isLimitReached
+          ? 'bg-red-50/70 dark:bg-red-950/20 border-red-200 dark:border-red-900/50'
+          : isNearLimit
+          ? 'bg-amber-50/70 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50'
+          : 'bg-[var(--color-superficie)] border-[var(--color-borde)] shadow-2xs'
+      }`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <Package className="w-3.5 h-3.5 text-amber-500" />
+              <span>Capacidad del Catálogo</span>
+            </span>
+            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-black/5 dark:bg-white/10 text-slate-800 dark:text-slate-200">
+              {planLabel}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <span className={isLimitReached ? 'text-red-600 dark:text-red-400 font-bold' : 'text-slate-700 dark:text-slate-300'}>
+              {products.length} de {productLimit} productos ({usagePercent}%)
+            </span>
+          </div>
+        </div>
+
+        {/* Barra de progreso interactiva */}
+        <div className="w-full h-2.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden relative">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${
+              isLimitReached
+                ? 'bg-red-500'
+                : usagePercent >= 80
+                ? 'bg-amber-500'
+                : 'bg-emerald-500'
+            }`}
+            style={{ width: `${usagePercent}%` }}
+          />
+        </div>
+
+        {/* Mensaje de estado & Botón de solicitar ampliación */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 mt-1 text-xs">
+          <div>
+            {isLimitReached ? (
+              <p className="text-red-700 dark:text-red-300 font-medium flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                <span>Has alcanzado el límite máximo de {productLimit} productos de tu plan actual.</span>
+              </p>
+            ) : isNearLimit ? (
+              <p className="text-amber-700 dark:text-amber-300 font-medium">
+                Te quedan {productLimit - products.length} productos disponibles para publicar.
+              </p>
+            ) : (
+              <p className="opacity-70">
+                Dispones de {productLimit - products.length} productos más en tu plan actual.
+              </p>
+            )}
+          </div>
+
+          <a
+            href={superadminWaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400 hover:underline hover:text-emerald-800 dark:hover:text-emerald-300 shrink-0 cursor-pointer"
+          >
+            <WhatsAppIcon className="w-3.5 h-3.5" />
+            <span>{isLimitReached ? 'Solicitar Ampliación de Plan' : 'Ampliar cupo / Subir plan'}</span>
+          </a>
+        </div>
       </div>
 
       {/* Barra de Filtros y Búsqueda */}
@@ -1396,6 +1507,58 @@ export default function ProductosTable({
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE AVISO: LÍMITE DE PRODUCTOS ALCANZADO */}
+      {isLimitModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-md bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-6 sm:p-7 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <Lock className="w-6 h-6" />
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsLimitModalOpen(false)}
+                className="p-2 rounded-xl opacity-60 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold font-[var(--font-heading)] text-slate-900 dark:text-white">
+                Límite de Productos Alcanzado
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Tu tienda actualmente está en el <strong>{planLabel}</strong> con un cupo de <strong>{productLimit} productos</strong> ({products.length} ya cargados).
+              </p>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Para publicar nuevos productos, puedes solicitar una ampliación de tu plan por WhatsApp o eliminar productos que ya no comercialices.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-4 border-t border-[var(--color-borde)]">
+              <button
+                type="button"
+                onClick={() => setIsLimitModalOpen(false)}
+                className="w-full sm:w-auto min-h-[44px] px-4 py-2 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 text-sm font-semibold transition-all cursor-pointer text-center"
+              >
+                Cerrar
+              </button>
+              <a
+                href={superadminWaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#1F2937' }}
+                className="w-full sm:flex-1 min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] hover:bg-[#eab308] text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm text-center"
+              >
+                <WhatsAppIcon className="w-4 h-4 text-[#1F2937]" />
+                <span>Solicitar Ampliación</span>
+              </a>
             </div>
           </div>
         </div>

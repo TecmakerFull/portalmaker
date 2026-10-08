@@ -56,6 +56,7 @@ export interface Store {
   plan?: 'starter' | 'maker_pro' | 'enterprise' | 'bonificado' | string;
   precio_mensual?: number;
   estado_pago?: 'al_dia' | 'pendiente' | 'bonificado' | 'gracia' | 'vencido';
+  limite_productos?: number;
   notas_admin?: string | null;
   suscripcion_activa: boolean;
   fecha_inicio_suscripcion: DateString | null;

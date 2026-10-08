@@ -103,6 +103,7 @@ create table stores (
   plan                        text    default 'maker_pro', -- 'starter' | 'maker_pro' | 'enterprise' | 'bonificado'
   precio_mensual              numeric(10,2) default 0,    -- valor mensual pactado
   estado_pago                 text    default 'al_dia',    -- 'al_dia' | 'pendiente' | 'bonificado' | 'gracia' | 'vencido'
+  limite_productos            int     default 50,          -- límite máximo de productos según el plan
   notas_admin                 text,                        -- notas internas del superadmin
   suscripcion_activa          boolean default true,
   fecha_inicio_suscripcion    date    default current_date,

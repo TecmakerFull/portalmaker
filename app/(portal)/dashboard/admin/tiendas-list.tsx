@@ -52,6 +52,7 @@ export type SuperadminStoreItem = {
   precio_mensual?: number | null
   estado_pago?: string | null
   notas_admin?: string | null
+  limite_productos?: number | null
   suscripcion_activa: boolean
   fecha_inicio_suscripcion: string | null
   fecha_proximo_vencimiento: string | null
@@ -270,6 +271,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
       whatsapp_numero: store.whatsapp_numero || '',
       plan: store.plan || 'maker_pro',
       precio_mensual: store.precio_mensual ?? 0,
+      limite_productos: store.limite_productos ?? 50,
       estado_pago: store.estado_pago || 'al_dia',
       fecha_inicio_suscripcion: store.fecha_inicio_suscripcion || store.created_at.split('T')[0],
       fecha_proximo_vencimiento: store.fecha_proximo_vencimiento || '',
@@ -295,6 +297,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
           whatsapp_numero: editForm.whatsapp_numero?.trim() || null,
           plan: editForm.plan,
           precio_mensual: Number(editForm.precio_mensual) || 0,
+          limite_productos: Number(editForm.limite_productos) || 50,
           estado_pago: editForm.estado_pago,
           fecha_inicio_suscripcion: editForm.fecha_inicio_suscripcion || null,
           fecha_proximo_vencimiento: editForm.fecha_proximo_vencimiento || null,
@@ -633,16 +636,42 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                   <div className="bg-[var(--color-superficie)] p-3 rounded-xl border border-[var(--color-borde)]/80 space-y-1">
                     <span className="text-[10px] uppercase font-semibold opacity-60 flex items-center gap-1">
                       <CreditCard className="w-3 h-3" />
-                      <span>Precio Mensual & Catálogo</span>
+                      <span>Precio & Límite Productos</span>
                     </span>
-                    <div className="font-bold text-[#CA8A04] dark:text-[#FACC15]">
-                      ${(store.precio_mensual ?? 0).toLocaleString('es-AR')} / mes
+                    <div className="font-bold text-[#CA8A04] dark:text-[#FACC15] flex items-center justify-between">
+                      <span>${(store.precio_mensual ?? 0).toLocaleString('es-AR')} / mes</span>
+                      <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        {store.product_count ?? 0} / {store.limite_productos ?? 50}
+                      </span>
                     </div>
-                    <p className="text-[11px] opacity-70">
-                      {store.product_count !== undefined
-                        ? `${store.product_count} productos cargados`
-                        : 'Catálogo activo'}
-                    </p>
+                    {/* Barra de progreso de productos */}
+                    {(() => {
+                      const count = store.product_count ?? 0
+                      const max = store.limite_productos ?? 50
+                      const pct = Math.min(100, Math.round((count / max) * 100))
+                      const barColor =
+                        pct >= 90
+                          ? 'bg-red-500'
+                          : pct >= 70
+                          ? 'bg-amber-500'
+                          : 'bg-emerald-500'
+                      return (
+                        <div className="space-y-1">
+                          <div className="w-full h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-300 ${barColor}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <p className="text-[10px] opacity-70 flex items-center justify-between">
+                            <span>{pct}% del cupo utilizado</span>
+                            {pct >= 100 && (
+                              <span className="text-red-500 font-bold">Cupo Lleno</span>
+                            )}
+                          </p>
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
 
@@ -732,20 +761,50 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                 </div>
               </div>
 
-              {/* Plan y Cobro */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2 border-t border-[var(--color-borde)]">
+              {/* Plan, Límite de Productos y Cobro */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-2 border-t border-[var(--color-borde)]">
                 <div>
                   <label className="text-xs font-semibold block mb-1">Plan Contratado</label>
                   <select
                     value={editForm.plan || 'maker_pro'}
-                    onChange={(e) => setEditForm({ ...editForm, plan: e.target.value })}
+                    onChange={(e) => {
+                      const newPlan = e.target.value
+                      const defaultLimits: Record<string, number> = {
+                        starter: 15,
+                        maker_pro: 50,
+                        enterprise: 500,
+                        bonificado: 100,
+                      }
+                      setEditForm({
+                        ...editForm,
+                        plan: newPlan,
+                        limite_productos: defaultLimits[newPlan] ?? 50,
+                      })
+                    }}
                     className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium cursor-pointer"
                   >
-                    <option value="maker_pro">Maker Pro</option>
-                    <option value="starter">Starter</option>
-                    <option value="enterprise">Enterprise</option>
-                    <option value="bonificado">Bonificado / Beta</option>
+                    <option value="maker_pro">Maker Pro (50 prod.)</option>
+                    <option value="starter">Starter (15 prod.)</option>
+                    <option value="enterprise">Enterprise (500 prod.)</option>
+                    <option value="bonificado">Bonificado / Beta (100 prod.)</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold block mb-1">Límite Máx. Productos</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10000"
+                    value={editForm.limite_productos ?? 50}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        limite_productos: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-amber-600 dark:text-amber-400"
+                  />
                 </div>
 
                 <div>
