@@ -15,7 +15,9 @@ import {
   AlignLeft,
   AlignCenter,
   Pin,
-  Info
+  Info,
+  Type,
+  MessageSquare
 } from 'lucide-react';
 import type { HeaderSettings, StoreSection } from '@/types/database';
 
@@ -26,9 +28,10 @@ interface HeaderEditorProps {
 
 export function HeaderEditor({ section, onChange }: HeaderEditorProps) {
   const settings = section.settings || {
+    mostrar_nombre: true,
     mostrar_buscador: true,
     mostrar_carrito: true,
-    mostrar_whatsapp: true,
+    mostrar_whatsapp_flotante: true,
     mostrar_tema_toggle: true,
     logo_posicion: 'centro',
     sticky: false,
@@ -119,6 +122,29 @@ export function HeaderEditor({ section, onChange }: HeaderEditorProps) {
         </div>
 
         <div className="space-y-3">
+          {/* Nombre de la tienda en texto */}
+          <label className="flex items-center justify-between p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 cursor-pointer transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                <Type className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 block">
+                  Nombre de la tienda en texto
+                </span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Muestra el nombre de tu marca junto o debajo del logo (activo por defecto)
+                </span>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={settings.mostrar_nombre ?? true}
+              onChange={(e) => updateSetting('mostrar_nombre', e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded border-zinc-300 dark:border-zinc-700 focus:ring-blue-500"
+            />
+          </label>
+
           {/* Buscador */}
           <label className="flex items-center justify-between p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 cursor-pointer transition-colors">
             <div className="flex items-center gap-3">
@@ -165,7 +191,7 @@ export function HeaderEditor({ section, onChange }: HeaderEditorProps) {
             />
           </label>
 
-          {/* WhatsApp Directo */}
+          {/* Botón Flotante de WhatsApp */}
           <label className="flex items-center justify-between p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 cursor-pointer transition-colors">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
@@ -173,17 +199,17 @@ export function HeaderEditor({ section, onChange }: HeaderEditorProps) {
               </div>
               <div>
                 <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 block">
-                  Botón de WhatsApp en la cabecera
+                  Botón flotante de WhatsApp
                 </span>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Acceso directo al número de atención de la tienda
+                  Muestra el botón flotante constante en la esquina inferior derecha
                 </span>
               </div>
             </div>
             <input
               type="checkbox"
-              checked={settings.mostrar_whatsapp}
-              onChange={(e) => updateSetting('mostrar_whatsapp', e.target.checked)}
+              checked={settings.mostrar_whatsapp_flotante ?? true}
+              onChange={(e) => updateSetting('mostrar_whatsapp_flotante', e.target.checked)}
               className="w-4 h-4 text-blue-600 rounded border-zinc-300 dark:border-zinc-700 focus:ring-blue-500"
             />
           </label>

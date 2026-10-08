@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTenantStore } from "@/lib/tenant";
-import type { Store } from "@/types/database";
+import type { Store, HeaderSettings } from "@/types/database";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import StoreThemeSync from "./theme-sync";
 import CartProviderClient from "./cart-provider-client";
 
@@ -59,6 +60,18 @@ export default async function TiendaLayout({
   const tenantQuery = context.resolved_by === "query-param-dev" ? `?tenant=${store.slug}` : "";
   const tenantStyles = getTenantCSSVars(store);
 
+  // Obtener configuración de header para saber si el botón flotante está activo
+  const supabase = await createSupabaseServerClient();
+  const { data: headerSection } = await supabase
+    .from("store_sections")
+    .select("settings")
+    .eq("store_id", store.id)
+    .eq("section_type", "header")
+    .maybeSingle();
+
+  const headerSettings = headerSection?.settings as HeaderSettings | undefined;
+  const showFloatingWhatsapp = headerSettings?.mostrar_whatsapp_flotante ?? true;
+
   return (
     <div
       className="tienda-root min-h-screen"
@@ -112,6 +125,7 @@ export default async function TiendaLayout({
         storeName={store.nombre}
         whatsappNumero={store.whatsapp_numero}
         tenantQuery={tenantQuery}
+        showFloatingWhatsapp={showFloatingWhatsapp}
       >
         {children}
       </CartProviderClient>

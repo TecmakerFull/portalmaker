@@ -23,6 +23,7 @@ export default function MainHeader({
   tenantQuery,
 }: MainHeaderProps) {
   const {
+    mostrar_nombre = true,
     mostrar_buscador = true,
     mostrar_carrito = true,
     mostrar_tema_toggle = true,
@@ -73,15 +74,16 @@ export default function MainHeader({
                 href={`/tienda${tenantQuery}`}
                 className="group flex items-center gap-3 focus:outline-none min-w-0"
               >
-                {store.logo_url ? (
+                {store.logo_url && (
                   <img
                     src={store.logo_url}
                     alt={store.nombre}
-                    className="h-9 sm:h-12 w-auto max-w-[170px] sm:max-w-[220px] object-contain rounded-lg shrink-0"
+                    className="h-9 sm:h-12 w-auto max-w-[150px] sm:max-w-[200px] object-contain rounded-lg shrink-0"
                   />
-                ) : (
+                )}
+                {(!store.logo_url || mostrar_nombre) && (
                   <div className="min-w-0">
-                    <h1 className="text-lg sm:text-2xl font-bold tracking-tight font-[var(--font-heading)] text-[var(--color-primario)] group-hover:opacity-90 transition-opacity uppercase truncate">
+                    <h1 className="text-base sm:text-2xl font-bold tracking-tight font-[var(--font-heading)] text-[var(--color-primario)] group-hover:opacity-90 transition-opacity uppercase truncate">
                       {store.nombre}
                     </h1>
                     {store.slogan && (
@@ -102,14 +104,16 @@ export default function MainHeader({
                 href={`/tienda${tenantQuery}`}
                 className="group flex flex-col items-center justify-center focus:outline-none max-w-full"
               >
-                {store.logo_url ? (
+                {store.logo_url && (
                   <img
                     src={store.logo_url}
                     alt={store.nombre}
-                    className="h-9 sm:h-12 w-auto max-w-[140px] sm:max-w-[200px] object-contain rounded-lg shrink-0"
+                    className="h-8 sm:h-11 w-auto max-w-[140px] sm:max-w-[180px] object-contain rounded-lg shrink-0"
                   />
-                ) : (
-                  <h1 className="text-lg sm:text-2xl font-bold tracking-tight sm:tracking-wide font-[var(--font-heading)] text-[var(--color-primario)] group-hover:opacity-90 transition-opacity uppercase truncate max-w-[180px] sm:max-w-xs">
+                )}
+
+                {(!store.logo_url || mostrar_nombre) && (
+                  <h1 className="text-base sm:text-xl font-bold tracking-tight sm:tracking-wide font-[var(--font-heading)] text-[var(--color-primario)] group-hover:opacity-90 transition-opacity uppercase truncate max-w-[180px] sm:max-w-xs mt-0.5">
                     {store.nombre}
                   </h1>
                 )}

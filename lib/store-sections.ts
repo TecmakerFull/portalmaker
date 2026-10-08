@@ -77,9 +77,10 @@ export function getDefaultStoreSections(
     enabled: true,
     orden: 2,
     settings: {
+      mostrar_nombre: true,
       mostrar_buscador: true,
       mostrar_carrito: true,
-      mostrar_whatsapp: Boolean(store.whatsapp_numero),
+      mostrar_whatsapp_flotante: true,
       mostrar_tema_toggle: true,
       logo_posicion: 'centro',
       sticky: true,

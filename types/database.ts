@@ -450,9 +450,11 @@ export interface TopBarSettings {
 
 // 2. HEADER
 export interface HeaderSettings {
+  mostrar_nombre?: boolean;
   mostrar_buscador: boolean;
   mostrar_carrito: boolean;
-  mostrar_whatsapp: boolean;
+  mostrar_whatsapp?: boolean;
+  mostrar_whatsapp_flotante?: boolean;
   mostrar_tema_toggle: boolean;
   logo_posicion: 'centro' | 'izquierda';
   sticky: boolean;

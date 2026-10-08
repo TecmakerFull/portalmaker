@@ -13,19 +13,23 @@ export default function CartProviderClient({
   storeName,
   whatsappNumero,
   tenantQuery,
+  showFloatingWhatsapp = true,
   children,
 }: {
   storeId: string
   storeName: string
   whatsappNumero?: string | null
   tenantQuery: string
+  showFloatingWhatsapp?: boolean
   children: React.ReactNode
 }) {
   return (
     <CartProvider storeId={storeId}>
       {children}
       <CartDrawer storeName={storeName} tenantQuery={tenantQuery} />
-      <FloatingWhatsApp phone={whatsappNumero} storeName={storeName} />
+      {showFloatingWhatsapp && (
+        <FloatingWhatsApp phone={whatsappNumero} storeName={storeName} />
+      )}
     </CartProvider>
   )
 }

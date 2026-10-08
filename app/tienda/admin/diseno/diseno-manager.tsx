@@ -208,26 +208,6 @@ export function DisenoManager({
             <Eye className="w-4 h-4" />
             {showMobilePreview ? 'Ocultar Previsualización' : 'Ver Previsualización'}
           </button>
-
-          {/* Botón Guardar Cambios */}
-          <button
-            type="button"
-            onClick={handleSaveChanges}
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-md hover:shadow transition-all"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Guardando...</span>
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                <span>Guardar Cambios</span>
-              </>
-            )}
-          </button>
         </div>
       </div>
 
@@ -301,6 +281,41 @@ export function DisenoManager({
                   onChange={handleUpdateSection}
                 />
               )}
+
+              {/* Botón de Guardar y Feedback al pie del editor */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                {saveSuccess && (
+                  <div className="p-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <span>¡Diseño guardado exitosamente!</span>
+                  </div>
+                )}
+                {saveError && (
+                  <div className="p-3 px-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400 text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" />
+                    <span>{saveError}</span>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleSaveChanges}
+                  disabled={saving}
+                  className="min-h-[44px] px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 text-white" />
+                      <span>Guardar Cambios de Diseño</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           ) : (
             /* Lista y Ordenador de Secciones */
@@ -407,6 +422,41 @@ export function DisenoManager({
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Botón de Guardar y Feedback al pie de la lista de secciones */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                {saveSuccess && (
+                  <div className="p-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <span>¡Estructura guardada exitosamente!</span>
+                  </div>
+                )}
+                {saveError && (
+                  <div className="p-3 px-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400 text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" />
+                    <span>{saveError}</span>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleSaveChanges}
+                  disabled={saving}
+                  className="min-h-[44px] px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 text-white" />
+                      <span>Guardar Estructura</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           )}
