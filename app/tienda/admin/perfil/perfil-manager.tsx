@@ -1,11 +1,13 @@
 // =============================================================================
-// PORTALMAKER — Gestor de Perfil, Suscripción y Preferencias del Panel
+// PORTALMAKER — Gestor de Perfil, Datos de Tienda, Suscripción y Preferencias del Panel
 // =============================================================================
 
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { Store } from '@/types/database'
 import {
   User,
@@ -21,6 +23,10 @@ import {
   CheckCircle2,
   AlertTriangle,
   ExternalLink,
+  Store as StoreIcon,
+  Loader2,
+  Save,
+  Check,
 } from 'lucide-react'
 
 export default function PerfilManager({
@@ -30,6 +36,16 @@ export default function PerfilManager({
   store: Store
   tenantQuery: string
 }) {
+  const router = useRouter()
+  const supabase = createSupabaseBrowserClient()
+
+  // Datos de la tienda editables desde el perfil
+  const [nombre, setNombre] = useState(store.nombre)
+  const [slogan, setSlogan] = useState(store.slogan ?? '')
+  const [savingStore, setSavingStore] = useState(false)
+  const [storeSuccessMsg, setStoreSuccessMsg] = useState<string | null>(null)
+  const [storeErrorMsg, setStoreErrorMsg] = useState<string | null>(null)
+
   // Tema del panel del cliente: 'sistema' | 'light' | 'dark'
   const [panelTheme, setPanelTheme] = useState<'sistema' | 'light' | 'dark'>('sistema')
   const [mounted, setMounted] = useState(false)
@@ -79,6 +95,40 @@ export default function PerfilManager({
     }
   }
 
+  // Guardar nombre y datos de la tienda
+  const handleSaveStoreData = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!nombre.trim()) {
+      setStoreErrorMsg('El nombre de la tienda no puede estar vacío.')
+      return
+    }
+
+    setSavingStore(true)
+    setStoreErrorMsg(null)
+    setStoreSuccessMsg(null)
+
+    try {
+      const { error } = await supabase
+        .from('stores')
+        .update({
+          nombre: nombre.trim(),
+          slogan: slogan.trim() || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', store.id)
+
+      if (error) throw error
+
+      setStoreSuccessMsg('¡Nombre y datos de la tienda guardados correctamente!')
+      router.refresh()
+      setTimeout(() => setStoreSuccessMsg(null), 4000)
+    } catch (err: any) {
+      setStoreErrorMsg(err?.message || 'Error al guardar los datos de la tienda.')
+    } finally {
+      setSavingStore(false)
+    }
+  }
+
   // Cálculo de fechas y periodo de prueba (ej: 10 días de prueba base)
   const createdDate = new Date(store.created_at)
   const today = new Date()
@@ -108,11 +158,89 @@ export default function PerfilManager({
           Mi Cuenta & Perfil
         </h1>
         <p className="text-xs sm:text-sm opacity-70 mt-1">
-          Revisa el estado de tu suscripción, días de prueba y personaliza la visualización de tu panel.
+          Modifica el nombre de tu página, revisa el estado de tu suscripción y personaliza tu panel.
         </p>
       </div>
 
-      {/* 1. Tarjeta de Estado de Cuenta & Suscripción */}
+      {/* 1. Modificar Nombre de la Tienda y Datos Básicos */}
+      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
+        <div>
+          <h2 className="text-base font-bold flex items-center gap-2">
+            <StoreIcon className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+            <span>Nombre de tu Página / Tienda</span>
+          </h2>
+          <p className="text-xs opacity-70 mt-0.5">
+            Puedes cambiar el nombre público de tu tienda y tu slogan en cualquier momento.
+          </p>
+        </div>
+
+        <form onSubmit={handleSaveStoreData} className="space-y-4 pt-1">
+          {storeSuccessMsg && (
+            <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
+              <Check className="w-4 h-4 shrink-0" />
+              <span>{storeSuccessMsg}</span>
+            </div>
+          )}
+
+          {storeErrorMsg && (
+            <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>{storeErrorMsg}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
+                Nombre de la Tienda *
+              </label>
+              <input
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="Ej: Aetera, Tecmaker 3D..."
+                required
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
+                Slogan / Frase corta
+              </label>
+              <input
+                type="text"
+                value={slogan}
+                onChange={(e) => setSlogan(e.target.value)}
+                placeholder="Ej: Diversión duradera de alta gama."
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              type="submit"
+              disabled={savingStore}
+              className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-bold text-xs hover:bg-[#EAB308] active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+            >
+              {savingStore ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Guardando...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Guardar Nombre</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* 2. Tarjeta de Estado de Cuenta & Suscripción */}
       <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -196,7 +324,7 @@ export default function PerfilManager({
         </div>
       </div>
 
-      {/* 2. Preferencia de Visualización del Menú / Panel Admin */}
+      {/* 3. Preferencia de Visualización del Menú / Panel Admin */}
       <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
         <div>
           <h2 className="text-base font-bold flex items-center gap-2">
@@ -283,7 +411,7 @@ export default function PerfilManager({
         </div>
       </div>
 
-      {/* 3. Datos de Administrador & Dominio */}
+      {/* 4. Datos de Administrador & Dominio */}
       <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
         <h2 className="text-base font-bold flex items-center gap-2">
           <User className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />

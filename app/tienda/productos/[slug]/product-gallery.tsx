@@ -18,27 +18,29 @@ interface ProductGalleryProps {
   images: string[]
   productName: string
   selectedImageOverride?: string | null
+  onImageChange?: (imageUrl: string, index: number) => void
 }
 
 export default function ProductGallery({
   images,
   productName,
   selectedImageOverride,
+  onImageChange,
 }: ProductGalleryProps) {
   // Asegurar que si la imagen de la variante no está en el listado base, se incluya al inicio
   const displayImages =
     selectedImageOverride && !images.includes(selectedImageOverride)
       ? [selectedImageOverride, ...images]
-      : images
+      : images.length > 0 ? images : []
 
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [isZoomOpen, setIsZoomOpen] = useState(false)
 
-  // Sincronizar selección de variante con la imagen activa de la galería
+  // Sincronizar selección de variante externa con la imagen activa de la galería
   useEffect(() => {
     if (selectedImageOverride) {
       const idx = displayImages.findIndex((img) => img === selectedImageOverride)
-      if (idx !== -1) {
+      if (idx !== -1 && idx !== selectedIndex) {
         setSelectedIndex(idx)
       }
     }
@@ -46,13 +48,35 @@ export default function ProductGallery({
 
   const hasMultiple = displayImages.length > 1
 
+  const handleSelectImage = useCallback((idx: number) => {
+    setSelectedIndex(idx)
+    const imgUrl = displayImages[idx]
+    if (imgUrl && onImageChange) {
+      onImageChange(imgUrl, idx)
+    }
+  }, [displayImages, onImageChange])
+
   const handlePrev = useCallback(() => {
-    setSelectedIndex((prev) => (prev === 0 ? displayImages.length - 1 : prev - 1))
-  }, [displayImages.length])
+    setSelectedIndex((prev) => {
+      const nextIdx = prev === 0 ? displayImages.length - 1 : prev - 1
+      const imgUrl = displayImages[nextIdx]
+      if (imgUrl && onImageChange) {
+        onImageChange(imgUrl, nextIdx)
+      }
+      return nextIdx
+    })
+  }, [displayImages, onImageChange])
 
   const handleNext = useCallback(() => {
-    setSelectedIndex((prev) => (prev === displayImages.length - 1 ? 0 : prev + 1))
-  }, [displayImages.length])
+    setSelectedIndex((prev) => {
+      const nextIdx = prev === displayImages.length - 1 ? 0 : prev + 1
+      const imgUrl = displayImages[nextIdx]
+      if (imgUrl && onImageChange) {
+        onImageChange(imgUrl, nextIdx)
+      }
+      return nextIdx
+    })
+  }, [displayImages, onImageChange])
 
   // Navegación por teclado en modo Zoom
   useEffect(() => {
@@ -135,7 +159,7 @@ export default function ProductGallery({
           {/* Indicador de posición (ej: 2/3) */}
           {hasMultiple && (
             <span className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-black/50 text-white text-[11px] font-medium backdrop-blur-xs">
-              {selectedIndex + 1} / {images.length}
+              {selectedIndex + 1} / {displayImages.length}
             </span>
           )}
         </div>
@@ -143,13 +167,13 @@ export default function ProductGallery({
         {/* Tira de Miniaturas Inferiores */}
         {hasMultiple && (
           <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
-            {images.map((url: string, i: number) => {
+            {displayImages.map((url: string, i: number) => {
               const isActive = i === selectedIndex
               return (
                 <button
                   key={i}
                   type="button"
-                  onClick={() => setSelectedIndex(i)}
+                  onClick={() => handleSelectImage(i)}
                   aria-label={`Ver vista ${i + 1}`}
                   className={`relative shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border transition-all cursor-pointer bg-black/5 ${
                     isActive

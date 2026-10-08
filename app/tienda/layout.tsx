@@ -1,12 +1,30 @@
-// =============================================================================
-// PORTALMAKER — Layout del route group (tienda)
-// "El portal del Maker" | portalmaker.com.ar
-// =============================================================================
-
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTenantStore } from "@/lib/tenant";
 import type { Store } from "@/types/database";
 import StoreThemeSync from "./theme-sync";
+import CartProviderClient from "./cart-provider-client";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const tenant = await getTenantStore();
+  if (!tenant) return {};
+
+  const { store } = tenant;
+  const storeIcon = store.favicon_url || store.icono_url || store.logo_url || "/icon.svg";
+
+  return {
+    title: {
+      default: `${store.nombre}${store.slogan ? ` — ${store.slogan}` : ""}`,
+      template: `%s | ${store.nombre}`,
+    },
+    description: store.meta_description || store.slogan || `Catálogo oficial de ${store.nombre}`,
+    icons: {
+      icon: [{ url: storeIcon }],
+      shortcut: [{ url: storeIcon }],
+      apple: [{ url: storeIcon }],
+    },
+  };
+}
 
 function getTenantCSSVars(store: Store): React.CSSProperties {
   const fontHeading = store.font_heading?.toLowerCase().replace(/\s+/g, "-") || "inter";
@@ -37,7 +55,8 @@ export default async function TiendaLayout({
     notFound();
   }
 
-  const { store } = tenant;
+  const { store, context } = tenant;
+  const tenantQuery = context.resolved_by === "query-param-dev" ? `?tenant=${store.slug}` : "";
   const tenantStyles = getTenantCSSVars(store);
 
   return (
@@ -88,7 +107,14 @@ export default async function TiendaLayout({
         />
       )}
 
-      {children}
+      <CartProviderClient
+        storeId={store.id}
+        storeName={store.nombre}
+        whatsappNumero={store.whatsapp_numero}
+        tenantQuery={tenantQuery}
+      >
+        {children}
+      </CartProviderClient>
     </div>
   );
 }

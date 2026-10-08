@@ -1,15 +1,28 @@
 // =============================================================================
-// PORTALMAKER — Vista Interactiva de Producto con Variantes y Galería Sincronizada
+// PORTALMAKER — Vista Interactiva de Producto con Variantes, Stock y Carrito
 // "El portal del Maker" | portalmaker.com.ar
 // =============================================================================
 
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Product, Store, ProductVariant, ProductDetails } from '@/types/database'
 import ProductGallery from './product-gallery'
+import { useCart } from '@/lib/cart-context'
 import { renderMarkdown } from '@/lib/markdown'
-import { MessageSquare, Clock, Box, Layers } from 'lucide-react'
+import {
+  MessageSquare,
+  Clock,
+  Box,
+  Layers,
+  ShoppingBag,
+  Plus,
+  Minus,
+  Check,
+  ArrowRight,
+  ShieldCheck,
+} from 'lucide-react'
 
 interface ProductDetailViewProps {
   product: Product & { category?: { nombre: string } | null }
@@ -23,48 +36,136 @@ export default function ProductDetailView({
   store,
   variants = [],
 }: ProductDetailViewProps) {
+  const router = useRouter()
+  const { addItem, openCart } = useCart()
+
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
     variants.length > 0 ? variants[0] : null
   )
+  const [quantity, setQuantity] = useState(1)
+  const [addedSuccess, setAddedSuccess] = useState(false)
+  const [cartFeedback, setCartFeedback] = useState<string | null>(null)
 
-  const imagenes = product.imagenes && product.imagenes.length > 0 ? product.imagenes : []
+  // Combinar imágenes del producto con imágenes de variantes para que todas estén accesibles en la galería
+  const rawImages = product.imagenes && product.imagenes.length > 0 ? product.imagenes : []
+  const variantImages = variants
+    .map((v) => v.imagen_url)
+    .filter((url): url is string => Boolean(url))
+
+  // Lista única preservando orden
+  const allImages = Array.from(new Set([...rawImages, ...variantImages]))
+
+  // Manejar cambio de imagen desde la galería (ej: click en miniatura o flecha)
+  const handleGalleryImageChange = (imageUrl: string) => {
+    // Si la imagen seleccionada corresponde a una variante específica, sincronizamos la variante seleccionada
+    const matchingVariant = variants.find((v) => v.imagen_url === imageUrl)
+    if (matchingVariant && matchingVariant.id !== selectedVariant?.id) {
+      setSelectedVariant(matchingVariant)
+    }
+  }
 
   // Cálculo del precio activo (incluyendo variación de precio de la variante si aplica)
   const additionalPrice = selectedVariant?.precio_adicional ?? 0
   const currentBasePrice = product.precio_base + additionalPrice
-  const currentOfferPrice = product.precio_oferta !== null && product.precio_oferta !== undefined
-    ? product.precio_oferta + additionalPrice
-    : null
+  const currentOfferPrice =
+    product.precio_oferta !== null && product.precio_oferta !== undefined
+      ? product.precio_oferta + additionalPrice
+      : null
+
+  const effectivePrice =
+    product.oferta_activa && currentOfferPrice ? currentOfferPrice : currentBasePrice
 
   // Stock activo
   const hasVariantStock = selectedVariant && selectedVariant.stock !== null
   const currentStock = hasVariantStock ? selectedVariant.stock : product.stock
   const hasStock = !product.gestiona_stock || (currentStock ?? 0) > 0
+  const isReserva = !product.gestiona_stock || (currentStock ?? 0) <= 0
 
-  // Generar URL de WhatsApp con la variante seleccionada
+  // Stepper de Cantidad
+  const handleIncrement = () => {
+    if (product.gestiona_stock && currentStock !== null && currentStock > 0) {
+      if (quantity < currentStock) {
+        setQuantity((q) => q + 1)
+      }
+    } else {
+      setQuantity((q) => q + 1)
+    }
+  }
+
+  const handleDecrement = () => {
+    if (quantity > 1) {
+      setQuantity((q) => q - 1)
+    }
+  }
+
+  // Agregar al Carrito
+  const handleAddToCart = (andOpenCart: boolean = true) => {
+    const itemToAdd = {
+      productId: product.id,
+      productSlug: product.slug,
+      productName: product.nombre,
+      imagenUrl: selectedVariant?.imagen_url || (rawImages.length > 0 ? rawImages[0] : null),
+      variantId: selectedVariant?.id || null,
+      variantName: selectedVariant?.nombre || null,
+      unitPrice: effectivePrice,
+      originalPrice: product.oferta_activa ? currentBasePrice : null,
+      gestionaStock: product.gestiona_stock,
+      stockDisponible: currentStock,
+      isReserva: isReserva,
+    }
+
+    const res = addItem(itemToAdd, quantity)
+
+    if (res.success) {
+      setAddedSuccess(true)
+      setCartFeedback('¡Agregado al carrito!')
+      setTimeout(() => {
+        setAddedSuccess(false)
+        setCartFeedback(null)
+      }, 3000)
+
+      if (andOpenCart) {
+        openCart()
+      }
+    } else {
+      setCartFeedback(res.message || 'No se pudo agregar más cantidad.')
+    }
+  }
+
+  // Comprar / Reservar Ahora (Agrega y va directo a checkout)
+  const handleBuyNow = () => {
+    handleAddToCart(false)
+    const tenantQuery = store.slug ? `?tenant=${store.slug}` : ''
+    router.push(`/tienda/checkout${tenantQuery}`)
+  }
+
+  // Generar URL de WhatsApp con la variante y cantidad seleccionada
   const cleanPhone = store.whatsapp_numero ? store.whatsapp_numero.replace(/[^0-9]/g, '') : null
-  const displayPriceText = product.precio_base === 0 && !product.gestiona_stock
-    ? 'A consultar'
-    : `$${(currentOfferPrice || currentBasePrice).toLocaleString('es-AR')}`
+  const displayPriceText =
+    product.precio_base === 0 && !product.gestiona_stock
+      ? 'A consultar'
+      : `$${effectivePrice.toLocaleString('es-AR')}`
 
   const variantText = selectedVariant ? ` (Opción: ${selectedVariant.nombre})` : ''
-  const whatsappMsg = `Hola ${store.nombre}! Me interesa el producto "${product.nombre}"${variantText} (${displayPriceText}). ¿Podrían darme más información?`
+  const quantityText = quantity > 1 ? ` [Cantidad: ${quantity}]` : ''
+  const whatsappMsg = `Hola ${store.nombre}! Me interesa el producto "${product.nombre}"${variantText}${quantityText} (${displayPriceText}). ¿Podrían darme más información?`
   const whatsappUrl = cleanPhone
     ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMsg)}`
     : null
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start">
-      {/* Columna Izquierda: Galería Interactiva con Sincronización de Variante */}
+      {/* Columna Izquierda: Galería Interactiva con Sincronización Bidireccional */}
       <div>
         <ProductGallery
-          images={imagenes}
+          images={allImages}
           productName={product.nombre}
           selectedImageOverride={selectedVariant?.imagen_url}
+          onImageChange={handleGalleryImageChange}
         />
       </div>
 
-      {/* Columna Derecha: Información, Selección de Variantes y Compra */}
+      {/* Columna Derecha: Información, Selección de Variantes, Stock y Compra */}
       <div className="space-y-6">
         <div>
           {product.category && (
@@ -123,7 +224,10 @@ export default function ProductDetailView({
                   <button
                     key={v.id}
                     type="button"
-                    onClick={() => setSelectedVariant(v)}
+                    onClick={() => {
+                      setSelectedVariant(v)
+                      setQuantity(1)
+                    }}
                     className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all cursor-pointer ${
                       isSelected
                         ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 text-[var(--color-texto)] ring-2 ring-[var(--color-primario)]/30 shadow-xs scale-98'
@@ -160,24 +264,90 @@ export default function ProductDetailView({
           </div>
         )}
 
-        {/* Botón WhatsApp Principal */}
-        {whatsappUrl && (
-          <div className="pt-2">
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="min-h-[52px] w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-[var(--color-primario)] text-white text-base font-bold hover:opacity-90 active:scale-98 transition-all shadow-md cursor-pointer"
-            >
-              <MessageSquare className="w-5 h-5" />
-              <span>
-                {product.gestiona_stock && !hasStock
-                  ? 'Consultar Disponibilidad por WhatsApp'
-                  : 'Comprar / Consultar por WhatsApp'}
+        {/* Selector de Cantidad y Botones de Carrito / Compra */}
+        <div className="pt-3 border-t border-black/10 dark:border-white/10 space-y-3.5">
+          {/* Fila con Stepper de Cantidad */}
+          <div className="flex items-center gap-4">
+            <span className="text-xs font-bold uppercase tracking-wider opacity-70">Cantidad:</span>
+            <div className="flex items-center border border-black/15 dark:border-white/15 rounded-xl bg-black/[0.03] dark:bg-white/[0.04]">
+              <button
+                type="button"
+                onClick={handleDecrement}
+                disabled={quantity <= 1}
+                className="w-10 h-10 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer disabled:opacity-40"
+                title="Disminuir cantidad"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="w-10 text-center font-bold text-sm select-none">{quantity}</span>
+              <button
+                type="button"
+                onClick={handleIncrement}
+                disabled={
+                  product.gestiona_stock && currentStock !== null && currentStock > 0
+                    ? quantity >= currentStock
+                    : false
+                }
+                className="w-10 h-10 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer disabled:opacity-40"
+                title="Aumentar cantidad"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+
+            {product.gestiona_stock && (
+              <span className="text-xs opacity-60">
+                {(currentStock ?? 0) > 0 ? `${currentStock} disponibles` : 'Bajo pedido'}
               </span>
-            </a>
+            )}
           </div>
-        )}
+
+          {/* Feedback de Carrito */}
+          {cartFeedback && (
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
+              <Check className="w-4 h-4 shrink-0" />
+              <span>{cartFeedback}</span>
+            </div>
+          )}
+
+          {/* Botones Principales de Compra / Carrito */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            {/* Botón Agregar al Carrito */}
+            <button
+              type="button"
+              onClick={() => handleAddToCart(true)}
+              className="min-h-[50px] w-full px-5 py-3 rounded-2xl border-2 border-[var(--color-primario)] text-[var(--color-primario)] hover:bg-[var(--color-primario)]/10 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer shadow-xs"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>Agregar al carrito</span>
+            </button>
+
+            {/* Botón Comprar / Reservar Ahora */}
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              className="min-h-[50px] w-full px-5 py-3 rounded-2xl bg-[var(--color-primario)] text-white font-bold text-xs sm:text-sm hover:opacity-90 flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer shadow-md"
+            >
+              <span>{isReserva ? 'Reservar Ahora' : 'Comprar Ahora'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Consulta rápida por WhatsApp */}
+          {whatsappUrl && (
+            <div className="pt-1">
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="min-h-[44px] w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black/[0.04] dark:bg-white/[0.04] hover:bg-black/10 dark:hover:bg-white/10 text-xs font-semibold transition-all"
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-[var(--color-primario)]" />
+                <span>¿Dudas? Consultar directamente por WhatsApp</span>
+              </a>
+            </div>
+          )}
+        </div>
 
         {/* Características rápidas */}
         <div className="grid grid-cols-2 gap-3 pt-2">

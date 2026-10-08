@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import ThemeToggle from '../../theme-toggle'
+import CartButton from '../../cart-button'
 import ProductDetailView from './product-detail-view'
 import { ArrowLeft } from 'lucide-react'
 
@@ -56,14 +57,28 @@ export default async function ProductoDetallePage({ params }: PageProps) {
       {/* Header */}
       <header className="border-b border-black/10 dark:border-white/10 sticky top-0 bg-[var(--color-fondo)]/90 backdrop-blur-md z-30 transition-colors duration-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
-          <Link
-            href={`/tienda${tenantQuery}`}
-            className="text-2xl sm:text-3xl font-extrabold tracking-tight font-[var(--font-heading)] text-[var(--color-primario)]"
-          >
-            {store.nombre}
+          <Link href={`/tienda${tenantQuery}`} className="flex items-center gap-3">
+            {store.logo_url && (
+              <img
+                src={store.logo_url}
+                alt={store.nombre}
+                className="h-10 sm:h-12 w-auto max-w-[140px] object-contain rounded-lg"
+              />
+            )}
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold font-[var(--font-heading)] text-[var(--color-primario)]">
+                {store.nombre}
+              </h1>
+              {store.slogan && (
+                <p className="text-xs opacity-70 line-clamp-1">
+                  {store.slogan}
+                </p>
+              )}
+            </div>
           </Link>
 
           <div className="flex items-center gap-3">
+            <CartButton />
             <ThemeToggle />
             <Link
               href={`/tienda${tenantQuery}`}

@@ -110,6 +110,7 @@ create table stores (
   icono_url      text,   -- versión compacta (solo símbolo, para header móvil colapsado)
   favicon_url    text,   -- ícono de la pestaña del navegador
   hero_banner_url text,  -- imagen principal del home (se complementa con tabla banners)
+  banners_activo  boolean default false, -- habilita carrusel de banners promocionales
   slogan         text,   -- texto corto bajo el logo
 
   -- Branding — Paleta de colores (modo claro)
@@ -149,6 +150,15 @@ create table stores (
   ga_measurement_id    text,   -- Google Analytics (se inyecta automáticamente si está cargado)
   meta_pixel_id        text,   -- Meta Pixel (idem)
   google_maps_embed_url text,  -- URL de embed de Maps para la página de Contacto
+
+  -- Cobros y Transferencia Bancaria (opcional para el checkout)
+  transferencia_activa        boolean default false,
+  transferencia_alias         text,
+  transferencia_cbu_cvu       text,
+  transferencia_banco         text,
+  transferencia_titular       text,
+  transferencia_cuit          text,
+  transferencia_instrucciones text,
 
   -- Timestamps
   created_at timestamptz default now(),
@@ -425,7 +435,13 @@ create table orders (
     check (estado_pago in ('pendiente', 'aprobado', 'rechazado')),
 
   -- Método de pago elegido por el comprador
-  metodo_pago text,  -- 'mercadopago' | 'transferencia' | 'efectivo'
+  metodo_pago text,  -- 'mercadopago' | 'transferencia' | 'efectivo' | 'acordar'
+
+  -- Tipo de entrega
+  tipo_entrega text default 'acordar', -- 'acordar' | 'retiro' | 'envio'
+
+  -- Control de stock
+  stock_descontado boolean default false, -- true cuando el admin confirma y se descuenta del inventario
 
   -- Referencia a la zona de envío elegida
   zona_envio_id uuid,  -- FK a shipping_zones (se agrega como ALTER luego de crear esa tabla)
@@ -746,6 +762,77 @@ create policy "system_insert_order_items" on order_items for insert with check (
 
 grant select on order_items to authenticated;
 grant insert on order_items to anon, authenticated;
+
+
+-- =============================================================================
+-- 16. BANNERS
+--     Banners promocionales y carrusel de novedades debajo del header.
+--     Hasta 3 slides con imagen, título, texto CTA y enlace a producto/categoría.
+-- =============================================================================
+create table banners (
+  id          uuid primary key default gen_random_uuid(),
+  store_id    uuid not null references stores(id) on delete cascade,
+
+  imagen_url  text not null,
+  video_url   text,
+  titulo      text,
+  subtitulo   text,
+  cta_texto   text,         -- ej: "Ver Producto", "Ver Ofertas", "Comprar Ahora"
+  cta_url     text,         -- ej: "/tienda/productos/slug" o "/tienda?cat=slug"
+  orden       int default 0,
+  activo      boolean default true,
+
+  fecha_desde timestamptz,
+  fecha_hasta timestamptz,
+
+  created_at  timestamptz default now()
+);
+
+create index idx_banners_store on banners(store_id, orden, activo);
+
+alter table banners enable row level security;
+create policy "public_read_banners" on banners for select using (activo = true);
+create policy "admin_all_banners" on banners for all
+  using (
+    auth.jwt() ->> 'email' = (select admin_email from stores where id = banners.store_id)
+    or is_platform_admin()
+  );
+
+grant select on banners to anon, authenticated;
+grant insert, update, delete on banners to authenticated;
+
+
+-- =============================================================================
+-- 17. STORE_SECTIONS
+--     Arquitectura extensible de secciones de storefront por tienda:
+--     top_bar, header, navbar, hero, etc.
+-- =============================================================================
+create table store_sections (
+  id           uuid primary key default gen_random_uuid(),
+  store_id     uuid not null references stores(id) on delete cascade,
+  section_type text not null,
+  enabled      boolean default true,
+  orden        int default 0,
+  settings     jsonb default '{}'::jsonb,
+  content      jsonb default '[]'::jsonb,
+  created_at   timestamptz default now(),
+  updated_at   timestamptz default now(),
+
+  constraint uq_store_section unique(store_id, section_type)
+);
+
+create index idx_store_sections_store on store_sections(store_id, orden);
+
+alter table store_sections enable row level security;
+create policy "public_read_sections" on store_sections for select using (true);
+create policy "admin_all_sections" on store_sections for all
+  using (
+    auth.jwt() ->> 'email' = (select admin_email from stores where id = store_sections.store_id)
+    or is_platform_admin()
+  );
+
+grant select on store_sections to anon, authenticated;
+grant insert, update, delete on store_sections to authenticated;
 
 
 -- =============================================================================

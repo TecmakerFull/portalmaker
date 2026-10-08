@@ -63,6 +63,7 @@ export interface Store {
   icono_url: string | null;
   favicon_url: string | null;
   hero_banner_url: string | null;
+  banners_activo?: boolean;
   slogan: string | null;
 
   // Branding — Paleta de colores (modo claro)
@@ -98,6 +99,15 @@ export interface Store {
   ga_measurement_id: string | null;
   meta_pixel_id: string | null;
   google_maps_embed_url: string | null;
+
+  // Cobros y Transferencia
+  transferencia_activa?: boolean;
+  transferencia_alias?: string | null;
+  transferencia_cbu_cvu?: string | null;
+  transferencia_banco?: string | null;
+  transferencia_titular?: string | null;
+  transferencia_cuit?: string | null;
+  transferencia_instrucciones?: string | null;
 
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -234,11 +244,14 @@ export interface ProductDetails {
 // =============================================================================
 export interface OrderItem {
   product_id: UUID;
+  variant_id?: UUID | null;
   nombre: string;         // snapshot del nombre al momento del pedido
   variante?: string;      // snapshot de la variante elegida
   cantidad: number;
   precio_unitario: number;
   subtotal: number;
+  gestiona_stock?: boolean;
+  is_reserva?: boolean;
 }
 
 export interface Order {
@@ -248,6 +261,8 @@ export interface Order {
   email_comprador: string | null;
   telefono_comprador: string | null;
   direccion_entrega: string | null;
+  tipo_entrega?: 'acordar' | 'retiro' | 'envio' | null;
+  stock_descontado?: boolean;
   items: OrderItem[];           // snapshot inmutable en jsonb
   total: number;
   costo_envio: number;
@@ -307,6 +322,7 @@ export interface Banner {
   imagen_url: string;
   video_url: string | null;
   titulo: string | null;
+  subtitulo?: string | null;
   cta_texto: string | null;   // texto del botón
   cta_url: string | null;     // URL del botón
   orden: number;
@@ -399,3 +415,106 @@ export interface TenantContext {
   store_slug: string;
   resolved_by: 'subdomain' | 'custom_domain' | 'query-param-dev';
 }
+
+// =============================================================================
+// STORE_SECTIONS — Arquitectura modular de secciones de Storefront
+// =============================================================================
+export type StoreSectionType =
+  | 'top_bar'
+  | 'header'
+  | 'navbar'
+  | 'hero'
+  | 'featured_categories'
+  | 'featured_products'
+  | 'footer'
+  | string;
+
+// 1. TOP BAR
+export interface TopBarMessageItem {
+  id: string;
+  texto: string;
+  icono?: string | null;       // Nombre de icono lucide-react (ej: "Truck", "Instagram", "MessageSquare")
+  link_url?: string | null;
+  activo: boolean;
+  orden?: number;
+}
+
+export interface TopBarSettings {
+  modo: 'estatico' | 'rotativo' | 'ticker';
+  intervalo_segundos: number;    // para modo rotativo (ej: 4s)
+  velocidad_ticker: number;      // para modo marquee (ej: 25s)
+  pausar_hover: boolean;
+  fondo_color: 'primario' | 'superficie' | 'contraste';
+  mostrar_en_mobile: boolean;
+}
+
+// 2. HEADER
+export interface HeaderSettings {
+  mostrar_buscador: boolean;
+  mostrar_carrito: boolean;
+  mostrar_whatsapp: boolean;
+  mostrar_tema_toggle: boolean;
+  logo_posicion: 'centro' | 'izquierda';
+  sticky: boolean;
+}
+
+// 3. NAVBAR
+export interface NavbarItem {
+  id: string;
+  texto: string;
+  tipo_destino: 'catalogo' | 'categoria' | 'producto' | 'pagina' | 'custom';
+  destino_valor?: string;        // ID de categoría o slug de producto/página
+  destino_url: string;           // URL resultante (ej: "/tienda?cat=123" o "/tienda/productos/xyz")
+  destacado?: boolean;           // Si true, se resalta visualmente (ej: Ofertas, Hot)
+  badge_texto?: string | null;   // Texto pequeño sobre el link (ej: "Oferta", "Nuevo")
+  activo: boolean;
+  orden?: number;
+}
+
+export interface NavbarSettings {
+  alineacion: 'centro' | 'izquierda' | 'espaciado';
+  estilo: 'linea' | 'pills';
+  sticky: boolean;
+}
+
+// 4. HERO / BANNERS
+export interface HeroBannerSlide {
+  id: string;
+  imagen_desktop: string;
+  imagen_mobile?: string | null;  // Imagen optimizada vertical para mobile
+  titulo?: string | null;
+  subtitulo?: string | null;
+  texto_adicional?: string | null;
+  cta_texto?: string | null;
+  cta_url?: string | null;
+  cta_destino_tipo?: 'producto' | 'categoria' | 'pagina' | 'custom';
+  cta_destino_valor?: string;
+  fecha_desde?: string | null;    // ISO DateString
+  fecha_hasta?: string | null;    // ISO DateString
+  activo: boolean;
+  orden?: number;
+}
+
+export interface HeroBannerSettings {
+  modo: 'carrusel' | 'banner_unico';
+  autoplay: boolean;
+  intervalo_segundos: number;
+  mostrar_flechas: boolean;
+  mostrar_indicadores: boolean;
+  pausar_hover: boolean;
+  altura: 'adaptable' | 'compacta' | 'pantalla_completa';
+}
+
+// Interfaz Genérica de Sección en Base de Datos
+export interface StoreSection<TSettings = any, TContent = any> {
+  id: UUID;
+  store_id: UUID;
+  section_type: StoreSectionType;
+  enabled: boolean;
+  orden: number;
+  settings: TSettings;
+  content: TContent;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+

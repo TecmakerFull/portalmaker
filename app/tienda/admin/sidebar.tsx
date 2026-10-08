@@ -27,6 +27,8 @@ import {
   X,
   Palette,
   MessageSquare,
+  ShoppingBag,
+  CreditCard,
 } from 'lucide-react'
 import type { Store as StoreType } from '@/types/database'
 
@@ -56,12 +58,17 @@ export default function AdminSidebar({
   const [updatingStatus, setUpdatingStatus] = useState(false)
 
   const isInicio = pathname === '/tienda/admin'
+  const isVentas = pathname.includes('/tienda/admin/ventas')
   const isCategorias = pathname.includes('/tienda/admin/categorias')
   const isNuevoProducto = pathname.includes('/tienda/admin/productos/nuevo')
   const isProductosAdmin =
     pathname.includes('/tienda/admin/productos') && !isNuevoProducto && !isCategorias
+  const isDiseno = pathname.includes('/tienda/admin/diseno')
   const isBranding = pathname.includes('/tienda/admin/branding')
+  const isBanners = pathname.includes('/tienda/admin/banners')
+  const isSobreNosotros = pathname.includes('/tienda/admin/sobre-nosotros')
   const isContacto = pathname.includes('/tienda/admin/contacto')
+  const isPagos = pathname.includes('/tienda/admin/pagos')
   const isDominio = pathname.includes('/tienda/admin/dominio')
   const isPerfil = pathname.includes('/tienda/admin/perfil')
 
@@ -151,6 +158,24 @@ export default function AdminSidebar({
           <span>Inicio</span>
         </Link>
 
+        {/* Ventas & Pedidos */}
+        <Link
+          href={`/tienda/admin/ventas${tenantQuery}`}
+          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            isVentas
+              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <ShoppingBag className="w-4 h-4" />
+            <span>Ventas & Pedidos</span>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+            Nuevo
+          </span>
+        </Link>
+
         {/* Grupo: Mi Tienda */}
         <div className="pt-2">
           <button
@@ -172,6 +197,19 @@ export default function AdminSidebar({
           {openTienda && (
             <div className="ml-4 pl-3 border-l border-[var(--color-borde)] space-y-1 mt-1">
               <Link
+                href={`/tienda/admin/diseno${tenantQuery}`}
+                className={`min-h-[40px] flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  isDiseno
+                    ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
+                    : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+                }`}
+              >
+                <span>Diseño de Tienda</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-blue-500/20 text-blue-700 dark:text-blue-400">
+                  Nuevo
+                </span>
+              </Link>
+              <Link
                 href={`/tienda/admin/branding${tenantQuery}`}
                 className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   isBranding
@@ -179,7 +217,30 @@ export default function AdminSidebar({
                     : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
               >
-                Diseño & Paleta
+                Colores & Logo
+              </Link>
+              <Link
+                href={`/tienda/admin/banners${tenantQuery}`}
+                className={`min-h-[40px] flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  isBanners
+                    ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
+                    : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+                }`}
+              >
+                <span>Banners & Promos</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-[#FACC15]/20 text-[#CA8A04] dark:text-[#FACC15]">
+                  Carrusel
+                </span>
+              </Link>
+              <Link
+                href={`/tienda/admin/sobre-nosotros${tenantQuery}`}
+                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  isSobreNosotros
+                    ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
+                    : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+                }`}
+              >
+                Sobre Nosotros
               </Link>
               <Link
                 href={`/tienda/admin/contacto${tenantQuery}`}
@@ -190,6 +251,16 @@ export default function AdminSidebar({
                 }`}
               >
                 Contacto & Ubicación
+              </Link>
+              <Link
+                href={`/tienda/admin/pagos${tenantQuery}`}
+                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  isPagos
+                    ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
+                    : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+                }`}
+              >
+                Cobros & Transferencia
               </Link>
               <Link
                 href={`/tienda/admin/dominio${tenantQuery}`}

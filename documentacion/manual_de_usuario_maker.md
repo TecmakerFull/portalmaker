@@ -118,90 +118,131 @@ En la parte inferior verás una simulación interactiva con el logo y el botón 
 
 ---
 
-## 6. La Tienda Pública y Ventas por WhatsApp
+## 6. Banners y Carrusel Promocional
 
-Tu tienda pública está optimizada para celulares y computadoras:
+Acceso: Desde el menú lateral en **Mi tienda → Banners & Promos** (`/tienda/admin/banners`).
 
-* **Filtros rápidos**: Tus compradores pueden filtrar por categorías con un solo toque.
-* **Modo Claro / Oscuro**: El visitante puede alternar entre el tema claro u oscuro desde el botón sol/luna del encabezado.
-* **Consulta y Compra Directa**:
-  * En cada tarjeta y en la ficha del producto, el botón de **WhatsApp** abre una conversación directa a tu número con el nombre del producto y el precio precargados automáticamente.
-  * Ejemplo de mensaje generado:
-    > *"Hola TecMaker 3D! Me interesa el producto: 'Lámpara Luna 3D' ($15.000)"*
+### Características:
+* **Interruptor Maestro**: Activa o desactiva la visualización del carrusel completo en tu tienda con un solo clic.
+* **Hasta 3 Slides**: Puedes cargar hasta 3 imágenes de alta calidad (recomendado 1920x600 o similar) para mostrar promociones, novedades, piezas destacadas o avisos de vacaciones/demoras.
+* **Subida Directa o URL**: Sube imágenes directamente desde tu computadora o pega una URL de imagen externa.
+* **Títulos y Subtítulos**: Añade textos descriptivos que se superponen con degradado inteligente para garantizar contraste en cualquier foto.
+* **Botón de Acción (CTA) Interactivo**:
+  * Puedes añadir un botón (ej: *"Ver Ofertas"*, *"Comprar Ahora"*).
+  * **Vincular a un Producto**: Elige un producto de tu catálogo en el desplegable y el botón redirigirá directamente a su ficha técnica.
+  * **Vincular a una Categoría**: Elige una categoría y el botón filtrará el catálogo por esa sección.
+  * **Enlace Personalizado**: Para redirigir a una página interna (ej: `/tienda/sobre-nosotros`) o un enlace externo.
+* **Transiciones y Gestos**: El carrusel rota suavemente de forma automática cada 5.5 segundos, se pausa al pasar el mouse y responde a gestos táctiles (swipe) en dispositivos móviles.
 
 ---
 
-## 7. Formulario de Contacto, Ubicación y Redes Sociales
+## 7. Carrito de Compras, Reservas y Checkout por WhatsApp
+
+Portalmaker incorpora un sistema de **Carrito de Compras y Reservas** inteligente y sin fricción:
+
+### Características del Carrito:
+* **Soporte para Stock Inmediato y Piezas a Pedido**:
+  * Si el producto tiene stock disponible, se agrega como compra inmediata con control de cantidad máxima.
+  * Si el producto es a pedido (o stock = 0), se etiqueta automáticamente como **"Bajo pedido / Reserva"**, informando al cliente que se fabricará a medida.
+* **Control de Variantes y Fotos Sincronizadas**:
+  * Cada variante seleccionada (color, tamaño, grabado) se agrega con su precio individual y foto específica al carrito.
+* **Drawer Lateral Interactivo**:
+  * Los clientes pueden abrir su carrito desde cualquier página de la tienda, ajustar cantidades con los botones `+` y `-`, o eliminar productos.
+* **Formulario de Checkout**:
+  1. **Datos del Comprador**: Nombre y apellido, WhatsApp de contacto y email.
+  2. **Forma de Entrega**: Retiro en taller, Envío a domicilio o A convenir por WhatsApp.
+  3. **Forma de Pago**: Transferencia bancaria (con datos precargados), Efectivo al retirar o A coordinar.
+  4. **Notas Especiales**: Campo libre para que el cliente especifique colores, personalizaciones o requerimientos especiales.
+* **Confirmación y Envío a WhatsApp**:
+  * Al hacer clic en **"Confirmar y Enviar por WhatsApp"**, el pedido queda guardado con un número único (ej: `#PM-4821`) en el panel de la tienda y abre una conversación con el vendedor con todo el detalle listo para enviar.
+
+---
+
+## 7. Configuración de Cobros y Transferencia Bancaria
+
+Acceso: Desde el menú lateral en **Mi tienda → Cobros & Transferencia** (`/tienda/admin/pagos`).
+
+Puedes precargar tus datos para que tus clientes paguen directamente sin tener que pedirlos por mensaje:
+* **Interruptor de Transferencia**: Activa o desactiva la opción en el checkout.
+* **Alias**: Tu alias de banco o Mercado Pago (ej: `tecmaker.3d.mp`). Tus clientes tendrán un botón de **"Copiar"** con 1 toque.
+* **CBU / CVU**: Clave bancaria uniforme de 22 dígitos.
+* **Banco / Billetera**: Nombre de la entidad (ej: *Mercado Pago*, *Banco Nación*, *Brubank*).
+* **Titular & CUIT**: Nombre completo y CUIT/CUIL del titular de la cuenta.
+* **Instrucciones**: Mensaje explicativo para el comprobante (ej: *"Enviar comprobante por WhatsApp indicando número de pedido"*).
+
+---
+
+## 8. Gestión de Ventas & Pedidos en el Panel del Maker
+
+Acceso: Desde el menú lateral en **Ventas & Pedidos** (`/tienda/admin/ventas`).
+
+Cada pedido generado por tus clientes se registra en tu panel para que lleves el control total:
+* **Métricas Principales**:
+  * 💰 **Total Facturado ($)**: Suma de ventas aprobadas y en producción.
+  * 📦 **Pedidos Totales**: Cantidad histórica de pedidos y reservas.
+  * ⏳ **Pendientes**: Pedidos nuevos que requieren tu confirmación.
+  * 👥 **Clientes Únicos**: Cantidad de personas distintas que te han comprado.
+* **Filtros por Estado**:
+  * *Todos* | *Nuevos* | *En Producción* | *Despachados* | *Entregados* | *Cancelados*.
+* **Gestión y Descuento Automático de Stock**:
+  * En el detalle de cada pedido, al hacer clic en **"Confirmar Venta y Descontar Stock"**, el sistema descuenta automáticamente las unidades vendidas del inventario de productos y variantes.
+  * Si necesitas cancelar un pedido, puedes pulsar **"Cancelar Pedido"** y el stock se restaurará automáticamente.
+* **Contacto Directo**: Botón verde de **WhatsApp** en cada pedido para abrir el chat con el comprador con un solo clic.
+
+---
+
+## 9. Sección "Sobre Nosotros" del Taller
+
+Acceso: Desde el menú lateral en **Mi tienda → Sobre Nosotros** (`/tienda/admin/sobre-nosotros`).
+
+Permite contar la historia de tu taller, qué tecnologías utilizas y mostrar fotos de tus máquinas y equipo:
+* **Habilitar / Deshabilitar**: Interruptor para mostrar o esconder el enlace en el menú y pie de página de tu tienda.
+* **Título Personalizado**: (ej: *Sobre Nosotros*, *Quiénes Somos*, *El Taller*).
+* **Foto del Taller / Equipo**: Sube una foto de tu espacio de trabajo o creaciones.
+* **Historia & Valores**: Espacio para escribir tu trayectoria y especialidades.
+
+---
+
+## 10. Formulario de Contacto, Ubicación y Redes Sociales
 
 Acceso: Desde el menú lateral en **Mi tienda → Contacto & Ubicación** (`/tienda/admin/contacto`).
 
 Aquí puedes configurar todos los puntos de encuentro con tus clientes:
-* **Canales de Atención**:
-  * **WhatsApp de Ventas**: Número directo con código de país para recibir pedidos.
-  * **Email de Contacto**: Dirección de correo electrónico pública para presupuestos formales.
-  * **Horarios de Atención**: Plazos y días hábiles de atención y retiro en taller (ej: *Lun a Vie 9 a 18hs - Sáb 10 a 13hs*).
-* **Ubicación del Taller y Punto de Retiro**:
-  * **Dirección Física**: Calle, número, localidad y provincia donde tus clientes pueden retirar piezas impresas o cortadas.
-  * **Google Maps**: Enlace o código embed para que tus clientes abran la ruta en el mapa con un toque.
-* **Redes Sociales**:
-  * Enlaces directos a tu perfil de **Instagram**, página de **Facebook** y cuenta de **TikTok** (se muestran con íconos elegantes en la web pública).
-* **Página Pública de Contacto (`/tienda/contacto`)**:
-  * Incluye un formulario interactivo con selector de motivo (Presupuesto/Cotización, Modelado 3D, Retiro de pedido) que genera un mensaje estructurado y lo envía directamente por WhatsApp.
+* **Canales de Atención**: WhatsApp de ventas, email y horarios de atención.
+* **Ubicación y Google Maps**: Dirección física del taller con mapa interactivo.
+* **Redes Sociales**: Enlaces a Instagram, Facebook y TikTok.
 
 ---
 
-## 8. Experiencia Móvil y Administración desde el Celular (Mobile-First)
+## 11. Experiencia Móvil y Administración desde el Celular (Mobile-First)
 
-Tanto la **Tienda Pública** como el **Panel de Administración del Maker** están diseñados bajo una arquitectura *Mobile-First*, permitiéndote gestionar todo tu taller directamente desde tu smartphone:
-
-* **Menú Hamburguesa & Drawer Deslizante**:
-  * En pantallas de celular, el menú se pliega automáticamente detrás del botón de tres líneas (hamburguesa) en la barra superior.
-  * Al tocarlo, se despliega suavemente un panel lateral con acceso a todas las secciones (Productos, Categorías, Diseño, Contacto, Dominio y Mi Cuenta).
-  * Al hacer tap en cualquier enlace o fuera del menú, este se cierra de forma instantánea.
-* **Touch Targets Cómodos (44×44px)**:
-  * Todos los botones, campos interactivos e íconos poseen un tamaño mínimo de **44×44 píxeles**, garantizando una navegación táctil precisa y sin pulsaciones erróneas.
-* **Control Rápido de Estado (Encendida / Apagada)**:
-  * El interruptor de publicación está siempre visible en la parte superior del menú móvil para pausar o reactivar tu tienda con un solo tap.
-* **Subida de Fotos desde la Cámara**:
-  * Puedes tomar fotos de tus piezas impresas o cortadas directamente con la cámara del celular y subirlas al formulario de productos al instante.
+Tanto la **Tienda Pública** como el **Panel de Administración del Maker** están diseñados bajo una arquitectura *Mobile-First*:
+* Grilla de catálogo en **2 columnas en celulares** para una navegación ágil y visual.
+* Menú hamburguesa lateral con acceso a todas las secciones.
+* Touch targets mínimos de **44×44 píxeles** en todos los botones e interactivos.
 
 ---
 
-## 9. Cómo Vincular tu Dominio Propio (.com.ar) directamente en NIC.ar
+## 12. Cómo Vincular tu Dominio Propio (.com.ar) directamente en NIC.ar
 
-Puedes conectar tu propio dominio de forma 100% directa sin contratar hosting ni intermediarios:
-
-### Paso 1: Registrar el dominio en NIC Argentina (nic.ar)
-1. Ingresa a [nic.ar](https://nic.ar) con tu CUIT y Clave Fiscal de AFIP.
-2. Busca el nombre de tu marca o taller (ej: `mitaller3d.com.ar`).
-3. Si está disponible, abona el arancel oficial de registro anual.
-
-### Paso 2: Delegar en NIC.ar a los Servidores de Portalmaker
-1. En tu panel de dominios de **NIC.ar**, haz clic en el botón **"Delegar"** al lado de tu dominio.
-2. Pulsa en **"Agregar Servidor"** e ingresa los 2 servidores de Portalmaker:
+Puedes conectar tu propio dominio de forma 100% directa:
+1. En [nic.ar](https://nic.ar), delega tu dominio a:
    * **Host 1**: `ns1.portalmaker.com.ar`
    * **Host 2**: `ns2.portalmaker.com.ar`
-3. Guarda los cambios en NIC.ar.
-
-### Paso 3: Guardar el dominio en Portalmaker
-1. Ingresa a tu panel en **Mi tienda → Dominio Propio** (`/tienda/admin/dominio`).
-2. Escribe tu dominio (ej: `www.mitaller3d.com.ar` o `mitaller3d.com.ar`) y pulsa **"Guardar Dominio"**.
-3. ¡Listo! En cuanto finalice la propagación de DNS (2 a 12 horas), tu tienda responderá en tu propio dominio con el certificado SSL (candado verde HTTPS) activado automáticamente.
+2. En tu panel de Portalmaker (**Mi tienda → Dominio Propio**), ingresa tu dominio y pulsa **"Guardar Dominio"**.
 
 ---
 
-## 10. Preguntas Frecuentes y Soporte
+## 13. Preguntas Frecuentes y Soporte
 
-* **¿Puedo administrar mi taller 100% desde el celular?**
-  Sí, todo el panel de administración, la carga de fotos, creación de categorías y control de tienda están preparados para smartphones.
-* **¿Tengo que pagar comisiones por venta?**
-  No. Las ventas y consultas se realizan directamente por WhatsApp entre tú y tu cliente.
-* **¿Puedo cambiar las fotos o precios en cualquier momento?**
-  Sí, desde `/tienda/admin/productos` puedes editar cualquier dato y se actualiza al instante en la web pública.
-* **¿Qué tamaño de imagen es recomendable?**
-  Fotos cuadradas o verticales en formato JPG o PNG de buena iluminación, de entre 800x800px y 1600x1600px.
+* **¿Puedo vender piezas que no tengo en stock?**
+  Sí, el sistema clasifica automáticamente los productos sin stock como "Bajo pedido / Reserva" para que los clientes puedan solicitarlos.
+* **¿Cómo se descuenta el stock?**
+  El stock no se descuenta hasta que el dueño de la tienda lo confirme en el panel (**Ventas & Pedidos → Confirmar Venta y Descontar Stock**), asegurando control total sobre el inventario.
+* **¿Qué métodos de pago puedo ofrecer?**
+  Transferencia bancaria directa (con copia rápida de alias/CBU), efectivo y acuerdos por WhatsApp. Próximamente se integrará Mercado Pago y couriers automáticos.
 
 ---
 
-*Portalmaker — El portal del Maker*
+*Portalmaker — El portal del Maker* | portalmaker.com.ar
 

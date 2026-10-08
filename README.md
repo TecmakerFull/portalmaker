@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Portalmaker — "El portal del Maker"
 
-## Getting Started
+> Plataforma multi-tenant e-commerce diseñada para talleres de Impresión 3D, Grabado Láser, CNC y Fabricación Digital.
+> Dominio: [portalmaker.com.ar](https://portalmaker.com.ar)
 
-First, run the development server:
+---
+
+## Stack Tecnológico
+
+- **Framework**: Next.js 15 (App Router, Server Components & Server Actions)
+- **Base de Datos & Auth**: Supabase (PostgreSQL + Auth + Storage + RLS)
+- **Estilos**: Tailwind CSS + Variables CSS Dinámicas por Tenant + Modo Claro/Oscuro
+- **Iconografía**: `lucide-react` (exclusivo)
+- **Despliegue**: Cloudflare Pages / Workers
+
+---
+
+## Módulos y Funcionalidades
+
+### 1. Tienda Pública Multi-tenant
+- Resolución automática de subdominio (`[slug].portalmaker.com.ar`) y dominio propio (`mitaller.com.ar`).
+- **Catálogo Interactivo**:
+  - Buscador multi-término en tiempo real (búsqueda por palabras en nombre y descripción).
+  - Filtros por pastillas de categorías.
+  - Grilla responsive con **2 columnas en mobile**.
+  - Galería sincronizada bidireccionalmente con variantes de producto.
+- **Carrito de Compras y Reservas**:
+  - Distinción automática entre piezas en stock y piezas **bajo pedido / reserva**.
+  - Control de cantidades y límites de stock.
+  - Drawer deslizante interactivo accesible desde cualquier página.
+- **Checkout Sin Fricción**:
+  - Datos de contacto del comprador.
+  - Opciones de entrega (Retiro en taller, Envío a domicilio, A convenir).
+  - Opciones de pago (Transferencia con datos precargados y copia rápida de Alias/CBU, Efectivo, A coordinar).
+  - Generación de pedido inmutable en base de datos.
+  - Envío automático de pedido formateado a **WhatsApp** del vendedor.
+
+### 2. Panel de Administración del Maker (`/tienda/admin`)
+- **Ventas & Pedidos (`/tienda/admin/ventas`)**:
+  - Métricas en tiempo real: Facturación ($), Total de Pedidos, Pendientes y Clientes Únicos.
+  - Filtros por estado: Nuevos, En Producción, Despachados, Entregados, Cancelados.
+  - **Confirmar Venta y Descontar Stock**: Descuenta automáticamente el stock de productos y variantes en base de datos.
+  - Cancelación de pedidos con restauración automática de stock.
+  - Acceso directo para chatear por WhatsApp con el cliente.
+- **Cobros & Transferencia (`/tienda/admin/pagos`)**:
+  - Configuración de Alias, CBU/CVU, Banco, Titular y CUIT para copia rápida en el checkout.
+- **Diseño & Paleta (`/tienda/admin/branding`)**:
+  - 6 paletas de colores preset con cálculo de contraste WCAG AA.
+  - Selección de tipografías Google Fonts.
+  - Carga de Logotipo e Icono de marca.
+- **Sobre Nosotros (`/tienda/admin/sobre-nosotros`)**:
+  - Configuración opcional de historia del taller, valores y foto de máquinas/equipo.
+- **Contacto & Ubicación (`/tienda/admin/contacto`)**:
+  - Dirección física, mapa de Google Maps, horarios y redes sociales.
+- **Gestión de Productos (`/tienda/admin/productos`)**:
+  - Múltiples imágenes, variantes con sobreprecio/stock, categorías, tiempo estimado de producción.
+
+---
+
+## Desarrollo Local
 
 ```bash
+# Instalar dependencias
+npm install
+
+# Correr servidor de desarrollo
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra [http://localhost:3000](http://localhost:3000) en el navegador.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+© Portalmaker — Todos los derechos reservados.
