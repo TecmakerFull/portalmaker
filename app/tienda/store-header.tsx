@@ -51,10 +51,9 @@ export default function StoreHeader({
               onClick={handleSearchClick}
               aria-label="Buscar productos en el catálogo"
               title="Buscar en el catálogo"
-              className="min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-all flex items-center gap-2"
+              className="min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] text-[var(--color-texto)] hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center transition-all cursor-pointer active:scale-95"
             >
-              <Search className="w-5 h-5" />
-              <span className="hidden md:inline font-medium">Buscar</span>
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" />
             </Link>
           </div>
 
