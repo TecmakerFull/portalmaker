@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   ArrowLeft,
   Navigation,
+  ChevronDown,
 } from 'lucide-react'
 import WhatsAppIcon from '../sections/whatsapp-icon'
 
@@ -159,7 +160,7 @@ export default function ContactoClient({ store, tenantQuery }: ContactoClientPro
                   <select
                     value={tipoConsulta}
                     onChange={(e) => setTipoConsulta(e.target.value)}
-                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-[var(--color-primario)] focus:ring-2 focus:ring-[var(--color-primario)]/20 transition-all cursor-pointer"
+                    className="w-full min-h-[44px] appearance-none pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-medium focus:outline-none focus:border-[var(--color-primario)] focus:ring-2 focus:ring-[var(--color-primario)]/20 transition-all cursor-pointer"
                   >
                     <option value="Presupuesto / Cotización" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 py-1.5">
                       Presupuesto / Cotización de Impresión o Corte
@@ -177,6 +178,7 @@ export default function ContactoClient({ store, tenantQuery }: ContactoClientPro
                       Otra Consulta
                     </option>
                   </select>
+                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 

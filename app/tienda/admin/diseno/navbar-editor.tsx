@@ -20,7 +20,8 @@ import {
   Package,
   Globe,
   Info,
-  Sliders
+  Sliders,
+  ChevronDown
 } from 'lucide-react';
 import type {
   NavbarSettings,
@@ -368,17 +369,20 @@ export function NavbarEditor({
                           <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                             Tipo de destino
                           </label>
-                          <select
-                            value={item.tipo_destino}
-                            onChange={(e) => handleUpdateItem(item.id, { tipo_destino: e.target.value as any })}
-                            className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-                          >
-                            <option value="catalogo">Catálogo completo</option>
-                            <option value="categoria">Categoría de productos</option>
-                            <option value="producto">Producto específico</option>
-                            <option value="pagina">Página informativa</option>
-                            <option value="custom">URL personalizada / Externa</option>
-                          </select>
+                          <div className="relative">
+                            <select
+                              value={item.tipo_destino}
+                              onChange={(e) => handleUpdateItem(item.id, { tipo_destino: e.target.value as any })}
+                              className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                            >
+                              <option value="catalogo" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Catálogo completo</option>
+                              <option value="categoria" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Categoría de productos</option>
+                              <option value="producto" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Producto específico</option>
+                              <option value="pagina" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Página informativa</option>
+                              <option value="custom" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">URL personalizada / Externa</option>
+                            </select>
+                            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          </div>
                         </div>
                       </div>
 
@@ -388,18 +392,21 @@ export function NavbarEditor({
                           <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                             Seleccionar Categoría
                           </label>
-                          <select
-                            value={item.destino_valor || ''}
-                            onChange={(e) => handleUpdateItem(item.id, { destino_valor: e.target.value })}
-                            className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-                          >
-                            <option value="">-- Elige una categoría --</option>
-                            {categories.map((cat) => (
-                              <option key={cat.id} value={cat.id}>
-                                {cat.nombre}
-                              </option>
-                            ))}
-                          </select>
+                          <div className="relative">
+                            <select
+                              value={item.destino_valor || ''}
+                              onChange={(e) => handleUpdateItem(item.id, { destino_valor: e.target.value })}
+                              className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                            >
+                              <option value="" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">-- Elige una categoría --</option>
+                              {categories.map((cat) => (
+                                <option key={cat.id} value={cat.id} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">
+                                  {cat.nombre}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          </div>
                         </div>
                       )}
 
@@ -408,18 +415,21 @@ export function NavbarEditor({
                           <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                             Seleccionar Producto
                           </label>
-                          <select
-                            value={item.destino_valor || ''}
-                            onChange={(e) => handleUpdateItem(item.id, { destino_valor: e.target.value })}
-                            className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-                          >
-                            <option value="">-- Elige un producto --</option>
-                            {products.map((prod) => (
-                              <option key={prod.id} value={prod.slug}>
-                                {prod.nombre}
-                              </option>
-                            ))}
-                          </select>
+                          <div className="relative">
+                            <select
+                              value={item.destino_valor || ''}
+                              onChange={(e) => handleUpdateItem(item.id, { destino_valor: e.target.value })}
+                              className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                            >
+                              <option value="" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">-- Elige un producto --</option>
+                              {products.map((prod) => (
+                                <option key={prod.id} value={prod.slug} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">
+                                  {prod.nombre}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          </div>
                         </div>
                       )}
 
@@ -428,18 +438,21 @@ export function NavbarEditor({
                           <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                             Seleccionar Página
                           </label>
-                          <select
-                            value={item.destino_valor || ''}
-                            onChange={(e) => handleUpdateItem(item.id, { destino_valor: e.target.value })}
-                            className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-                          >
-                            <option value="">-- Elige una página --</option>
-                            {pages.map((pg) => (
-                              <option key={pg.id} value={pg.slug}>
-                                {pg.titulo}
-                              </option>
-                            ))}
-                          </select>
+                          <div className="relative">
+                            <select
+                              value={item.destino_valor || ''}
+                              onChange={(e) => handleUpdateItem(item.id, { destino_valor: e.target.value })}
+                              className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                            >
+                              <option value="" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">-- Elige una página --</option>
+                              {pages.map((pg) => (
+                                <option key={pg.id} value={pg.slug} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">
+                                  {pg.titulo}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          </div>
                         </div>
                       )}
 

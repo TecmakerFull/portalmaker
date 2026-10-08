@@ -115,29 +115,35 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
           {/* Modo */}
           <div className="space-y-1.5">
             <label className="font-bold opacity-70 block">Modo de visualización</label>
-            <select
-              value={settings.modo}
-              onChange={(e) => handleSettingChange('modo', e.target.value)}
-              className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
-            >
-              <option value="rotativo">Rotativo (Pasa de mensaje en mensaje)</option>
-              <option value="ticker">Ticker / Marquee (Desplazamiento continuo)</option>
-              <option value="estatico">Estático (Mensajes fijos)</option>
-            </select>
+            <div className="relative">
+              <select
+                value={settings.modo}
+                onChange={(e) => handleSettingChange('modo', e.target.value)}
+                className="w-full appearance-none pl-3 pr-9 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer"
+              >
+                <option value="rotativo" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Rotativo (Pasa de mensaje en mensaje)</option>
+                <option value="ticker" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Ticker / Marquee (Desplazamiento continuo)</option>
+                <option value="estatico" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Estático (Mensajes fijos)</option>
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
           </div>
 
           {/* Color de Fondo */}
           <div className="space-y-1.5">
             <label className="font-bold opacity-70 block">Color de fondo</label>
-            <select
-              value={settings.fondo_color}
-              onChange={(e) => handleSettingChange('fondo_color', e.target.value)}
-              className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
-            >
-              <option value="primario">Color Primario de la Tienda</option>
-              <option value="superficie">Superficie Sutil (Gris claro / Oscuro)</option>
-              <option value="contraste">Alto Contraste (Negro / Blanco)</option>
-            </select>
+            <div className="relative">
+              <select
+                value={settings.fondo_color}
+                onChange={(e) => handleSettingChange('fondo_color', e.target.value)}
+                className="w-full appearance-none pl-3 pr-9 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer"
+              >
+                <option value="primario" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Color Primario de la Tienda</option>
+                <option value="superficie" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Superficie Sutil (Gris claro / Oscuro)</option>
+                <option value="contraste" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Alto Contraste (Negro / Blanco)</option>
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
           </div>
 
           {/* Intervalo / Velocidad */}
@@ -287,18 +293,21 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
                       <div className="w-9 h-9 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center justify-center shrink-0">
                         <SectionIcon name={item.icono} className="w-4 h-4 text-[var(--color-primario)]" />
                       </div>
-                      <select
-                        value={item.icono || ''}
-                        onChange={(e) => handleUpdateMessage(idx, 'icono', e.target.value)}
-                        className="w-full min-h-[38px] px-2.5 py-1.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs"
-                      >
-                        <option value="">Sin icono</option>
-                        {iconOptions.map((icon) => (
-                          <option key={icon} value={icon}>
-                            {icon}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="relative flex-1">
+                        <select
+                          value={item.icono || ''}
+                          onChange={(e) => handleUpdateMessage(idx, 'icono', e.target.value)}
+                          className="w-full appearance-none pl-2.5 pr-8 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer"
+                        >
+                          <option value="" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Sin icono</option>
+                          {iconOptions.map((icon) => (
+                            <option key={icon} value={icon} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">
+                              {icon}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
                     </div>
                   </div>
 

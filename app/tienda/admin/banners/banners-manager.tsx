@@ -250,8 +250,55 @@ export default function BannersManager({
           activo: s.activo,
         }))
 
-        const { error: insertError } = await supabase.from('banners').insert(rowsToInsert)
+        let { error: insertError } = await supabase.from('banners').insert(rowsToInsert)
+
+        // Si la columna subtitulo no existe en la base de datos de banners, reintentar sin ella
+        if (insertError && (insertError.message?.includes('subtitulo') || insertError.code === 'PGRST204')) {
+          const fallbackRows = rowsToInsert.map(({ subtitulo, ...rest }) => rest)
+          const fallbackResult = await supabase.from('banners').insert(fallbackRows)
+          insertError = fallbackResult.error
+        }
+
         if (insertError) throw insertError
+      }
+
+      // 4. Sincronizar también con la arquitectura modular store_sections (hero)
+      try {
+        const heroSlides = slides.map((s, idx) => ({
+          id: s.id || `slide-${idx}`,
+          imagen_desktop: s.imagen_url.trim(),
+          titulo: s.titulo.trim() || null,
+          subtitulo: s.subtitulo.trim() || null,
+          cta_texto: s.has_cta && s.cta_texto.trim() ? s.cta_texto.trim() : null,
+          cta_url: s.has_cta && s.cta_url.trim() ? s.cta_url.trim() : null,
+          cta_destino_tipo: s.cta_destino_tipo,
+          cta_destino_valor: s.cta_destino_valor,
+          orden: idx,
+          activo: s.activo,
+        }))
+
+        await supabase.from('store_sections').upsert(
+          {
+            store_id: store.id,
+            section_type: 'hero',
+            enabled: bannersActivo,
+            orden: 4,
+            settings: {
+              modo: 'carrusel',
+              autoplay: true,
+              intervalo_segundos: 5,
+              mostrar_flechas: true,
+              mostrar_indicadores: true,
+              pausar_hover: true,
+              altura: 'adaptable',
+            },
+            content: heroSlides,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'store_id,section_type' }
+        )
+      } catch (secErr) {
+        console.warn('Sincronización opcional con store_sections omitida:', secErr)
       }
 
       setMsg({ type: 'success', text: '¡Banners y carrusel promocional guardados con éxito!' })
@@ -648,17 +695,20 @@ export default function BannersManager({
                             {slide.cta_destino_tipo === 'producto' && (
                               <div className="pt-1">
                                 {products.length > 0 ? (
-                                  <select
-                                    value={slide.cta_destino_valor}
-                                    onChange={(e) => handleUpdateSlide(idx, 'cta_destino_valor', e.target.value)}
-                                    className="w-full min-h-[40px] px-3.5 py-2 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
-                                  >
-                                    {products.map((p) => (
-                                      <option key={p.id} value={p.slug}>
-                                        {p.nombre} {p.visible ? '' : '(Oculto)'}
-                                      </option>
-                                    ))}
-                                  </select>
+                                  <div className="relative">
+                                    <select
+                                      value={slide.cta_destino_valor}
+                                      onChange={(e) => handleUpdateSlide(idx, 'cta_destino_valor', e.target.value)}
+                                      className="w-full min-h-[42px] appearance-none pl-3.5 pr-10 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-white dark:bg-zinc-900 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer"
+                                    >
+                                      {products.map((p) => (
+                                        <option key={p.id} value={p.slug} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1.5">
+                                          {p.nombre} {p.visible ? '' : '(Oculto)'}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <ChevronDown className="w-4 h-4 text-zinc-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                  </div>
                                 ) : (
                                   <p className="text-xs opacity-60 italic">
                                     No hay productos cargados todavía en tu catálogo.
@@ -670,17 +720,20 @@ export default function BannersManager({
                             {slide.cta_destino_tipo === 'categoria' && (
                               <div className="pt-1">
                                 {categories.length > 0 ? (
-                                  <select
-                                    value={slide.cta_destino_valor}
-                                    onChange={(e) => handleUpdateSlide(idx, 'cta_destino_valor', e.target.value)}
-                                    className="w-full min-h-[40px] px-3.5 py-2 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
-                                  >
-                                    {categories.map((c) => (
-                                      <option key={c.id} value={c.id}>
-                                        {c.nombre}
-                                      </option>
-                                    ))}
-                                  </select>
+                                  <div className="relative">
+                                    <select
+                                      value={slide.cta_destino_valor}
+                                      onChange={(e) => handleUpdateSlide(idx, 'cta_destino_valor', e.target.value)}
+                                      className="w-full min-h-[42px] appearance-none pl-3.5 pr-10 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-white dark:bg-zinc-900 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer"
+                                    >
+                                      {categories.map((c) => (
+                                        <option key={c.id} value={c.id} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1.5">
+                                          {c.nombre}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <ChevronDown className="w-4 h-4 text-zinc-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                  </div>
                                 ) : (
                                   <p className="text-xs opacity-60 italic">
                                     No hay categorías cargadas todavía.

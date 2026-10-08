@@ -20,7 +20,8 @@ import {
   Sliders,
   ExternalLink,
   Info,
-  Clock
+  Clock,
+  ChevronDown
 } from 'lucide-react';
 import type {
   HeroBannerSettings,
@@ -484,17 +485,20 @@ export function HeroEditor({
                             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                               Destino del clic
                             </label>
-                            <select
-                              value={slide.cta_destino_tipo || 'catalogo'}
-                              onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_tipo: e.target.value as any })}
-                              className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-                            >
-                              <option value="catalogo">Catálogo general</option>
-                              <option value="categoria">Categoría</option>
-                              <option value="producto">Producto</option>
-                              <option value="pagina">Página</option>
-                              <option value="custom">URL personalizada</option>
-                            </select>
+                            <div className="relative">
+                              <select
+                                value={slide.cta_destino_tipo || 'catalogo'}
+                                onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_tipo: e.target.value as any })}
+                                className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                              >
+                                <option value="catalogo" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Catálogo general</option>
+                                <option value="categoria" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Categoría</option>
+                                <option value="producto" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Producto</option>
+                                <option value="pagina" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Página</option>
+                                <option value="custom" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">URL personalizada</option>
+                              </select>
+                              <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            </div>
                           </div>
 
                           <div>
@@ -502,38 +506,47 @@ export function HeroEditor({
                               Elemento destino
                             </label>
                             {slide.cta_destino_tipo === 'categoria' ? (
-                              <select
-                                value={slide.cta_destino_valor || ''}
-                                onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_valor: e.target.value })}
-                                className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none"
-                              >
-                                <option value="">-- Elige categoría --</option>
-                                {categories.map((c) => (
-                                  <option key={c.id} value={c.id}>{c.nombre}</option>
-                                ))}
-                              </select>
+                              <div className="relative">
+                                <select
+                                  value={slide.cta_destino_valor || ''}
+                                  onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_valor: e.target.value })}
+                                  className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                                >
+                                  <option value="" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">-- Elige categoría --</option>
+                                  {categories.map((c) => (
+                                    <option key={c.id} value={c.id} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">{c.nombre}</option>
+                                  ))}
+                                </select>
+                                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                              </div>
                             ) : slide.cta_destino_tipo === 'producto' ? (
-                              <select
-                                value={slide.cta_destino_valor || ''}
-                                onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_valor: e.target.value })}
-                                className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none"
-                              >
-                                <option value="">-- Elige producto --</option>
-                                {products.map((p) => (
-                                  <option key={p.id} value={p.slug}>{p.nombre}</option>
-                                ))}
-                              </select>
+                              <div className="relative">
+                                <select
+                                  value={slide.cta_destino_valor || ''}
+                                  onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_valor: e.target.value })}
+                                  className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                                >
+                                  <option value="" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">-- Elige producto --</option>
+                                  {products.map((p) => (
+                                    <option key={p.id} value={p.slug} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">{p.nombre}</option>
+                                  ))}
+                                </select>
+                                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                              </div>
                             ) : slide.cta_destino_tipo === 'pagina' ? (
-                              <select
-                                value={slide.cta_destino_valor || ''}
-                                onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_valor: e.target.value })}
-                                className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none"
-                              >
-                                <option value="">-- Elige página --</option>
-                                {pages.map((pg) => (
-                                  <option key={pg.id} value={pg.slug}>{pg.titulo}</option>
-                                ))}
-                              </select>
+                              <div className="relative">
+                                <select
+                                  value={slide.cta_destino_valor || ''}
+                                  onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_valor: e.target.value })}
+                                  className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                                >
+                                  <option value="" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">-- Elige página --</option>
+                                  {pages.map((pg) => (
+                                    <option key={pg.id} value={pg.slug} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">{pg.titulo}</option>
+                                  ))}
+                                </select>
+                                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                              </div>
                             ) : (
                               <input
                                 type="text"
