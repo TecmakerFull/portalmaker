@@ -143,6 +143,48 @@ export default function ProductoForm({
   // Modal para seleccionar foto de variante
   const [variantPhotoPickerIndex, setVariantPhotoPickerIndex] = useState<number | null>(null)
   const [customVariantUrl, setCustomVariantUrl] = useState('')
+  const [uploadingVariantImage, setUploadingVariantImage] = useState(false)
+  const variantFileInputRef = useRef<HTMLInputElement>(null)
+
+  // Subir archivo directo para variante
+  const handleUploadVariantFile = async (file: File) => {
+    if (variantPhotoPickerIndex === null) return
+    setUploadingVariantImage(true)
+    try {
+      const publicUrl = await processImageFile(file)
+      handleUpdateVariant(variantPhotoPickerIndex, 'imagen_url', publicUrl)
+      setImagenes((prev) => (prev.includes(publicUrl) ? prev : [...prev, publicUrl]))
+      setVariantPhotoPickerIndex(null)
+    } catch (err: any) {
+      alert('Error al subir la imagen de la variante: ' + (err?.message || 'Error desconocido'))
+    } finally {
+      setUploadingVariantImage(false)
+    }
+  }
+
+  // Pegar foto para variante con Ctrl + V
+  const handlePasteVariantImage = (e: React.ClipboardEvent) => {
+    if (variantPhotoPickerIndex === null) return
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      if (item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile()
+        if (file) {
+          e.preventDefault()
+          handleUploadVariantFile(file)
+          return
+        }
+      }
+    }
+
+    const pastedText = e.clipboardData.getData('text')
+    if (pastedText && (pastedText.startsWith('http://') || pastedText.startsWith('https://'))) {
+      setCustomVariantUrl(pastedText.trim())
+    }
+  }
 
   // 8. Creación Rápida de Categoría
   const [showNuevaCatModal, setShowNuevaCatModal] = useState(false)
@@ -1331,10 +1373,13 @@ export default function ProductoForm({
         </div>
       </form>
 
-      {/* Modal Seleccionar Foto para Variante */}
+      {/* Modal Seleccionar / Subir Foto para Variante */}
       {variantPhotoPickerIndex !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5">
+        <div
+          onPaste={handlePasteVariantImage}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+        >
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
                 <h3 className="text-base font-bold font-[var(--font-heading)] text-slate-900 dark:text-white">
@@ -1355,13 +1400,53 @@ export default function ProductoForm({
               </button>
             </div>
 
-            {/* Galería de fotos del producto para elegir */}
-            <div className="space-y-3">
+            {/* Input de archivo oculto */}
+            <input
+              type="file"
+              ref={variantFileInputRef}
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleUploadVariantFile(file)
+                if (e.target) e.target.value = ''
+              }}
+            />
+
+            {/* 1. Botón de Subida Directa y Soporte para Pegar (Ctrl + V) */}
+            <div
+              onClick={() => variantFileInputRef.current?.click()}
+              className="p-4 rounded-2xl border-2 border-dashed border-amber-400/50 hover:border-amber-500 bg-amber-400/5 hover:bg-amber-400/10 transition-all flex flex-col items-center justify-center gap-2 text-center cursor-pointer group"
+            >
+              {uploadingVariantImage ? (
+                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-semibold text-xs">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Optimizando a WebP y subiendo...</span>
+                </div>
+              ) : (
+                <>
+                  <div className="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                      Subir foto desde tu dispositivo o pegar con Ctrl + V
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Se comprime automáticamente a formato WebP ligero
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* 2. Galería de fotos del producto para elegir */}
+            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <label className="block text-xs font-semibold uppercase tracking-wider opacity-75">
-                Elige una de las fotos cargadas en este producto:
+                O elige una foto ya cargada en este producto:
               </label>
               {imagenes.length > 0 ? (
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5 max-h-48 overflow-y-auto p-1">
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5 max-h-40 overflow-y-auto p-1">
                   {imagenes.map((url, i) => {
                     const isSelected = variants[variantPhotoPickerIndex]?.imagen_url === url
                     return (
@@ -1390,22 +1475,22 @@ export default function ProductoForm({
                 </div>
               ) : (
                 <p className="text-xs text-slate-500 italic">
-                  Aún no has cargado fotos generales en el producto. Puedes ingresar una URL abajo o subir fotos en la sección de imágenes.
+                  Aún no has cargado fotos generales en el producto.
                 </p>
               )}
             </div>
 
-            {/* O ingresar URL directa */}
+            {/* 3. O ingresar URL directa */}
             <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <label className="block text-xs font-semibold uppercase tracking-wider opacity-75">
-                O escribe/pega una URL de imagen:
+                O escribe una URL de imagen:
               </label>
               <div className="flex items-center gap-2">
                 <input
                   type="url"
                   value={customVariantUrl}
                   onChange={(e) => setCustomVariantUrl(e.target.value)}
-                  placeholder="https://ejemplo.com/foto-variante.jpg"
+                  placeholder="https://ejemplo.com/foto-variante.webp"
                   className="flex-1 min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
                 />
                 <button
