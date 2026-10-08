@@ -29,6 +29,7 @@ import {
   MessageSquare,
   ShoppingBag,
   CreditCard,
+  BookOpen,
 } from 'lucide-react'
 import type { Store as StoreType } from '@/types/database'
 
@@ -58,6 +59,7 @@ export default function AdminSidebar({
   const [updatingStatus, setUpdatingStatus] = useState(false)
 
   const isInicio = pathname === '/tienda/admin'
+  const isGuia = pathname.includes('/tienda/admin/guia')
   const isVentas = pathname.includes('/tienda/admin/ventas')
   const isCategorias = pathname.includes('/tienda/admin/categorias')
   const isNuevoProducto = pathname.includes('/tienda/admin/productos/nuevo')
@@ -156,6 +158,24 @@ export default function AdminSidebar({
         >
           <Home className="w-4 h-4" />
           <span>Inicio</span>
+        </Link>
+
+        {/* Guía Paso a Paso */}
+        <Link
+          href={`/tienda/admin/guia${tenantQuery}`}
+          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            isGuia
+              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <BookOpen className="w-4 h-4 text-amber-500" />
+            <span>Guía Paso a Paso</span>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-800 dark:text-amber-300">
+            Tutorial
+          </span>
         </Link>
 
         {/* Ventas & Pedidos */}
