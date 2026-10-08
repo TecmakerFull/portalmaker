@@ -29,6 +29,10 @@ import {
   ShoppingBag,
   Truck,
   Phone,
+  Sliders,
+  Wand2,
+  Pipette,
+  RefreshCw,
 } from 'lucide-react'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 import { compressImageFile } from '@/lib/image-compression'
@@ -47,7 +51,6 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
   const [slogan, setSlogan] = useState(store.slogan ?? '')
   const [whatsapp, setWhatsapp] = useState(store.whatsapp_numero ?? '')
   const [logoUrl, setLogoUrl] = useState(store.logo_url ?? '')
-  const [mostrarNombreTienda, setMostrarNombreTienda] = useState((store as any).mostrar_nombre_tienda ?? true)
   const [uploadingLogo, setUploadingLogo] = useState(false)
 
   // Modo por defecto para la tienda pública
@@ -71,6 +74,7 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
 
   // Estados de interfaz
   const [previewMode, setPreviewMode] = useState<'claro' | 'oscuro'>('claro')
+  const [customModeTab, setCustomModeTab] = useState<'claro' | 'oscuro'>('claro')
   const [loading, setLoading] = useState(false)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -170,6 +174,11 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
   // Guardar cambios en Supabase
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!nombre.trim()) {
+      setErrorMsg('El nombre de la tienda es obligatorio.')
+      return
+    }
+
     setLoading(true)
     setErrorMsg(null)
     setSuccessMsg(null)
@@ -182,7 +191,6 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
           slogan: slogan.trim() || null,
           whatsapp_numero: whatsapp.trim() || null,
           logo_url: logoUrl.trim() || null,
-          mostrar_nombre_tienda: mostrarNombreTienda,
           tema_por_defecto: temaPorDefecto,
           color_primario: colorPrimario,
           color_secundario: colorSecundario,
@@ -194,6 +202,7 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
           color_texto_dark: colorTextoDark,
           font_heading: fontHeading,
           font_body: fontBody,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', store.id)
 
@@ -487,21 +496,25 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
         </div>
       </div>
 
-      {/* 3. Paletas de Color Preset (10 Opciones Oficiales) */}
+      {/* 3. Paletas de Color Preset (10 Opciones Oficiales + Paleta Personalizada) */}
       <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
         <div>
           <h2 className="text-base font-bold flex items-center gap-2">
             <Palette className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-            <span>Paleta de Colores de la Tienda (10 Opciones)</span>
+            <span>Paleta de Colores de la Tienda</span>
           </h2>
           <p className="text-xs opacity-70 mt-0.5">
-            Selecciona una de las 10 paletas de diseño. Cada una incluye sus versiones automáticas en modo claro y modo oscuro.
+            Selecciona una de las 10 combinaciones predefinidas o personaliza los colores exactos de tu marca.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {COLOR_PRESETS.map((preset) => {
-            const isSelected = colorPrimario === preset.claro.primario && colorSecundario === preset.claro.secundario
+            const isSelected =
+              colorPrimario.toLowerCase() === preset.claro.primario.toLowerCase() &&
+              colorSecundario.toLowerCase() === preset.claro.secundario.toLowerCase() &&
+              colorFondo.toLowerCase() === preset.claro.fondo.toLowerCase() &&
+              colorTexto.toLowerCase() === preset.claro.texto.toLowerCase()
 
             return (
               <button
@@ -546,6 +559,311 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
               </button>
             )
           })}
+
+          {/* Opción 11: Tarjeta de Paleta Personalizada (Ancho completo) */}
+          {(() => {
+            const isPresetActive = COLOR_PRESETS.some(
+              (p) =>
+                colorPrimario.toLowerCase() === p.claro.primario.toLowerCase() &&
+                colorSecundario.toLowerCase() === p.claro.secundario.toLowerCase() &&
+                colorFondo.toLowerCase() === p.claro.fondo.toLowerCase() &&
+                colorTexto.toLowerCase() === p.claro.texto.toLowerCase()
+            )
+            const isCustomActive = !isPresetActive
+
+            return (
+              <div
+                className={`sm:col-span-2 p-5 sm:p-6 rounded-2xl border transition-all space-y-4 ${
+                  isCustomActive
+                    ? 'border-[#FACC15] ring-2 ring-[#FACC15]/40 bg-[#FACC15]/5 shadow-sm'
+                    : 'border-[var(--color-borde)] bg-[var(--color-fondo)]/30 hover:border-[var(--color-texto-muted)]'
+                }`}
+              >
+                {/* Header de la tarjeta personalizada */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                        <Sliders className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-sm sm:text-base">11 Personalizada — Colores a Medida de tu Marca</span>
+                      {isCustomActive && (
+                        <span className="flex items-center gap-1 text-[11px] font-bold text-amber-800 dark:text-amber-200 bg-[#FDE68A] px-2.5 py-0.5 rounded-full">
+                          <Check className="w-3 h-3" />
+                          <span>Activa</span>
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs opacity-75">
+                      Define los códigos hexadecimales o usa el selector visual para replicar la identidad corporativa de tu taller.
+                    </p>
+                  </div>
+
+                  {/* Muestra en vivo de los colores actuales */}
+                  <div className="flex items-center gap-1.5 self-start sm:self-auto shrink-0 bg-black/5 dark:bg-white/5 p-1.5 rounded-xl border border-[var(--color-borde)]">
+                    <span className="text-[10px] font-mono opacity-60 mr-1 uppercase">Muestra:</span>
+                    <span
+                      className="w-5 h-5 rounded-md border border-black/20 dark:border-white/20 shadow-2xs"
+                      style={{ backgroundColor: colorPrimario }}
+                      title={`Primario: ${colorPrimario}`}
+                    />
+                    <span
+                      className="w-5 h-5 rounded-md border border-black/20 dark:border-white/20 shadow-2xs"
+                      style={{ backgroundColor: colorSecundario }}
+                      title={`Secundario: ${colorSecundario}`}
+                    />
+                    <span
+                      className="w-5 h-5 rounded-md border border-black/20 dark:border-white/20 shadow-2xs"
+                      style={{ backgroundColor: colorFondo }}
+                      title={`Fondo: ${colorFondo}`}
+                    />
+                    <span
+                      className="w-5 h-5 rounded-md border border-black/20 dark:border-white/20 shadow-2xs"
+                      style={{ backgroundColor: colorTexto }}
+                      title={`Texto: ${colorTexto}`}
+                    />
+                  </div>
+                </div>
+
+                {/* Selector de Pestaña Modo Claro / Modo Oscuro para la configuración personalizada */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-[var(--color-borde)]">
+                  <div className="flex items-center p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-[var(--color-borde)] text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setCustomModeTab('claro')}
+                      className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        customModeTab === 'claro'
+                          ? 'bg-white dark:bg-zinc-800 text-black dark:text-white shadow-xs'
+                          : 'opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <Sun className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Colores Modo Claro</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCustomModeTab('oscuro')}
+                      className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        customModeTab === 'oscuro'
+                          ? 'bg-zinc-900 text-white shadow-xs'
+                          : 'opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <Moon className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Colores Modo Oscuro</span>
+                    </button>
+                  </div>
+
+                  {customModeTab === 'oscuro' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setColorPrimarioDark(colorPrimario)
+                        setColorSecundarioDark(colorSecundario)
+                        setColorFondoDark('#0F172A')
+                        setColorTextoDark('#F8FAFC')
+                      }}
+                      className="px-3 py-1.5 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Wand2 className="w-3.5 h-3.5 text-[#CA8A04] dark:text-[#FACC15]" />
+                      <span>Generar contraste oscuro automático</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Grilla de Controles de Color */}
+                {customModeTab === 'claro' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5 pt-1">
+                    {/* 1. Primario Claro */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold opacity-75">
+                        Color Primario
+                      </label>
+                      <div className="flex items-center gap-2 p-1.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)]">
+                        <input
+                          type="color"
+                          value={colorPrimario.startsWith('#') && colorPrimario.length === 7 ? colorPrimario : '#FACC15'}
+                          onChange={(e) => setColorPrimario(e.target.value)}
+                          className="w-8 h-8 rounded-lg border-0 cursor-pointer p-0 bg-transparent shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={colorPrimario}
+                          onChange={(e) => setColorPrimario(e.target.value)}
+                          placeholder="#000000"
+                          className="w-full bg-transparent text-xs font-mono font-medium text-[var(--color-input-texto)] focus:outline-none uppercase"
+                        />
+                      </div>
+                      <span className="text-[10px] opacity-60 block">Botones, acentos y links</span>
+                    </div>
+
+                    {/* 2. Secundario Claro */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold opacity-75">
+                        Color Secundario
+                      </label>
+                      <div className="flex items-center gap-2 p-1.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)]">
+                        <input
+                          type="color"
+                          value={colorSecundario.startsWith('#') && colorSecundario.length === 7 ? colorSecundario : '#4B5563'}
+                          onChange={(e) => setColorSecundario(e.target.value)}
+                          className="w-8 h-8 rounded-lg border-0 cursor-pointer p-0 bg-transparent shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={colorSecundario}
+                          onChange={(e) => setColorSecundario(e.target.value)}
+                          placeholder="#000000"
+                          className="w-full bg-transparent text-xs font-mono font-medium text-[var(--color-input-texto)] focus:outline-none uppercase"
+                        />
+                      </div>
+                      <span className="text-[10px] opacity-60 block">Detalles y elementos suaves</span>
+                    </div>
+
+                    {/* 3. Fondo Claro */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold opacity-75">
+                        Color de Fondo
+                      </label>
+                      <div className="flex items-center gap-2 p-1.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)]">
+                        <input
+                          type="color"
+                          value={colorFondo.startsWith('#') && colorFondo.length === 7 ? colorFondo : '#FFFFFF'}
+                          onChange={(e) => setColorFondo(e.target.value)}
+                          className="w-8 h-8 rounded-lg border-0 cursor-pointer p-0 bg-transparent shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={colorFondo}
+                          onChange={(e) => setColorFondo(e.target.value)}
+                          placeholder="#FFFFFF"
+                          className="w-full bg-transparent text-xs font-mono font-medium text-[var(--color-input-texto)] focus:outline-none uppercase"
+                        />
+                      </div>
+                      <span className="text-[10px] opacity-60 block">Fondo general de la tienda</span>
+                    </div>
+
+                    {/* 4. Texto Claro */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold opacity-75">
+                        Color de Texto
+                      </label>
+                      <div className="flex items-center gap-2 p-1.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)]">
+                        <input
+                          type="color"
+                          value={colorTexto.startsWith('#') && colorTexto.length === 7 ? colorTexto : '#111827'}
+                          onChange={(e) => setColorTexto(e.target.value)}
+                          className="w-8 h-8 rounded-lg border-0 cursor-pointer p-0 bg-transparent shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={colorTexto}
+                          onChange={(e) => setColorTexto(e.target.value)}
+                          placeholder="#111827"
+                          className="w-full bg-transparent text-xs font-mono font-medium text-[var(--color-input-texto)] focus:outline-none uppercase"
+                        />
+                      </div>
+                      <span className="text-[10px] opacity-60 block">Títulos y párrafos</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5 pt-1">
+                    {/* 1. Primario Oscuro */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold opacity-75">
+                        Primario Oscuro
+                      </label>
+                      <div className="flex items-center gap-2 p-1.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)]">
+                        <input
+                          type="color"
+                          value={colorPrimarioDark.startsWith('#') && colorPrimarioDark.length === 7 ? colorPrimarioDark : '#FACC15'}
+                          onChange={(e) => setColorPrimarioDark(e.target.value)}
+                          className="w-8 h-8 rounded-lg border-0 cursor-pointer p-0 bg-transparent shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={colorPrimarioDark}
+                          onChange={(e) => setColorPrimarioDark(e.target.value)}
+                          placeholder="#000000"
+                          className="w-full bg-transparent text-xs font-mono font-medium text-[var(--color-input-texto)] focus:outline-none uppercase"
+                        />
+                      </div>
+                      <span className="text-[10px] opacity-60 block">Acentos en tema oscuro</span>
+                    </div>
+
+                    {/* 2. Secundario Oscuro */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold opacity-75">
+                        Secundario Oscuro
+                      </label>
+                      <div className="flex items-center gap-2 p-1.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)]">
+                        <input
+                          type="color"
+                          value={colorSecundarioDark.startsWith('#') && colorSecundarioDark.length === 7 ? colorSecundarioDark : '#9CA3AF'}
+                          onChange={(e) => setColorSecundarioDark(e.target.value)}
+                          className="w-8 h-8 rounded-lg border-0 cursor-pointer p-0 bg-transparent shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={colorSecundarioDark}
+                          onChange={(e) => setColorSecundarioDark(e.target.value)}
+                          placeholder="#000000"
+                          className="w-full bg-transparent text-xs font-mono font-medium text-[var(--color-input-texto)] focus:outline-none uppercase"
+                        />
+                      </div>
+                      <span className="text-[10px] opacity-60 block">Bordes y detalles oscuros</span>
+                    </div>
+
+                    {/* 3. Fondo Oscuro */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold opacity-75">
+                        Fondo Oscuro
+                      </label>
+                      <div className="flex items-center gap-2 p-1.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)]">
+                        <input
+                          type="color"
+                          value={colorFondoDark.startsWith('#') && colorFondoDark.length === 7 ? colorFondoDark : '#111827'}
+                          onChange={(e) => setColorFondoDark(e.target.value)}
+                          className="w-8 h-8 rounded-lg border-0 cursor-pointer p-0 bg-transparent shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={colorFondoDark}
+                          onChange={(e) => setColorFondoDark(e.target.value)}
+                          placeholder="#111827"
+                          className="w-full bg-transparent text-xs font-mono font-medium text-[var(--color-input-texto)] focus:outline-none uppercase"
+                        />
+                      </div>
+                      <span className="text-[10px] opacity-60 block">Fondo principal en tema dark</span>
+                    </div>
+
+                    {/* 4. Texto Oscuro */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold opacity-75">
+                        Texto Oscuro
+                      </label>
+                      <div className="flex items-center gap-2 p-1.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)]">
+                        <input
+                          type="color"
+                          value={colorTextoDark.startsWith('#') && colorTextoDark.length === 7 ? colorTextoDark : '#F9FAFB'}
+                          onChange={(e) => setColorTextoDark(e.target.value)}
+                          className="w-8 h-8 rounded-lg border-0 cursor-pointer p-0 bg-transparent shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={colorTextoDark}
+                          onChange={(e) => setColorTextoDark(e.target.value)}
+                          placeholder="#F9FAFB"
+                          className="w-full bg-transparent text-xs font-mono font-medium text-[var(--color-input-texto)] focus:outline-none uppercase"
+                        />
+                      </div>
+                      <span className="text-[10px] opacity-60 block">Lectura clara sobre fondo oscuro</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
       </div>
 
@@ -802,28 +1120,26 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
                   className="h-10 w-auto max-w-[120px] object-contain rounded-lg mb-1 shadow-2xs"
                 />
               )}
-              {mostrarNombreTienda && (
-                <h3
-                  className="text-base sm:text-lg font-bold uppercase tracking-tight"
-                  style={{
-                    color: currentPrimario,
-                    fontFamily:
-                      fontHeading === 'Inter'
-                        ? 'var(--font-inter), sans-serif'
-                        : fontHeading === 'Outfit'
-                        ? 'var(--font-outfit), sans-serif'
-                        : fontHeading === 'Playfair Display'
-                        ? 'var(--font-playfair-display), Georgia, serif'
-                        : fontHeading === 'Space Grotesk'
-                        ? 'var(--font-space-grotesk), sans-serif'
-                        : fontHeading === 'DM Serif Display'
-                        ? 'var(--font-dm-serif-display), Georgia, serif'
-                        : 'sans-serif',
-                  }}
-                >
-                  {nombre || 'Nombre de la Tienda'}
-                </h3>
-              )}
+              <h3
+                className="text-base sm:text-lg font-bold uppercase tracking-tight"
+                style={{
+                  color: currentPrimario,
+                  fontFamily:
+                    fontHeading === 'Inter'
+                      ? 'var(--font-inter), sans-serif'
+                      : fontHeading === 'Outfit'
+                      ? 'var(--font-outfit), sans-serif'
+                      : fontHeading === 'Playfair Display'
+                      ? 'var(--font-playfair-display), Georgia, serif'
+                      : fontHeading === 'Space Grotesk'
+                      ? 'var(--font-space-grotesk), sans-serif'
+                      : fontHeading === 'DM Serif Display'
+                      ? 'var(--font-dm-serif-display), Georgia, serif'
+                      : 'sans-serif',
+                }}
+              >
+                {nombre || 'Nombre de la Tienda'}
+              </h3>
               {slogan && <p className="text-[11px] opacity-70 mt-0.5">{slogan}</p>}
             </div>
 
