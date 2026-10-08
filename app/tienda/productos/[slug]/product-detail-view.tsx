@@ -43,6 +43,7 @@ export default function ProductDetailView({
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
     variants.length > 0 ? variants[0] : null
   )
+  const [variantImageOverride, setVariantImageOverride] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [addedSuccess, setAddedSuccess] = useState(false)
   const [cartFeedback, setCartFeedback] = useState<string | null>(null)
@@ -161,7 +162,7 @@ export default function ProductDetailView({
         <ProductGallery
           images={allImages}
           productName={product.nombre}
-          selectedImageOverride={selectedVariant?.imagen_url}
+          selectedImageOverride={variantImageOverride}
           onImageChange={handleGalleryImageChange}
         />
       </div>
@@ -177,6 +178,14 @@ export default function ProductDetailView({
           <h1 className="text-2xl sm:text-4xl font-extrabold font-[var(--font-heading)] leading-tight">
             {product.nombre}
           </h1>
+          {selectedVariant && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[var(--color-primario)]/15 text-[var(--color-primario)] border border-[var(--color-primario)]/30 inline-flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5" />
+                <span>Opción seleccionada: <strong>{selectedVariant.nombre}</strong></span>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Precio */}
@@ -228,6 +237,9 @@ export default function ProductDetailView({
                     onClick={() => {
                       setSelectedVariant(v)
                       setQuantity(1)
+                      if (v.imagen_url) {
+                        setVariantImageOverride(v.imagen_url)
+                      }
                     }}
                     className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all cursor-pointer ${
                       isSelected

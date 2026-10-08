@@ -8,6 +8,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import type { Product, Category, Store } from '@/types/database'
+import { useCart } from '@/lib/cart-context'
 import {
   Search,
   X,
@@ -18,6 +19,7 @@ import {
   Filter,
   Sparkles,
   ShoppingBag,
+  Check,
 } from 'lucide-react'
 import WhatsAppIcon from './sections/whatsapp-icon'
 
@@ -34,11 +36,49 @@ export default function CatalogView({
   store,
   tenantQuery,
 }: CatalogViewProps) {
+  const { addItem } = useCart()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | 'todos'>('todos')
+  const [addedProductId, setAddedProductId] = useState<string | null>(null)
+  const [cartNotification, setCartNotification] = useState<string | null>(null)
 
   // Teléfono limpio para WhatsApp
   const cleanPhone = store.whatsapp_numero ? store.whatsapp_numero.replace(/[^0-9]/g, '') : null
+
+  // Agregar directamente al carrito desde la tarjeta del catálogo
+  const handleAddToCart = (product: Product & { category?: { nombre: string } | null }, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const firstImage = product.imagenes && product.imagenes.length > 0 ? product.imagenes[0] : null
+    const effectivePrice = product.oferta_activa && product.precio_oferta ? product.precio_oferta : product.precio_base
+
+    const res = addItem(
+      {
+        productId: product.id,
+        productSlug: product.slug,
+        productName: product.nombre,
+        imagenUrl: firstImage,
+        variantId: null,
+        variantName: null,
+        unitPrice: effectivePrice,
+        originalPrice: product.oferta_activa ? product.precio_base : null,
+        gestionaStock: product.gestiona_stock,
+        stockDisponible: product.stock,
+        isReserva: !product.gestiona_stock || (product.stock ?? 0) <= 0,
+      },
+      1
+    )
+
+    if (res.success) {
+      setAddedProductId(product.id)
+      setCartNotification(`¡${product.nombre} agregado al carrito!`)
+      setTimeout(() => {
+        setAddedProductId(null)
+        setCartNotification(null)
+      }, 2000)
+    }
+  }
 
   // Filtrado reactivo por palabras sueltas (nombre, descripción, categoría) + categoría activa
   const filteredProducts = useMemo(() => {
@@ -79,50 +119,25 @@ export default function CatalogView({
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Barra de Búsqueda y Filtros de Categorías */}
-      <div className="space-y-4">
-        {/* Encabezado y Buscador */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold font-[var(--font-heading)]">
-              Catálogo de Productos
-            </h2>
-            <p className="text-xs sm:text-sm opacity-70 mt-0.5">
-              {filteredProducts.length}{' '}
-              {filteredProducts.length === 1 ? 'producto disponible' : 'productos disponibles'}
-              {(searchQuery || selectedCategoryId !== 'todos') && (
-                <span className="ml-1 opacity-80">(filtrado de {products.length})</span>
-              )}
-            </p>
-          </div>
-
-          {/* Campo de Búsqueda con palabras sueltas */}
-          <div className="relative w-full md:w-80">
-            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none opacity-50">
-              <Search className="w-4 h-4" />
-            </div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por nombre o descripción..."
-              className="w-full min-h-[42px] pl-9 pr-9 py-2 rounded-2xl border border-black/15 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.04] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)] focus:border-transparent transition-all placeholder:opacity-50"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                aria-label="Limpiar búsqueda"
-                className="absolute inset-y-0 right-2 flex items-center px-1.5 opacity-60 hover:opacity-100 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      <div className="space-y-3">
+        {/* Encabezado */}
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold font-[var(--font-heading)]">
+            Catálogo de Productos
+          </h2>
+          <p className="text-xs sm:text-sm opacity-70 mt-0.5">
+            {filteredProducts.length}{' '}
+            {filteredProducts.length === 1 ? 'producto disponible' : 'productos disponibles'}
+            {(searchQuery || selectedCategoryId !== 'todos') && (
+              <span className="ml-1 opacity-80">(filtrado de {products.length})</span>
             )}
-          </div>
+          </p>
         </div>
 
-        {/* Pastillas / Pills de Categorías (Más compactas y sutiles) */}
-        {categories.length > 0 && (
-          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1.5 scrollbar-none pt-0.5">
+        {/* Fila alineada: Pills de Categorías a la izquierda + Buscador a la derecha */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+          {/* Pastillas / Pills de Categorías (alineadas a la izquierda) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none flex-1 min-w-0">
             {/* Pill: Todos */}
             <button
               type="button"
@@ -155,7 +170,31 @@ export default function CatalogView({
               )
             })}
           </div>
-        )}
+
+          {/* Campo de Búsqueda alineado a la derecha en la misma fila */}
+          <div className="relative w-full sm:w-72 md:w-80 shrink-0">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none opacity-50">
+              <Search className="w-4 h-4" />
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar por nombre o descripción..."
+              className="w-full min-h-[38px] pl-9 pr-9 py-1.5 rounded-2xl border border-black/15 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.04] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)] focus:border-transparent transition-all placeholder:opacity-50"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                aria-label="Limpiar búsqueda"
+                className="absolute inset-y-0 right-2 flex items-center px-1.5 opacity-60 hover:opacity-100 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Grilla de Productos (2 Columnas en Mobile, 3 en Tablet, 4 en Desktop) */}
@@ -167,6 +206,7 @@ export default function CatalogView({
 
             const hasPrice = typeof product.precio_base === 'number' && product.precio_base > 0
             const isOutOfStock = product.gestiona_stock && (product.stock ?? 0) <= 0
+            const isAdded = addedProductId === product.id
 
             // Mensaje de WhatsApp personalizado por producto
             const productWaUrl = cleanPhone
@@ -249,13 +289,27 @@ export default function CatalogView({
                 {/* Botón de Acción según si tiene precio o no */}
                 <div className="p-2.5 sm:p-4 pt-0">
                   {hasPrice && !isOutOfStock ? (
-                    <Link
-                      href={`/tienda/productos/${product.slug}${tenantQuery}`}
-                      className="min-h-[40px] w-full flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-xl bg-[var(--color-primario)] text-white text-[11px] sm:text-xs font-bold hover:opacity-90 active:scale-98 transition-all shadow-xs"
+                    <button
+                      type="button"
+                      onClick={(e) => handleAddToCart(product, e)}
+                      className={`min-h-[40px] w-full flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-xl text-white text-[11px] sm:text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-98 ${
+                        isAdded
+                          ? 'bg-emerald-600 hover:bg-emerald-700'
+                          : 'bg-[var(--color-primario)] hover:opacity-90'
+                      }`}
                     >
-                      <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">Agregar</span>
-                    </Link>
+                      {isAdded ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 shrink-0" />
+                          <span>¡Agregado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">Agregar</span>
+                        </>
+                      )}
+                    </button>
                   ) : productWaUrl ? (
                     <a
                       href={productWaUrl}
