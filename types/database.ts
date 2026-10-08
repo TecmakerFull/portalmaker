@@ -53,6 +53,10 @@ export interface Store {
   whatsapp_numero: string | null;
 
   // Suscripción
+  plan?: 'starter' | 'maker_pro' | 'enterprise' | 'bonificado' | string;
+  precio_mensual?: number;
+  estado_pago?: 'al_dia' | 'pendiente' | 'bonificado' | 'gracia' | 'vencido';
+  notas_admin?: string | null;
   suscripcion_activa: boolean;
   fecha_inicio_suscripcion: DateString | null;
   fecha_proximo_vencimiento: DateString | null;

@@ -50,6 +50,7 @@ export default function NuevaTiendaModal() {
 
     try {
       const defaultPreset = COLOR_PRESETS.find((p) => p.id === 6) ?? COLOR_PRESETS[0]
+      const defaultDueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
       const { data, error } = await supabase
         .from('stores')
@@ -58,6 +59,12 @@ export default function NuevaTiendaModal() {
           slug: slug.trim().toLowerCase(),
           admin_email: adminEmail.trim().toLowerCase(),
           slogan: rubro,
+          plan: 'maker_pro',
+          precio_mensual: 0,
+          estado_pago: 'al_dia',
+          fecha_inicio_suscripcion: new Date().toISOString().split('T')[0],
+          fecha_proximo_vencimiento: defaultDueDate,
+          dias_gracia: 3,
           color_primario: defaultPreset.claro.primario,
           color_secundario: defaultPreset.claro.secundario,
           color_fondo: defaultPreset.claro.fondo,
