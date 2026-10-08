@@ -36,6 +36,8 @@ import {
   Image as ImageIcon,
 } from 'lucide-react'
 
+import { compressImageFile } from '@/lib/image-compression'
+
 interface LocalVariant {
   id?: string
   nombre: string
@@ -203,17 +205,30 @@ export default function ProductoForm({
 
   const [inputImageUrl, setInputImageUrl] = useState('')
 
-  // Procesar archivo individual (intenta subir a Storage, con fallback a Base64 si Storage no está disponible)
+  // Procesar archivo individual (optimización WebP en cliente + subida a Storage)
   const processImageFile = async (file: File): Promise<string> => {
+    // 1. Compresión y conversión client-side a WebP (máx 1400px, calidad 82%)
+    let fileToUpload = file
+    try {
+      fileToUpload = await compressImageFile(file, {
+        maxWidth: 1400,
+        maxHeight: 1400,
+        quality: 0.82,
+        format: 'image/webp',
+      })
+    } catch (compressErr) {
+      console.warn('No se pudo comprimir la imagen en cliente, usando archivo original:', compressErr)
+    }
+
     try {
       const bucketName = process.env.NEXT_PUBLIC_STORAGE_BUCKET || 'portalmaker-media'
-      const fileExt = file.name ? file.name.split('.').pop() : 'jpg'
-      const cleanExt = fileExt ? `.${fileExt}` : '.jpg'
+      const fileExt = fileToUpload.name ? fileToUpload.name.split('.').pop() : 'webp'
+      const cleanExt = fileExt ? `.${fileExt}` : '.webp'
       const filePath = `tiendas/${store.id}/productos/${Date.now()}-${Math.random().toString(36).substring(7)}${cleanExt}`
 
       const { error: uploadError } = await supabase.storage
         .from(bucketName)
-        .upload(filePath, file, { cacheControl: '3600', upsert: true })
+        .upload(filePath, fileToUpload, { cacheControl: '31536000', upsert: true })
 
       if (!uploadError) {
         const { data: { publicUrl } } = supabase.storage
@@ -232,7 +247,7 @@ export default function ProductoForm({
       reader.onloadend = () => {
         resolve(reader.result as string)
       }
-      reader.readAsDataURL(file)
+      reader.readAsDataURL(fileToUpload)
     })
   }
 

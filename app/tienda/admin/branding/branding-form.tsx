@@ -26,6 +26,7 @@ import {
   Link as LinkIcon,
   Clipboard,
 } from 'lucide-react'
+import { compressImageFile } from '@/lib/image-compression'
 
 interface BrandingFormProps {
   store: Store
@@ -70,19 +71,32 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
 
   const supabase = createSupabaseBrowserClient()
 
-  // Subir archivo de logo a Supabase Storage
+  // Subir archivo de logo a Supabase Storage con compresión WebP
   const uploadLogoFile = async (file: File) => {
     setUploadingLogo(true)
     setErrorMsg(null)
     try {
+      // Compresión client-side a WebP preservando transparencias (máx 800px)
+      let fileToUpload = file
+      try {
+        fileToUpload = await compressImageFile(file, {
+          maxWidth: 800,
+          maxHeight: 800,
+          quality: 0.88,
+          format: 'image/webp',
+        })
+      } catch (cErr) {
+        console.warn('Fallo compresión de logo, subiendo original:', cErr)
+      }
+
       const bucketName = process.env.NEXT_PUBLIC_STORAGE_BUCKET || 'portalmaker-media'
-      const fileExt = file.name ? file.name.split('.').pop() : 'png'
-      const cleanExt = fileExt ? `.${fileExt}` : '.png'
+      const fileExt = fileToUpload.name ? fileToUpload.name.split('.').pop() : 'webp'
+      const cleanExt = fileExt ? `.${fileExt}` : '.webp'
       const filePath = `tiendas/${store.id}/branding/logo-${Date.now()}${cleanExt}`
 
       const { error: uploadError } = await supabase.storage
         .from(bucketName)
-        .upload(filePath, file, { cacheControl: '3600', upsert: true })
+        .upload(filePath, fileToUpload, { cacheControl: '31536000', upsert: true })
 
       if (uploadError) throw uploadError
 

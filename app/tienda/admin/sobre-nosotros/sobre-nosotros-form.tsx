@@ -21,6 +21,7 @@ import {
   Eye,
   FileText,
 } from 'lucide-react'
+import { compressImageFile } from '@/lib/image-compression'
 
 interface SobreNosotrosFormProps {
   store: Store
@@ -65,19 +66,32 @@ export default function SobreNosotrosForm({
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  // Subir imagen a Supabase Storage
+  // Subir imagen a Supabase Storage con compresión WebP
   const uploadImageFile = async (file: File) => {
     setUploadingImage(true)
     setErrorMsg(null)
     try {
+      // Compresión en cliente a WebP (máx 1200px)
+      let fileToUpload = file
+      try {
+        fileToUpload = await compressImageFile(file, {
+          maxWidth: 1200,
+          maxHeight: 1200,
+          quality: 0.82,
+          format: 'image/webp',
+        })
+      } catch (cErr) {
+        console.warn('Fallo compresión en cliente, subiendo original:', cErr)
+      }
+
       const bucketName = process.env.NEXT_PUBLIC_STORAGE_BUCKET || 'portalmaker-media'
-      const fileExt = file.name ? file.name.split('.').pop() : 'png'
-      const cleanExt = fileExt ? `.${fileExt}` : '.png'
+      const fileExt = fileToUpload.name ? fileToUpload.name.split('.').pop() : 'webp'
+      const cleanExt = fileExt ? `.${fileExt}` : '.webp'
       const filePath = `tiendas/${store.id}/paginas/sobre-nosotros-${Date.now()}${cleanExt}`
 
       const { error: uploadError } = await supabase.storage
         .from(bucketName)
-        .upload(filePath, file, { cacheControl: '3600', upsert: true })
+        .upload(filePath, fileToUpload, { cacheControl: '31536000', upsert: true })
 
       if (uploadError) throw uploadError
 

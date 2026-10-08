@@ -31,6 +31,7 @@ import {
   FolderTree,
   Link2,
 } from 'lucide-react'
+import { compressImageFile } from '@/lib/image-compression'
 
 interface ProductOption {
   id: string
@@ -179,16 +180,30 @@ export default function BannersManager({
     setSlides(updated)
   }
 
-  // Subir imagen a Supabase Storage
+  // Subir imagen a Supabase Storage con compresión WebP
   const handleImageUpload = async (index: number, file: File) => {
     try {
       setUploadingIndex(index)
-      const fileExt = file.name.split('.').pop()
+
+      // Compresión client-side optimizada para banners de ancho completo (1920x1080 WebP)
+      let fileToUpload = file
+      try {
+        fileToUpload = await compressImageFile(file, {
+          maxWidth: 1920,
+          maxHeight: 1080,
+          quality: 0.82,
+          format: 'image/webp',
+        })
+      } catch (cErr) {
+        console.warn('Fallo compresión de banner, subiendo original:', cErr)
+      }
+
+      const fileExt = fileToUpload.name ? fileToUpload.name.split('.').pop() : 'webp'
       const fileName = `${store.id}/banner-${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`
 
       const { data, error } = await supabase.storage
         .from('portalmaker-media')
-        .upload(fileName, file, { upsert: true })
+        .upload(fileName, fileToUpload, { cacheControl: '31536000', upsert: true })
 
       if (error) throw error
 
