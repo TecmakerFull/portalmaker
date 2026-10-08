@@ -25,7 +25,12 @@ import {
   Trash2,
   Link as LinkIcon,
   Clipboard,
+  Search,
+  ShoppingBag,
+  Truck,
+  Phone,
 } from 'lucide-react'
+import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 import { compressImageFile } from '@/lib/image-compression'
 
 interface BrandingFormProps {
@@ -42,6 +47,7 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
   const [slogan, setSlogan] = useState(store.slogan ?? '')
   const [whatsapp, setWhatsapp] = useState(store.whatsapp_numero ?? '')
   const [logoUrl, setLogoUrl] = useState(store.logo_url ?? '')
+  const [mostrarNombreTienda, setMostrarNombreTienda] = useState((store as any).mostrar_nombre_tienda ?? true)
   const [uploadingLogo, setUploadingLogo] = useState(false)
 
   // Modo por defecto para la tienda pública
@@ -176,6 +182,7 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
           slogan: slogan.trim() || null,
           whatsapp_numero: whatsapp.trim() || null,
           logo_url: logoUrl.trim() || null,
+          mostrar_nombre_tienda: mostrarNombreTienda,
           tema_por_defecto: temaPorDefecto,
           color_primario: colorPrimario,
           color_secundario: colorSecundario,
@@ -738,52 +745,188 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
           </div>
         </div>
 
-        {/* Caja de Preview con los estilos dinámicos */}
+        {/* Caja de Preview con los estilos dinámicos modernos */}
         <div
-          className="rounded-2xl p-6 transition-colors duration-300 border border-black/10 dark:border-white/10 shadow-inner"
-          style={{ backgroundColor: currentFondo, color: currentTexto }}
+          className="rounded-3xl transition-colors duration-300 border border-slate-300 dark:border-slate-700 shadow-xl overflow-hidden relative"
+          style={{
+            backgroundColor: currentFondo,
+            color: currentTexto,
+            fontFamily:
+              fontBody === 'Inter'
+                ? 'var(--font-inter), sans-serif'
+                : fontBody === 'Outfit'
+                ? 'var(--font-outfit), sans-serif'
+                : fontBody === 'Playfair Display'
+                ? 'var(--font-playfair-display), Georgia, serif'
+                : fontBody === 'Space Grotesk'
+                ? 'var(--font-space-grotesk), sans-serif'
+                : fontBody === 'DM Serif Display'
+                ? 'var(--font-dm-serif-display), Georgia, serif'
+                : 'sans-serif',
+          }}
         >
-          {/* Header simulado */}
-          <div className="border-b pb-4 mb-6 flex items-center justify-between gap-3" style={{ borderColor: 'rgba(128,128,128,0.2)' }}>
-            <div className="flex items-center gap-3">
-              {logoUrl ? (
+          {/* 1. Barra de Navegador simulada */}
+          <div className="bg-slate-200 dark:bg-slate-800 px-4 py-2 border-b border-slate-300 dark:border-slate-700 flex items-center gap-2 select-none">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" />
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block" />
+            </div>
+            <div className="flex-1 max-w-xs mx-auto text-center bg-white/70 dark:bg-slate-900/70 rounded-md py-0.5 text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
+              {store.slug ? `${store.slug}.portalmaker.com.ar` : 'mi-tienda.portalmaker.com.ar'}
+            </div>
+          </div>
+
+          {/* 2. Top Bar sutil con mensaje */}
+          <div
+            className="px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2 text-center text-white"
+            style={{ backgroundColor: currentPrimario }}
+          >
+            <Truck className="w-3.5 h-3.5" />
+            <span>Envíos a todo el país • Consultas por WhatsApp</span>
+          </div>
+
+          {/* 3. Header Principal Moderno */}
+          <div className="p-4 sm:p-5 flex items-center justify-between gap-4 border-b border-black/5 dark:border-white/5">
+            {/* Buscador Pill */}
+            <div className="p-2.5 rounded-2xl border border-black/10 dark:border-white/10 flex items-center justify-center opacity-70">
+              <Search className="w-4 h-4" />
+            </div>
+
+            {/* Logo y Nombre de Marca */}
+            <div className="flex flex-col items-center text-center">
+              {logoUrl && (
                 <img
                   src={logoUrl}
                   alt={nombre}
-                  className="h-10 w-auto max-w-[120px] object-contain rounded-md"
+                  className="h-10 w-auto max-w-[120px] object-contain rounded-lg mb-1 shadow-2xs"
                 />
-              ) : null}
-              <div>
-                <h3 className="text-xl font-bold" style={{ color: currentPrimario }}>
+              )}
+              {mostrarNombreTienda && (
+                <h3
+                  className="text-base sm:text-lg font-bold uppercase tracking-tight"
+                  style={{
+                    color: currentPrimario,
+                    fontFamily:
+                      fontHeading === 'Inter'
+                        ? 'var(--font-inter), sans-serif'
+                        : fontHeading === 'Outfit'
+                        ? 'var(--font-outfit), sans-serif'
+                        : fontHeading === 'Playfair Display'
+                        ? 'var(--font-playfair-display), Georgia, serif'
+                        : fontHeading === 'Space Grotesk'
+                        ? 'var(--font-space-grotesk), sans-serif'
+                        : fontHeading === 'DM Serif Display'
+                        ? 'var(--font-dm-serif-display), Georgia, serif'
+                        : 'sans-serif',
+                  }}
+                >
                   {nombre || 'Nombre de la Tienda'}
                 </h3>
-                {slogan && <p className="text-xs opacity-75 mt-0.5">{slogan}</p>}
+              )}
+              {slogan && <p className="text-[11px] opacity-70 mt-0.5">{slogan}</p>}
+            </div>
+
+            {/* Íconos Tema & Carrito */}
+            <div className="flex items-center gap-2">
+              <div className="p-2.5 rounded-2xl border border-black/10 dark:border-white/10 flex items-center justify-center opacity-70">
+                {previewMode === 'claro' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              </div>
+              <div className="p-2.5 rounded-2xl border border-black/10 dark:border-white/10 flex items-center justify-center opacity-70">
+                <ShoppingBag className="w-4 h-4" />
               </div>
             </div>
-            <span
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white shadow-xs shrink-0"
-              style={{ backgroundColor: currentPrimario }}
-            >
-              WhatsApp
-            </span>
           </div>
 
-          {/* Card simulada */}
-          <div className="max-w-xs mx-auto rounded-xl p-4 border overflow-hidden shadow-sm" style={{ backgroundColor: 'rgba(128,128,128,0.08)', borderColor: 'rgba(128,128,128,0.15)' }}>
-            <div className="aspect-video w-full rounded-lg bg-black/10 dark:bg-white/10 flex items-center justify-center text-xs opacity-60 mb-3">
-              Foto de Producto
-            </div>
-            <h4 className="font-bold text-sm mb-1">Producto de Ejemplo</h4>
-            <p className="text-base font-bold mb-3" style={{ color: currentPrimario }}>
-              $15.000
-            </p>
-            <button
-              type="button"
-              className="w-full py-2 rounded-lg text-xs font-semibold text-white shadow-xs hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: currentPrimario }}
+          {/* 4. Navbar de Secciones */}
+          <div className="px-4 py-2.5 flex items-center justify-center gap-6 text-xs font-semibold border-b border-black/5 dark:border-white/5 opacity-80">
+            <span className="hover:opacity-100 cursor-pointer">Productos</span>
+            <span className="hover:opacity-100 cursor-pointer">Contacto & Ubicación</span>
+          </div>
+
+          {/* 5. Contenido & Catálogo Simulado */}
+          <div className="p-4 sm:p-6 space-y-5">
+            {/* Mini Banner Promocional */}
+            <div
+              className="p-5 rounded-2xl bg-gradient-to-r from-black/80 to-black/60 text-white flex flex-col items-start gap-2 shadow-sm"
+              style={{
+                borderColor: 'rgba(255,255,255,0.1)',
+              }}
             >
-              Consultar por WhatsApp
-            </button>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400">
+                Lanzamiento Especial
+              </span>
+              <h4 className="text-base sm:text-lg font-bold">Piezas 3D & Insumos Maker</h4>
+              <button
+                type="button"
+                className="mt-1 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xs transition-opacity hover:opacity-90"
+                style={{ backgroundColor: currentPrimario }}
+              >
+                Ver Producto
+              </button>
+            </div>
+
+            {/* Grilla de 2 Productos */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              {/* Producto 1 */}
+              <div
+                className="rounded-2xl p-3 border space-y-2 shadow-2xs"
+                style={{
+                  backgroundColor: previewMode === 'oscuro' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                  borderColor: previewMode === 'oscuro' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                }}
+              >
+                <div className="aspect-square w-full rounded-xl bg-black/10 dark:bg-white/10 flex items-center justify-center text-[11px] opacity-60">
+                  Foto 3D
+                </div>
+                <div className="space-y-1">
+                  <h5 className="font-bold text-xs truncate">Filamento PLA 1kg</h5>
+                  <p className="text-sm font-bold" style={{ color: currentPrimario }}>
+                    $24.000
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="w-full py-2 rounded-xl text-xs font-bold text-white shadow-xs flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: currentPrimario }}
+                >
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  <span>Agregar</span>
+                </button>
+              </div>
+
+              {/* Producto 2 */}
+              <div
+                className="rounded-2xl p-3 border space-y-2 shadow-2xs"
+                style={{
+                  backgroundColor: previewMode === 'oscuro' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                  borderColor: previewMode === 'oscuro' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                }}
+              >
+                <div className="aspect-square w-full rounded-xl bg-black/10 dark:bg-white/10 flex items-center justify-center text-[11px] opacity-60">
+                  Foto 3D
+                </div>
+                <div className="space-y-1">
+                  <h5 className="font-bold text-xs truncate">Soporte Gamer RGB</h5>
+                  <p className="text-sm font-bold" style={{ color: currentPrimario }}>
+                    $18.500
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="w-full py-2 rounded-xl text-xs font-bold text-white shadow-xs flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: currentPrimario }}
+                >
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  <span>Agregar</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Botón Flotante de WhatsApp en la esquina */}
+          <div className="absolute bottom-4 right-4 z-10 w-11 h-11 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer">
+            <WhatsAppIcon className="w-6 h-6 text-white" />
           </div>
         </div>
       </div>

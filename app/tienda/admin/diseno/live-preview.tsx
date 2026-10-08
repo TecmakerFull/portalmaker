@@ -116,14 +116,64 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
     sectionsList: sections,
   };
 
+  // Medición de ancho del contenedor para escalado proporcional dinámico
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(480);
+  const [contentHeight, setContentHeight] = useState(600);
+
+  React.useEffect(() => {
+    if (!containerRef.current) return;
+    const updateSize = () => {
+      if (containerRef.current) {
+        // Descontar padding lateral (aprox 32px)
+        const availableW = Math.max(300, containerRef.current.clientWidth - 32);
+        setContainerWidth(availableW);
+      }
+    };
+    updateSize();
+
+    const ro = new ResizeObserver(() => updateSize());
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!contentRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.height > 0) {
+          setContentHeight(Math.ceil(entry.contentRect.height));
+        }
+      }
+    });
+    ro.observe(contentRef.current);
+    return () => ro.disconnect();
+  }, [device, previewTheme, sections]);
+
+  // Dimensiones virtuales reales de cada dispositivo
+  const targetVirtualWidth =
+    device === 'desktop' ? 1024 : device === 'tablet' ? 768 : 375;
+
+  // Factor de escala calculado
+  const scale = Math.min(1, containerWidth / targetVirtualWidth);
+  const scaledWrapperWidth = Math.round(targetVirtualWidth * scale);
+  const scaledWrapperHeight = Math.round(contentHeight * scale);
+
   return (
-    <div className="flex flex-col h-full bg-zinc-100/70 dark:bg-zinc-950/70 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-inner">
+    <div
+      ref={containerRef}
+      className="flex flex-col h-full bg-zinc-100/70 dark:bg-zinc-950/70 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-inner"
+    >
       {/* Barra de control del simulador */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Vista Previa en Vivo
+            <span>Vista Previa</span>
+          </span>
+          <span className="text-[10px] font-mono opacity-50 hidden sm:inline">
+            ({targetVirtualWidth}px • {Math.round(scale * 100)}%)
           </span>
         </div>
 
@@ -132,7 +182,7 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
           <button
             type="button"
             onClick={() => setDevice('desktop')}
-            title="Vista de Computadora"
+            title="Vista de Computadora (1024px)"
             className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
               device === 'desktop'
                 ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm'
@@ -144,7 +194,7 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
           <button
             type="button"
             onClick={() => setDevice('tablet')}
-            title="Vista Tablet"
+            title="Vista Tablet (768px)"
             className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
               device === 'tablet'
                 ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm'
@@ -156,7 +206,7 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
           <button
             type="button"
             onClick={() => setDevice('mobile')}
-            title="Vista Móvil"
+            title="Vista Móvil (375px)"
             className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
               device === 'mobile'
                 ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm'
@@ -172,7 +222,7 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
           <button
             type="button"
             onClick={() => setPreviewTheme(previewTheme === 'light' ? 'dark' : 'light')}
-            className="p-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors"
+            className="p-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors cursor-pointer"
             title="Cambiar tema de la vista previa"
           >
             {previewTheme === 'light' ? (
@@ -184,62 +234,79 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
         </div>
       </div>
 
-      {/* Contenedor del marco simulado */}
-      <div className="flex-1 p-4 sm:p-6 overflow-y-auto flex items-start justify-center">
+      {/* Contenedor del marco simulado con escalado proporcional */}
+      <div className="flex-1 p-3 sm:p-4 overflow-y-auto overflow-x-hidden flex items-start justify-center">
+        {/* Wrapper que reserva el tamaño escalado exacto */}
         <div
-          className={`transition-all duration-300 mx-auto rounded-2xl shadow-xl overflow-hidden border border-zinc-300/80 dark:border-zinc-700/80 ${
-            previewTheme === 'dark' ? 'dark bg-zinc-950 text-zinc-100' : 'bg-white text-zinc-900'
-          } ${
-            device === 'desktop'
-              ? 'w-full max-w-5xl'
-              : device === 'tablet'
-              ? 'w-[768px]'
-              : 'w-[375px]'
-          }`}
+          style={{
+            width: `${scaledWrapperWidth}px`,
+            height: `${scaledWrapperHeight}px`,
+            minHeight: '300px',
+          }}
+          className="relative transition-all duration-300 mx-auto"
         >
-          {/* Barra superior de navegador simulada */}
-          <div className="bg-zinc-200 dark:bg-zinc-800 px-4 py-2 border-b border-zinc-300 dark:border-zinc-700 flex items-center gap-2">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" />
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block" />
+          {/* Elemento virtual con dimensiones reales escalado con CSS transform */}
+          <div
+            ref={contentRef}
+            style={{
+              width: `${targetVirtualWidth}px`,
+              transform: `scale(${scale})`,
+              transformOrigin: 'top left',
+            }}
+            className={`rounded-2xl shadow-xl overflow-hidden border border-zinc-300/80 dark:border-zinc-700/80 ${
+              previewTheme === 'dark' ? 'dark bg-zinc-950 text-zinc-100' : 'bg-white text-zinc-900'
+            }`}
+          >
+            {/* Barra superior de navegador simulada */}
+            <div className="bg-zinc-200 dark:bg-zinc-800 px-4 py-2 border-b border-zinc-300 dark:border-zinc-700 flex items-center gap-2 select-none">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block" />
+              </div>
+              <div className="flex-1 max-w-xs mx-auto text-center bg-white/70 dark:bg-zinc-900/70 rounded-md py-0.5 text-[11px] font-mono text-zinc-500 dark:text-zinc-400 truncate">
+                {store.slug ? `${store.slug}.portalmaker.com.ar` : 'mi-tienda.portalmaker.com.ar'}
+              </div>
             </div>
-            <div className="flex-1 max-w-xs mx-auto text-center bg-white/70 dark:bg-zinc-900/70 rounded-md py-0.5 text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
-              {store.slug ? `${store.slug}.portalmaker.com.ar` : 'mi-tienda.portalmaker.com.ar'}
-            </div>
-          </div>
 
-          {/* Renderizado de Secciones de la Tienda */}
-          <div className="relative min-h-[420px]">
-            {/* 1. Header Flow (Top Bar + Header + Navbar) */}
-            <StorefrontHeaderFlow
-              store={store}
-              resolvedSections={resolvedSections}
-              tenantQuery=""
-            />
-
-            {/* 2. Hero Banners */}
-            {heroSec && heroSec.enabled && (
-              <HeroBanners
-                section={heroSec}
+            {/* Renderizado de Secciones de la Tienda */}
+            <div className="relative min-h-[420px]">
+              {/* 1. Header Flow (Top Bar + Header + Navbar) */}
+              <StorefrontHeaderFlow
+                store={store}
+                resolvedSections={resolvedSections}
                 tenantQuery=""
               />
-            )}
 
-            {/* 3. Simulación de contenido de catálogo */}
-            <div className="p-6">
-              <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded mb-4" />
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 bg-zinc-50 dark:bg-zinc-900/50"
-                  >
-                    <div className="aspect-square bg-zinc-200 dark:bg-zinc-800 rounded-lg mb-2" />
-                    <div className="h-3 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded mb-1.5" />
-                    <div className="h-3 w-1/2 bg-zinc-200 dark:bg-zinc-800 rounded" />
-                  </div>
-                ))}
+              {/* 2. Hero Banners */}
+              {heroSec && heroSec.enabled && (
+                <HeroBanners
+                  section={heroSec}
+                  tenantQuery=""
+                />
+              )}
+
+              {/* 3. Simulación de contenido de catálogo */}
+              <div className="p-6">
+                <div className="h-4 w-36 bg-zinc-200 dark:bg-zinc-800 rounded mb-4" />
+                <div className={`grid gap-4 ${
+                  device === 'desktop'
+                    ? 'grid-cols-4'
+                    : device === 'tablet'
+                    ? 'grid-cols-3'
+                    : 'grid-cols-2'
+                }`}>
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 bg-zinc-50 dark:bg-zinc-900/50 space-y-2"
+                    >
+                      <div className="aspect-square bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
+                      <div className="h-3 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                      <div className="h-3 w-1/2 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
