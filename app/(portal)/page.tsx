@@ -6,6 +6,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import ThemeToggle from '@/app/tienda/theme-toggle'
+import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 import { Sparkles, Store, Palette, MessageSquare, ArrowRight, ShieldCheck, Zap, Mail, HelpCircle, ArrowUpRight } from 'lucide-react'
 
 // Contacto oficial del portal
@@ -203,11 +204,11 @@ export default function PortalHomePage() {
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-6 rounded-2xl border border-[var(--color-borde)] bg-black/[0.02] dark:bg-white/[0.02] hover:border-[#FACC15] hover:shadow-md transition-all flex flex-col justify-between gap-4 group"
+              className="p-6 rounded-2xl border border-[var(--color-borde)] bg-black/[0.02] dark:bg-white/[0.02] hover:border-[#25D366] hover:shadow-md transition-all flex flex-col justify-between gap-4 group"
             >
               <div className="space-y-2">
-                <div className="w-10 h-10 rounded-xl bg-[#FACC15]/20 text-[#CA8A04] dark:text-[#FACC15] flex items-center justify-center">
-                  <MessageSquare className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center">
+                  <WhatsAppIcon className="w-5 h-5" />
                 </div>
                 <h3 className="font-bold text-base">WhatsApp Directo</h3>
                 <p className="text-xs opacity-70 leading-relaxed">

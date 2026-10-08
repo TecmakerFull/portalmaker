@@ -31,8 +31,10 @@ import {
   Layers,
   ShoppingBag,
 } from 'lucide-react'
+import WhatsAppIcon from './whatsapp-icon'
 
 export const AVAILABLE_SECTION_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  WhatsApp: WhatsAppIcon,
   Truck,
   Instagram: Camera,
   Camera,

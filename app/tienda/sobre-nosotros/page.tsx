@@ -8,7 +8,7 @@ import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import StoreHeader from '@/app/tienda/store-header'
 import { renderMarkdown } from '@/lib/markdown'
-import { MessageSquare } from 'lucide-react'
+import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 
 export default async function TiendaSobreNosotrosPage() {
   const tenant = await getTenantStore()
@@ -119,9 +119,9 @@ export default async function TiendaSobreNosotrosPage() {
                 href={generalWhatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="min-h-[44px] px-6 py-3 rounded-2xl bg-[var(--color-primario)] text-white text-xs sm:text-sm font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-2 shadow-sm shrink-0"
+                className="min-h-[44px] px-6 py-3 rounded-2xl bg-[#25D366] hover:bg-[#20ba59] text-white text-xs sm:text-sm font-bold active:scale-95 transition-all flex items-center gap-2 shadow-sm shrink-0"
               >
-                <MessageSquare className="w-4 h-4" />
+                <WhatsAppIcon className="w-4 h-4 shrink-0" />
                 <span>Escribinos por WhatsApp</span>
               </a>
             </div>

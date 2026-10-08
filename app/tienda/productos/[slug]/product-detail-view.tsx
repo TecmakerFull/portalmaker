@@ -23,6 +23,7 @@ import {
   ArrowRight,
   ShieldCheck,
 } from 'lucide-react'
+import WhatsAppIcon from '../../sections/whatsapp-icon'
 
 interface ProductDetailViewProps {
   product: Product & { category?: { nombre: string } | null }
@@ -340,9 +341,9 @@ export default function ProductDetailView({
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="min-h-[44px] w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black/[0.04] dark:bg-white/[0.04] hover:bg-black/10 dark:hover:bg-white/10 text-xs font-semibold transition-all"
+                className="min-h-[44px] w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold transition-all border border-emerald-500/20"
               >
-                <MessageSquare className="w-3.5 h-3.5 text-[var(--color-primario)]" />
+                <WhatsAppIcon className="w-4 h-4 shrink-0" />
                 <span>¿Dudas? Consultar directamente por WhatsApp</span>
               </a>
             </div>

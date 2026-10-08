@@ -22,6 +22,7 @@ import {
   ArrowLeft,
   Navigation,
 } from 'lucide-react'
+import WhatsAppIcon from '../sections/whatsapp-icon'
 
 interface ContactoClientProps {
   store: Store
@@ -200,7 +201,7 @@ export default function ContactoClient({ store, tenantQuery }: ContactoClientPro
                 >
                   {cleanPhone ? (
                     <>
-                      <MessageSquare className="w-4 h-4" />
+                      <WhatsAppIcon className="w-4 h-4 shrink-0" />
                       <span>Enviar Consulta por WhatsApp</span>
                     </>
                   ) : (
@@ -227,8 +228,8 @@ export default function ContactoClient({ store, tenantQuery }: ContactoClientPro
               {/* WhatsApp */}
               {cleanPhone && (
                 <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[var(--color-primario)]/15 text-[var(--color-primario)] flex items-center justify-center shrink-0 mt-0.5">
-                    <MessageSquare className="w-4 h-4" />
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <WhatsAppIcon className="w-5 h-5 shrink-0" />
                   </div>
                   <div>
                     <span className="text-xs opacity-60 font-semibold uppercase tracking-wider block">
