@@ -64,12 +64,11 @@ export default function PortalHomePage() {
 
             {/* Botón Comienza gratis */}
             <Link
-              href="/login"
+              href="/login?mode=register"
               style={{ color: '#1F2937' }}
-              className="min-h-[44px] px-3.5 sm:px-5 py-2.5 rounded-full bg-[#FACC15] text-[#1F2937] text-xs sm:text-sm font-bold hover:bg-[#eab308] active:scale-95 transition-all shadow-xs flex items-center gap-1.5"
+              className="min-h-[44px] px-4 sm:px-5 py-2.5 rounded-full bg-[#FACC15] text-[#1F2937] text-xs sm:text-sm font-bold hover:bg-[#eab308] active:scale-95 transition-all shadow-xs flex items-center justify-center"
             >
               <span>Comienza gratis</span>
-              <ArrowRight className="w-4 h-4 text-[#1F2937]" />
             </Link>
           </div>
         </div>
@@ -96,7 +95,7 @@ export default function PortalHomePage() {
             style={{ color: '#1F2937' }}
             className="w-full min-h-[48px] px-8 py-3.5 rounded-2xl bg-[#FACC15] text-[#1F2937] text-sm sm:text-base font-bold hover:bg-[#eab308] active:scale-98 transition-all shadow-md flex items-center justify-center gap-2"
           >
-            <span>Crear mi Tienda</span>
+            <span>Ir a mi tienda</span>
             <ArrowRight className="w-4 h-4 text-[#1F2937]" />
           </Link>
 

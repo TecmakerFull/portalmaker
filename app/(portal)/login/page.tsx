@@ -5,8 +5,8 @@
 
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
@@ -28,9 +28,20 @@ import {
 
 type AuthMode = 'login' | 'register' | 'forgot'
 
-export default function LoginPage() {
+function LoginFormContent() {
   const router = useRouter()
-  const [mode, setMode] = useState<AuthMode>('login')
+  const searchParams = useSearchParams()
+  const initialMode = searchParams.get('mode') === 'register' || searchParams.get('modo') === 'registro' ? 'register' : 'login'
+  const [mode, setMode] = useState<AuthMode>(initialMode)
+
+  useEffect(() => {
+    const urlMode = searchParams.get('mode')
+    if (urlMode === 'register' || searchParams.get('modo') === 'registro') {
+      setMode('register')
+    } else if (urlMode === 'login') {
+      setMode('login')
+    }
+  }, [searchParams])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -485,6 +496,20 @@ export default function LoginPage() {
         Portalmaker — El portal del Maker
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <Loader2 className="w-8 h-8 animate-spin text-[#CA8A04]" />
+        </div>
+      }
+    >
+      <LoginFormContent />
+    </Suspense>
   )
 }
 
