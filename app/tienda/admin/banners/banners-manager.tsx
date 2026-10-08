@@ -17,6 +17,7 @@ import {
   UploadCloud,
   CheckCircle2,
   AlertCircle,
+  Check,
   Loader2,
   ExternalLink,
   ChevronUp,
@@ -303,6 +304,7 @@ export default function BannersManager({
 
       setMsg({ type: 'success', text: '¡Banners y carrusel promocional guardados con éxito!' })
       router.refresh()
+      setTimeout(() => setMsg(null), 4000)
     } catch (err: any) {
       console.error('Error al guardar banners:', err)
       setMsg({ type: 'error', text: err?.message || 'Error al guardar los banners.' })
@@ -766,30 +768,59 @@ export default function BannersManager({
       </div>
 
       {/* Botón Guardar Cambios Fijo / Destacado */}
-      <div className="pt-4 border-t border-black/10 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="pt-4 border-t border-black/10 dark:border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         <p className="text-xs opacity-60">
           Los cambios se reflejarán de inmediato en tu tienda pública.
         </p>
 
-        <button
-          type="button"
-          onClick={handleSaveAll}
-          disabled={saving}
-          className="min-h-[48px] w-full sm:w-auto px-8 py-3 rounded-2xl bg-[var(--color-primario)] text-white text-sm font-bold hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
-        >
-          {saving ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Guardando banners...</span>
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              <span>Guardar Banners</span>
-            </>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {msg && (
+            <div
+              className={`p-3 px-4 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 animate-in fade-in ${
+                msg.type === 'success'
+                  ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+                  : 'bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400'
+              }`}
+            >
+              {msg.type === 'success' ? (
+                <Check className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+              )}
+              <span>{msg.text}</span>
+            </div>
           )}
-        </button>
+
+          <button
+            type="button"
+            onClick={handleSaveAll}
+            disabled={saving}
+            className="min-h-[48px] w-full sm:w-auto px-8 py-3 rounded-2xl bg-[var(--color-primario)] text-white text-sm font-bold hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50 shrink-0"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Guardando banners...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                <span>Guardar Banners</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Notificación Toast Flotante */}
+      {msg && msg.type === 'success' && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-[#1F2937] text-white text-sm font-medium shadow-2xl border border-white/10 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
+            <Check className="w-3.5 h-3.5" />
+          </div>
+          <span>{msg.text}</span>
+        </div>
+      )}
     </div>
   )
 }

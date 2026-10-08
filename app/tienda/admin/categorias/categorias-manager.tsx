@@ -45,6 +45,7 @@ export default function CategoriasManager({
   const [parentId, setParentId] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   // Abrir modal para nueva categoría raíz
@@ -115,6 +116,7 @@ export default function CategoriasManager({
               : c
           )
         )
+        setSuccessMsg(`¡Categoría "${nombre.trim()}" actualizada exitosamente!`)
       } else {
         // Crear
         const { data, error } = await supabase
@@ -134,6 +136,7 @@ export default function CategoriasManager({
         if (data) {
           setCategories((prev) => [...prev, data])
         }
+        setSuccessMsg(`¡Categoría "${nombre.trim()}" creada exitosamente!`)
       }
 
       setIsOpenModal(false)
@@ -141,6 +144,7 @@ export default function CategoriasManager({
       setParentId('')
       setEditingCategory(null)
       router.refresh()
+      setTimeout(() => setSuccessMsg(null), 4000)
     } catch (err: any) {
       setErrorMsg(err?.message || 'Error al guardar la categoría.')
     } finally {
@@ -164,7 +168,9 @@ export default function CategoriasManager({
       if (error) throw error
 
       setCategories((prev) => prev.filter((c) => c.id !== categoryId && c.parent_id !== categoryId))
+      setSuccessMsg('Categoría eliminada correctamente.')
       router.refresh()
+      setTimeout(() => setSuccessMsg(null), 4000)
     } catch (err: any) {
       alert(err?.message || 'Error al eliminar la categoría.')
     } finally {
@@ -441,6 +447,16 @@ export default function CategoriasManager({
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Notificación Toast Flotante */}
+      {successMsg && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-[#1F2937] text-white text-sm font-medium shadow-2xl border border-white/10 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
+            <Check className="w-3.5 h-3.5" />
+          </div>
+          <span>{successMsg}</span>
         </div>
       )}
     </div>

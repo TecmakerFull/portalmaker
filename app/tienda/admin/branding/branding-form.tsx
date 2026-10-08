@@ -180,6 +180,7 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
 
       setSuccessMsg('¡Configuración de marca guardada exitosamente!')
       router.refresh()
+      setTimeout(() => setSuccessMsg(null), 4000)
     } catch (err: any) {
       setErrorMsg(err?.message || 'Error al guardar la configuración.')
     } finally {
@@ -773,12 +774,25 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
         </div>
       </div>
 
-      {/* Botón de Guardar */}
-      <div className="flex items-center justify-end">
+      {/* Botón de Guardar y Feedback */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-2">
+        {successMsg && (
+          <div className="p-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-sm flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+            <Check className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <span>{successMsg}</span>
+          </div>
+        )}
+        {errorMsg && (
+          <div className="p-3 px-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-sm flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={loading}
-          className="min-h-[48px] px-8 py-3 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-xs cursor-pointer"
+          className="min-h-[48px] px-8 py-3 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-xs cursor-pointer shrink-0"
         >
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
@@ -790,6 +804,16 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
           )}
         </button>
       </div>
+
+      {/* Notificación Toast Flotante */}
+      {successMsg && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-[#1F2937] text-white text-sm font-medium shadow-2xl border border-white/10 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
+            <Check className="w-3.5 h-3.5" />
+          </div>
+          <span>{successMsg}</span>
+        </div>
+      )}
     </form>
   )
 }

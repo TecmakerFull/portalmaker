@@ -218,11 +218,24 @@ export default function PerfilManager({
             </div>
           </div>
 
-          <div className="flex justify-end pt-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-2">
+            {storeSuccessMsg && (
+              <div className="p-2.5 px-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+                <Check className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <span>{storeSuccessMsg}</span>
+              </div>
+            )}
+            {storeErrorMsg && (
+              <div className="p-2.5 px-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                <span>{storeErrorMsg}</span>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={savingStore}
-              className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-bold text-xs hover:bg-[#EAB308] active:scale-98 transition-all flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+              className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-bold text-xs hover:bg-[#EAB308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
             >
               {savingStore ? (
                 <>
@@ -238,6 +251,16 @@ export default function PerfilManager({
             </button>
           </div>
         </form>
+
+        {/* Notificación Toast Flotante */}
+        {storeSuccessMsg && (
+          <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-[#1F2937] text-white text-sm font-medium shadow-2xl border border-white/10 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+            <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
+              <Check className="w-3.5 h-3.5" />
+            </div>
+            <span>{storeSuccessMsg}</span>
+          </div>
+        )}
       </div>
 
       {/* 2. Tarjeta de Estado de Cuenta & Suscripción */}

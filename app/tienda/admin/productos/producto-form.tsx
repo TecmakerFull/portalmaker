@@ -1272,6 +1272,14 @@ export default function ProductoForm({
           )}
         </div>
 
+        {/* Feedback de error o éxito al lado del botón */}
+        {errorMsg && (
+          <div className="p-3 px-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs sm:text-sm flex items-center gap-2 animate-in fade-in">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
         {/* Botones de Guardar */}
         <div className="flex items-center justify-end gap-3 pt-2">
           {isModal ? (

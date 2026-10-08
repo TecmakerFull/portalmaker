@@ -74,6 +74,7 @@ export default function DominioManager({
       )
       setCustomDomain(cleanDomain)
       router.refresh()
+      setTimeout(() => setSuccessMsg(null), 5000)
     } catch (err: any) {
       setErrorMsg(err?.message || 'Error al guardar el dominio.')
     } finally {
@@ -96,6 +97,7 @@ export default function DominioManager({
       setCustomDomain('')
       setSuccessMsg('Dominio propio desvinculado correctamente.')
       router.refresh()
+      setTimeout(() => setSuccessMsg(null), 4000)
     } catch (err: any) {
       setErrorMsg(err?.message || 'Error al desvincular el dominio.')
     } finally {
@@ -350,6 +352,16 @@ export default function DominioManager({
           </div>
         </div>
       </div>
+
+      {/* Notificación Toast Flotante */}
+      {successMsg && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-[#1F2937] text-white text-sm font-medium shadow-2xl border border-white/10 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
+            <Check className="w-3.5 h-3.5" />
+          </div>
+          <span>{successMsg}</span>
+        </div>
+      )}
     </div>
   )
 }

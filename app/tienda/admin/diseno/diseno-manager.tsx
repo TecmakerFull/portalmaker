@@ -423,6 +423,16 @@ export function DisenoManager({
           </div>
         </div>
       </div>
+
+      {/* Toast Flotante de Confirmación */}
+      {saveSuccess && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-[#1F2937] text-white text-sm font-medium shadow-2xl border border-white/10 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <span>¡Diseño guardado exitosamente! Los cambios ya están activos.</span>
+        </div>
+      )}
     </div>
   );
 }
