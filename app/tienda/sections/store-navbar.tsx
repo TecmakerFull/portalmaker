@@ -58,11 +58,12 @@ export default function StoreNavbar({ section, tenantQuery }: StoreNavbarProps) 
           {items.map((item, idx) => {
             const destUrl = formatUrl(item.destino_url)
             const isExternal = destUrl.startsWith('http')
+            const cleanDest = (item.destino_url || '/tienda').split('?')[0]
             const isActive =
               !isExternal &&
-              (destUrl === `/tienda${tenantQuery}` || destUrl === '/tienda'
-                ? pathname === '/tienda'
-                : pathname.includes(item.destino_url.split('?')[0]))
+              (cleanDest === '/tienda'
+                ? pathname === '/tienda' || pathname.startsWith('/tienda/productos')
+                : pathname.startsWith(cleanDest))
 
             const isPill = estilo === 'pills'
 

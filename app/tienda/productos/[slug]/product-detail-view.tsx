@@ -100,7 +100,7 @@ export default function ProductDetailView({
   }
 
   // Agregar al Carrito
-  const handleAddToCart = (andOpenCart: boolean = true) => {
+  const handleAddToCart = (andOpenCart: boolean = false) => {
     const itemToAdd = {
       productId: product.id,
       productSlug: product.slug,
@@ -119,7 +119,7 @@ export default function ProductDetailView({
 
     if (res.success) {
       setAddedSuccess(true)
-      setCartFeedback('¡Agregado al carrito!')
+      setCartFeedback('Producto agregado al carrito')
       setTimeout(() => {
         setAddedSuccess(false)
         setCartFeedback(null)
@@ -316,11 +316,24 @@ export default function ProductDetailView({
             {/* Botón Agregar al Carrito */}
             <button
               type="button"
-              onClick={() => handleAddToCart(true)}
-              className="min-h-[50px] w-full px-5 py-3 rounded-2xl border-2 border-[var(--color-primario)] text-[var(--color-primario)] hover:bg-[var(--color-primario)]/10 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer shadow-xs"
+              onClick={() => handleAddToCart(false)}
+              className={`min-h-[50px] w-full px-5 py-3 rounded-2xl border-2 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer shadow-xs ${
+                addedSuccess
+                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                  : 'border-[var(--color-primario)] text-[var(--color-primario)] hover:bg-[var(--color-primario)]/10'
+              }`}
             >
-              <ShoppingBag className="w-4 h-4" />
-              <span>Agregar al carrito</span>
+              {addedSuccess ? (
+                <>
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span>Producto agregado</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="w-4 h-4 shrink-0" />
+                  <span>Agregar al carrito</span>
+                </>
+              )}
             </button>
 
             {/* Botón Comprar / Reservar Ahora */}

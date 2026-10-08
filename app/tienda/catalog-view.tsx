@@ -254,7 +254,7 @@ export default function CatalogView({
                       className="min-h-[40px] w-full flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-xl bg-[var(--color-primario)] text-white text-[11px] sm:text-xs font-bold hover:opacity-90 active:scale-98 transition-all shadow-xs"
                     >
                       <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">Comprar</span>
+                      <span className="truncate">Agregar</span>
                     </Link>
                   ) : productWaUrl ? (
                     <a

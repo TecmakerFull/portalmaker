@@ -6,8 +6,9 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import StoreHeader from '@/app/tienda/store-header'
+import StorefrontHeaderFlow from '@/app/tienda/sections/storefront-header-flow'
 import ContactoClient from './contacto-client'
+import { getStoreSections } from '@/lib/store-sections'
 
 export default async function TiendaContactoPage() {
   const tenant = await getTenantStore()
@@ -32,19 +33,29 @@ export default async function TiendaContactoPage() {
 
   const hasSobreNosotros = !!sobreNosotrosPage
 
-  return (
-    <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] transition-colors duration-200">
-      {/* Header */}
-      <StoreHeader
-        store={store}
-        tenantQuery={tenantQuery}
-        hasSobreNosotros={hasSobreNosotros}
-      />
+  // Obtener secciones modulares de Storefront (Top Bar, Header, Navbar)
+  const resolvedSections = await getStoreSections(
+    supabase,
+    store.id,
+    store,
+    hasSobreNosotros
+  )
 
-      {/* Main */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <ContactoClient store={store} tenantQuery={tenantQuery} />
-      </main>
+  return (
+    <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] transition-colors duration-200 flex flex-col justify-between">
+      <div>
+        {/* Cabecera y Navegación Modular (Top Bar -> Header -> Navbar) */}
+        <StorefrontHeaderFlow
+          store={store}
+          resolvedSections={resolvedSections}
+          tenantQuery={tenantQuery}
+        />
+
+        {/* Main */}
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+          <ContactoClient store={store} tenantQuery={tenantQuery} />
+        </main>
+      </div>
 
       {/* Footer */}
       <footer className="mt-20 border-t border-black/10 dark:border-white/10 py-8 text-center text-xs opacity-60 space-y-2">

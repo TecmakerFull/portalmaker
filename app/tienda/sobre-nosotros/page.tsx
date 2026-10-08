@@ -6,9 +6,10 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import StoreHeader from '@/app/tienda/store-header'
+import StorefrontHeaderFlow from '@/app/tienda/sections/storefront-header-flow'
 import { renderMarkdown } from '@/lib/markdown'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
+import { getStoreSections } from '@/lib/store-sections'
 
 export default async function TiendaSobreNosotrosPage() {
   const tenant = await getTenantStore()
@@ -58,17 +59,26 @@ export default async function TiendaSobreNosotrosPage() {
     ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hola ${store.nombre}! Leí su sección Sobre Nosotros y me gustaría consultarles.`)}`
     : null
 
-  return (
-    <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] transition-colors duration-200">
-      {/* Header */}
-      <StoreHeader
-        store={store}
-        tenantQuery={tenantQuery}
-        hasSobreNosotros={true}
-      />
+  // Obtener secciones modulares de Storefront (Top Bar, Header, Navbar)
+  const resolvedSections = await getStoreSections(
+    supabase,
+    store.id,
+    store,
+    true
+  )
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-16 space-y-10">
+  return (
+    <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] transition-colors duration-200 flex flex-col justify-between">
+      <div>
+        {/* Cabecera y Navegación Modular (Top Bar -> Header -> Navbar) */}
+        <StorefrontHeaderFlow
+          store={store}
+          resolvedSections={resolvedSections}
+          tenantQuery={tenantQuery}
+        />
+
+        {/* Main Content */}
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-16 space-y-10">
         <div className="text-center space-y-3">
           <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primario)] bg-[var(--color-primario)]/10 px-3 py-1 rounded-full inline-block">
             Conocé nuestro taller
@@ -128,6 +138,7 @@ export default async function TiendaSobreNosotrosPage() {
           )}
         </div>
       </main>
+    </div>
 
       {/* Footer */}
       <footer className="mt-20 border-t border-black/10 dark:border-white/10 py-8 text-center text-xs opacity-60 space-y-2">
