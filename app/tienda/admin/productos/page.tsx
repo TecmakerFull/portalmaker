@@ -19,10 +19,10 @@ export default async function AdminProductosPage() {
 
   const supabase = await createSupabaseServerClient()
 
-  // 1. Obtener productos de la tienda ordenados por fecha
+  // 1. Obtener productos de la tienda con variantes y categoría
   const { data: products } = await supabase
     .from('products')
-    .select('*, category:categories(nombre)')
+    .select('*, category:categories(nombre), variants:product_variants(*)')
     .eq('store_id', store.id)
     .order('created_at', { ascending: false })
 
