@@ -363,5 +363,30 @@ body {
   }
 }
 
+/* =============================================================================
+ * TOP BAR TICKER / MARQUEE ANIMATION
+ * ============================================================================= */
+@keyframes ticker {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-ticker {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  width: max-content !important;
+  animation: ticker 25s linear infinite;
+  will-change: transform;
+}
+
+.animate-ticker:hover,
+.animation-paused {
+  animation-play-state: paused !important;
+}
+
 
 

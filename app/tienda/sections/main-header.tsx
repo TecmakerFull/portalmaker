@@ -40,8 +40,11 @@ export default function MainHeader({
     mostrar_buscador = true,
     mostrar_carrito = true,
     mostrar_tema_toggle = true,
+    logo_posicion = 'centro',
     sticky = true,
   } = settings || {}
+
+  const isCenter = logo_posicion === 'centro'
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -63,123 +66,198 @@ export default function MainHeader({
     return `${path}${sep}${tenantQuery.replace('?', '')}`
   }
 
+  // Componente reutilizable del Logo y Nombre
+  const renderLogoAndBrand = (centered: boolean = false) => (
+    <Link
+      href={withTenant('/tienda')}
+      className={`min-w-0 flex items-center gap-2 sm:gap-3 group focus:outline-none ${
+        centered ? 'justify-center text-center' : 'justify-start'
+      }`}
+    >
+      {store.logo_url ? (
+        <img
+          src={store.logo_url}
+          alt={store.nombre}
+          className="h-8 sm:h-11 w-auto max-w-[130px] sm:max-w-[180px] object-contain rounded-lg shrink-0"
+        />
+      ) : null}
+
+      {(!store.logo_url || mostrar_nombre) && (
+        <div className={`min-w-0 ${centered ? 'text-center' : 'text-left'}`}>
+          <span className="brand text-[var(--color-primario)] block truncate text-base sm:text-xl lg:text-2xl">
+            {store.nombre}
+            <span className="text-[var(--color-texto)]">.</span>
+          </span>
+          {store.slogan && (
+            <span className="mt-0.5 block text-[10px] sm:text-[11px] opacity-70 truncate font-normal">
+              {store.slogan}
+            </span>
+          )}
+        </div>
+      )}
+    </Link>
+  )
+
+  // Componente reutilizable del Buscador Desktop
+  const renderSearchBar = (extraClasses: string = '') => (
+    <form
+      onSubmit={handleSearchSubmit}
+      role="search"
+      className={`hidden md:flex items-center rounded-xl border border-black/15 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.04] px-3.5 focus-within:border-[var(--color-primario)] focus-within:ring-2 focus-within:ring-[var(--color-primario)]/20 transition-all ${extraClasses}`}
+    >
+      <Search className="w-4 h-4 opacity-50 shrink-0" />
+      <input
+        type="text"
+        aria-label="Buscar productos"
+        placeholder="¿Qué estás buscando?"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="h-10 min-w-0 flex-1 bg-transparent px-3 text-xs outline-none placeholder:opacity-50 text-[var(--color-texto)]"
+      />
+      <button
+        type="submit"
+        className="text-[11px] font-semibold opacity-60 hover:opacity-100 text-[var(--color-primario-legible)] cursor-pointer py-1 px-2 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-all"
+      >
+        Buscar
+      </button>
+    </form>
+  )
+
   return (
     <header
       className={`border-b border-black/10 dark:border-white/10 bg-[var(--color-fondo)]/95 backdrop-blur-md z-30 transition-colors duration-200 ${
         sticky ? 'sticky top-0' : 'relative'
       }`}
     >
-      <div className="wrap grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:gap-4 py-4 sm:py-5 md:grid-cols-[1fr_1.3fr_1fr]">
-        {/* Izquierda: Botón Menú Mobile + Logo / Marca */}
-        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-          <button
-            type="button"
-            className="md:hidden min-w-[44px] min-h-[44px] -ml-2 rounded-xl flex items-center justify-center text-[var(--color-texto)] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
-            aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú de navegación'}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-
-          <Link
-            href={withTenant('/tienda')}
-            className="min-w-0 flex items-center gap-3 group focus:outline-none"
-          >
-            {store.logo_url ? (
-              <img
-                src={store.logo_url}
-                alt={store.nombre}
-                className="h-9 sm:h-11 w-auto max-w-[140px] sm:max-w-[180px] object-contain rounded-lg shrink-0"
-              />
-            ) : null}
-
-            {(!store.logo_url || mostrar_nombre) && (
-              <div className="min-w-0">
-                <span className="brand text-[var(--color-primario)] block truncate">
-                  {store.nombre}
-                  <span className="text-[var(--color-texto)]">.</span>
-                </span>
-                {store.slogan && (
-                  <span className="mt-0.5 block text-[10px] sm:text-[11px] opacity-70 truncate font-normal">
-                    {store.slogan}
-                  </span>
-                )}
-              </div>
-            )}
-          </Link>
-        </div>
-
-        {/* Centro: Buscador de productos (Desktop) */}
-        {mostrar_buscador && (
-          <form
-            onSubmit={handleSearchSubmit}
-            role="search"
-            className="hidden md:flex items-center rounded-xl border border-black/15 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.04] px-3.5 focus-within:border-[var(--color-primario)] focus-within:ring-2 focus-within:ring-[var(--color-primario)]/20 transition-all"
-          >
-            <Search className="w-4 h-4 opacity-50 shrink-0" />
-            <input
-              type="text"
-              aria-label="Buscar productos"
-              placeholder="¿Qué estás buscando?"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-10 min-w-0 flex-1 bg-transparent px-3 text-xs outline-none placeholder:opacity-50 text-[var(--color-texto)]"
-            />
-            <button
-              type="submit"
-              className="text-[11px] font-semibold opacity-60 hover:opacity-100 text-[var(--color-primario)] cursor-pointer py-1 px-2 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-all"
-            >
-              Buscar
-            </button>
-          </form>
-        )}
-
-        {/* Derecha: Acciones (Tema, Cuenta, Favoritos, Carrito) */}
-        <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-3">
-          {mostrar_tema_toggle && <ThemeToggle />}
-
-          {/* Botón Mi Cuenta */}
-          <Link
-            href={withTenant('/tienda/cuenta')}
-            title="Mi cuenta"
-            aria-label="Mi cuenta"
-            className="min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] flex items-center justify-center transition-all active:scale-95 cursor-pointer"
-          >
-            <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" />
-          </Link>
-
-          {/* Botón Favoritos con Badge */}
-          <Link
-            href={withTenant('/tienda/favoritos')}
-            title="Favoritos"
-            aria-label={`Favoritos, ${favorites.length} guardados`}
-            className="relative min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] flex items-center justify-center transition-all active:scale-95 cursor-pointer"
-          >
-            <Heart className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" />
-            {favorites.length > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[9px] font-bold flex items-center justify-center shadow-xs">
-                {favorites.length}
-              </span>
-            )}
-          </Link>
-
-          {/* Botón Carrito */}
-          {mostrar_carrito && (
+      {isCenter ? (
+        /* DISPOSICIÓN 1: LOGO CENTRADO (Estilo Tiendanube Moderno) */
+        <div className="wrap grid grid-cols-[auto_1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-4 py-3.5 sm:py-5">
+          {/* Izquierda: Menú Mobile + Buscador Desktop */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               type="button"
-              onClick={toggleCart}
-              aria-label={`Abrir carrito con ${totalItems} productos`}
-              className="min-h-[40px] h-10 px-2.5 sm:px-3 rounded-xl border border-black/15 dark:border-white/15 bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+              className="md:hidden min-w-[40px] min-h-[40px] -ml-1 rounded-xl flex items-center justify-center text-[var(--color-texto)] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+              aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú de navegación'}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primario-legible)]" />
-              <span className="hidden sm:inline text-xs font-semibold">Mi carrito</span>
-              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[10px] font-bold flex items-center justify-center shadow-xs">
-                {totalItems}
-              </span>
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
-          )}
+
+            {mostrar_buscador && renderSearchBar('w-full max-w-[240px] lg:max-w-[320px]')}
+          </div>
+
+          {/* Centro: Logo / Marca perfectamente centrado */}
+          <div className="flex items-center justify-center min-w-0 px-2">
+            {renderLogoAndBrand(true)}
+          </div>
+
+          {/* Derecha: Acciones */}
+          <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-3">
+            {mostrar_tema_toggle && <ThemeToggle />}
+
+            <Link
+              href={withTenant('/tienda/cuenta')}
+              title="Mi cuenta"
+              aria-label="Mi cuenta"
+              className="min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+            >
+              <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" />
+            </Link>
+
+            <Link
+              href={withTenant('/tienda/favoritos')}
+              title="Favoritos"
+              aria-label={`Favoritos, ${favorites.length} guardados`}
+              className="relative min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+            >
+              <Heart className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" />
+              {favorites.length > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[9px] font-bold flex items-center justify-center shadow-xs">
+                  {favorites.length}
+                </span>
+              )}
+            </Link>
+
+            {mostrar_carrito && (
+              <button
+                type="button"
+                onClick={toggleCart}
+                aria-label={`Abrir carrito con ${totalItems} productos`}
+                className="min-h-[40px] h-10 px-2.5 sm:px-3 rounded-xl border border-black/15 dark:border-white/15 bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+              >
+                <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primario-legible)]" />
+                <span className="hidden sm:inline text-xs font-semibold">Mi carrito</span>
+                <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[10px] font-bold flex items-center justify-center shadow-xs">
+                  {totalItems}
+                </span>
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      ) : (
+        /* DISPOSICIÓN 2: LOGO A LA IZQUIERDA (Estilo E-commerce Clásico) */
+        <div className="wrap grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:gap-4 py-4 sm:py-5 md:grid-cols-[1fr_1.3fr_1fr]">
+          {/* Izquierda: Botón Menú Mobile + Logo / Marca */}
+          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+            <button
+              type="button"
+              className="md:hidden min-w-[44px] min-h-[44px] -ml-2 rounded-xl flex items-center justify-center text-[var(--color-texto)] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+              aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú de navegación'}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+
+            {renderLogoAndBrand(false)}
+          </div>
+
+          {/* Centro: Buscador de productos (Desktop) */}
+          {mostrar_buscador ? renderSearchBar('w-full') : <div />}
+
+          {/* Derecha: Acciones */}
+          <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-3">
+            {mostrar_tema_toggle && <ThemeToggle />}
+
+            <Link
+              href={withTenant('/tienda/cuenta')}
+              title="Mi cuenta"
+              aria-label="Mi cuenta"
+              className="min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+            >
+              <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" />
+            </Link>
+
+            <Link
+              href={withTenant('/tienda/favoritos')}
+              title="Favoritos"
+              aria-label={`Favoritos, ${favorites.length} guardados`}
+              className="relative min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+            >
+              <Heart className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" />
+              {favorites.length > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[9px] font-bold flex items-center justify-center shadow-xs">
+                  {favorites.length}
+                </span>
+              )}
+            </Link>
+
+            {mostrar_carrito && (
+              <button
+                type="button"
+                onClick={toggleCart}
+                aria-label={`Abrir carrito con ${totalItems} productos`}
+                className="min-h-[40px] h-10 px-2.5 sm:px-3 rounded-xl border border-black/15 dark:border-white/15 bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+              >
+                <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primario-legible)]" />
+                <span className="hidden sm:inline text-xs font-semibold">Mi carrito</span>
+                <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[10px] font-bold flex items-center justify-center shadow-xs">
+                  {totalItems}
+                </span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Menú Desplegable Mobile */}
       {mobileMenuOpen && (

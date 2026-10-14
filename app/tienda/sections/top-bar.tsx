@@ -34,8 +34,8 @@ export default function TopBar({ section, tenantQuery }: TopBarProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
 
-  // Color de fondo
-  let bgClasses = 'bg-[var(--color-primario)] text-white'
+  // Color de fondo con contraste accesible
+  let bgClasses = 'bg-[var(--color-primario)] text-[var(--color-primario-texto)]'
   if (fondo_color === 'superficie') {
     bgClasses = 'bg-black/[0.04] dark:bg-white/[0.06] text-[var(--color-texto)] border-b border-black/5 dark:border-white/5'
   } else if (fondo_color === 'contraste') {
@@ -110,6 +110,9 @@ export default function TopBar({ section, tenantQuery }: TopBarProps) {
     return inner
   }
 
+  // Lista repetida para ticker fluido continuo
+  const tickerBlock = [...items, ...items, ...items]
+
   return (
     <aside
       aria-label="Barra de avisos y novedades"
@@ -124,19 +127,31 @@ export default function TopBar({ section, tenantQuery }: TopBarProps) {
         {modo === 'ticker' ? (
           <div className="w-full h-full overflow-hidden whitespace-nowrap relative flex items-center">
             <div
-              className={`flex items-center gap-10 animate-ticker ${
+              className={`flex items-center gap-8 animate-ticker ${
                 isPaused ? 'animation-paused' : ''
               }`}
               style={{
-                animationDuration: `${Math.max(velocidad_ticker, 10)}s`,
+                animationDuration: `${Math.max(velocidad_ticker, 12)}s`,
               }}
             >
-              {[...items, ...items, ...items, ...items].map((item, idx) => (
-                <div key={idx} className="inline-flex items-center gap-2 shrink-0">
-                  {renderMessageContent(item)}
-                  <span className="opacity-40 text-[10px]">•</span>
-                </div>
-              ))}
+              {/* Set 1 */}
+              <div className="flex items-center gap-8 shrink-0">
+                {tickerBlock.map((item, idx) => (
+                  <div key={`t1-${idx}`} className="inline-flex items-center gap-2 shrink-0">
+                    {renderMessageContent(item)}
+                    <span className="opacity-40 text-[10px]">•</span>
+                  </div>
+                ))}
+              </div>
+              {/* Set 2 (duplicado idéntico para loop continuo) */}
+              <div className="flex items-center gap-8 shrink-0" aria-hidden="true">
+                {tickerBlock.map((item, idx) => (
+                  <div key={`t2-${idx}`} className="inline-flex items-center gap-2 shrink-0">
+                    {renderMessageContent(item)}
+                    <span className="opacity-40 text-[10px]">•</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         ) : modo === 'rotativo' ? (
