@@ -86,7 +86,6 @@ export default function MainHeader({
         <div className={`min-w-0 ${centered ? 'text-center' : 'text-left'}`}>
           <span className="brand text-[var(--color-primario)] block truncate text-base sm:text-xl lg:text-2xl">
             {store.nombre}
-            <span className="text-[var(--color-texto)]">.</span>
           </span>
           {store.slogan && (
             <span className="mt-0.5 block text-[10px] sm:text-[11px] opacity-70 truncate font-normal">

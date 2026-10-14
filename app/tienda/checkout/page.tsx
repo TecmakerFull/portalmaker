@@ -38,7 +38,6 @@ export default async function TiendaCheckoutPage() {
               <div>
                 <span className="brand text-[var(--color-primario)] text-xl sm:text-2xl font-bold">
                   {store.nombre}
-                  <span className="text-[var(--color-texto)]">.</span>
                 </span>
                 <span className="block text-[10px] opacity-60 font-medium">Finalizar compra / reserva</span>
               </div>

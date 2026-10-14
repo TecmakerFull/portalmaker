@@ -32,7 +32,6 @@ export default function StoreFooter({ store, tenantQuery }: StoreFooterProps) {
             <Link href={withTenant('/tienda')} className="inline-block focus:outline-none">
               <span className="brand text-[var(--color-primario)]">
                 {store.nombre}
-                <span className="text-[var(--color-texto)]">.</span>
               </span>
             </Link>
             <p className="max-w-xs text-xs leading-relaxed opacity-70">

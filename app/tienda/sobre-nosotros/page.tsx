@@ -109,7 +109,7 @@ export default async function TiendaSobreNosotrosPage() {
             <div className="max-w-md space-y-4">
               <p className="eyebrow text-[var(--color-primario)]">NUESTRA ESENCIA</p>
               <h1 className="text-3xl sm:text-5xl font-semibold font-[var(--font-heading)] leading-tight text-[var(--color-texto)]">
-                Somos {store.nombre}.
+                Somos {store.nombre}
               </h1>
               <p className="text-sm sm:text-base leading-relaxed opacity-75 text-[var(--color-texto)]">
                 {store.slogan || 'Creemos que vivir mejor comienza con las cosas que eliges tener cerca.'}
