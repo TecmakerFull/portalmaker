@@ -75,61 +75,64 @@ export default function PortalHomePage() {
         </div>
       </header>
 
-      {/* Hero Section con Banner de Fondo a Pantalla Completa */}
-      <section className="relative w-full overflow-hidden min-h-[580px] sm:min-h-[640px] flex items-center justify-center border-b border-[var(--color-borde)]">
-        {/* Imagen de Fondo Banner a todo el ancho */}
+      {/* Hero Section con Banner de Fondo a Pantalla Completa (Full-Width) */}
+      <section className="relative w-full overflow-hidden min-h-[540px] sm:min-h-[600px] lg:min-h-[660px] flex items-center border-b border-[var(--color-borde)]">
+        {/* Imagen de Fondo Banner a todo el ancho detrás de título y botones */}
         <div className="absolute inset-0 w-full h-full pointer-events-none">
           <Image
             src="/banner.png"
-            alt="Portalmaker — El portal del Maker"
+            alt="Portalmaker — Plataforma para crear tu tienda online"
             fill
-            className="object-cover object-center opacity-30 dark:opacity-20"
+            className="object-cover object-right sm:object-center opacity-85 dark:opacity-35"
             priority
           />
-          {/* Overlay suave para legibilidad perfecta de textos y botones */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-fondo)]/80 via-[var(--color-fondo)]/90 to-[var(--color-fondo)] backdrop-blur-[1px]" />
+          {/* Degradado horizontal suave para legibilidad nítida del texto a la izquierda sin tapar los objetos de la derecha */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-fondo)] via-[var(--color-fondo)]/85 sm:via-[var(--color-fondo)]/60 to-[var(--color-fondo)]/30 dark:from-[var(--color-fondo)] dark:via-[var(--color-fondo)]/80 dark:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-fondo)]/60 via-transparent to-transparent sm:hidden" />
         </div>
 
-        {/* Contenido sobre el fondo */}
-        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FACC15]/20 border border-[#FACC15]/40 text-[var(--color-texto)] text-xs font-semibold uppercase tracking-wider mb-6 shadow-xs backdrop-blur-xs">
-            <Zap className="w-3.5 h-3.5 text-[#EAB308]" />
-            <span>El portal de los makers</span>
+        {/* Contenido sobre el fondo de pantalla completa: Título y Botones */}
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 w-full">
+          <div className="max-w-2xl text-left">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FACC15]/20 border border-[#FACC15]/40 text-[var(--color-texto)] text-xs font-semibold uppercase tracking-wider mb-6 shadow-xs backdrop-blur-xs">
+              <Zap className="w-3.5 h-3.5 text-[#EAB308]" />
+              <span>El portal de los makers</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.15] font-[var(--font-portal-heading)] text-[var(--color-texto)]">
+              Comienza una tienda online para tu negocio gratis
+            </h1>
+
+            <p className="mt-5 text-sm sm:text-lg opacity-85 leading-relaxed font-normal text-[var(--color-texto)] max-w-xl">
+              Portalmaker es la plataforma todo en uno para crear, administrar y hacer crecer tu tienda online. Diseñada para makers, talleres y creadores de todo tipo de productos.
+            </p>
+
+            <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 max-w-md">
+              <Link
+                href="/login"
+                style={{ color: '#1F2937' }}
+                className="min-h-[48px] px-8 py-3.5 rounded-2xl bg-[#FACC15] text-[#1F2937] text-sm sm:text-base font-bold hover:bg-[#eab308] active:scale-98 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Ir a mi tienda</span>
+                <ArrowRight className="w-4 h-4 text-[#1F2937]" />
+              </Link>
+
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="min-h-[48px] px-6 py-3.5 rounded-2xl border border-[var(--color-borde)] bg-[var(--color-superficie)]/90 backdrop-blur-md text-xs sm:text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-[var(--color-texto)] shadow-xs cursor-pointer"
+              >
+                <MessageSquare className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                <span>Solicitar asesoría</span>
+              </a>
+            </div>
+
+            {/* Social Proof sutil */}
+            <p className="mt-6 text-xs sm:text-sm opacity-70 font-medium text-[var(--color-texto)]">
+              Impulsamos a tiendas, talleres y creadores independientes
+            </p>
           </div>
-
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.15] font-[var(--font-portal-heading)] max-w-4xl mx-auto text-[var(--color-texto)]">
-            Comienza una tienda online para tu negocio gratis
-          </h1>
-
-          <p className="mt-5 text-sm sm:text-lg opacity-85 max-w-2xl mx-auto leading-relaxed font-normal text-[var(--color-texto)]">
-            Portalmaker es la plataforma todo en uno para crear, administrar y hacer crecer tu tienda online. Diseñada para makers, talleres y creadores de todo tipo de productos.
-          </p>
-
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto">
-            <Link
-              href="/login"
-              style={{ color: '#1F2937' }}
-              className="w-full min-h-[48px] px-8 py-3.5 rounded-2xl bg-[#FACC15] text-[#1F2937] text-sm sm:text-base font-bold hover:bg-[#eab308] active:scale-98 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>Ir a mi tienda</span>
-              <ArrowRight className="w-4 h-4 text-[#1F2937]" />
-            </Link>
-
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full min-h-[48px] px-6 py-3.5 rounded-2xl border border-[var(--color-borde)] bg-[var(--color-superficie)]/80 backdrop-blur-xs text-xs sm:text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-[var(--color-texto)] shadow-xs cursor-pointer"
-            >
-              <MessageSquare className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-              <span>Solicitar asesoría</span>
-            </a>
-          </div>
-
-          {/* Social Proof sutil */}
-          <p className="mt-6 text-xs sm:text-sm opacity-60 font-medium text-[var(--color-texto)]">
-            Impulsamos a tiendas, talleres y creadores independientes
-          </p>
         </div>
       </section>
 
