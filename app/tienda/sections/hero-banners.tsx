@@ -32,11 +32,11 @@ export default function HeroBanners({
     return true
   })
 
-  // Si no hay slides configurados o la sección está vacía, creamos el slide por defecto estilo TiendaDemo
+  // Si no hay slides configurados o la sección está vacía, creamos el slide por defecto con banner.png
   const defaultSlide: HeroBannerSlide = {
     id: 'default-hero-demo',
-    imagen_desktop: '/demo/store-hero.jpg',
-    imagen_mobile: '/demo/store-hero.jpg',
+    imagen_desktop: '/banner.png',
+    imagen_mobile: '/banner.png',
     subtitulo: 'NUEVA COLECCIÓN · 2026',
     texto_adicional: 'OBJETOS CON INTENCIÓN. ESPACIOS CON ALMA.',
     titulo: storeSlogan || 'Diseño para tu día a día.',
@@ -113,7 +113,7 @@ export default function HeroBanners({
   }
 
   const currentSlide = slides[currentIndex] || defaultSlide
-  const heroImage = currentSlide.imagen_desktop || '/demo/store-hero.jpg'
+  const heroImage = currentSlide.imagen_desktop || currentSlide.imagen_mobile || '/banner.png'
 
   return (
     <section
@@ -123,40 +123,40 @@ export default function HeroBanners({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="relative min-h-[500px] sm:min-h-[520px] overflow-hidden bg-black/[0.03] dark:bg-white/[0.04] transition-colors"
+      className="relative h-[420px] sm:h-[480px] lg:h-[500px] max-h-[520px] overflow-hidden bg-black/[0.03] dark:bg-white/[0.04] transition-colors"
     >
-      {/* Imagen de fondo / producto destacada */}
+      {/* Imagen de fondo / producto destacada con altura limitada y object-cover */}
       <img
         src={heroImage}
         alt={currentSlide.titulo || 'Hero banner de la tienda'}
-        className="absolute inset-0 w-full h-full object-cover object-[center_60%] sm:object-[center_50%] opacity-70 sm:opacity-90 dark:opacity-40"
+        className="absolute inset-0 w-full h-full object-cover object-center opacity-70 sm:opacity-90 dark:opacity-40 pointer-events-none"
         fetchPriority="high"
       />
 
       {/* Degradado suave para asegurar contraste del texto */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-fondo)] via-[var(--color-fondo)]/80 to-transparent sm:w-3/4 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-fondo)] via-[var(--color-fondo)]/85 to-transparent sm:w-3/4 pointer-events-none" />
 
-      {/* Contenido Hero */}
-      <div className="wrap relative z-10 py-12 sm:py-20 flex flex-col justify-center min-h-[500px] sm:min-h-[520px]">
-        <div className="max-w-[480px] space-y-5">
+      {/* Contenido Hero con altura ajustada */}
+      <div className="wrap relative z-10 py-8 sm:py-12 flex flex-col justify-center h-full">
+        <div className="max-w-[480px] space-y-4">
           {/* Badge Pill */}
-          <span className="hero-pill text-[var(--color-texto)] border-black/20 dark:border-white/20">
+          <span className="hero-pill text-[var(--color-texto)] border-black/20 dark:border-white/20 truncate max-w-full inline-flex">
             <span className="hero-dot" />
-            {currentSlide.subtitulo || 'NUEVA COLECCIÓN · 2026'}
+            <span className="truncate">{currentSlide.subtitulo || 'NUEVA COLECCIÓN · 2026'}</span>
           </span>
 
-          {/* Eyebrow Pre-título */}
-          <p className="text-[11px] font-semibold tracking-wider uppercase text-[var(--color-primario)]">
+          {/* Eyebrow Pre-título con contraste accesible y truncate */}
+          <p className="text-[11px] font-semibold tracking-wider uppercase text-[var(--color-primario-legible)] truncate max-w-full">
             {currentSlide.texto_adicional || 'OBJETOS CON INTENCIÓN. ESPACIOS CON ALMA.'}
           </p>
 
-          {/* Título Principal */}
-          <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight font-[var(--font-heading)] text-[var(--color-texto)] leading-[1.15]">
+          {/* Título Principal con límite de 2 líneas */}
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-semibold tracking-tight font-[var(--font-heading)] text-[var(--color-texto)] leading-[1.15] line-clamp-2 max-w-[500px]">
             {currentSlide.titulo || storeSlogan || 'Diseño para tu día a día.'}
           </h1>
 
-          {/* Descripción */}
-          <p className="text-xs sm:text-sm leading-relaxed opacity-75 max-w-[380px] text-[var(--color-texto)]">
+          {/* Descripción con límite de 2-3 líneas */}
+          <p className="text-xs sm:text-sm leading-relaxed opacity-75 max-w-[400px] text-[var(--color-texto)] line-clamp-2 sm:line-clamp-3">
             Piezas que combinan forma y función. Descubre una selección cuidada
             que hace de lo cotidiano algo extraordinario.
           </p>
@@ -165,7 +165,7 @@ export default function HeroBanners({
           <div className="pt-2 flex flex-wrap items-center gap-4 sm:gap-6">
             <Link
               href={formatUrl(currentSlide.cta_url || '/tienda')}
-              className="min-h-[44px] h-11 px-6 rounded-full bg-[var(--color-primario)] text-white text-xs sm:text-sm font-semibold hover:opacity-95 active:scale-98 transition-all inline-flex items-center gap-2 shadow-xs cursor-pointer"
+              className="min-h-[44px] h-11 px-6 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs sm:text-sm font-semibold hover:opacity-95 active:scale-98 transition-all inline-flex items-center gap-2 shadow-xs cursor-pointer"
             >
               <span>{currentSlide.cta_texto || 'Explorar colección'}</span>
               <ArrowRight className="w-4 h-4 ml-1" />
@@ -173,7 +173,7 @@ export default function HeroBanners({
 
             <Link
               href={formatUrl('/tienda/sobre-nosotros')}
-              className="text-xs sm:text-sm font-semibold underline decoration-[var(--color-primario)]/40 underline-offset-4 hover:decoration-[var(--color-primario)] text-[var(--color-texto)] inline-flex items-center gap-1.5 transition-colors"
+              className="text-xs sm:text-sm font-semibold underline decoration-[var(--color-primario-legible)]/40 underline-offset-4 hover:decoration-[var(--color-primario-legible)] text-[var(--color-texto)] inline-flex items-center gap-1.5 transition-colors"
             >
               <span>Nuestra esencia</span>
               <ArrowUpRight className="w-3.5 h-3.5 opacity-70" />
@@ -183,7 +183,7 @@ export default function HeroBanners({
           {/* Social Proof / Reseñas ilustrativas */}
           <div className="pt-4 flex items-center gap-3">
             <div className="flex -space-x-2" aria-hidden="true">
-              <span className="grid size-7 place-items-center rounded-full border-2 border-[var(--color-fondo)] bg-[var(--color-primario)] text-[8px] font-bold text-white">
+              <span className="grid size-7 place-items-center rounded-full border-2 border-[var(--color-fondo)] bg-[var(--color-primario)] text-[8px] font-bold text-[var(--color-primario-texto)]">
                 MC
               </span>
               <span className="grid size-7 place-items-center rounded-full border-2 border-[var(--color-fondo)] bg-black/20 dark:bg-white/20 text-[8px] font-bold">

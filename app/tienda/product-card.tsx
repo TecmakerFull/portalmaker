@@ -212,7 +212,7 @@ export default function ProductCard({ product, store, tenantQuery }: ProductCard
             className={`min-h-[32px] h-8 px-2.5 sm:px-3 rounded-lg text-[11px] font-semibold transition-all inline-flex items-center gap-1 active:scale-95 cursor-pointer shadow-xs ${
               added
                 ? 'bg-emerald-600 text-white'
-                : 'hover:bg-[var(--color-primario)] hover:text-white border border-black/10 dark:border-white/10 text-[var(--color-texto)] bg-black/[0.02] dark:bg-white/[0.03]'
+                : 'hover:bg-[var(--color-primario)] hover:text-[var(--color-primario-texto)] border border-black/10 dark:border-white/10 text-[var(--color-texto)] bg-black/[0.02] dark:bg-white/[0.03]'
             }`}
           >
             {added ? (

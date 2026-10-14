@@ -117,7 +117,7 @@ export default async function TiendaSobreNosotrosPage() {
               <div className="pt-2">
                 <Link
                   href={withTenant('/tienda')}
-                  className="min-h-[44px] h-11 px-6 rounded-full bg-[var(--color-primario)] text-white text-xs sm:text-sm font-semibold hover:opacity-95 active:scale-98 transition-all inline-flex items-center gap-2 shadow-xs cursor-pointer"
+                  className="min-h-[44px] h-11 px-6 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs sm:text-sm font-semibold hover:opacity-95 active:scale-98 transition-all inline-flex items-center gap-2 shadow-xs cursor-pointer"
                 >
                   <span>Descubre nuestra selección</span>
                   <ArrowRight className="w-4 h-4 ml-1" />

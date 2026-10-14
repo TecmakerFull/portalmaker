@@ -334,7 +334,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
         </div>
         <Link
           href={`/tienda${tenantQuery}`}
-          className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[var(--color-primario)] text-white text-xs font-bold hover:opacity-90 transition-all inline-flex items-center gap-2"
+          className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs font-bold hover:opacity-90 transition-all inline-flex items-center gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Ir al Catálogo</span>
@@ -365,7 +365,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
         {/* 1. Datos de Contacto */}
         <div className="bg-black/[0.02] dark:bg-white/[0.03] rounded-3xl border border-black/10 dark:border-white/10 p-5 sm:p-7 space-y-4 shadow-xs">
           <h2 className="text-base font-bold font-[var(--font-heading)] flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-[var(--color-primario)] text-white text-xs flex items-center justify-center">
+            <span className="w-6 h-6 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs flex items-center justify-center">
               1
             </span>
             <span>Tus Datos de Contacto</span>
@@ -425,7 +425,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
         {/* 2. Forma de Entrega */}
         <div className="bg-black/[0.02] dark:bg-white/[0.03] rounded-3xl border border-black/10 dark:border-white/10 p-5 sm:p-7 space-y-4 shadow-xs">
           <h2 className="text-base font-bold font-[var(--font-heading)] flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-[var(--color-primario)] text-white text-xs flex items-center justify-center">
+            <span className="w-6 h-6 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs flex items-center justify-center">
               2
             </span>
             <span>Forma de Entrega</span>
@@ -620,7 +620,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
         {/* 3. Forma de Pago */}
         <div className="bg-black/[0.02] dark:bg-white/[0.03] rounded-3xl border border-black/10 dark:border-white/10 p-5 sm:p-7 space-y-4 shadow-xs">
           <h2 className="text-base font-bold font-[var(--font-heading)] flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-[var(--color-primario)] text-white text-xs flex items-center justify-center">
+            <span className="w-6 h-6 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs flex items-center justify-center">
               3
             </span>
             <span>Forma de Pago</span>
@@ -859,7 +859,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
           <div className="pt-3 border-t border-black/10 dark:border-white/10 space-y-1">
             <div className="flex justify-between items-baseline">
               <span className="text-sm font-semibold opacity-70">Total a pagar:</span>
-              <span className="text-2xl sm:text-3xl font-bold text-[var(--color-primario)] font-[var(--font-heading)]">
+              <span className="text-2xl sm:text-3xl font-bold text-[var(--color-primario-legible)] font-[var(--font-heading)]">
                 ${totalAmount.toLocaleString('es-AR')}
               </span>
             </div>
@@ -875,7 +875,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
             <button
               type="submit"
               disabled={loading || items.length === 0}
-              className="min-h-[52px] w-full px-6 py-3.5 rounded-2xl bg-[var(--color-primario)] text-white text-sm font-bold hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-2.5 shadow-md cursor-pointer disabled:opacity-50"
+              className="min-h-[52px] w-full px-6 py-3.5 rounded-2xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-sm font-bold hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-2.5 shadow-md cursor-pointer disabled:opacity-50"
             >
               {loading ? (
                 <>

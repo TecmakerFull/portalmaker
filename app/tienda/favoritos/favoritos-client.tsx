@@ -66,7 +66,7 @@ export default function FavoritosClient({
           </p>
           <Link
             href={withTenant('/tienda')}
-            className="mt-6 min-h-[44px] px-5 py-2.5 rounded-xl bg-[var(--color-primario)] text-white text-xs font-semibold inline-flex items-center gap-2 shadow-xs hover:opacity-95 cursor-pointer"
+            className="mt-6 min-h-[44px] px-5 py-2.5 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs font-semibold inline-flex items-center gap-2 shadow-xs hover:opacity-95 cursor-pointer"
           >
             <span>Encuentra tus favoritos</span>
             <ArrowRight className="w-4 h-4" />

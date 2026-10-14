@@ -122,7 +122,7 @@ export default function CartDrawer({
               <Link
                 href={withTenant('/tienda')}
                 onClick={closeCart}
-                className="mt-4 min-h-[44px] px-5 py-2.5 rounded-xl bg-[var(--color-primario)] text-white text-xs font-semibold inline-flex items-center gap-2 shadow-xs hover:opacity-95 cursor-pointer"
+                className="mt-4 min-h-[44px] px-5 py-2.5 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs font-semibold inline-flex items-center gap-2 shadow-xs hover:opacity-95 cursor-pointer"
               >
                 <span>Explorar productos</span>
                 <ArrowRight className="w-4 h-4" />
@@ -230,7 +230,7 @@ export default function CartDrawer({
             <Link
               href={withTenant('/tienda/checkout')}
               onClick={closeCart}
-              className="mt-5 w-full min-h-[48px] h-12 rounded-xl bg-[var(--color-primario)] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-md hover:opacity-95 active:scale-98 transition-all cursor-pointer"
+              className="mt-5 w-full min-h-[48px] h-12 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-sm font-semibold flex items-center justify-center gap-2 shadow-md hover:opacity-95 active:scale-98 transition-all cursor-pointer"
             >
               <span>Finalizar compra</span>
               <ArrowRight className="w-4 h-4" />

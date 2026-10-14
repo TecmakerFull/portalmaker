@@ -41,7 +41,7 @@ export default function LegalClient({ store, initialTab = 'terms' }: LegalClient
           onClick={() => setTab('terms')}
           className={`pb-3.5 text-xs sm:text-sm font-semibold transition-all relative cursor-pointer whitespace-nowrap ${
             tab === 'terms'
-              ? 'text-[var(--color-primario)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario)]'
+              ? 'text-[var(--color-primario-legible)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario-legible)]'
               : 'opacity-60 hover:opacity-100'
           }`}
         >
@@ -52,7 +52,7 @@ export default function LegalClient({ store, initialTab = 'terms' }: LegalClient
           onClick={() => setTab('privacy')}
           className={`pb-3.5 text-xs sm:text-sm font-semibold transition-all relative cursor-pointer whitespace-nowrap ${
             tab === 'privacy'
-              ? 'text-[var(--color-primario)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario)]'
+              ? 'text-[var(--color-primario-legible)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario-legible)]'
               : 'opacity-60 hover:opacity-100'
           }`}
         >
@@ -63,7 +63,7 @@ export default function LegalClient({ store, initialTab = 'terms' }: LegalClient
           onClick={() => setTab('cookies')}
           className={`pb-3.5 text-xs sm:text-sm font-semibold transition-all relative cursor-pointer whitespace-nowrap ${
             tab === 'cookies'
-              ? 'text-[var(--color-primario)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario)]'
+              ? 'text-[var(--color-primario-legible)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario-legible)]'
               : 'opacity-60 hover:opacity-100'
           }`}
         >

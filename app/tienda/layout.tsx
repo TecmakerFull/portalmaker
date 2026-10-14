@@ -5,6 +5,7 @@ import type { Store, HeaderSettings } from "@/types/database";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import StoreThemeSync from "./theme-sync";
 import CartProviderClient from "./cart-provider-client";
+import { getReadableTextColor, getAccessibleColorOnBg } from "@/lib/color-utils";
 
 export async function generateMetadata(): Promise<Metadata> {
   const tenant = await getTenantStore();
@@ -31,15 +32,48 @@ function getTenantCSSVars(store: Store): React.CSSProperties {
   const fontHeading = store.font_heading?.toLowerCase().replace(/\s+/g, "-") || "manrope";
   const fontBody = store.font_body?.toLowerCase().replace(/\s+/g, "-") || "dm-sans";
 
+  const primarioLight = store.color_primario || "#FACC15";
+  const fondoLight = store.color_fondo || "#FFFFFF";
+  const secundarioLight = store.color_secundario || "#4B5563";
+
+  const primarioDark = store.color_primario_dark || primarioLight;
+  const fondoDark = store.color_fondo_dark || "#111827";
+  const secundarioDark = store.color_secundario_dark || secundarioLight;
+
+  // 1. Color de texto a colocar ENCIMA del color primario (ej: botones, badges)
+  const primarioTextoLight = getReadableTextColor(primarioLight);
+  const primarioTextoDark = getReadableTextColor(primarioDark);
+
+  // 2. Color del primario cuando se usa como TEXTO o BORDE sobre fondo claro (garantiza ratio >= 4.5:1)
+  const primarioLegibleLight = getAccessibleColorOnBg(primarioLight, fondoLight, 4.5);
+  // En fondo oscuro, el primario suele ser claro/brillante, aseguramos legibilidad
+  const primarioLegibleDark = getAccessibleColorOnBg(primarioDark, fondoDark, 4.5);
+
+  // 3. Lo mismo para secundario
+  const secundarioTextoLight = getReadableTextColor(secundarioLight);
+  const secundarioTextoDark = getReadableTextColor(secundarioDark);
+  const secundarioLegibleLight = getAccessibleColorOnBg(secundarioLight, fondoLight, 4.5);
+  const secundarioLegibleDark = getAccessibleColorOnBg(secundarioDark, fondoDark, 4.5);
+
   return {
-    "--tenant-primario": store.color_primario,
-    "--tenant-secundario": store.color_secundario,
-    "--tenant-fondo": store.color_fondo,
-    "--tenant-texto": store.color_texto,
-    "--tenant-primario-dark": store.color_primario_dark || store.color_primario,
-    "--tenant-secundario-dark": store.color_secundario_dark || store.color_secundario,
-    "--tenant-fondo-dark": store.color_fondo_dark || "#111827",
+    "--tenant-primario": primarioLight,
+    "--tenant-primario-texto": primarioTextoLight,
+    "--tenant-primario-legible": primarioLegibleLight,
+    "--tenant-secundario": secundarioLight,
+    "--tenant-secundario-texto": secundarioTextoLight,
+    "--tenant-secundario-legible": secundarioLegibleLight,
+    "--tenant-fondo": fondoLight,
+    "--tenant-texto": store.color_texto || "#111827",
+
+    "--tenant-primario-dark": primarioDark,
+    "--tenant-primario-dark-texto": primarioTextoDark,
+    "--tenant-primario-dark-legible": primarioLegibleDark,
+    "--tenant-secundario-dark": secundarioDark,
+    "--tenant-secundario-dark-texto": secundarioTextoDark,
+    "--tenant-secundario-dark-legible": secundarioLegibleDark,
+    "--tenant-fondo-dark": fondoDark,
     "--tenant-texto-dark": store.color_texto_dark || "#F9FAFB",
+
     "--font-heading": `var(--font-${fontHeading}, var(--font-manrope))`,
     "--font-body": `var(--font-${fontBody}, var(--font-dm-sans))`,
     "--font-display": `var(--font-${fontHeading}, var(--font-manrope))`,

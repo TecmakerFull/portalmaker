@@ -103,10 +103,14 @@ body {
   border-color: var(--color-borde);
 }
 
-/* Variables dinámicas para la tienda del tenant */
+/* Variables dinámicas para la tienda del tenant con contraste accesible WCAG AA */
 .tienda-root {
   --color-primario: var(--tenant-primario, #FACC15);
+  --color-primario-texto: var(--tenant-primario-texto, #111827);
+  --color-primario-legible: var(--tenant-primario-legible, #A16207);
   --color-secundario: var(--tenant-secundario, #4B5563);
+  --color-secundario-texto: var(--tenant-secundario-texto, #FFFFFF);
+  --color-secundario-legible: var(--tenant-secundario-legible, #374151);
   --color-fondo: var(--tenant-fondo, #F3F4F6);
   --color-texto: var(--tenant-texto, #111827);
   --color-superficie: #FFFFFF;
@@ -117,11 +121,34 @@ body {
 :root[data-theme="dark"] .tienda-root,
 .dark .tienda-root {
   --color-primario: var(--tenant-primario-dark, var(--tenant-primario, #FACC15));
+  --color-primario-texto: var(--tenant-primario-dark-texto, var(--tenant-primario-texto, #111827));
+  --color-primario-legible: var(--tenant-primario-dark-legible, var(--tenant-primario-dark, #FACC15));
   --color-secundario: var(--tenant-secundario-dark, var(--tenant-secundario, #9CA3AF));
+  --color-secundario-texto: var(--tenant-secundario-dark-texto, var(--tenant-secundario-texto, #FFFFFF));
+  --color-secundario-legible: var(--tenant-secundario-dark-legible, var(--tenant-secundario-dark, #9CA3AF));
   --color-fondo: var(--tenant-fondo-dark, #111827);
   --color-texto: var(--tenant-texto-dark, #F9FAFB);
   --color-superficie: #1F2937;
   --color-borde: rgba(255, 255, 255, 0.1);
+}
+
+/* Clases de utilidad para accesibilidad de contraste automática */
+.btn-primary {
+  background-color: var(--color-primario) !important;
+  color: var(--color-primario-texto) !important;
+}
+
+.badge-primary {
+  background-color: var(--color-primario) !important;
+  color: var(--color-primario-texto) !important;
+}
+
+.text-accent-legible {
+  color: var(--color-primario-legible) !important;
+}
+
+.border-accent-legible {
+  border-color: var(--color-primario-legible) !important;
 }
 
 /* =============================================================================

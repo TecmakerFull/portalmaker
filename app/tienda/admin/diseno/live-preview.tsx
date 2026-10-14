@@ -253,7 +253,7 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
               transform: `scale(${scale})`,
               transformOrigin: 'top left',
             }}
-            className={`rounded-2xl shadow-xl overflow-hidden border border-zinc-300/80 dark:border-zinc-700/80 ${
+            className={`tienda-root rounded-2xl shadow-xl overflow-hidden border border-zinc-300/80 dark:border-zinc-700/80 ${
               previewTheme === 'dark' ? 'dark bg-zinc-950 text-zinc-100' : 'bg-white text-zinc-900'
             }`}
           >

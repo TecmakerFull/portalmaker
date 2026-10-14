@@ -51,7 +51,7 @@ export default function NewsletterSection({ storeName = 'nuestra tienda' }: News
           <button
             type="submit"
             disabled={subscribed}
-            className="h-11 px-5 rounded-xl bg-[var(--color-primario)] text-white text-xs sm:text-sm font-semibold shrink-0 inline-flex items-center gap-1.5 shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer disabled:bg-emerald-600 disabled:opacity-100"
+            className="h-11 px-5 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs sm:text-sm font-semibold shrink-0 inline-flex items-center gap-1.5 shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer disabled:bg-emerald-600 disabled:text-white disabled:opacity-100"
           >
             {subscribed ? (
               <>

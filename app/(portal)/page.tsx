@@ -115,6 +115,21 @@ export default function PortalHomePage() {
         <p className="mt-6 text-xs sm:text-sm opacity-60 font-medium">
           Impulsamos a tiendas, talleres y creadores independientes
         </p>
+
+        {/* Showcase Banner de Tienda Portalmaker */}
+        <div className="mt-10 sm:mt-12 relative max-w-5xl mx-auto rounded-3xl overflow-hidden border border-[var(--color-borde)] shadow-2xl bg-black/[0.03] dark:bg-white/[0.04]">
+          <div className="relative aspect-[21/9] sm:aspect-[2.5/1] max-h-[460px] w-full overflow-hidden">
+            <Image
+              src="/banner.png"
+              alt="Vista previa de tienda Portalmaker"
+              width={1600}
+              height={640}
+              className="w-full h-full object-cover object-center"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+          </div>
+        </div>
       </section>
 
       {/* Características Destacadas */}

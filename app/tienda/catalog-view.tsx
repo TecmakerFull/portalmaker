@@ -119,7 +119,7 @@ export default function CatalogView({
               onClick={() => setSelectedCategory('Todos')}
               className={`category-link text-xs transition-all ${
                 selectedCategory === 'Todos'
-                  ? 'bg-[var(--color-primario)] text-white shadow-xs font-semibold'
+                  ? 'bg-[var(--color-primario)] text-[var(--color-primario-texto)] shadow-xs font-semibold'
                   : 'border border-black/15 dark:border-white/15 bg-[var(--color-superficie)] opacity-75 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
               }`}
             >
@@ -135,7 +135,7 @@ export default function CatalogView({
                   onClick={() => setSelectedCategory(cat.nombre)}
                   className={`category-link text-xs transition-all ${
                     isActive
-                      ? 'bg-[var(--color-primario)] text-white shadow-xs font-semibold'
+                      ? 'bg-[var(--color-primario)] text-[var(--color-primario-texto)] shadow-xs font-semibold'
                       : 'border border-black/15 dark:border-white/15 bg-[var(--color-superficie)] opacity-75 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                   }`}
                 >
@@ -193,7 +193,7 @@ export default function CatalogView({
           <button
             type="button"
             onClick={handleReset}
-            className="mt-5 min-h-[40px] px-4 py-2 rounded-xl bg-[var(--color-primario)] text-white text-xs font-semibold cursor-pointer shadow-xs hover:opacity-95"
+            className="mt-5 min-h-[40px] px-4 py-2 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs font-semibold cursor-pointer shadow-xs hover:opacity-95"
           >
             Ver toda la colección
           </button>

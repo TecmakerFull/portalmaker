@@ -63,7 +63,7 @@ export default function StoreNavbar({ section, tenantQuery }: StoreNavbarProps) 
           <span
             className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${
               isSale
-                ? 'bg-[var(--color-primario)]/15 text-[var(--color-primario)]'
+                ? 'bg-[var(--color-primario)]/15 text-[var(--color-primario-legible)]'
                 : 'bg-black/10 dark:bg-white/10 text-[var(--color-texto)]'
             }`}
           >
@@ -75,8 +75,8 @@ export default function StoreNavbar({ section, tenantQuery }: StoreNavbarProps) 
 
     const linkClasses = `relative text-[13px] font-medium transition-colors py-3.5 ${
       isActive
-        ? 'text-[var(--color-primario)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario)]'
-        : 'text-[var(--color-texto)] opacity-75 hover:opacity-100 hover:text-[var(--color-primario)]'
+        ? 'text-[var(--color-primario-legible)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario-legible)]'
+        : 'text-[var(--color-texto)] opacity-75 hover:opacity-100 hover:text-[var(--color-primario-legible)]'
     }`
 
     if (isExternal) {
@@ -116,8 +116,8 @@ export default function StoreNavbar({ section, tenantQuery }: StoreNavbarProps) 
             href={formatUrl('/tienda')}
             className={`relative text-[13px] font-medium transition-colors py-3.5 whitespace-nowrap ${
               pathname === '/tienda'
-                ? 'text-[var(--color-primario)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario)]'
-                : 'text-[var(--color-texto)] opacity-75 hover:opacity-100 hover:text-[var(--color-primario)]'
+                ? 'text-[var(--color-primario-legible)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario-legible)]'
+                : 'text-[var(--color-texto)] opacity-75 hover:opacity-100 hover:text-[var(--color-primario-legible)]'
             }`}
           >
             Inicio

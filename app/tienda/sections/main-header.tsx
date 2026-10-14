@@ -157,7 +157,7 @@ export default function MainHeader({
           >
             <Heart className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" />
             {favorites.length > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-white text-[9px] font-bold flex items-center justify-center shadow-xs">
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[9px] font-bold flex items-center justify-center shadow-xs">
                 {favorites.length}
               </span>
             )}
@@ -171,9 +171,9 @@ export default function MainHeader({
               aria-label={`Abrir carrito con ${totalItems} productos`}
               className="min-h-[40px] h-10 px-2.5 sm:px-3 rounded-xl border border-black/15 dark:border-white/15 bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
             >
-              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primario)]" />
+              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primario-legible)]" />
               <span className="hidden sm:inline text-xs font-semibold">Mi carrito</span>
-              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
+              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[10px] font-bold flex items-center justify-center shadow-xs">
                 {totalItems}
               </span>
             </button>
@@ -197,7 +197,7 @@ export default function MainHeader({
               <button
                 type="submit"
                 aria-label="Ejecutar búsqueda"
-                className="h-11 w-11 shrink-0 rounded-xl bg-[var(--color-primario)] text-white flex items-center justify-center cursor-pointer shadow-xs active:scale-95"
+                className="h-11 w-11 shrink-0 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] flex items-center justify-center cursor-pointer shadow-xs active:scale-95"
               >
                 <Search className="w-4 h-4" />
               </button>
@@ -224,7 +224,7 @@ export default function MainHeader({
               className="py-2.5 px-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-between"
             >
               <span>Mis favoritos</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-primario)]/15 text-[var(--color-primario)] font-semibold">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-primario)]/15 text-[var(--color-primario-legible)] font-semibold">
                 {favorites.length}
               </span>
             </Link>

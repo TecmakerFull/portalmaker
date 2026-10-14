@@ -242,7 +242,7 @@ export default function ProductDetailView({
                   {formatMoney(currentBasePrice)}
                 </span>
                 {discountPercent && (
-                  <span className="rounded bg-[var(--color-primario)]/15 px-2 py-0.5 text-xs font-semibold text-[var(--color-primario)]">
+                  <span className="rounded bg-[var(--color-primario)]/15 px-2 py-0.5 text-xs font-semibold text-[var(--color-primario-legible)]">
                     −{discountPercent}%
                   </span>
                 )}
@@ -266,7 +266,7 @@ export default function ProductDetailView({
             <div className="pt-2 border-t border-black/10 dark:border-white/10 space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="opacity-70">Opción seleccionada:</span>
-                <strong className="text-[var(--color-primario)]">
+                <strong className="text-[var(--color-primario-legible)]">
                   {selectedVariant?.nombre}
                 </strong>
               </div>
@@ -286,7 +286,7 @@ export default function ProductDetailView({
                       }}
                       className={`min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-[var(--color-primario)] bg-[var(--color-primario)] text-white shadow-xs'
+                          ? 'border-[var(--color-primario)] bg-[var(--color-primario)] text-[var(--color-primario-texto)] shadow-xs'
                           : 'border-black/15 dark:border-white/15 bg-[var(--color-superficie)] opacity-80 hover:opacity-100 hover:border-black/30'
                       }`}
                     >
@@ -304,7 +304,7 @@ export default function ProductDetailView({
           )}
 
           {/* Estado de Disponibilidad */}
-          <p className="flex items-center gap-2 text-xs font-medium text-[var(--color-primario)]">
+          <p className="flex items-center gap-2 text-xs font-medium text-[var(--color-primario-legible)]">
             <span className="hero-dot" />
             <span>
               {product.gestiona_stock
@@ -346,7 +346,7 @@ export default function ProductDetailView({
             <button
               type="button"
               onClick={() => handleAddToCart(false)}
-              className="flex-1 min-h-[44px] h-11 px-4 rounded-xl bg-[var(--color-primario)] text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-xs hover:opacity-95 active:scale-98 transition-all cursor-pointer"
+              className="flex-1 min-h-[44px] h-11 px-4 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-xs hover:opacity-95 active:scale-98 transition-all cursor-pointer"
             >
               {addedSuccess ? (
                 <>
@@ -431,7 +431,7 @@ export default function ProductDetailView({
             onClick={() => setActiveTab('descripcion')}
             className={`pb-4 text-xs sm:text-sm font-semibold transition-all relative cursor-pointer ${
               activeTab === 'descripcion'
-                ? 'text-[var(--color-primario)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario)]'
+                ? 'text-[var(--color-primario-legible)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario-legible)]'
                 : 'opacity-60 hover:opacity-100'
             }`}
           >
@@ -444,7 +444,7 @@ export default function ProductDetailView({
             onClick={() => setActiveTab('tecnicos')}
             className={`pb-4 text-xs sm:text-sm font-semibold transition-all relative cursor-pointer ${
               activeTab === 'tecnicos'
-                ? 'text-[var(--color-primario)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario)]'
+                ? 'text-[var(--color-primario-legible)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario-legible)]'
                 : 'opacity-60 hover:opacity-100'
             }`}
           >
@@ -457,7 +457,7 @@ export default function ProductDetailView({
             onClick={() => setActiveTab('valoraciones')}
             className={`pb-4 text-xs sm:text-sm font-semibold transition-all relative cursor-pointer ${
               activeTab === 'valoraciones'
-                ? 'text-[var(--color-primario)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario)]'
+                ? 'text-[var(--color-primario-legible)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario-legible)]'
                 : 'opacity-60 hover:opacity-100'
             }`}
           >

@@ -86,7 +86,7 @@ export default async function TiendaPage() {
         </header>
 
         <main className="max-w-lg mx-auto p-6 text-center space-y-6">
-          <div className="w-16 h-16 rounded-3xl bg-[var(--color-primario)]/15 text-[var(--color-primario)] flex items-center justify-center mx-auto shadow-xs">
+          <div className="w-16 h-16 rounded-3xl bg-[var(--color-primario)]/15 text-[var(--color-primario-legible)] flex items-center justify-center mx-auto shadow-xs">
             <Package className="w-8 h-8" />
           </div>
           <div>
@@ -107,7 +107,7 @@ export default async function TiendaPage() {
               href={generalWhatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="min-h-[48px] px-6 py-3 rounded-2xl bg-[var(--color-primario)] text-white text-sm font-bold hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-2 shadow-sm"
+              className="min-h-[48px] px-6 py-3 rounded-2xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-sm font-bold hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-2 shadow-sm"
             >
               <MessageSquare className="w-4 h-4" />
               <span>Contactar por WhatsApp</span>
