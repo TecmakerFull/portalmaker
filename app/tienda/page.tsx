@@ -1,5 +1,5 @@
 // =============================================================================
-// PORTALMAKER — Tienda Pública (Catálogo de Productos)
+// PORTALMAKER — Tienda Pública (Página de Inicio Estilo TiendaDemo / Nöra)
 // "El portal del Maker" | portalmaker.com.ar
 // =============================================================================
 
@@ -10,7 +10,11 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import ThemeToggle from './theme-toggle'
 import StorefrontHeaderFlow from './sections/storefront-header-flow'
 import HeroBanners from './sections/hero-banners'
+import TrustFeatures from './sections/trust-features'
 import CatalogView from './catalog-view'
+import StorySection from './sections/story-section'
+import NewsletterSection from './sections/newsletter-section'
+import StoreFooter from './sections/store-footer'
 import { getStoreSections } from '@/lib/store-sections'
 import { MessageSquare, Package } from 'lucide-react'
 
@@ -121,18 +125,26 @@ export default async function TiendaPage() {
   return (
     <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] transition-colors duration-200 flex flex-col justify-between">
       <div>
-        {/* Cabecera y Navegación Modular (Top Bar -> Header -> Navbar) */}
+        {/* 1. Cabecera y Navegación Modular (Top Bar -> Header -> Navbar) */}
         <StorefrontHeaderFlow
           store={store}
           resolvedSections={resolvedSections}
           tenantQuery={tenantQuery}
         />
 
-        {/* Contenido Principal con Buscador, Hero Banners y Grilla Interactiva */}
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6 sm:space-y-8">
-          {/* Sección 4: Hero / Banners */}
-          <HeroBanners section={resolvedSections.hero} tenantQuery={tenantQuery} />
+        {/* 2. Hero / Banners Promocionales (Estilo TiendaDemo) */}
+        <HeroBanners
+          section={resolvedSections.hero}
+          storeName={store.nombre}
+          storeSlogan={store.slogan}
+          tenantQuery={tenantQuery}
+        />
 
+        {/* 3. Barra de Confianza & Beneficios (4 columnas) */}
+        <TrustFeatures />
+
+        {/* 4. Colección Curada de Productos con Filtros y Buscador */}
+        <main className="wrap pt-12 sm:pt-16">
           <CatalogView
             products={productList}
             categories={categoryList}
@@ -140,29 +152,20 @@ export default async function TiendaPage() {
             tenantQuery={tenantQuery}
           />
         </main>
+
+        {/* 5. Propuesta de Valor / Manifiesto Maker ("MENOS, PERO MEJOR") */}
+        <StorySection
+          storeName={store.nombre}
+          slogan={store.slogan}
+          tenantQuery={tenantQuery}
+        />
+
+        {/* 6. Suscripción a Novedades (Newsletter) */}
+        <NewsletterSection storeName={store.nombre} />
       </div>
 
-      {/* Footer */}
-      <footer className="mt-20 border-t border-black/10 dark:border-white/10 py-8 text-center text-xs opacity-75 space-y-2">
-        <div className="flex items-center justify-center gap-4 text-xs font-semibold">
-          <Link href={`/tienda${tenantQuery}`} className="hover:underline">
-            Catálogo
-          </Link>
-          {hasSobreNosotros && (
-            <>
-              <span>•</span>
-              <Link href={`/tienda/sobre-nosotros${tenantQuery}`} className="hover:underline">
-                Sobre Nosotros
-              </Link>
-            </>
-          )}
-          <span>•</span>
-          <Link href={`/tienda/contacto${tenantQuery}`} className="hover:underline">
-            Contacto & Ubicación
-          </Link>
-        </div>
-        <p className="opacity-60">© {new Date().getFullYear()} {store.nombre} — Desarrollado sobre Portalmaker</p>
-      </footer>
+      {/* 7. Footer de 4 Columnas con Medios de Pago y Enlaces Legales */}
+      <StoreFooter store={store} tenantQuery={tenantQuery} />
     </div>
   )
 }

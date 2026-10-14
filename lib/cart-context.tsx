@@ -36,6 +36,11 @@ interface CartContextType {
   openCart: () => void
   closeCart: () => void
   toggleCart: () => void
+  // Favoritos
+  favorites: string[]
+  toggleFavorite: (productId: string) => void
+  isFavorite: (productId: string) => boolean
+  clearFavorites: () => void
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -48,12 +53,14 @@ export function CartProvider({
   children: React.ReactNode
 }) {
   const [items, setItems] = useState<CartItem[]>([])
+  const [favorites, setFavorites] = useState<string[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   const storageKey = `pm_cart_${storeId}`
+  const favsStorageKey = `pm_favs_${storeId}`
 
-  // Cargar carrito desde localStorage al montar
+  // Cargar carrito y favoritos desde localStorage al montar
   useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey)
@@ -63,11 +70,18 @@ export function CartProvider({
           setItems(parsed)
         }
       }
+      const savedFavs = localStorage.getItem(favsStorageKey)
+      if (savedFavs) {
+        const parsedFavs = JSON.parse(savedFavs)
+        if (Array.isArray(parsedFavs)) {
+          setFavorites(parsedFavs)
+        }
+      }
     } catch (e) {
-      console.error('Error al cargar carrito:', e)
+      console.error('Error al cargar datos locales de tienda:', e)
     }
     setMounted(true)
-  }, [storageKey])
+  }, [storageKey, favsStorageKey])
 
   // Guardar en localStorage cuando cambian los items
   useEffect(() => {
@@ -78,6 +92,35 @@ export function CartProvider({
       console.error('Error al guardar carrito:', e)
     }
   }, [items, storageKey, mounted])
+
+  // Guardar favoritos en localStorage cuando cambian
+  useEffect(() => {
+    if (!mounted) return
+    try {
+      localStorage.setItem(favsStorageKey, JSON.stringify(favorites))
+    } catch (e) {
+      console.error('Error al guardar favoritos:', e)
+    }
+  }, [favorites, favsStorageKey, mounted])
+
+  // Alternar favorito
+  const toggleFavorite = useCallback((productId: string) => {
+    setFavorites((prev) =>
+      prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
+    )
+  }, [])
+
+  const isFavorite = useCallback(
+    (productId: string) => favorites.includes(productId),
+    [favorites]
+  )
+
+  const clearFavorites = useCallback(() => {
+    setFavorites([])
+    try {
+      localStorage.removeItem(favsStorageKey)
+    } catch (e) {}
+  }, [favsStorageKey])
 
   // Agregar item al carrito
   const addItem = useCallback(
@@ -205,6 +248,10 @@ export function CartProvider({
         openCart,
         closeCart,
         toggleCart,
+        favorites,
+        toggleFavorite,
+        isFavorite,
+        clearFavorites,
       }}
     >
       {children}

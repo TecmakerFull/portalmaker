@@ -1,5 +1,6 @@
 // =============================================================================
-// PORTALMAKER — Página Pública de "Sobre Nosotros"
+// PORTALMAKER — Página Pública de "Sobre Nosotros" (Estilo TiendaDemo)
+// "El portal del Maker" | portalmaker.com.ar
 // =============================================================================
 
 import { notFound } from 'next/navigation'
@@ -7,9 +8,10 @@ import Link from 'next/link'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import StorefrontHeaderFlow from '@/app/tienda/sections/storefront-header-flow'
+import StoreFooter from '@/app/tienda/sections/store-footer'
 import { renderMarkdown } from '@/lib/markdown'
-import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 import { getStoreSections } from '@/lib/store-sections'
+import { ArrowRight, Sparkles, Gem, Leaf, Heart } from 'lucide-react'
 
 export default async function TiendaSobreNosotrosPage() {
   const tenant = await getTenantStore()
@@ -23,7 +25,7 @@ export default async function TiendaSobreNosotrosPage() {
 
   const supabase = await createSupabaseServerClient()
 
-  // Obtener datos de la página
+  // Obtener datos de la página si existen
   const { data: pageData } = await supabase
     .from('store_pages')
     .select('*')
@@ -32,15 +34,11 @@ export default async function TiendaSobreNosotrosPage() {
     .eq('visible', true)
     .maybeSingle()
 
-  if (!pageData) {
-    notFound()
-  }
-
   // Parsear contenido
   let texto = ''
   let imagenUrl = ''
 
-  if (pageData.contenido) {
+  if (pageData?.contenido) {
     try {
       if (pageData.contenido.startsWith('{')) {
         const parsed = JSON.parse(pageData.contenido)
@@ -54,12 +52,7 @@ export default async function TiendaSobreNosotrosPage() {
     }
   }
 
-  const cleanPhone = store.whatsapp_numero ? store.whatsapp_numero.replace(/[^0-9]/g, '') : null
-  const generalWhatsappUrl = cleanPhone
-    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hola ${store.nombre}! Leí su sección Sobre Nosotros y me gustaría consultarles.`)}`
-    : null
-
-  // Obtener secciones modulares de Storefront (Top Bar, Header, Navbar)
+  // Obtener secciones modulares de Storefront
   const resolvedSections = await getStoreSections(
     supabase,
     store.id,
@@ -67,92 +60,115 @@ export default async function TiendaSobreNosotrosPage() {
     true
   )
 
+  const withTenant = (path: string) => {
+    if (!tenantQuery) return path
+    const sep = path.includes('?') ? '&' : '?'
+    return `${path}${sep}${tenantQuery.replace('?', '')}`
+  }
+
+  const bannerImage = imagenUrl || '/demo/store-hero.jpg'
+
+  const pillars = [
+    {
+      icon: Gem,
+      title: 'Diseño que permanece',
+      text: 'Formas que trascienden tendencias pasajeras y se adaptan a tus espacios con armonía.',
+    },
+    {
+      icon: Leaf,
+      title: 'Elegir con intención',
+      text: 'Una colección cuidada pieza por pieza, sin ruido innecesario ni producción descartable.',
+    },
+    {
+      icon: Heart,
+      title: 'Cerca de las personas',
+      text: 'Una experiencia sencilla, honesta y directa de taller a tu hogar.',
+    },
+  ]
+
   return (
     <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] transition-colors duration-200 flex flex-col justify-between">
       <div>
-        {/* Cabecera y Navegación Modular (Top Bar -> Header -> Navbar) */}
+        {/* Cabecera y Navegación Modular */}
         <StorefrontHeaderFlow
           store={store}
           resolvedSections={resolvedSections}
           tenantQuery={tenantQuery}
         />
 
-        {/* Main Content */}
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-16 space-y-10">
-        <div className="text-center space-y-3">
-          <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primario)] bg-[var(--color-primario)]/10 px-3 py-1 rounded-full inline-block">
-            Conocé nuestro taller
-          </span>
-          <h2 className="text-3xl sm:text-5xl font-extrabold font-[var(--font-heading)]">
-            {pageData.titulo || 'Sobre Nosotros'}
-          </h2>
-          {store.slogan && (
-            <p className="text-sm sm:text-base opacity-70 max-w-xl mx-auto">
-              {store.slogan}
-            </p>
-          )}
-        </div>
+        {/* Hero Banner de Sobre Nosotros */}
+        <section className="relative min-h-[420px] sm:min-h-[480px] overflow-hidden bg-black/[0.03] dark:bg-white/[0.04]">
+          <img
+            src={bannerImage}
+            alt={`El taller de ${store.nombre}`}
+            className="absolute inset-0 w-full h-full object-cover object-center opacity-65 dark:opacity-35"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-fondo)] via-[var(--color-fondo)]/80 to-transparent sm:w-2/3 pointer-events-none" />
 
-        {/* Foto Destacada (si tiene) */}
-        {imagenUrl && (
-          <div className="w-full aspect-[16/9] sm:aspect-[21/9] rounded-3xl overflow-hidden border border-black/10 dark:border-white/10 shadow-lg bg-black/5">
-            <img
-              src={imagenUrl}
-              alt={pageData.titulo}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
-
-        {/* Texto de la Historia */}
-        <div className="bg-black/[0.02] dark:bg-white/[0.03] border border-black/10 dark:border-white/10 rounded-3xl p-6 sm:p-10 space-y-6 text-sm sm:text-base leading-relaxed">
-          {texto ? (
-            <div className="space-y-4">
-              {renderMarkdown(texto)}
+          <div className="wrap relative z-10 py-16 sm:py-24 flex flex-col justify-center min-h-[420px] sm:min-h-[480px]">
+            <div className="max-w-md space-y-4">
+              <p className="eyebrow text-[var(--color-primario)]">NUESTRA ESENCIA</p>
+              <h1 className="text-3xl sm:text-5xl font-semibold font-[var(--font-heading)] leading-tight text-[var(--color-texto)]">
+                Somos {store.nombre}.
+              </h1>
+              <p className="text-sm sm:text-base leading-relaxed opacity-75 text-[var(--color-texto)]">
+                {store.slogan || 'Creemos que vivir mejor comienza con las cosas que eliges tener cerca.'}
+              </p>
+              <div className="pt-2">
+                <Link
+                  href={withTenant('/tienda')}
+                  className="min-h-[44px] h-11 px-6 rounded-full bg-[var(--color-primario)] text-white text-xs sm:text-sm font-semibold hover:opacity-95 active:scale-98 transition-all inline-flex items-center gap-2 shadow-xs cursor-pointer"
+                >
+                  <span>Descubre nuestra selección</span>
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </Link>
+              </div>
             </div>
-          ) : (
-            <p className="opacity-70 italic text-center py-6">
-              Esta sección está siendo actualizada con la historia y fotos del taller.
-            </p>
-          )}
+          </div>
+        </section>
 
-          {generalWhatsappUrl && (
-            <div className="pt-6 border-t border-black/10 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>
-                <h3 className="font-bold text-base">¿Tienes un proyecto personalizado en mente?</h3>
-                <p className="text-xs sm:text-sm opacity-70">
-                  Fabricamos piezas a medida, prototipos y series personalizadas.
+        {/* Historia & Manifiesto */}
+        <section className="wrap py-14 sm:py-20 space-y-16">
+          <div className="grid gap-8 sm:gap-12 md:grid-cols-2 items-start">
+            <h2 className="text-2xl sm:text-4xl font-medium font-[var(--font-heading)] leading-tight text-[var(--color-texto)]">
+              Objetos con intención.<br />
+              Espacios con alma.
+            </h2>
+            <div className="space-y-4 text-xs sm:text-sm leading-relaxed opacity-75 text-[var(--color-texto)] font-[var(--font-body)]">
+              {texto ? (
+                renderMarkdown(texto)
+              ) : (
+                <>
+                  <p>
+                    {store.nombre} nace de una idea simple: rodearnos de menos cosas, pero mejores. Piezas donde la belleza y la utilidad conviven sin esfuerzo.
+                  </p>
+                  <p>
+                    Seleccionamos y fabricamos objetos para tu día a día con una mirada que prioriza el detalle, el tacto de los materiales y esa dedicación artesanal que marca una gran diferencia.
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* 3 Pilares TiendaDemo */}
+          <div className="grid gap-8 border-t border-black/10 dark:border-white/10 pt-12 sm:grid-cols-3">
+            {pillars.map(({ icon: Icon, title, text }) => (
+              <div key={title} className="space-y-3">
+                <Icon className="w-7 h-7 text-[var(--color-primario)] stroke-[1.4]" />
+                <h3 className="text-base sm:text-lg font-semibold text-[var(--color-texto)]">
+                  {title}
+                </h3>
+                <p className="text-xs sm:text-sm leading-relaxed opacity-70 text-[var(--color-texto)]">
+                  {text}
                 </p>
               </div>
-
-              <a
-                href={generalWhatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="min-h-[44px] px-6 py-3 rounded-2xl bg-[#25D366] hover:bg-[#20ba59] text-white text-xs sm:text-sm font-bold active:scale-95 transition-all flex items-center gap-2 shadow-sm shrink-0"
-              >
-                <WhatsAppIcon className="w-4 h-4 shrink-0" />
-                <span>Escribinos por WhatsApp</span>
-              </a>
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
+            ))}
+          </div>
+        </section>
+      </div>
 
       {/* Footer */}
-      <footer className="mt-20 border-t border-black/10 dark:border-white/10 py-8 text-center text-xs opacity-60 space-y-2">
-        <div className="flex items-center justify-center gap-4 text-xs font-semibold">
-          <Link href={`/tienda${tenantQuery}`} className="hover:underline">
-            Catálogo
-          </Link>
-          <span>•</span>
-          <Link href={`/tienda/contacto${tenantQuery}`} className="hover:underline">
-            Contacto & Ubicación
-          </Link>
-        </div>
-        <p>© {new Date().getFullYear()} {store.nombre} — Desarrollado sobre Portalmaker</p>
-      </footer>
+      <StoreFooter store={store} tenantQuery={tenantQuery} />
     </div>
   )
 }

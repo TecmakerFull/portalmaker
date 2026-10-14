@@ -12,10 +12,12 @@
 4. [Gestión de Productos e Imágenes](#4-gestión-de-productos-e-imágenes)
 5. [Personalización de Marca, Colores y Fuentes](#5-personalización-de-marca-colores-y-fuentes)
 6. [La Tienda Pública y Ventas por WhatsApp](#6-la-tienda-pública-y-ventas-por-whatsapp)
-7. [Formulario de Contacto, Ubicación y Redes Sociales](#7-formulario-de-contacto-ubicación-y-redes-sociales)
-8. [Experiencia Móvil y Administración desde el Celular (Mobile-First)](#8-experiencia-móvil-y-administración-desde-el-celular-mobile-first)
-9. [Cómo Vincular tu Dominio Propio (.com.ar / .com)](#9-cómo-vincular-tu-dominio-propio-comar--com)
-10. [Preguntas Frecuentes y Soporte](#10-preguntas-frecuentes-y-soporte)
+7. [Ventas, Pedidos y Descuento Automático de Stock](#8-ventas-pedidos-y-descuento-automático-de-stock)
+8. [Formulario de Contacto, Ubicación y Redes Sociales](#10-formulario-de-contacto-ubicación-y-redes-sociales)
+9. [Experiencia Móvil y Administración desde el Celular](#11-experiencia-móvil-y-administración-desde-el-celular-mobile-first)
+10. [Cómo Vincular tu Dominio Propio (.com.ar)](#12-cómo-vincular-tu-dominio-propio-comar-directamente-en-nicar)
+11. [Colaboradores y Trabajo en Equipo (Cómo invitar y cómo entra cada uno)](#13-colaboradores-y-trabajo-en-equipo-cómo-invitar-y-cómo-entra-cada-uno)
+12. [Preguntas Frecuentes y Soporte](#14-preguntas-frecuentes-y-soporte)
 
 ---
 
@@ -39,6 +41,19 @@
 3. Tienes dos formas de ingresar:
    * **Con Email y Contraseña**: Si es tu primera vez, ingresa tu email y contraseña deseada y haz clic en **"Crear Cuenta"**.
    * **Con Google**: Haz clic en **"Continuar con Google"** para un acceso instantáneo con tu cuenta de Gmail.
+
+### ¿Iniciaste sesión con Google y también quieres entrar con correo y contraseña?
+Cuando inicias sesión con el botón **"Continuar con Google"** por primera vez, el sistema crea tu cuenta automáticamente vinculada a tu correo de Gmail verificado, pero **todavía no tiene una contraseña asignada**. Si luego intentas ingresar escribiendo una contraseña en el formulario tradicional, el sistema no la reconocerá porque esa clave aún no ha sido creada.
+
+**Cómo activar tu contraseña en 3 simples pasos:**
+1. En la pantalla de inicio de sesión, haz clic en **"¿Olvidaste tu contraseña?"** (o ingresa directo a `/login?mode=forgot`).
+2. Escribe tu correo electrónico de Google y presiona el botón para solicitar el enlace.
+3. Revisa tu casilla de correo: te llegará un mensaje con un enlace seguro para **definir tu contraseña**. Haz clic allí, escribe la clave que quieras usar y presiona guardar.
+
+> **¡Listo!** A partir de ese momento, tu cuenta queda habilitada con **ambas opciones de acceso**:
+> * Puedes seguir entrando con un solo clic en **"Continuar con Google"**.
+> * O puedes escribir tu **Correo y Contraseña**.
+> Ambos métodos ingresan a la misma cuenta y a tu misma tienda, con todos tus datos intactos.
 
 ---
 
@@ -233,8 +248,50 @@ Puedes conectar tu propio dominio de forma 100% directa:
 
 ---
 
-## 13. Preguntas Frecuentes y Soporte
+## 13. Colaboradores y Trabajo en Equipo (Cómo invitar y cómo entra cada uno)
 
+Si trabajas con un socio, diseñador o ayudante en el taller, puedes invitarlo a colaborar en tu tienda para que te ayude a cargar productos, ajustar fotos o cambiar precios, sin necesidad de compartirle tu propia contraseña ni tu cuenta de Google.
+
+### ¿Cómo funciona para el Dueño de la Tienda?
+1. **Invitar a un nuevo colaborador**:
+   - Ingresa a tu panel de administración y entra en **Colaboradores** (ícono de equipo en el menú lateral).
+   - Escribe el correo electrónico de la persona que quieres invitar y haz clic en **"Enviar Invitación"**.
+   - El sistema generará un enlace de invitación único y seguro. Puedes copiarlo con un solo clic y enviárselo directamente por WhatsApp o correo.
+2. **Gestionar a tu equipo**:
+   - En esa misma pantalla verás a todos tus colaboradores con su estado en tiempo real:
+     - **Invitación enviada**: El colaborador fue invitado pero aún no activó su cuenta.
+     - **Activo**: Ya ingresó y está habilitado para colaborar en la tienda.
+   - Si en algún momento dejas de trabajar con esa persona, simplemente pulsas **"Revocar Acceso"** o **"Eliminar"** y el sistema le quitará el acceso a tu tienda de manera instantánea.
+
+---
+
+### ¿Cómo tiene que hacer el Colaborador para entrar?
+El proceso para la persona invitada es directo y muy sencillo:
+
+1. **Abrir el enlace de invitación**:
+   - El colaborador abre el enlace que le compartió el dueño desde su computadora o celular.
+2. **Crear su contraseña o entrar con Google**:
+   - **Si usa Gmail o ya tiene cuenta en la plataforma**: Puede hacer clic directamente en **"Continuar con Google"**.
+   - **Si es su primera vez**: Escribe la contraseña que prefiera usar para su cuenta y presiona **"Aceptar invitación y crear cuenta"**.
+3. **Acceso directo al panel de la tienda**:
+   - Una vez adentro, el sistema lo reconoce automáticamente como colaborador autorizado de la tienda.
+   - Podrá ingresar en cualquier momento futuro desde `/login` usando su **Correo y Contraseña** (o el botón de Google).
+   - Tendrá acceso para cargar y editar productos, categorías, fotos y banners, mientras que los datos sensibles (como la suscripción y pagos de la plataforma) quedan reservados exclusivamente para el dueño.
+4. **¿Y si olvida su contraseña?**:
+   - Al igual que cualquier usuario, puede ir a `/login`, hacer clic en **"¿Olvidaste tu contraseña?"**, ingresar su correo y el sistema le enviará un mensaje seguro con un enlace para definir una nueva clave.
+
+---
+
+## 14. Preguntas Frecuentes y Soporte
+
+* **¿Inicié sesión con Google y ahora quiero entrar con correo y contraseña, se puede?**
+  ¡Sí! Cuando entras por primera vez con Google, el sistema crea tu cuenta pero no tiene contraseña asignada. Para activarla:
+  1. En la pantalla de ingreso (`/login`), haz clic en **"¿Olvidaste tu contraseña?"**.
+  2. Escribe tu correo de Gmail y solicita el enlace.
+  3. Revisa tu correo, abre el enlace y escribe la contraseña que quieras.
+  A partir de ese momento, podrás entrar tanto con el botón de Google como escribiendo tu correo y tu contraseña.
+* **¿Puedo invitar a más de un colaborador a mi tienda?**
+  Sí, puedes invitar a los miembros de tu equipo desde el menú **Colaboradores**. Cada uno ingresa con su propia cuenta y contraseña personal.
 * **¿Puedo vender piezas que no tengo en stock?**
   Sí, el sistema clasifica automáticamente los productos sin stock como "Bajo pedido / Reserva" para que los clientes puedan solicitarlos.
 * **¿Cómo se descuenta el stock?**
@@ -245,4 +302,5 @@ Puedes conectar tu propio dominio de forma 100% directa:
 ---
 
 *Portalmaker — El portal del Maker* | portalmaker.com.ar
+
 

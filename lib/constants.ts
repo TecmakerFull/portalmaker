@@ -50,6 +50,8 @@ export const PORTAL_COLORS = {
 // =============================================================================
 
 export const AVAILABLE_FONTS = [
+  { label: 'DM Sans (Recomendada Tienda)', value: 'DM Sans', style: 'sans-serif' },
+  { label: 'Manrope (Recomendada Títulos)', value: 'Manrope', style: 'sans-serif' },
   { label: 'Inter',            value: 'Inter',             style: 'sans-serif' },
   { label: 'Outfit',           value: 'Outfit',            style: 'sans-serif' },
   { label: 'Playfair Display', value: 'Playfair Display',  style: 'serif' },

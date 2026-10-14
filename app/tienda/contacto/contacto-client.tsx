@@ -1,5 +1,6 @@
 // =============================================================================
-// PORTALMAKER — Formulario y Vista Pública de Contacto (Client Component)
+// PORTALMAKER — Formulario y Vista Pública de Contacto (Estilo TiendaDemo)
+// "El portal del Maker" | portalmaker.com.ar
 // =============================================================================
 
 'use client'
@@ -8,22 +9,15 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { Store } from '@/types/database'
 import {
-  MapPin,
+  MessageCircle,
+  Package,
   Mail,
-  Phone,
+  Check,
+  ArrowRight,
   Clock,
-  Send,
-  MessageSquare,
-  Camera,
-  Share2,
-  Video,
+  MapPin,
   ExternalLink,
-  CheckCircle2,
-  ArrowLeft,
-  Navigation,
-  ChevronDown,
 } from 'lucide-react'
-import WhatsAppIcon from '../sections/whatsapp-icon'
 
 interface ContactoClientProps {
   store: Store
@@ -31,336 +25,245 @@ interface ContactoClientProps {
 }
 
 export default function ContactoClient({ store, tenantQuery }: ContactoClientProps) {
-  // Estados del formulario
   const [nombre, setNombre] = useState('')
-  const [contacto, setContacto] = useState('')
-  const [tipoConsulta, setTipoConsulta] = useState('Presupuesto / Cotización')
+  const [email, setEmail] = useState('')
+  const [motivo, setMotivo] = useState('Información de un producto')
   const [mensaje, setMensaje] = useState('')
+  const [privacidad, setPrivacidad] = useState(false)
   const [enviado, setEnviado] = useState(false)
 
   const cleanPhone = store.whatsapp_numero ? store.whatsapp_numero.replace(/[^0-9]/g, '') : null
 
-  // Enviar consulta por WhatsApp
-  const handleSendWhatsapp = (e: React.FormEvent) => {
+  const withTenant = (path: string) => {
+    if (!tenantQuery) return path
+    const sep = path.includes('?') ? '&' : '?'
+    return `${path}${sep}${tenantQuery.replace('?', '')}`
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!mensaje.trim()) return
 
-    const textoFormateado = `*Consulta desde la tienda web - ${store.nombre}*\n` +
+    const textoFormateado =
+      `*Consulta desde la tienda web - ${store.nombre}*\n` +
       `*Nombre:* ${nombre.trim() || 'No especificado'}\n` +
-      `*Contacto:* ${contacto.trim() || 'No especificado'}\n` +
-      `*Motivo:* ${tipoConsulta}\n` +
+      `*Correo:* ${email.trim() || 'No especificado'}\n` +
+      `*Motivo:* ${motivo}\n` +
       `*Mensaje:* ${mensaje.trim()}`
 
     if (cleanPhone) {
       const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(textoFormateado)}`
       window.open(url, '_blank')
-      setEnviado(true)
     } else if (store.email_contacto) {
       const mailtoUrl = `mailto:${store.email_contacto}?subject=${encodeURIComponent(
-        `Consulta Web: ${tipoConsulta}`
+        `Consulta Web: ${motivo}`
       )}&body=${encodeURIComponent(textoFormateado)}`
       window.location.href = mailtoUrl
-      setEnviado(true)
     }
+
+    setEnviado(true)
   }
 
-  // Generar link de Google Maps
-  const mapsSearchUrl = store.google_maps_embed_url && !store.google_maps_embed_url.includes('<iframe')
-    ? store.google_maps_embed_url
-    : store.direccion
-    ? `https://maps.google.com/?q=${encodeURIComponent(store.direccion)}`
-    : null
+  // Google Maps URL
+  const mapsSearchUrl =
+    store.google_maps_embed_url && !store.google_maps_embed_url.includes('<iframe')
+      ? store.google_maps_embed_url
+      : store.direccion
+      ? `https://maps.google.com/?q=${encodeURIComponent(store.direccion)}`
+      : null
 
   return (
-    <div className="space-y-8">
-      {/* Botón Volver al Catálogo */}
+    <div className="space-y-10">
+      {/* Encabezado */}
       <div>
-        <Link
-          href={`/tienda${tenantQuery}`}
-          className="min-h-[44px] inline-flex items-center gap-2 text-sm font-semibold opacity-70 hover:opacity-100 hover:text-[var(--color-primario)] transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Volver al Catálogo</span>
-        </Link>
-      </div>
-
-      <div className="text-center max-w-2xl mx-auto space-y-2">
-        <h1 className="text-3xl sm:text-4xl font-extrabold font-[var(--font-heading)] text-[var(--color-primario)]">
-          Contacto & Taller
+        <p className="eyebrow text-[var(--color-primario)]">ESTAMOS CERCA</p>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-medium font-[var(--font-heading)] mt-3 text-[var(--color-texto)]">
+          Hablemos.
         </h1>
-        <p className="text-sm sm:text-base opacity-75">
-          Escríbenos para consultas de piezas personalizadas, cotizaciones por volumen o retiros en taller.
+        <p className="mt-3 text-xs sm:text-sm opacity-70 text-[var(--color-texto)] max-w-lg">
+          Una pregunta, una idea o un poco de ayuda para tu proyecto. Te escuchamos.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Columna Izquierda: Formulario de Contacto (7 cols) */}
-        <div className="lg:col-span-7 bg-black/[0.02] dark:bg-white/[0.03] border border-black/10 dark:border-white/10 rounded-3xl p-6 sm:p-8">
-          <div className="flex items-center gap-2.5 mb-6 border-b border-black/10 dark:border-white/10 pb-4">
-            <MessageSquare className="w-5 h-5 text-[var(--color-primario)]" />
-            <h2 className="text-lg font-bold font-[var(--font-heading)]">
-              Envíanos un Mensaje
+      <div className="grid gap-12 lg:grid-cols-[1fr_1.3fr] items-start">
+        {/* Columna Izquierda: Información de Contacto */}
+        <div className="space-y-8">
+          <div>
+            <MessageCircle className="mb-3 w-6 h-6 text-[var(--color-primario)]" />
+            <h2 className="text-base sm:text-lg font-semibold text-[var(--color-texto)]">
+              Atención personalizada
             </h2>
+            <p className="mt-1.5 text-xs sm:text-sm leading-relaxed opacity-75 text-[var(--color-texto)]">
+              {cleanPhone
+                ? `Escríbenos directamente por WhatsApp al +${cleanPhone} o utiliza el formulario.`
+                : 'El correo, WhatsApp y los canales de atención están disponibles a través de este formulario.'}
+            </p>
+
+            {store.email_contacto && (
+              <p className="mt-2 text-xs opacity-75 font-medium">
+                Email: {store.email_contacto}
+              </p>
+            )}
+
+            {store.horario_atencion && (
+              <p className="mt-1 text-xs opacity-75 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 opacity-60" />
+                <span>Horario: {store.horario_atencion}</span>
+              </p>
+            )}
           </div>
 
-          {enviado ? (
-            <div className="text-center py-10 space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold">¡Mensaje Preparado!</h3>
-              <p className="text-sm opacity-70 max-w-md mx-auto">
-                Se ha generado el mensaje con tus datos para contactarnos inmediatamente.
-              </p>
-              <button
-                type="button"
-                onClick={() => setEnviado(false)}
-                className="min-h-[44px] px-6 py-2.5 rounded-xl border border-black/15 dark:border-white/15 text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+          <div>
+            <Package className="mb-3 w-6 h-6 text-[var(--color-primario)]" />
+            <h2 className="text-base sm:text-lg font-semibold text-[var(--color-texto)]">
+              ¿Una duda sobre tu pedido?
+            </h2>
+            <p className="mt-1.5 text-xs sm:text-sm leading-relaxed opacity-75 text-[var(--color-texto)]">
+              Consulta información de envíos, devoluciones y tiempos de producción.
+            </p>
+            <div className="mt-3">
+              <Link
+                href={withTenant('/tienda/ayuda')}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-primario)] hover:underline"
               >
-                Enviar otra consulta
-              </button>
+                <span>Consulta nuestras preguntas frecuentes</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
-          ) : (
-            <form onSubmit={handleSendWhatsapp} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5 text-slate-700 dark:text-slate-300">
-                    Tu Nombre *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={nombre}
-                    onChange={(e) => setNombre(e.target.value)}
-                    placeholder="Ej: Juan Pérez"
-                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:border-[var(--color-primario)] focus:ring-2 focus:ring-[var(--color-primario)]/20 transition-all"
-                  />
-                </div>
+          </div>
 
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5 text-slate-700 dark:text-slate-300">
-                    Tu Teléfono / Email *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={contacto}
-                    onChange={(e) => setContacto(e.target.value)}
-                    placeholder="Ej: 11 2345-6789 o email"
-                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:border-[var(--color-primario)] focus:ring-2 focus:ring-[var(--color-primario)]/20 transition-all"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1.5 text-slate-700 dark:text-slate-300">
-                  Tipo de Consulta
-                </label>
-                <div className="relative">
-                  <select
-                    value={tipoConsulta}
-                    onChange={(e) => setTipoConsulta(e.target.value)}
-                    className="w-full min-h-[44px] appearance-none pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-medium focus:outline-none focus:border-[var(--color-primario)] focus:ring-2 focus:ring-[var(--color-primario)]/20 transition-all cursor-pointer"
-                  >
-                    <option value="Presupuesto / Cotización" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 py-1.5">
-                      Presupuesto / Cotización de Impresión o Corte
-                    </option>
-                    <option value="Consulta sobre Producto" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 py-1.5">
-                      Consulta sobre un Producto del Catálogo
-                    </option>
-                    <option value="Pedido Especial / Prototipado" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 py-1.5">
-                      Pedido Especial / Modelado 3D / Prototipado
-                    </option>
-                    <option value="Estado de Pedido / Retiro" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 py-1.5">
-                      Estado de Pedido / Coordinación de Retiro
-                    </option>
-                    <option value="Otra Consulta" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 py-1.5">
-                      Otra Consulta
-                    </option>
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1.5 text-slate-700 dark:text-slate-300">
-                  Mensaje o Especificaciones *
-                </label>
-                <textarea
-                  required
-                  rows={4}
-                  value={mensaje}
-                  onChange={(e) => setMensaje(e.target.value)}
-                  placeholder="Detalla tu consulta, medidas de la pieza, material deseado o cantidad de unidades..."
-                  className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:border-[var(--color-primario)] focus:ring-2 focus:ring-[var(--color-primario)]/20 transition-all resize-y min-h-[110px]"
-                />
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="w-full min-h-[48px] px-6 py-3 rounded-xl bg-[var(--color-primario)] text-white text-sm font-bold hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+          {/* Dirección física / Taller si existe */}
+          {store.direccion && (
+            <div>
+              <MapPin className="mb-3 w-6 h-6 text-[var(--color-primario)]" />
+              <h2 className="text-base sm:text-lg font-semibold text-[var(--color-texto)]">
+                Ubicación del Taller
+              </h2>
+              <p className="mt-1.5 text-xs sm:text-sm leading-relaxed opacity-75 text-[var(--color-texto)]">
+                {store.direccion}
+              </p>
+              {mapsSearchUrl && (
+                <a
+                  href={mapsSearchUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-primario)] hover:underline"
                 >
-                  {cleanPhone ? (
-                    <>
-                      <WhatsAppIcon className="w-4 h-4 shrink-0" />
-                      <span>Enviar Consulta por WhatsApp</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      <span>Enviar Mensaje</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+                  <span>Abrir en Google Maps</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
           )}
         </div>
 
-        {/* Columna Derecha: Información del Taller y Ubicación (5 cols) */}
-        <div className="lg:col-span-5 space-y-6">
-          {/* Tarjeta de Información */}
-          <div className="bg-black/[0.02] dark:bg-white/[0.03] border border-black/10 dark:border-white/10 rounded-3xl p-6 sm:p-8 space-y-6">
-            <h2 className="text-lg font-bold font-[var(--font-heading)] border-b border-black/10 dark:border-white/10 pb-4">
-              Información de Atención
-            </h2>
-
-            <div className="space-y-4">
-              {/* WhatsApp */}
-              {cleanPhone && (
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                    <WhatsAppIcon className="w-5 h-5 shrink-0" />
-                  </div>
-                  <div>
-                    <span className="text-xs opacity-60 font-semibold uppercase tracking-wider block">
-                      WhatsApp Directo
-                    </span>
-                    <a
-                      href={`https://wa.me/${cleanPhone}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-bold hover:text-[var(--color-primario)] transition-colors inline-flex items-center gap-1.5"
-                    >
-                      <span>+{store.whatsapp_numero}</span>
-                      <ExternalLink className="w-3.5 h-3.5 opacity-50" />
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              {/* Email */}
-              {store.email_contacto && (
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[var(--color-primario)]/15 text-[var(--color-primario)] flex items-center justify-center shrink-0 mt-0.5">
-                    <Mail className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-xs opacity-60 font-semibold uppercase tracking-wider block">
-                      Email
-                    </span>
-                    <a
-                      href={`mailto:${store.email_contacto}`}
-                      className="text-sm font-bold hover:text-[var(--color-primario)] transition-colors break-all inline-flex items-center gap-1.5"
-                    >
-                      <span>{store.email_contacto}</span>
-                      <ExternalLink className="w-3.5 h-3.5 opacity-50" />
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              {/* Horario */}
-              {store.horario_atencion && (
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[var(--color-primario)]/15 text-[var(--color-primario)] flex items-center justify-center shrink-0 mt-0.5">
-                    <Clock className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-xs opacity-60 font-semibold uppercase tracking-wider block">
-                      Horarios de Atención
-                    </span>
-                    <p className="text-sm font-medium opacity-90 leading-relaxed">
-                      {store.horario_atencion}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Dirección / Ubicación */}
-              {store.direccion && (
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[var(--color-primario)]/15 text-[var(--color-primario)] flex items-center justify-center shrink-0 mt-0.5">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-xs opacity-60 font-semibold uppercase tracking-wider block">
-                      Ubicación / Taller
-                    </span>
-                    <p className="text-sm font-medium opacity-90 leading-relaxed">
-                      {store.direccion}
-                    </p>
-                    {mapsSearchUrl && (
-                      <a
-                        href={mapsSearchUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="min-h-[36px] inline-flex items-center gap-1.5 text-xs font-bold text-[var(--color-primario)] hover:underline mt-1.5"
-                      >
-                        <Navigation className="w-3.5 h-3.5" />
-                        <span>Abrir en Google Maps</span>
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Redes Sociales */}
-            {(store.instagram_url || store.facebook_url || store.tiktok_url) && (
-              <div className="pt-4 border-t border-black/10 dark:border-white/10">
-                <span className="text-xs opacity-60 font-semibold uppercase tracking-wider block mb-3">
-                  Seguinos en Redes
-                </span>
-                <div className="flex flex-wrap gap-2.5">
-                  {store.instagram_url && (
-                    <a
-                      href={store.instagram_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="min-h-[44px] px-3.5 py-2 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold flex items-center gap-2 transition-colors"
-                    >
-                      <Camera className="w-4 h-4 text-pink-500" />
-                      <span>Instagram</span>
-                    </a>
-                  )}
-                  {store.facebook_url && (
-                    <a
-                      href={store.facebook_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="min-h-[44px] px-3.5 py-2 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold flex items-center gap-2 transition-colors"
-                    >
-                      <Share2 className="w-4 h-4 text-blue-500" />
-                      <span>Facebook</span>
-                    </a>
-                  )}
-                  {store.tiktok_url && (
-                    <a
-                      href={store.tiktok_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="min-h-[44px] px-3.5 py-2 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold flex items-center gap-2 transition-colors"
-                    >
-                      <Video className="w-4 h-4 text-violet-500" />
-                      <span>TikTok</span>
-                    </a>
-                  )}
-                </div>
+        {/* Columna Derecha: Formulario de Contacto */}
+        <div>
+          {enviado ? (
+            <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] p-8 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+                <Check className="w-6 h-6" />
               </div>
-            )}
-          </div>
+              <h2 className="text-lg sm:text-xl font-semibold font-[var(--font-heading)]">
+                Tu mensaje ha sido enviado
+              </h2>
+              <p className="text-xs sm:text-sm opacity-70 max-w-sm mx-auto leading-relaxed">
+                Gracias por comunicarte con {store.nombre}. Nos pondremos en contacto contigo a la brevedad.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setEnviado(false)
+                  setMensaje('')
+                }}
+                className="mt-4 min-h-[40px] px-4 py-2 rounded-xl border border-black/15 dark:border-white/15 text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+              >
+                Escribir otro mensaje
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="grid gap-4 sm:gap-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="block text-xs font-medium mb-1.5 opacity-80">
+                    Tu nombre
+                  </span>
+                  <input
+                    required
+                    type="text"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    placeholder="Tu nombre completo"
+                    className="w-full h-11 px-3.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-superficie)] text-xs sm:text-sm outline-none focus:border-[var(--color-primario)] focus:ring-1 focus:ring-[var(--color-primario)] text-[var(--color-texto)]"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="block text-xs font-medium mb-1.5 opacity-80">
+                    Correo electrónico
+                  </span>
+                  <input
+                    required
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="nombre@ejemplo.com"
+                    className="w-full h-11 px-3.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-superficie)] text-xs sm:text-sm outline-none focus:border-[var(--color-primario)] focus:ring-1 focus:ring-[var(--color-primario)] text-[var(--color-texto)]"
+                  />
+                </label>
+              </div>
+
+              <label className="block">
+                <span className="block text-xs font-medium mb-1.5 opacity-80">
+                  ¿En qué podemos ayudarte?
+                </span>
+                <select
+                  value={motivo}
+                  onChange={(e) => setMotivo(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-superficie)] text-xs sm:text-sm outline-none focus:border-[var(--color-primario)] focus:ring-1 focus:ring-[var(--color-primario)] text-[var(--color-texto)]"
+                >
+                  <option value="Información de un producto">Información de un producto</option>
+                  <option value="Presupuesto / Cotización especial">Presupuesto / Cotización especial</option>
+                  <option value="Estado de mi pedido">Estado de mi pedido</option>
+                  <option value="Envíos y devoluciones">Envíos y devoluciones</option>
+                  <option value="Otro motivo">Otro motivo</option>
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="block text-xs font-medium mb-1.5 opacity-80">
+                  Tu mensaje
+                </span>
+                <textarea
+                  required
+                  rows={5}
+                  value={mensaje}
+                  onChange={(e) => setMensaje(e.target.value)}
+                  placeholder="Escribe tu consulta o los detalles de la pieza que deseas fabricar..."
+                  className="w-full p-3.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-superficie)] text-xs sm:text-sm outline-none focus:border-[var(--color-primario)] focus:ring-1 focus:ring-[var(--color-primario)] text-[var(--color-texto)] resize-none"
+                />
+              </label>
+
+              <label className="flex items-center gap-2.5 text-xs opacity-75 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  required
+                  checked={privacidad}
+                  onChange={(e) => setPrivacidad(e.target.checked)}
+                  className="accent-[var(--color-primario)] rounded w-4 h-4 cursor-pointer"
+                />
+                <span>Acepto la política de privacidad y condiciones de contacto.</span>
+              </label>
+
+              <button
+                type="submit"
+                className="h-12 w-full rounded-xl bg-[var(--color-primario)] text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-xs hover:opacity-95 active:scale-98 transition-all cursor-pointer"
+              >
+                <span>Enviar mensaje</span>
+                <Mail className="w-4 h-4" />
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>

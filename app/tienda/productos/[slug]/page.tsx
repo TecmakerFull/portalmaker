@@ -1,9 +1,14 @@
+// =============================================================================
+// PORTALMAKER — Página de Detalle de Producto (Estilo TiendaDemo)
+// "El portal del Maker" | portalmaker.com.ar
+// =============================================================================
+
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import StorefrontHeaderFlow from '../../sections/storefront-header-flow'
 import ProductDetailView from './product-detail-view'
+import StoreFooter from '../../sections/store-footer'
 import { getStoreSections } from '@/lib/store-sections'
 
 interface PageProps {
@@ -23,7 +28,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
 
   const supabase = await createSupabaseServerClient()
 
-  // Buscar producto
+  // 1. Buscar producto
   const { data: product } = await supabase
     .from('products')
     .select('*, category:categories(nombre)')
@@ -36,7 +41,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
     notFound()
   }
 
-  // Buscar variantes activas del producto
+  // 2. Buscar variantes activas del producto
   const { data: variants } = await supabase
     .from('product_variants')
     .select('*')
@@ -44,14 +49,23 @@ export default async function ProductoDetallePage({ params }: PageProps) {
     .eq('activo', true)
     .order('orden', { ascending: true })
 
-  // Buscar detalles adicionales (dimensiones, etc.)
+  // 3. Buscar detalles adicionales (especificaciones, medidas, etc.)
   const { data: details } = await supabase
     .from('product_details')
     .select('*')
     .eq('product_id', product.id)
     .maybeSingle()
 
-  // Verificar si la página "Sobre Nosotros" está activa
+  // 4. Buscar otros productos recomendados de la tienda ("También te puede gustar")
+  const { data: relatedProducts } = await supabase
+    .from('products')
+    .select('*, category:categories(nombre)')
+    .eq('store_id', store.id)
+    .eq('visible', true)
+    .neq('id', product.id)
+    .limit(4)
+
+  // 5. Verificar si la página "Sobre Nosotros" está activa
   const { data: sobreNosotrosPage } = await supabase
     .from('store_pages')
     .select('id, visible')
@@ -62,7 +76,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
 
   const hasSobreNosotros = !!sobreNosotrosPage
 
-  // Obtener secciones modulares de Storefront (Top Bar, Header, Navbar)
+  // 6. Obtener secciones modulares de Storefront
   const resolvedSections = await getStoreSections(
     supabase,
     store.id,
@@ -81,37 +95,20 @@ export default async function ProductoDetallePage({ params }: PageProps) {
         />
 
         {/* Detalle del Producto */}
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <main className="wrap py-8 sm:py-12">
           <ProductDetailView
             product={product}
             store={store}
             variants={variants ?? []}
             details={details}
+            relatedProducts={relatedProducts ?? []}
+            tenantQuery={tenantQuery}
           />
         </main>
       </div>
 
-      {/* Footer */}
-      <footer className="mt-20 border-t border-black/10 dark:border-white/10 py-8 text-center text-xs opacity-75 space-y-2">
-        <div className="flex items-center justify-center gap-4 text-xs font-semibold">
-          <Link href={`/tienda${tenantQuery}`} className="hover:underline">
-            Catálogo
-          </Link>
-          {hasSobreNosotros && (
-            <>
-              <span>•</span>
-              <Link href={`/tienda/sobre-nosotros${tenantQuery}`} className="hover:underline">
-                Sobre Nosotros
-              </Link>
-            </>
-          )}
-          <span>•</span>
-          <Link href={`/tienda/contacto${tenantQuery}`} className="hover:underline">
-            Contacto & Ubicación
-          </Link>
-        </div>
-        <p className="opacity-60">© {new Date().getFullYear()} {store.nombre} — Desarrollado sobre Portalmaker</p>
-      </footer>
+      {/* Footer 4 Columnas */}
+      <StoreFooter store={store} tenantQuery={tenantQuery} />
     </div>
   )
 }

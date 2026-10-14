@@ -1,5 +1,5 @@
 // =============================================================================
-// PORTALMAKER — Sección 4: Hero / Banners Promocionales (Mobile & Desktop)
+// PORTALMAKER — Sección 4: Hero / Banners Promocionales Minimalista (Estilo TiendaDemo)
 // "El portal del Maker" | portalmaker.com.ar
 // =============================================================================
 
@@ -8,47 +8,62 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import type { StoreSection, HeroBannerSettings, HeroBannerSlide } from '@/types/database'
-import { ChevronLeft, ChevronRight, ArrowRight, Sparkles } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, Star } from 'lucide-react'
 
 interface HeroBannersProps {
-  section: StoreSection<HeroBannerSettings, HeroBannerSlide[]>
+  section?: StoreSection<HeroBannerSettings, HeroBannerSlide[]> | null
+  storeName?: string
+  storeSlogan?: string | null
   tenantQuery: string
 }
 
-export default function HeroBanners({ section, tenantQuery }: HeroBannersProps) {
-  if (!section || !section.enabled) return null
-
+export default function HeroBanners({
+  section,
+  storeName = 'Tienda',
+  storeSlogan,
+  tenantQuery,
+}: HeroBannersProps) {
+  // Slides activos configurados por el dueño de la tienda
   const now = new Date().getTime()
-  const activeSlides = (section.content || []).filter((slide) => {
-    if (!slide.activo || !slide.imagen_desktop) return false
-
-    // Validar vigencia de fechas si están definidas
+  const configuredSlides = (section?.content || []).filter((slide) => {
+    if (!slide.activo) return false
     if (slide.fecha_desde && new Date(slide.fecha_desde).getTime() > now) return false
     if (slide.fecha_hasta && new Date(slide.fecha_hasta).getTime() < now) return false
-
     return true
   })
 
-  if (activeSlides.length === 0) return null
+  // Si no hay slides configurados o la sección está vacía, creamos el slide por defecto estilo TiendaDemo
+  const defaultSlide: HeroBannerSlide = {
+    id: 'default-hero-demo',
+    imagen_desktop: '/demo/store-hero.jpg',
+    imagen_mobile: '/demo/store-hero.jpg',
+    subtitulo: 'NUEVA COLECCIÓN · 2026',
+    texto_adicional: 'OBJETOS CON INTENCIÓN. ESPACIOS CON ALMA.',
+    titulo: storeSlogan || 'Diseño para tu día a día.',
+    cta_texto: 'Explorar colección',
+    cta_url: '/tienda',
+    activo: true,
+  }
 
-  const {
-    modo = 'carrusel',
-    autoplay = true,
-    intervalo_segundos = 5,
-    mostrar_flechas = true,
-    mostrar_indicadores = true,
-    pausar_hover = true,
-    altura = 'adaptable',
-  } = section.settings || {}
+  // Si la sección está explícitamente deshabilitada y hay slides configurados, respetamos el apagado
+  if (section && section.enabled === false && configuredSlides.length > 0) {
+    return null
+  }
 
-  const isSingle = modo === 'banner_unico' || activeSlides.length === 1
-  const slides = isSingle ? [activeSlides[0]] : activeSlides
+  const slides: HeroBannerSlide[] =
+    configuredSlides.length > 0 ? configuredSlides : [defaultSlide]
+
   const count = slides.length
-
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const touchStartX = useRef<number | null>(null)
   const touchEndX = useRef<number | null>(null)
+
+  const {
+    autoplay = true,
+    intervalo_segundos = 5,
+    pausar_hover = true,
+  } = section?.settings || {}
 
   const nextSlide = useCallback(() => {
     if (count <= 1) return
@@ -60,18 +75,14 @@ export default function HeroBanners({ section, tenantQuery }: HeroBannersProps) 
     setCurrentIndex((prev) => (prev - 1 + count) % count)
   }, [count])
 
-  // Rotación automática
   useEffect(() => {
-    if (isSingle || !autoplay || isPaused) return
-
+    if (count <= 1 || !autoplay || isPaused) return
     const timer = setInterval(() => {
       nextSlide()
-    }, Math.max(intervalo_segundos * 1000, 2500))
-
+    }, Math.max(intervalo_segundos * 1000, 3000))
     return () => clearInterval(timer)
-  }, [isSingle, autoplay, intervalo_segundos, isPaused, nextSlide])
+  }, [count, autoplay, intervalo_segundos, isPaused, nextSlide])
 
-  // Gestos táctiles
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.targetTouches[0].clientX
   }
@@ -91,16 +102,8 @@ export default function HeroBanners({ section, tenantQuery }: HeroBannersProps) 
     touchEndX.current = null
   }
 
-  // Altura configurable
-  let heightClass = 'aspect-[16/8] sm:aspect-[21/8] md:aspect-[3/1] max-h-[500px]'
-  if (altura === 'compacta') {
-    heightClass = 'aspect-[16/6] sm:aspect-[24/7] md:aspect-[4/1] max-h-[380px]'
-  } else if (altura === 'pantalla_completa') {
-    heightClass = 'min-h-[420px] sm:min-h-[540px]'
-  }
-
   const formatUrl = (url?: string | null) => {
-    if (!url) return null
+    if (!url) return '/tienda'
     if (url.startsWith('http')) return url
     if (tenantQuery) {
       const sep = url.includes('?') ? '&' : '?'
@@ -109,147 +112,122 @@ export default function HeroBanners({ section, tenantQuery }: HeroBannersProps) 
     return url
   }
 
+  const currentSlide = slides[currentIndex] || defaultSlide
+  const heroImage = currentSlide.imagen_desktop || '/demo/store-hero.jpg'
+
   return (
     <section
-      aria-label="Banners y promociones destacadas"
+      aria-label="Presentación destacada de la tienda"
       onMouseEnter={() => pausar_hover && setIsPaused(true)}
       onMouseLeave={() => pausar_hover && setIsPaused(false)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="relative w-full overflow-hidden rounded-3xl border border-black/10 dark:border-white/10 shadow-md bg-black/5 dark:bg-white/5 my-4 sm:my-6 group select-none"
+      className="relative min-h-[500px] sm:min-h-[520px] overflow-hidden bg-black/[0.03] dark:bg-white/[0.04] transition-colors"
     >
-      <div className={`relative w-full ${heightClass}`}>
-        {slides.map((slide, idx) => {
-          const isActive = idx === currentIndex
-          const ctaUrl = formatUrl(slide.cta_url)
-          const isExternal = ctaUrl?.startsWith('http')
+      {/* Imagen de fondo / producto destacada */}
+      <img
+        src={heroImage}
+        alt={currentSlide.titulo || 'Hero banner de la tienda'}
+        className="absolute inset-0 w-full h-full object-cover object-[center_60%] sm:object-[center_50%] opacity-70 sm:opacity-90 dark:opacity-40"
+        fetchPriority="high"
+      />
 
-          return (
-            <div
-              key={slide.id || idx}
-              aria-hidden={!isActive}
-              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                isActive ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
-              }`}
+      {/* Degradado suave para asegurar contraste del texto */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-fondo)] via-[var(--color-fondo)]/80 to-transparent sm:w-3/4 pointer-events-none" />
+
+      {/* Contenido Hero */}
+      <div className="wrap relative z-10 py-12 sm:py-20 flex flex-col justify-center min-h-[500px] sm:min-h-[520px]">
+        <div className="max-w-[480px] space-y-5">
+          {/* Badge Pill */}
+          <span className="hero-pill text-[var(--color-texto)] border-black/20 dark:border-white/20">
+            <span className="hero-dot" />
+            {currentSlide.subtitulo || 'NUEVA COLECCIÓN · 2026'}
+          </span>
+
+          {/* Eyebrow Pre-título */}
+          <p className="text-[11px] font-semibold tracking-wider uppercase text-[var(--color-primario)]">
+            {currentSlide.texto_adicional || 'OBJETOS CON INTENCIÓN. ESPACIOS CON ALMA.'}
+          </p>
+
+          {/* Título Principal */}
+          <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight font-[var(--font-heading)] text-[var(--color-texto)] leading-[1.15]">
+            {currentSlide.titulo || storeSlogan || 'Diseño para tu día a día.'}
+          </h1>
+
+          {/* Descripción */}
+          <p className="text-xs sm:text-sm leading-relaxed opacity-75 max-w-[380px] text-[var(--color-texto)]">
+            Piezas que combinan forma y función. Descubre una selección cuidada
+            que hace de lo cotidiano algo extraordinario.
+          </p>
+
+          {/* Botones de Acción */}
+          <div className="pt-2 flex flex-wrap items-center gap-4 sm:gap-6">
+            <Link
+              href={formatUrl(currentSlide.cta_url || '/tienda')}
+              className="min-h-[44px] h-11 px-6 rounded-full bg-[var(--color-primario)] text-white text-xs sm:text-sm font-semibold hover:opacity-95 active:scale-98 transition-all inline-flex items-center gap-2 shadow-xs cursor-pointer"
             >
-              {/* Imagen Responsiva (Desktop vs Mobile) */}
-              <picture className="w-full h-full block">
-                {slide.imagen_mobile && (
-                  <source
-                    media="(max-width: 640px)"
-                    srcSet={slide.imagen_mobile}
-                  />
-                )}
-                <img
-                  src={slide.imagen_desktop}
-                  alt={slide.titulo || `Banner ${idx + 1}`}
-                  className="w-full h-full object-cover object-center"
-                />
-              </picture>
+              <span>{currentSlide.cta_texto || 'Explorar colección'}</span>
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Link>
 
-              {/* Degradado y Textos */}
-              {(slide.titulo || slide.subtitulo || slide.texto_adicional || slide.cta_texto) && (
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent flex flex-col justify-end p-5 sm:p-8 md:p-10 text-white">
-                  <div className="max-w-2xl space-y-2">
-                    {slide.subtitulo && (
-                      <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white/95 w-fit">
-                        <Sparkles className="w-3 h-3 text-amber-300" />
-                        <span>{slide.subtitulo}</span>
-                      </span>
-                    )}
+            <Link
+              href={formatUrl('/tienda/sobre-nosotros')}
+              className="text-xs sm:text-sm font-semibold underline decoration-[var(--color-primario)]/40 underline-offset-4 hover:decoration-[var(--color-primario)] text-[var(--color-texto)] inline-flex items-center gap-1.5 transition-colors"
+            >
+              <span>Nuestra esencia</span>
+              <ArrowUpRight className="w-3.5 h-3.5 opacity-70" />
+            </Link>
+          </div>
 
-                    {slide.titulo && (
-                      <h2 className="text-xl sm:text-3xl md:text-4xl font-bold font-[var(--font-heading)] leading-tight drop-shadow-sm">
-                        {slide.titulo}
-                      </h2>
-                    )}
-
-                    {slide.texto_adicional && (
-                      <p className="text-xs sm:text-sm text-white/90 line-clamp-2 drop-shadow-xs max-w-lg">
-                        {slide.texto_adicional}
-                      </p>
-                    )}
-
-                    {/* Botón CTA */}
-                    {slide.cta_texto && ctaUrl && (
-                      <div className="pt-2">
-                        {isExternal ? (
-                          <a
-                            href={ctaUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[var(--color-primario)] text-white text-xs sm:text-sm font-bold hover:opacity-90 active:scale-95 transition-all shadow-lg inline-flex items-center gap-2 cursor-pointer"
-                          >
-                            <span>{slide.cta_texto}</span>
-                            <ArrowRight className="w-4 h-4" />
-                          </a>
-                        ) : (
-                          <Link
-                            href={ctaUrl}
-                            className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[var(--color-primario)] text-white text-xs sm:text-sm font-bold hover:opacity-90 active:scale-95 transition-all shadow-lg inline-flex items-center gap-2 cursor-pointer"
-                          >
-                            <span>{slide.cta_texto}</span>
-                            <ArrowRight className="w-4 h-4" />
-                          </Link>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+          {/* Social Proof / Reseñas ilustrativas */}
+          <div className="pt-4 flex items-center gap-3">
+            <div className="flex -space-x-2" aria-hidden="true">
+              <span className="grid size-7 place-items-center rounded-full border-2 border-[var(--color-fondo)] bg-[var(--color-primario)] text-[8px] font-bold text-white">
+                MC
+              </span>
+              <span className="grid size-7 place-items-center rounded-full border-2 border-[var(--color-fondo)] bg-black/20 dark:bg-white/20 text-[8px] font-bold">
+                AL
+              </span>
+              <span className="grid size-7 place-items-center rounded-full border-2 border-[var(--color-fondo)] bg-black/10 dark:bg-white/10 text-[8px] font-bold">
+                JR
+              </span>
             </div>
-          )
-        })}
+
+            <div>
+              <div className="flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Star
+                    key={n}
+                    className="w-3 h-3 fill-[var(--color-primario)] text-[var(--color-primario)]"
+                  />
+                ))}
+              </div>
+              <p className="mt-0.5 text-[9px] sm:text-[10px] opacity-75 font-medium">
+                Pequeños detalles. Grandes experiencias.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Controles de Navegación */}
-      {!isSingle && count > 1 && (
-        <>
-          {mostrar_flechas && (
-            <>
-              <button
-                type="button"
-                onClick={prevSlide}
-                aria-label="Banner anterior"
-                className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-80 group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer shadow-md"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-
-              <button
-                type="button"
-                onClick={nextSlide}
-                aria-label="Banner siguiente"
-                className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-80 group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer shadow-md"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </>
-          )}
-
-          {mostrar_indicadores && (
-            <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/30 backdrop-blur-md">
-              {slides.map((_, dotIdx) => (
-                <button
-                  key={dotIdx}
-                  type="button"
-                  onClick={() => setCurrentIndex(dotIdx)}
-                  aria-label={`Ir al banner ${dotIdx + 1}`}
-                  className="min-h-[24px] min-w-[24px] flex items-center justify-center cursor-pointer"
-                >
-                  <span
-                    className={`block rounded-full transition-all duration-300 ${
-                      dotIdx === currentIndex
-                        ? 'w-6 h-2 bg-[var(--color-primario)] shadow-sm'
-                        : 'w-2 h-2 bg-white/60 hover:bg-white'
-                    }`}
-                  />
-                </button>
-              ))}
-            </div>
-          )}
-        </>
+      {/* Indicadores de slides si hay más de 1 */}
+      {count > 1 && (
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
+          {slides.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => setCurrentIndex(idx)}
+              aria-label={`Ir al banner ${idx + 1}`}
+              className={`transition-all rounded-full cursor-pointer ${
+                idx === currentIndex
+                  ? 'w-7 h-1.5 bg-[var(--color-primario)]'
+                  : 'w-1.5 h-1.5 bg-[var(--color-primario)]/30 hover:bg-[var(--color-primario)]/60'
+              }`}
+            />
+          ))}
+        </div>
       )}
     </section>
   )

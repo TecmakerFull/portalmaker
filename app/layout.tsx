@@ -13,7 +13,7 @@
 // =============================================================================
 
 import type { Metadata } from "next";
-import { Inter, Outfit, Playfair_Display, Space_Grotesk, DM_Serif_Display } from "next/font/google";
+import { Inter, Outfit, Playfair_Display, Space_Grotesk, DM_Serif_Display, DM_Sans, Manrope } from "next/font/google";
 import "./globals.css";
 
 // ============================================================
@@ -51,6 +51,18 @@ const dmSerifDisplay = DM_Serif_Display({
   subsets: ["latin"],
   weight: "400",
   variable: "--font-dm-serif-display",
+  display: "swap",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  display: "swap",
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-manrope",
   display: "swap",
 });
 
@@ -102,6 +114,8 @@ export default function RootLayout({
           ${playfairDisplay.variable}
           ${spaceGrotesk.variable}
           ${dmSerifDisplay.variable}
+          ${dmSans.variable}
+          ${manrope.variable}
           antialiased
         `}
       >

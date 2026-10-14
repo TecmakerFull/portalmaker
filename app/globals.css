@@ -109,6 +109,9 @@ body {
   --color-secundario: var(--tenant-secundario, #4B5563);
   --color-fondo: var(--tenant-fondo, #F3F4F6);
   --color-texto: var(--tenant-texto, #111827);
+  --color-superficie: #FFFFFF;
+  --color-borde: rgba(0, 0, 0, 0.08);
+  font-family: var(--font-sans, var(--font-dm-sans)), system-ui, sans-serif;
 }
 
 :root[data-theme="dark"] .tienda-root,
@@ -117,5 +120,174 @@ body {
   --color-secundario: var(--tenant-secundario-dark, var(--tenant-secundario, #9CA3AF));
   --color-fondo: var(--tenant-fondo-dark, #111827);
   --color-texto: var(--tenant-texto-dark, #F9FAFB);
+  --color-superficie: #1F2937;
+  --color-borde: rgba(255, 255, 255, 0.1);
 }
+
+/* =============================================================================
+ * ESTILOS MINIMALISTAS TIENDA DEMO (NÖRA)
+ * ============================================================================= */
+.wrap {
+  width: min(1280px, calc(100% - 64px));
+  margin-inline: auto;
+}
+@media (max-width: 767px) {
+  .wrap {
+    width: calc(100% - 32px);
+  }
+}
+
+.brand {
+  font-family: var(--font-display, var(--font-manrope)), system-ui, sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+@media (max-width: 767px) {
+  .brand {
+    font-size: 28px;
+  }
+}
+
+.announcement {
+  background: var(--color-primario);
+  color: #FFFFFF;
+  font-size: 11px;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 2px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid currentColor;
+  border-radius: 30px;
+  padding: 6px 14px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.hero-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primario);
+}
+
+.product-photo {
+  aspect-ratio: 1/1.04;
+  background: rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+  position: relative;
+  border-radius: 8px;
+}
+:root[data-theme="dark"] .product-photo,
+.dark .product-photo {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.product-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.product-card:hover .product-photo img {
+  transform: scale(1.045);
+}
+
+.product-badge {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.favorite-button {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+.favorite-button:hover {
+  transform: scale(1.08);
+}
+
+.category-link {
+  padding: 8px 18px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--color-superficie);
+  outline: 1px solid rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.1);
+}
+:root[data-theme="dark"] .swatch,
+.dark .swatch {
+  outline: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.whatsapp-float {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 40;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #25D366;
+  color: #FFFFFF;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+  display: grid;
+  place-items: center;
+  transition: transform 0.2s ease;
+}
+.whatsapp-float:hover {
+  transform: scale(1.06);
+}
+@media (max-width: 767px) {
+  .whatsapp-float {
+    right: 16px;
+    bottom: 16px;
+    width: 48px;
+    height: 48px;
+  }
+}
+
 

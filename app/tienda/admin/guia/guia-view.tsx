@@ -382,6 +382,24 @@ export default function GuiaView({
               El comprador armará su carrito y al hacer clic en "Pedir por WhatsApp" te llegará un mensaje pre-armado a tu número con la lista exacta de productos, variantes elegidas, total en pesos y datos de entrega.
             </p>
           </div>
+
+          <div className="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 space-y-1">
+            <span className="font-bold block text-slate-900 dark:text-white">
+              ¿Inicié sesión con Google y ahora quiero entrar con correo y contraseña, se puede?
+            </span>
+            <p className="opacity-80">
+              ¡Sí, totalmente! Al entrar con Google por primera vez, el sistema crea tu cuenta pero todavía no tiene contraseña. Para activarla, ve a la pantalla de ingreso (/login), toca en "¿Olvidaste tu contraseña?" y escribe tu correo de Gmail. El sistema te enviará un email con un enlace seguro para escribir tu contraseña. A partir de allí podrás entrar con un clic en Google o escribiendo tu correo y clave.
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 space-y-1">
+            <span className="font-bold block text-slate-900 dark:text-white">
+              ¿Puedo invitar a alguien para que me ayude a administrar la tienda?
+            </span>
+            <p className="opacity-80">
+              Sí. Desde el menú lateral en "Colaboradores" puedes ingresar el correo de tu socio o ayudante para enviarle una invitación. El colaborador podrá crear su propia contraseña o entrar con Google para ayudarte a cargar productos, precios y banners, manteniendo protegida tu información privada de facturación.
+            </p>
+          </div>
         </div>
       </div>
     </div>

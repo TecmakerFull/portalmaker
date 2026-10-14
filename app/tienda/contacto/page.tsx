@@ -3,11 +3,11 @@
 // =============================================================================
 
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import StorefrontHeaderFlow from '@/app/tienda/sections/storefront-header-flow'
 import ContactoClient from './contacto-client'
+import StoreFooter from '@/app/tienda/sections/store-footer'
 import { getStoreSections } from '@/lib/store-sections'
 
 export default async function TiendaContactoPage() {
@@ -51,33 +51,14 @@ export default async function TiendaContactoPage() {
           tenantQuery={tenantQuery}
         />
 
-        {/* Main */}
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* Main Content */}
+        <main className="wrap py-10 sm:py-16">
           <ContactoClient store={store} tenantQuery={tenantQuery} />
         </main>
       </div>
 
       {/* Footer */}
-      <footer className="mt-20 border-t border-black/10 dark:border-white/10 py-8 text-center text-xs opacity-60 space-y-2">
-        <div className="flex items-center justify-center gap-4 text-xs font-semibold">
-          <Link href={`/tienda${tenantQuery}`} className="hover:underline">
-            Catálogo
-          </Link>
-          {hasSobreNosotros && (
-            <>
-              <span>•</span>
-              <Link href={`/tienda/sobre-nosotros${tenantQuery}`} className="hover:underline">
-                Sobre Nosotros
-              </Link>
-            </>
-          )}
-          <span>•</span>
-          <Link href={`/tienda/contacto${tenantQuery}`} className="hover:underline">
-            Contacto & Ubicación
-          </Link>
-        </div>
-        <p>© {new Date().getFullYear()} {store.nombre} — Desarrollado sobre Portalmaker</p>
-      </footer>
+      <StoreFooter store={store} tenantQuery={tenantQuery} />
     </div>
   )
 }

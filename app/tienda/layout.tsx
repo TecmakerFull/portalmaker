@@ -28,8 +28,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 function getTenantCSSVars(store: Store): React.CSSProperties {
-  const fontHeading = store.font_heading?.toLowerCase().replace(/\s+/g, "-") || "inter";
-  const fontBody = store.font_body?.toLowerCase().replace(/\s+/g, "-") || "inter";
+  const fontHeading = store.font_heading?.toLowerCase().replace(/\s+/g, "-") || "manrope";
+  const fontBody = store.font_body?.toLowerCase().replace(/\s+/g, "-") || "dm-sans";
 
   return {
     "--tenant-primario": store.color_primario,
@@ -40,8 +40,10 @@ function getTenantCSSVars(store: Store): React.CSSProperties {
     "--tenant-secundario-dark": store.color_secundario_dark || store.color_secundario,
     "--tenant-fondo-dark": store.color_fondo_dark || "#111827",
     "--tenant-texto-dark": store.color_texto_dark || "#F9FAFB",
-    "--font-heading": `var(--font-${fontHeading})`,
-    "--font-body": `var(--font-${fontBody})`,
+    "--font-heading": `var(--font-${fontHeading}, var(--font-manrope))`,
+    "--font-body": `var(--font-${fontBody}, var(--font-dm-sans))`,
+    "--font-display": `var(--font-${fontHeading}, var(--font-manrope))`,
+    "--font-sans": `var(--font-${fontBody}, var(--font-dm-sans))`,
   } as React.CSSProperties;
 }
 

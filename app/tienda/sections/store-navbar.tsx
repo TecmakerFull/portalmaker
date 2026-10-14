@@ -1,5 +1,5 @@
 // =============================================================================
-// PORTALMAKER — Sección 3: Navbar / Menú de Navegación Dinámico
+// PORTALMAKER — Sección 3: Navbar / Barra de Navegación Minimalista (Estilo TiendaDemo)
 // "El portal del Maker" | portalmaker.com.ar
 // =============================================================================
 
@@ -8,7 +8,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { StoreSection, NavbarSettings, NavbarItem } from '@/types/database'
-import { Sparkles, Flame } from 'lucide-react'
+import { ChevronDown, Sparkles } from 'lucide-react'
 
 interface StoreNavbarProps {
   section: StoreSection<NavbarSettings, NavbarItem[]>
@@ -23,17 +23,9 @@ export default function StoreNavbar({ section, tenantQuery }: StoreNavbarProps) 
   const items = (section.content || []).filter((it) => it.activo)
   if (items.length === 0) return null
 
-  const {
-    alineacion = 'centro',
-    estilo = 'linea',
-    sticky = false,
-  } = section.settings || {}
+  const { sticky = false } = section.settings || {}
 
-  let alignClass = 'justify-center'
-  if (alineacion === 'izquierda') alignClass = 'justify-start'
-  else if (alineacion === 'espaciado') alignClass = 'justify-between'
-
-  // Formatear destino con tenant query
+  // Helper para armar URL con tenant query
   const formatUrl = (url: string) => {
     if (!url) return '/tienda'
     if (url.startsWith('http')) return url
@@ -44,81 +36,105 @@ export default function StoreNavbar({ section, tenantQuery }: StoreNavbarProps) 
     return url
   }
 
+  // Separar enlaces principales (catálogo, categorías, ofertas) de los secundarios (nosotros, contacto)
+  const mainItems = items.filter(
+    (it) => !it.destino_url.includes('sobre-nosotros') && !it.destino_url.includes('contacto')
+  )
+  const secondaryItems = items.filter(
+    (it) => it.destino_url.includes('sobre-nosotros') || it.destino_url.includes('contacto')
+  )
+
+  const renderLink = (item: NavbarItem) => {
+    const destUrl = formatUrl(item.destino_url)
+    const isExternal = destUrl.startsWith('http')
+    const cleanDest = (item.destino_url || '/tienda').split('?') [0]
+    const isActive =
+      !isExternal &&
+      (cleanDest === '/tienda'
+        ? pathname === '/tienda' || pathname.startsWith('/tienda/productos')
+        : pathname.startsWith(cleanDest))
+
+    const isSale = item.destacado || item.badge_texto?.toLowerCase().includes('sale') || item.badge_texto?.toLowerCase().includes('oferta')
+
+    const inner = (
+      <span className="flex items-center gap-1.5 whitespace-nowrap">
+        <span>{item.texto}</span>
+        {item.badge_texto && (
+          <span
+            className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${
+              isSale
+                ? 'bg-[var(--color-primario)]/15 text-[var(--color-primario)]'
+                : 'bg-black/10 dark:bg-white/10 text-[var(--color-texto)]'
+            }`}
+          >
+            {item.badge_texto}
+          </span>
+        )}
+      </span>
+    )
+
+    const linkClasses = `relative text-[13px] font-medium transition-colors py-3.5 ${
+      isActive
+        ? 'text-[var(--color-primario)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario)]'
+        : 'text-[var(--color-texto)] opacity-75 hover:opacity-100 hover:text-[var(--color-primario)]'
+    }`
+
+    if (isExternal) {
+      return (
+        <a
+          key={item.id}
+          href={destUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={linkClasses}
+        >
+          {inner}
+        </a>
+      )
+    }
+
+    return (
+      <Link key={item.id} href={destUrl} className={linkClasses}>
+        {inner}
+      </Link>
+    )
+  }
+
   return (
-    <nav
-      aria-label="Navegación principal de la tienda"
-      className={`border-b border-black/5 dark:border-white/5 bg-[var(--color-fondo)]/90 backdrop-blur-xs transition-colors duration-200 z-20 ${
-        sticky ? 'sticky top-20 sm:top-24' : 'relative'
+    <div
+      className={`border-b border-black/10 dark:border-white/10 bg-[var(--color-fondo)]/90 backdrop-blur-xs transition-colors duration-200 z-20 ${
+        sticky ? 'sticky top-16 sm:top-20' : 'relative'
       }`}
     >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div
-          className={`flex items-center gap-2 sm:gap-6 py-2.5 overflow-x-auto scrollbar-none text-xs sm:text-sm font-semibold ${alignClass}`}
-        >
-          {items.map((item, idx) => {
-            const destUrl = formatUrl(item.destino_url)
-            const isExternal = destUrl.startsWith('http')
-            const cleanDest = (item.destino_url || '/tienda').split('?')[0]
-            const isActive =
-              !isExternal &&
-              (cleanDest === '/tienda'
-                ? pathname === '/tienda' || pathname.startsWith('/tienda/productos')
-                : pathname.startsWith(cleanDest))
+      <nav
+        aria-label="Navegación principal de la tienda"
+        className="wrap flex h-[48px] sm:h-[51px] items-center justify-between overflow-x-auto scrollbar-none"
+      >
+        {/* Enlaces Principales a la izquierda */}
+        <div className="flex items-center gap-6 sm:gap-8">
+          <Link
+            href={formatUrl('/tienda')}
+            className={`relative text-[13px] font-medium transition-colors py-3.5 whitespace-nowrap ${
+              pathname === '/tienda'
+                ? 'text-[var(--color-primario)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario)]'
+                : 'text-[var(--color-texto)] opacity-75 hover:opacity-100 hover:text-[var(--color-primario)]'
+            }`}
+          >
+            Inicio
+          </Link>
 
-            const isPill = estilo === 'pills'
-
-            const baseStyle = isPill
-              ? `min-h-[40px] px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
-                  isActive
-                    ? 'bg-[var(--color-primario)] text-white shadow-xs'
-                    : item.destacado
-                    ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 hover:bg-amber-500/25'
-                    : 'opacity-75 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-                }`
-              : `min-h-[40px] px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap relative ${
-                  isActive
-                    ? 'text-[var(--color-primario)] font-bold border-b-2 border-[var(--color-primario)] rounded-b-none'
-                    : item.destacado
-                    ? 'text-amber-600 dark:text-amber-400 font-bold hover:opacity-100'
-                    : 'opacity-70 hover:opacity-100 hover:text-[var(--color-primario)]'
-                }`
-
-            const content = (
-              <>
-                {item.destacado && (
-                  <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                )}
-                <span>{item.texto}</span>
-                {item.badge_texto && (
-                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded-md bg-amber-500 text-white shadow-xs">
-                    {item.badge_texto}
-                  </span>
-                )}
-              </>
-            )
-
-            if (isExternal) {
-              return (
-                <a
-                  key={item.id || idx}
-                  href={destUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={baseStyle}
-                >
-                  {content}
-                </a>
-              )
-            }
-
-            return (
-              <Link key={item.id || idx} href={destUrl} className={baseStyle}>
-                {content}
-              </Link>
-            )
-          })}
+          {mainItems.map((item) => renderLink(item))}
         </div>
-      </div>
-    </nav>
+
+        {/* Enlaces Secundarios a la derecha (Sobre nosotros, Contacto, Idioma/Moneda) */}
+        <div className="hidden md:flex items-center gap-6 shrink-0 pl-4">
+          {secondaryItems.map((item) => renderLink(item))}
+
+          <span className="hidden lg:flex items-center text-[11px] opacity-60 font-medium cursor-default">
+            Español · ARS <ChevronDown className="ml-1.5 w-3 h-3 opacity-60" />
+          </span>
+        </div>
+      </nav>
+    </div>
   )
 }
