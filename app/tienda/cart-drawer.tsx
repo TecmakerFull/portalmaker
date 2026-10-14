@@ -75,16 +75,16 @@ export default function CartDrawer({
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop con posición fija e interceptor de clic */}
       <div
-        className="drawer-backdrop"
+        className="drawer-backdrop fixed inset-0 bg-black/45 backdrop-blur-xs z-[100] transition-opacity"
         onClick={closeCart}
         aria-hidden="true"
       />
 
-      {/* Drawer */}
+      {/* Drawer lateral deslizable desde la derecha (100dvh) */}
       <aside
-        className="cart-drawer border-l border-black/10 dark:border-white/10"
+        className="cart-drawer fixed right-0 top-0 h-[100dvh] w-full max-w-[440px] bg-[var(--color-superficie)] text-[var(--color-texto)] z-[101] shadow-2xl flex flex-col border-l border-black/10 dark:border-white/10"
         role="dialog"
         aria-modal="true"
         aria-label="Tu carrito de compras"
