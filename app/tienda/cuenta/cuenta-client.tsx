@@ -184,17 +184,26 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
 
   // Comprobar sesión de Supabase al montar y escuchar cambios de auth
   useEffect(() => {
-    // Verificar si la URL viene con modo de recuperación
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search)
-      if (params.get('mode') === 'reset') {
-        setAuthMode('reset')
-      }
+    const isResetMode =
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('mode') === 'reset'
+
+    if (isResetMode) {
+      setAuthMode('reset')
+      setIsLoggedIn(false)
     }
 
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
       if (user?.email) {
+        if (isResetMode) {
+          setAuthMode('reset')
+          setIsLoggedIn(false)
+          return
+        }
         const name = user.user_metadata?.nombre || user.email.split('@')[0]
         setCurrentUser({ email: user.email, nombre: name })
         setIsLoggedIn(true)
@@ -206,11 +215,21 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
 
     checkUser()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setAuthMode('reset')
+        setIsLoggedIn(false)
+        return
       }
+
       if (session?.user?.email) {
+        if (isResetMode) {
+          setAuthMode('reset')
+          setIsLoggedIn(false)
+          return
+        }
         const name = session.user.user_metadata?.nombre || session.user.email.split('@')[0]
         setCurrentUser({ email: session.user.email, nombre: name })
         setIsLoggedIn(true)
@@ -306,14 +325,15 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
           `Solicitud enviada para ${store.nombre}. Te enviamos un enlace de acceso seguro a ${cleanEmail}. Ábrelo para ingresar sin contraseña.`
         )
       } else if (authMode === 'recover') {
-        // Solicitud de recuperación de contraseña
-        const resetRedirect = `${origin}/tienda/cuenta${
+        // Solicitud de recuperación de contraseña con callback explícito para no perder la tienda
+        const storeAccountPath = `/tienda/cuenta${
           tenantQuery
             ? tenantQuery.startsWith('?')
               ? `${tenantQuery}&mode=reset`
               : `?${tenantQuery}&mode=reset`
             : '?mode=reset'
         }`
+        const resetRedirect = `${origin}/auth/callback?next=${encodeURIComponent(storeAccountPath)}`
 
         const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
           redirectTo: resetRedirect,
@@ -340,7 +360,24 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
         if (error) throw error
 
         setAuthSuccess('Tu contraseña ha sido actualizada exitosamente.')
-        setAuthMode('login')
+        setNewPasswordInput('')
+        setConfirmPasswordInput('')
+
+        // Si la sesión quedó autenticada, cargar el perfil y entrar a la cuenta
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (user?.email) {
+          const name = user.user_metadata?.nombre || user.email.split('@')[0]
+          setCurrentUser({ email: user.email, nombre: name })
+          setIsLoggedIn(true)
+          await populateProfileData(user)
+          await syncCustomerCrm(user.email, name, user.user_metadata?.telefono)
+          await loadCustomerData(user.email)
+        } else {
+          setAuthMode('login')
+        }
       }
     } catch (err: any) {
       console.error('Error de autenticación:', err)

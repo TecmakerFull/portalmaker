@@ -37,9 +37,21 @@ export function middleware(request: NextRequest) {
     (base) => host === base || host === `www.${base}`
   )
 
-  // Interceptar callbacks de OAuth que lleguen a la raíz u otra ruta con ?code=...
+  // Interceptar callbacks de OAuth o Auth que lleguen a cualquier ruta con ?code=...
   if (nextUrl.searchParams.has('code') && !nextUrl.pathname.startsWith('/auth/callback')) {
     const callbackUrl = new URL('/auth/callback', request.url)
+    // Si no tiene 'next', asignarle el pathname + query original (sin el code) para volver exactamente donde estaba
+    if (!nextUrl.searchParams.has('next')) {
+      const cleanParams = new URLSearchParams()
+      nextUrl.searchParams.forEach((val, key) => {
+        if (key !== 'code' && key !== 'type') cleanParams.set(key, val)
+      })
+      const queryString = cleanParams.toString()
+      const originalTarget = `${nextUrl.pathname}${queryString ? `?${queryString}` : ''}`
+      if (originalTarget && originalTarget !== '/') {
+        callbackUrl.searchParams.set('next', originalTarget)
+      }
+    }
     nextUrl.searchParams.forEach((val, key) => {
       callbackUrl.searchParams.set(key, val)
     })
