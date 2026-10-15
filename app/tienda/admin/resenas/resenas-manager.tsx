@@ -29,7 +29,7 @@ interface ReviewWithProduct extends ProductReview {
     id: string
     nombre: string
     slug: string
-    fotos?: string[]
+    imagenes?: string[]
   } | null
 }
 
@@ -240,8 +240,16 @@ export default function ResenasManager({
                 {/* Información de la reseña */}
                 <div className="space-y-2 flex-1">
                   {/* Producto de referencia */}
-                  <div className="flex items-center gap-2 text-xs font-semibold">
-                    <Package className="w-3.5 h-3.5 text-[var(--color-primario)]" />
+                  <div className="flex items-center gap-2.5 text-xs font-semibold">
+                    {rev.product?.imagenes?.[0] ? (
+                      <img
+                        src={rev.product.imagenes[0]}
+                        alt={rev.product.nombre}
+                        className="w-7 h-7 rounded-lg object-cover border border-[var(--color-borde)] shrink-0"
+                      />
+                    ) : (
+                      <Package className="w-3.5 h-3.5 text-[var(--color-primario)] shrink-0" />
+                    )}
                     {rev.product ? (
                       <Link
                         href={withTenant(`/tienda/productos/${rev.product.slug}`)}

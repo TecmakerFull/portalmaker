@@ -27,14 +27,18 @@ export default async function ResenasAdminPage() {
   const supabase = await createSupabaseServerClient()
 
   // 1. Obtener todas las reseñas de la tienda con datos del producto
-  const { data: reviews } = await supabase
+  const { data: reviews, error } = await supabase
     .from('product_reviews')
     .select(`
       *,
-      product:products (id, nombre, slug, fotos)
+      product:products (id, nombre, slug, imagenes)
     `)
     .eq('store_id', store.id)
     .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error al cargar reseñas en admin de tienda:', error)
+  }
 
   return (
     <ResenasManager
