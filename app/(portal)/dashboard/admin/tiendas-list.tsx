@@ -1,14 +1,16 @@
 // =============================================================================
-// PORTALMAKER — Gestión de Cuentas, Clientes y Suscripciones (Superadmin)
-// "El portal del Maker" | portalmaker.com.ar
+// PORTALMAKER — Gestión Integral de Cuentas, Tiendas y Suscripciones (Superadmin)
+// Vista en lista compacta con buscador y filtros + Ficha Integral de Detalle
+// con control de pagos, vencimientos, días de gracia, límites y métricas.
 // =============================================================================
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import type { SubscriptionPayment } from '@/types/database'
 import {
   Store,
   ExternalLink,
@@ -36,6 +38,15 @@ import {
   TrendingUp,
   Copy,
   Check,
+  Users,
+  MessageSquare,
+  DollarSign,
+  Eye,
+  LayoutList,
+  LayoutGrid,
+  ChevronRight,
+  RefreshCw,
+  Sliders,
 } from 'lucide-react'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 
@@ -48,6 +59,8 @@ export type SuperadminStoreItem = {
   whatsapp_numero: string | null
   slogan: string | null
   logo_url: string | null
+  modo_operacion?: string | null
+  checkout_activo?: boolean | null
   plan?: string | null
   precio_mensual?: number | null
   estado_pago?: string | null
@@ -61,19 +74,54 @@ export type SuperadminStoreItem = {
   product_count?: number
 }
 
+interface StoreLiveMetrics {
+  totalOrders: number
+  totalSales: number
+  totalCustomers: number
+  totalCollaborators: number
+  totalReviews: number
+}
+
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
-  starter: { label: 'Starter', color: 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/50' },
-  maker_pro: { label: 'Maker Pro', color: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/50' },
-  enterprise: { label: 'Enterprise', color: 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/50' },
-  bonificado: { label: 'Bonificado', color: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/50' },
+  starter: {
+    label: 'Starter',
+    color: 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/50',
+  },
+  maker_pro: {
+    label: 'Maker Pro',
+    color: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/50',
+  },
+  enterprise: {
+    label: 'Enterprise',
+    color: 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/50',
+  },
+  bonificado: {
+    label: 'Bonificado',
+    color: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/50',
+  },
 }
 
 const ESTADO_PAGO_LABELS: Record<string, { label: string; color: string }> = {
-  al_dia: { label: 'Al Día', color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50' },
-  pendiente: { label: 'Pendiente', color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/50' },
-  bonificado: { label: 'Bonificado', color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/50' },
-  gracia: { label: 'En Gracia', color: 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-900/50' },
-  vencido: { label: 'Vencido', color: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/50' },
+  al_dia: {
+    label: 'Al Día',
+    color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50',
+  },
+  pendiente: {
+    label: 'Pendiente',
+    color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/50',
+  },
+  bonificado: {
+    label: 'Bonificado',
+    color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/50',
+  },
+  gracia: {
+    label: 'En Gracia',
+    color: 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-900/50',
+  },
+  vencido: {
+    label: 'Vencido',
+    color: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/50',
+  },
 }
 
 export default function SuperadminTiendasList({ initialStores }: { initialStores: SuperadminStoreItem[] }) {
@@ -84,19 +132,48 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'activa' | 'por_vencer' | 'en_gracia' | 'vencida' | 'pausada'>('all')
   const [planFilter, setPlanFilter] = useState<string>('all')
+  const [viewMode, setViewMode] = useState<'lista' | 'tarjetas'>('lista')
 
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
-  // Estado del Modal de Edición de Cuenta
-  const [editingStore, setEditingStore] = useState<SuperadminStoreItem | null>(null)
-  const [savingEdit, setSavingEdit] = useState(false)
-  const [editForm, setEditForm] = useState<Partial<SuperadminStoreItem>>({})
+  // Tienda seleccionada para la Ficha Integral (Drawer lateral)
+  const [selectedStore, setSelectedStore] = useState<SuperadminStoreItem | null>(null)
+  const [activeDrawerTab, setActiveDrawerTab] = useState<'pagos' | 'suscripcion' | 'metricas' | 'contacto' | 'notas'>('pagos')
+
+  // Datos en vivo de la tienda seleccionada
+  const [storePayments, setStorePayments] = useState<SubscriptionPayment[]>([])
+  const [loadingPayments, setLoadingPayments] = useState(false)
+  const [storeMetrics, setStoreMetrics] = useState<StoreLiveMetrics | null>(null)
+  const [loadingMetrics, setLoadingMetrics] = useState(false)
+
+  // Estado del formulario para registrar nuevo pago
+  const [showNewPaymentForm, setShowNewPaymentForm] = useState(false)
+  const [paymentMonto, setPaymentMonto] = useState<number>(0)
+  const [paymentMetodo, setPaymentMetodo] = useState<string>('transferencia')
+  const [paymentFecha, setPaymentFecha] = useState<string>(new Date().toISOString().split('T')[0])
+  const [paymentPeriodoDesde, setPaymentPeriodoDesde] = useState<string>(new Date().toISOString().split('T')[0])
+  const [paymentPeriodoHasta, setPaymentPeriodoHasta] = useState<string>('')
+  const [paymentNotas, setPaymentNotas] = useState<string>('')
+  const [savingPayment, setSavingPayment] = useState(false)
+
+  // Estado de edición rápida de suscripción
+  const [subEditForm, setSubEditForm] = useState<Partial<SuperadminStoreItem>>({})
+  const [savingSubEdit, setSavingSubEdit] = useState(false)
 
   const showToast = (msg: string) => {
     setToastMessage(msg)
-    setTimeout(() => setToastMessage(null), 3000)
+    setTimeout(() => setToastMessage(null), 3500)
+  }
+
+  // Formato de moneda ARS
+  const formatMoney = (val: number) => {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      maximumFractionDigits: 0,
+    }).format(val)
   }
 
   // Helper de cálculo de estado de suscripción
@@ -122,7 +199,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
 
       if (daysRemaining > 7) {
         status = 'activa'
-        statusLabel = `Al día (${daysRemaining}d rest.)`
+        statusLabel = `Al día (${daysRemaining}d)`
         badgeColor = 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
       } else if (daysRemaining >= 0) {
         status = 'por_vencer'
@@ -136,7 +213,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
           badgeColor = 'bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800'
         } else {
           status = 'vencida'
-          statusLabel = `Vencida (${daysOverdue}d atraso)`
+          statusLabel = `Vencida (${daysOverdue}d)`
           badgeColor = 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800'
         }
       }
@@ -171,7 +248,107 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
     }
   }
 
-  // Alternar suscripción activa / pausada
+  // Cargar pagos y métricas en vivo cuando se abre la Ficha Integral
+  useEffect(() => {
+    if (!selectedStore) {
+      setStorePayments([])
+      setStoreMetrics(null)
+      setShowNewPaymentForm(false)
+      return
+    }
+
+    // Inicializar formulario de edición de suscripción
+    setSubEditForm({
+      plan: selectedStore.plan || 'maker_pro',
+      precio_mensual: selectedStore.precio_mensual ?? 0,
+      limite_productos: selectedStore.limite_productos ?? 50,
+      estado_pago: selectedStore.estado_pago || 'al_dia',
+      fecha_proximo_vencimiento: selectedStore.fecha_proximo_vencimiento || '',
+      dias_gracia: selectedStore.dias_gracia ?? 3,
+      modo_operacion: selectedStore.modo_operacion || 'vitrina',
+      checkout_activo: Boolean(selectedStore.checkout_activo),
+      suscripcion_activa: selectedStore.suscripcion_activa,
+      notas_admin: selectedStore.notas_admin || '',
+    })
+
+    // Prellenar fecha de nuevo pago (+30 días por defecto)
+    const baseDue = selectedStore.fecha_proximo_vencimiento
+      ? new Date(selectedStore.fecha_proximo_vencimiento + 'T00:00:00')
+      : new Date()
+    const nextDue = new Date(baseDue.getTime() + 30 * 24 * 60 * 60 * 1000)
+    setPaymentPeriodoDesde(selectedStore.fecha_proximo_vencimiento || new Date().toISOString().split('T')[0])
+    setPaymentPeriodoHasta(nextDue.toISOString().split('T')[0])
+    setPaymentMonto(Number(selectedStore.precio_mensual) || 0)
+
+    // 1. Cargar pagos registrados
+    const loadPayments = async () => {
+      setLoadingPayments(true)
+      try {
+        const { data, error } = await supabase
+          .from('subscription_payments')
+          .select('*')
+          .eq('store_id', selectedStore.id)
+          .order('fecha_pago', { ascending: false })
+
+        if (error) throw error
+        setStorePayments((data as SubscriptionPayment[]) || [])
+      } catch (e) {
+        console.error('Error cargando pagos de suscripción:', e)
+      } finally {
+        setLoadingPayments(false)
+      }
+    }
+
+    // 2. Cargar métricas en vivo
+    const loadMetrics = async () => {
+      setLoadingMetrics(true)
+      try {
+        // Pedidos
+        const { data: ords } = await supabase
+          .from('orders')
+          .select('id, total')
+          .eq('store_id', selectedStore.id)
+
+        const totalOrders = ords?.length ?? 0
+        const totalSales = ords?.reduce((acc, o) => acc + (Number(o.total) || 0), 0) ?? 0
+
+        // Clientes
+        const { count: customersCount } = await supabase
+          .from('store_customers')
+          .select('id', { count: 'exact', head: true })
+          .eq('store_id', selectedStore.id)
+
+        // Colaboradores
+        const { count: collabCount } = await supabase
+          .from('store_collaborators')
+          .select('id', { count: 'exact', head: true })
+          .eq('store_id', selectedStore.id)
+
+        // Reseñas
+        const { count: reviewsCount } = await supabase
+          .from('product_reviews')
+          .select('id', { count: 'exact', head: true })
+          .eq('store_id', selectedStore.id)
+
+        setStoreMetrics({
+          totalOrders,
+          totalSales,
+          totalCustomers: customersCount ?? 0,
+          totalCollaborators: collabCount ?? 0,
+          totalReviews: reviewsCount ?? 0,
+        })
+      } catch (e) {
+        console.error('Error cargando métricas de tienda:', e)
+      } finally {
+        setLoadingMetrics(false)
+      }
+    }
+
+    loadPayments()
+    loadMetrics()
+  }, [selectedStore?.id])
+
+  // Alternar estado activo / pausado
   const toggleSuscripcion = async (storeId: string, currentState: boolean) => {
     setLoadingId(storeId)
     try {
@@ -186,25 +363,27 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
       setStores((prev) =>
         prev.map((s) => (s.id === storeId ? { ...s, suscripcion_activa: nextState } : s))
       )
+      if (selectedStore?.id === storeId) {
+        setSelectedStore((prev) => (prev ? { ...prev, suscripcion_activa: nextState } : null))
+      }
       showToast(nextState ? 'Tienda activada exitosamente' : 'Tienda pausada')
-    } catch (err) {
-      alert('Error al actualizar la suscripción: ' + (err as Error)?.message)
+    } catch (err: any) {
+      alert('Error al actualizar la suscripción: ' + err.message)
     } finally {
       setLoadingId(null)
     }
   }
 
-  // Extender suscripción (+30 días)
-  const extendSubscriptionMonth = async (store: SuperadminStoreItem) => {
+  // Extender vencimiento con meses calculados
+  const extendDueDate = async (store: SuperadminStoreItem, daysToAdd: number, label: string) => {
     setLoadingId(store.id)
     try {
       const currentDueDate = store.fecha_proximo_vencimiento
         ? new Date(store.fecha_proximo_vencimiento + 'T00:00:00')
         : new Date()
 
-      // Si ya estaba vencida, partimos de hoy
       const baseDate = currentDueDate < new Date() ? new Date() : currentDueDate
-      const newDueDate = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000)
+      const newDueDate = new Date(baseDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000)
       const newDueDateStr = newDueDate.toISOString().split('T')[0]
 
       const { error } = await supabase
@@ -218,107 +397,144 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
 
       if (error) throw error
 
+      const updated = {
+        fecha_proximo_vencimiento: newDueDateStr,
+        suscripcion_activa: true,
+        estado_pago: 'al_dia',
+      }
+
       setStores((prev) =>
-        prev.map((s) =>
-          s.id === store.id
-            ? {
-                ...s,
-                fecha_proximo_vencimiento: newDueDateStr,
-                suscripcion_activa: true,
-                estado_pago: 'al_dia',
-              }
-            : s
-        )
+        prev.map((s) => (s.id === store.id ? { ...s, ...updated } : s))
       )
-      showToast(`Suscripción extendida 30 días (hasta ${newDueDateStr})`)
-    } catch (err) {
-      alert('Error al extender suscripción: ' + (err as Error)?.message)
+      if (selectedStore?.id === store.id) {
+        setSelectedStore((prev) => (prev ? { ...prev, ...updated } : null))
+        setSubEditForm((prev) => ({ ...prev, ...updated }))
+      }
+
+      showToast(`Vencimiento extendido ${label} (hasta ${newDueDateStr})`)
+    } catch (err: any) {
+      alert('Error al extender vencimiento: ' + err.message)
     } finally {
       setLoadingId(null)
     }
   }
 
-  // Extender días de gracia (+7 días)
-  const addGraceDays = async (store: SuperadminStoreItem) => {
-    setLoadingId(store.id)
-    try {
-      const newGrace = (store.dias_gracia ?? 3) + 7
-      const { error } = await supabase
-        .from('stores')
-        .update({ dias_gracia: newGrace })
-        .eq('id', store.id)
-
-      if (error) throw error
-
-      setStores((prev) =>
-        prev.map((s) => (s.id === store.id ? { ...s, dias_gracia: newGrace } : s))
-      )
-      showToast(`Días de gracia aumentados a ${newGrace} días`)
-    } catch (err) {
-      alert('Error al actualizar días de gracia: ' + (err as Error)?.message)
-    } finally {
-      setLoadingId(null)
-    }
-  }
-
-  // Abrir Modal de Edición
-  const handleOpenEdit = (store: SuperadminStoreItem) => {
-    setEditingStore(store)
-    setEditForm({
-      nombre: store.nombre,
-      slug: store.slug,
-      admin_email: store.admin_email,
-      whatsapp_numero: store.whatsapp_numero || '',
-      plan: store.plan || 'maker_pro',
-      precio_mensual: store.precio_mensual ?? 0,
-      limite_productos: store.limite_productos ?? 50,
-      estado_pago: store.estado_pago || 'al_dia',
-      fecha_inicio_suscripcion: store.fecha_inicio_suscripcion || store.created_at.split('T')[0],
-      fecha_proximo_vencimiento: store.fecha_proximo_vencimiento || '',
-      dias_gracia: store.dias_gracia ?? 3,
-      suscripcion_activa: store.suscripcion_activa,
-      notas_admin: store.notas_admin || '',
-    })
-  }
-
-  // Guardar Edición de Cuenta
-  const handleSaveEdit = async (e: React.FormEvent) => {
+  // Registrar un nuevo pago de suscripción
+  const handleCreatePayment = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!editingStore) return
-    setSavingEdit(true)
+    if (!selectedStore) return
+    setSavingPayment(true)
 
     try {
-      const { error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser()
+
+      const paymentPayload = {
+        store_id: selectedStore.id,
+        monto: Number(paymentMonto) || 0,
+        metodo_pago: paymentMetodo,
+        periodo_desde: paymentPeriodoDesde,
+        periodo_hasta: paymentPeriodoHasta,
+        fecha_pago: paymentFecha,
+        registrado_por: user?.email || 'superadmin',
+        notas: paymentNotas.trim() || null,
+      }
+
+      const { data: insertedPayment, error: insertError } = await supabase
+        .from('subscription_payments')
+        .insert(paymentPayload)
+        .select()
+        .single()
+
+      if (insertError) throw insertError
+
+      // Actualizar también la tienda explícitamente por si el trigger de Supabase no estuviese activo
+      await supabase
         .from('stores')
         .update({
-          nombre: editForm.nombre?.trim(),
-          slug: editForm.slug?.trim().toLowerCase(),
-          admin_email: editForm.admin_email?.trim().toLowerCase(),
-          whatsapp_numero: editForm.whatsapp_numero?.trim() || null,
-          plan: editForm.plan,
-          precio_mensual: Number(editForm.precio_mensual) || 0,
-          limite_productos: Number(editForm.limite_productos) || 50,
-          estado_pago: editForm.estado_pago,
-          fecha_inicio_suscripcion: editForm.fecha_inicio_suscripcion || null,
-          fecha_proximo_vencimiento: editForm.fecha_proximo_vencimiento || null,
-          dias_gracia: Number(editForm.dias_gracia) || 0,
-          suscripcion_activa: Boolean(editForm.suscripcion_activa),
-          notas_admin: editForm.notas_admin?.trim() || null,
+          fecha_proximo_vencimiento: paymentPeriodoHasta,
+          suscripcion_activa: true,
+          estado_pago: 'al_dia',
         })
-        .eq('id', editingStore.id)
+        .eq('id', selectedStore.id)
+
+      // Actualizar estado local
+      const updatedStore = {
+        ...selectedStore,
+        fecha_proximo_vencimiento: paymentPeriodoHasta,
+        suscripcion_activa: true,
+        estado_pago: 'al_dia',
+      }
+
+      setStores((prev) => prev.map((s) => (s.id === selectedStore.id ? updatedStore : s)))
+      setSelectedStore(updatedStore)
+      setStorePayments((prev) => [insertedPayment as SubscriptionPayment, ...prev])
+      setShowNewPaymentForm(false)
+      setPaymentNotas('')
+      showToast('Pago registrado correctamente. Vencimiento actualizado.')
+    } catch (err: any) {
+      alert('Error al registrar pago: ' + err.message)
+    } finally {
+      setSavingPayment(false)
+    }
+  }
+
+  // Guardar cambios en Suscripción y Límites
+  const handleSaveSubEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedStore) return
+    setSavingSubEdit(true)
+
+    try {
+      const updateData = {
+        plan: subEditForm.plan,
+        precio_mensual: Number(subEditForm.precio_mensual) || 0,
+        limite_productos: Number(subEditForm.limite_productos) || 50,
+        estado_pago: subEditForm.estado_pago,
+        fecha_proximo_vencimiento: subEditForm.fecha_proximo_vencimiento || null,
+        dias_gracia: Number(subEditForm.dias_gracia) || 0,
+        modo_operacion: subEditForm.modo_operacion || 'vitrina',
+        checkout_activo: Boolean(subEditForm.checkout_activo),
+        suscripcion_activa: Boolean(subEditForm.suscripcion_activa),
+        notas_admin: subEditForm.notas_admin?.trim() || null,
+      }
+
+      const { error } = await supabase
+        .from('stores')
+        .update(updateData)
+        .eq('id', selectedStore.id)
+
+      if (error) throw error
+
+      const updated = { ...selectedStore, ...updateData } as SuperadminStoreItem
+      setStores((prev) => prev.map((s) => (s.id === selectedStore.id ? updated : s)))
+      setSelectedStore(updated)
+      showToast('Datos de la cuenta y suscripción actualizados.')
+    } catch (err: any) {
+      alert('Error al guardar datos: ' + err.message)
+    } finally {
+      setSavingSubEdit(false)
+    }
+  }
+
+  // Guardar notas rápidas de superadmin
+  const handleSaveQuickNotes = async () => {
+    if (!selectedStore) return
+    try {
+      const { error } = await supabase
+        .from('stores')
+        .update({ notas_admin: subEditForm.notas_admin?.trim() || null })
+        .eq('id', selectedStore.id)
 
       if (error) throw error
 
       setStores((prev) =>
-        prev.map((s) => (s.id === editingStore.id ? ({ ...s, ...editForm } as SuperadminStoreItem) : s))
+        prev.map((s) =>
+          s.id === selectedStore.id ? { ...s, notas_admin: subEditForm.notas_admin?.trim() || null } : s
+        )
       )
-      setEditingStore(null)
-      showToast('Cuenta de cliente actualizada correctamente')
-      router.refresh()
-    } catch (err) {
-      alert('Error al guardar datos: ' + (err as Error)?.message)
-    } finally {
-      setSavingEdit(false)
+      showToast('Notas de superadmin guardadas.')
+    } catch (err: any) {
+      alert('Error al guardar notas: ' + err.message)
     }
   }
 
@@ -353,36 +569,44 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
 
   return (
     <div className="space-y-6">
-      {/* Barra de Filtros y Búsqueda */}
+      {/* Toast flotante */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-3 rounded-2xl shadow-xl border border-white/10 dark:border-black/10 text-xs font-semibold flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Barra de Filtros, Búsqueda y Switch de Vista */}
       <div className="bg-[var(--color-superficie)] p-4 rounded-2xl border border-[var(--color-borde)] shadow-2xs space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Buscador */}
-          <div className="sm:col-span-6 relative">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 opacity-40" />
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 opacity-40 pointer-events-none" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar por nombre, subdominio, email del maker o notas..."
-              className="w-full min-h-[42px] pl-10 pr-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
+              className="w-full min-h-[42px] pl-10 pr-9 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
             />
             {searchTerm && (
               <button
                 type="button"
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-100 p-1"
+                className="absolute right-3 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-100 p-1 cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          {/* Filtro por Estado de Suscripción */}
-          <div className="sm:col-span-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Filtro por Estado */}
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="w-full min-h-[42px] px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-amber-400 cursor-pointer"
+              className="min-h-[42px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-amber-400 cursor-pointer"
             >
               <option value="all">Todos los estados ({stores.length})</option>
               <option value="activa">Al día / Activas</option>
@@ -391,14 +615,12 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
               <option value="vencida">Vencidas / En mora</option>
               <option value="pausada">Pausadas</option>
             </select>
-          </div>
 
-          {/* Filtro por Plan */}
-          <div className="sm:col-span-3">
+            {/* Filtro por Plan */}
             <select
               value={planFilter}
               onChange={(e) => setPlanFilter(e.target.value)}
-              className="w-full min-h-[42px] px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-amber-400 cursor-pointer"
+              className="min-h-[42px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-amber-400 cursor-pointer"
             >
               <option value="all">Todos los planes</option>
               <option value="maker_pro">Maker Pro</option>
@@ -406,535 +628,1087 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
               <option value="enterprise">Enterprise</option>
               <option value="bonificado">Bonificado / Beta</option>
             </select>
+
+            {/* Selector de Modo de Vista */}
+            <div className="flex items-center p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-[var(--color-borde)]">
+              <button
+                type="button"
+                onClick={() => setViewMode('lista')}
+                title="Vista en Lista compacta"
+                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                  viewMode === 'lista'
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs'
+                    : 'opacity-50 hover:opacity-100'
+                }`}
+              >
+                <LayoutList className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('tarjetas')}
+                title="Vista en Tarjetas"
+                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                  viewMode === 'tarjetas'
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs'
+                    : 'opacity-50 hover:opacity-100'
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Lista de Cuentas */}
+      {/* Renderizado de Tiendas */}
       {filteredStores.length === 0 ? (
-        <div className="text-center py-12 border border-dashed border-[var(--color-borde)] rounded-2xl p-6">
-          <Store className="w-10 h-10 mx-auto opacity-40 mb-3" />
-          <h3 className="text-base font-bold">No se encontraron cuentas</h3>
+        <div className="text-center py-16 border border-dashed border-[var(--color-borde)] rounded-2xl p-6 bg-[var(--color-superficie)]">
+          <Store className="w-10 h-10 mx-auto opacity-30 mb-3" />
+          <h3 className="text-base font-semibold">No se encontraron tiendas</h3>
           <p className="text-xs opacity-70 mt-1">
-            Prueba ajustando los términos de búsqueda o los filtros aplicados.
+            Prueba ajustando los términos de búsqueda o los filtros seleccionados.
           </p>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredStores.map((store) => {
-            const subInfo = getSubscriptionInfo(store)
-            const cleanPhone = store.whatsapp_numero ? store.whatsapp_numero.replace(/[^0-9]/g, '') : null
-            const planMeta = PLAN_LABELS[store.plan || 'maker_pro'] || { label: store.plan || 'Maker Pro', color: 'bg-slate-100 text-slate-700' }
-            const pagoMeta = ESTADO_PAGO_LABELS[store.estado_pago || 'al_dia'] || { label: store.estado_pago || 'Al Día', color: 'text-slate-600' }
+      ) : viewMode === 'lista' ? (
+        /* VISTA 1: TABLA / LISTA COMPACTA DE TIENDAS */
+        <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] shadow-2xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-[var(--color-borde)] bg-black/[0.02] dark:bg-white/[0.02] text-[11px] font-semibold opacity-70 uppercase tracking-wider">
+                  <th className="py-3.5 px-4">Tienda</th>
+                  <th className="py-3.5 px-4 hidden md:table-cell">Maker / Contacto</th>
+                  <th className="py-3.5 px-4">Plan & Precio</th>
+                  <th className="py-3.5 px-4">Estado & Vencimiento</th>
+                  <th className="py-3.5 px-4 hidden lg:table-cell">Catálogo / Cupo</th>
+                  <th className="py-3.5 px-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--color-borde)]">
+                {filteredStores.map((store) => {
+                  const subInfo = getSubscriptionInfo(store)
+                  const cleanPhone = store.whatsapp_numero ? store.whatsapp_numero.replace(/[^0-9]/g, '') : null
+                  const planMeta = PLAN_LABELS[store.plan || 'maker_pro'] || {
+                    label: store.plan || 'Maker Pro',
+                    color: 'bg-slate-100 text-slate-700',
+                  }
+                  const usagePercent = Math.min(
+                    Math.round(((store.product_count || 0) / (store.limite_productos || 50)) * 100),
+                    100
+                  )
 
-            return (
-              <div
-                key={store.id}
-                className="p-5 rounded-2xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 hover:bg-[var(--color-fondo)]/80 transition-all space-y-4"
-              >
-                {/* Cabecera de la Tarjeta: Identidad + Badges + Acciones Principales */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  {/* Identidad de la Tienda y Maker */}
-                  <div className="flex items-start gap-3.5 min-w-0">
-                    {/* Logo o Avatar */}
-                    <div className="w-12 h-12 rounded-2xl overflow-hidden border border-[var(--color-borde)] bg-[var(--color-superficie)] flex items-center justify-center shrink-0 shadow-2xs">
-                      {store.logo_url ? (
-                        <img src={store.logo_url} alt="" className="w-full h-full object-contain p-1" />
-                      ) : (
-                        <span className="font-bold text-lg text-[#CA8A04] dark:text-[#FACC15]">
-                          {store.nombre.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
+                  return (
+                    <tr
+                      key={store.id}
+                      onClick={() => setSelectedStore(store)}
+                      className="hover:bg-amber-500/[0.04] dark:hover:bg-amber-400/[0.05] transition-colors cursor-pointer group"
+                    >
+                      {/* Tienda: Logo + Nombre + Subdominio */}
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl overflow-hidden border border-[var(--color-borde)] bg-white dark:bg-slate-900 flex items-center justify-center shrink-0 shadow-2xs">
+                            {store.logo_url ? (
+                              <img src={store.logo_url} alt="" className="w-full h-full object-contain p-0.5" />
+                            ) : (
+                              <span className="font-bold text-sm text-[#CA8A04] dark:text-[#FACC15]">
+                                {store.nombre.charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
 
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-base text-zinc-900 dark:text-zinc-100 truncate">
-                          {store.nombre}
-                        </span>
+                          <div className="min-w-0">
+                            <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 block truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                              {store.nombre}
+                            </span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="font-mono text-[11px] text-[#CA8A04] dark:text-[#FACC15] truncate">
+                                {store.slug}.portalmaker.ar
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleCopyLink(store.slug)
+                                }}
+                                title="Copiar URL"
+                                className="opacity-40 hover:opacity-100 p-0.5 cursor-pointer"
+                              >
+                                {copiedSlug === store.slug ? (
+                                  <Check className="w-3 h-3 text-emerald-500" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
 
-                        {/* Badge de Suscripción */}
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${subInfo.badgeColor}`}>
-                          <span>{subInfo.statusLabel}</span>
-                        </span>
-
-                        {/* Badge de Plan */}
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${planMeta.color}`}>
-                          <span>{planMeta.label}</span>
-                        </span>
-
-                        {/* Badge de Pago */}
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${pagoMeta.color}`}>
-                          <span>{pagoMeta.label}</span>
-                        </span>
-                      </div>
-
-                      {/* Subdominio y Contacto */}
-                      <div className="flex items-center gap-2.5 text-xs opacity-75 flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => handleCopyLink(store.slug)}
-                          title="Copiar URL"
-                          className="font-mono text-[#CA8A04] dark:text-[#FACC15] font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
-                        >
-                          <span>{store.slug}.portalmaker.ar</span>
-                          {copiedSlug === store.slug ? (
-                            <Check className="w-3 h-3 text-emerald-500" />
-                          ) : (
-                            <Copy className="w-3 h-3 opacity-60" />
-                          )}
-                        </button>
-                        <span>•</span>
-                        <a
-                          href={`mailto:${store.admin_email}`}
-                          className="hover:underline flex items-center gap-1"
-                        >
-                          <Mail className="w-3 h-3 opacity-60" />
-                          <span>{store.admin_email}</span>
-                        </a>
-                        {cleanPhone && (
-                          <>
-                            <span>•</span>
+                      {/* Maker / Contacto */}
+                      <td className="py-3.5 px-4 hidden md:table-cell">
+                        <div className="space-y-0.5">
+                          <a
+                            href={`mailto:${store.admin_email}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[11px] opacity-80 hover:opacity-100 hover:underline flex items-center gap-1 truncate max-w-[200px]"
+                          >
+                            <Mail className="w-3 h-3 opacity-50 shrink-0" />
+                            <span>{store.admin_email}</span>
+                          </a>
+                          {cleanPhone && (
                             <a
                               href={`https://wa.me/${cleanPhone}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
                             >
-                              <WhatsAppIcon className="w-3 h-3" />
+                              <WhatsAppIcon className="w-3 h-3 shrink-0" />
                               <span>{store.whatsapp_numero}</span>
                             </a>
-                          </>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Plan & Precio */}
+                      <td className="py-3.5 px-4">
+                        <div className="space-y-1">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${planMeta.color}`}>
+                            {planMeta.label}
+                          </span>
+                          <span className="text-[11px] font-semibold opacity-75 block">
+                            {formatMoney(Number(store.precio_mensual) || 0)} / mes
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Estado & Vencimiento */}
+                      <td className="py-3.5 px-4">
+                        <div className="space-y-1">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${subInfo.badgeColor}`}>
+                            {subInfo.statusLabel}
+                          </span>
+                          <div className="text-[11px] opacity-70 flex items-center gap-1">
+                            <Clock className="w-3 h-3 opacity-50 shrink-0" />
+                            <span>{store.fecha_proximo_vencimiento || 'Sin fecha'}</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Cupo de Productos */}
+                      <td className="py-3.5 px-4 hidden lg:table-cell">
+                        <div className="space-y-1 w-32">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="font-semibold">{store.product_count || 0} / {store.limite_productos || 50}</span>
+                            <span className="opacity-60">{usagePercent}%</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                usagePercent >= 100
+                                  ? 'bg-red-500'
+                                  : usagePercent >= 80
+                                  ? 'bg-amber-500'
+                                  : 'bg-emerald-500'
+                              }`}
+                              style={{ width: `${usagePercent}%` }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Acciones Rápidas */}
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          {/* Ver Ficha Integral */}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedStore(store)}
+                            title="Ver Ficha y Gestión Integral"
+                            className="min-h-[34px] px-2.5 py-1 rounded-xl bg-amber-400/15 hover:bg-amber-400/25 text-[#CA8A04] dark:text-[#FACC15] font-semibold text-xs flex items-center gap-1 transition-all cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Ver Ficha</span>
+                          </button>
+
+                          {/* Admin de Tienda */}
+                          <Link
+                            href={`/tienda/admin/productos?tenant=${store.slug}`}
+                            title="Ingresar al Panel de Tienda"
+                            className="min-h-[34px] p-2 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 opacity-80 hover:opacity-100 flex items-center justify-center transition-all"
+                          >
+                            <Package className="w-3.5 h-3.5 text-[#CA8A04] dark:text-[#FACC15]" />
+                          </Link>
+
+                          {/* Visitar Tienda */}
+                          <Link
+                            href={`/tienda?tenant=${store.slug}`}
+                            target="_blank"
+                            title="Visitar Tienda Pública"
+                            className="min-h-[34px] p-2 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 opacity-80 hover:opacity-100 flex items-center justify-center transition-all"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </Link>
+
+                          {/* Pausar / Activar */}
+                          <button
+                            type="button"
+                            disabled={loadingId === store.id}
+                            onClick={() => toggleSuscripcion(store.id, store.suscripcion_activa)}
+                            title={store.suscripcion_activa ? 'Pausar tienda' : 'Activar tienda'}
+                            className={`min-h-[34px] p-2 rounded-xl border transition-all cursor-pointer ${
+                              store.suscripcion_activa
+                                ? 'border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                                : 'border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
+                            }`}
+                          >
+                            {loadingId === store.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Power className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        /* VISTA 2: TARJETAS EXPANDIDAS */
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredStores.map((store) => {
+            const subInfo = getSubscriptionInfo(store)
+            const cleanPhone = store.whatsapp_numero ? store.whatsapp_numero.replace(/[^0-9]/g, '') : null
+            const planMeta = PLAN_LABELS[store.plan || 'maker_pro'] || {
+              label: store.plan || 'Maker Pro',
+              color: 'bg-slate-100 text-slate-700',
+            }
+
+            return (
+              <div
+                key={store.id}
+                onClick={() => setSelectedStore(store)}
+                className="p-5 rounded-2xl border border-[var(--color-borde)] bg-[var(--color-superficie)] hover:border-amber-400/50 transition-all space-y-4 shadow-2xs cursor-pointer group"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl overflow-hidden border border-[var(--color-borde)] bg-white dark:bg-slate-900 flex items-center justify-center shrink-0">
+                      {store.logo_url ? (
+                        <img src={store.logo_url} alt="" className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <span className="font-bold text-base text-[#CA8A04] dark:text-[#FACC15]">
+                          {store.nombre.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-base group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                        {store.nombre}
+                      </h3>
+                      <p className="font-mono text-xs text-[#CA8A04] dark:text-[#FACC15]">
+                        {store.slug}.portalmaker.ar
+                      </p>
                     </div>
                   </div>
 
-                  {/* Acciones Rápidas de la Cabecera */}
-                  <div className="flex items-center gap-2 flex-wrap shrink-0">
-                    {/* Botón Editar Cuenta */}
-                    <button
-                      type="button"
-                      onClick={() => handleOpenEdit(store)}
-                      className="min-h-[38px] px-3.5 py-1.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs font-semibold flex items-center gap-1.5 hover:bg-amber-400/10 hover:text-amber-700 dark:hover:text-amber-300 transition-all cursor-pointer"
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                      <span>Gestionar Cuenta</span>
-                    </button>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${subInfo.badgeColor}`}>
+                    {subInfo.statusLabel}
+                  </span>
+                </div>
 
-                    {/* Botón Pausar / Activar */}
-                    <button
-                      type="button"
-                      disabled={loadingId === store.id}
-                      onClick={() => toggleSuscripcion(store.id, store.suscripcion_activa)}
-                      className={`min-h-[38px] px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                        store.suscripcion_activa
-                          ? 'border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30'
-                          : 'border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
-                      }`}
-                    >
-                      {loadingId === store.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Power className="w-3.5 h-3.5" />
-                      )}
-                      <span>{store.suscripcion_activa ? 'Pausar' : 'Activar'}</span>
-                    </button>
+                <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-[var(--color-borde)] opacity-80">
+                  <div>
+                    <span className="opacity-60 block text-[10px]">Plan:</span>
+                    <span className="font-semibold">{planMeta.label} ({formatMoney(Number(store.precio_mensual) || 0)})</span>
+                  </div>
+                  <div>
+                    <span className="opacity-60 block text-[10px]">Vencimiento:</span>
+                    <span className="font-semibold">{store.fecha_proximo_vencimiento || 'Sin fecha'}</span>
+                  </div>
+                  <div>
+                    <span className="opacity-60 block text-[10px]">Maker:</span>
+                    <span className="truncate block">{store.admin_email}</span>
+                  </div>
+                  <div>
+                    <span className="opacity-60 block text-[10px]">Catálogo:</span>
+                    <span className="font-semibold">{store.product_count || 0} / {store.limite_productos || 50} piezas</span>
+                  </div>
+                </div>
 
-                    {/* Acceso a Admin de Tienda */}
+                <div className="flex items-center justify-between pt-2 border-t border-[var(--color-borde)]" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStore(store)}
+                    className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
+                  >
+                    <span>Ver Ficha Integral</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+
+                  <div className="flex items-center gap-1.5">
                     <Link
                       href={`/tienda/admin/productos?tenant=${store.slug}`}
-                      className="min-h-[38px] px-3 py-1.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs font-semibold flex items-center gap-1.5 hover:bg-black/5 dark:hover:bg-white/5 transition-all"
+                      className="min-h-[34px] px-2.5 py-1 rounded-xl border border-[var(--color-borde)] text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-1"
                     >
-                      <Package className="w-3.5 h-3.5 text-[#CA8A04] dark:text-[#FACC15]" />
-                      <span>Admin Tienda</span>
+                      <Package className="w-3.5 h-3.5 text-[#CA8A04]" />
+                      <span>Admin</span>
                     </Link>
-
-                    {/* Ver Tienda Pública */}
                     <Link
                       href={`/tienda?tenant=${store.slug}`}
                       target="_blank"
-                      className="min-h-[38px] px-3 py-1.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs font-semibold flex items-center gap-1.5 hover:bg-black/5 dark:hover:bg-white/5 transition-all"
+                      className="min-h-[34px] px-2.5 py-1 rounded-xl border border-[var(--color-borde)] text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-1"
                     >
-                      <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+                      <ExternalLink className="w-3.5 h-3.5" />
                       <span>Visitar</span>
                     </Link>
                   </div>
                 </div>
-
-                {/* Fila de Datos Clave: Tiempos, Vencimiento, Días de Gracia y Notas */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-[var(--color-borde)] text-xs">
-                  {/* 1. Antigüedad y Fecha de Inicio */}
-                  <div className="bg-[var(--color-superficie)] p-3 rounded-xl border border-[var(--color-borde)]/80 space-y-1">
-                    <span className="text-[10px] uppercase font-semibold opacity-60 flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      <span>Inicio & Antigüedad</span>
-                    </span>
-                    <div className="font-bold">
-                      {store.fecha_inicio_suscripcion || store.created_at.split('T')[0]}
-                    </div>
-                    <p className="text-[11px] opacity-70">
-                      Hace {subInfo.timeElapsed} en la plataforma
-                    </p>
-                  </div>
-
-                  {/* 2. Próximo Vencimiento */}
-                  <div className="bg-[var(--color-superficie)] p-3 rounded-xl border border-[var(--color-borde)]/80 space-y-1">
-                    <span className="text-[10px] uppercase font-semibold opacity-60 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span>Próximo Vencimiento</span>
-                    </span>
-                    <div className="font-bold flex items-center justify-between">
-                      <span>{store.fecha_proximo_vencimiento || 'Sin fecha fijada'}</span>
-                      <button
-                        type="button"
-                        onClick={() => extendSubscriptionMonth(store)}
-                        title="Sumar +30 días"
-                        className="text-[10px] px-2 py-0.5 rounded bg-amber-400/20 text-amber-800 dark:text-amber-300 font-bold hover:bg-amber-400/40 transition-colors"
-                      >
-                        +1 Mes
-                      </button>
-                    </div>
-                    <p className="text-[11px] opacity-70">
-                      {subInfo.daysRemaining !== null ? (
-                        subInfo.daysRemaining > 0 ? (
-                          `${subInfo.daysRemaining} días restantes`
-                        ) : subInfo.daysRemaining === 0 ? (
-                          'Vence hoy'
-                        ) : (
-                          `Venció hace ${Math.abs(subInfo.daysRemaining)} días`
-                        )
-                      ) : (
-                        'Renovación manual'
-                      )}
-                    </p>
-                  </div>
-
-                  {/* 3. Días de Gracia */}
-                  <div className="bg-[var(--color-superficie)] p-3 rounded-xl border border-[var(--color-borde)]/80 space-y-1">
-                    <span className="text-[10px] uppercase font-semibold opacity-60 flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3" />
-                      <span>Tolerancia / Días Gracia</span>
-                    </span>
-                    <div className="font-bold flex items-center justify-between">
-                      <span>{store.dias_gracia ?? 3} días de gracia</span>
-                      <button
-                        type="button"
-                        onClick={() => addGraceDays(store)}
-                        title="Sumar +7 días de gracia"
-                        className="text-[10px] px-2 py-0.5 rounded bg-orange-400/20 text-orange-800 dark:text-orange-300 font-bold hover:bg-orange-400/40 transition-colors"
-                      >
-                        +7 Días
-                      </button>
-                    </div>
-                    <p className="text-[11px] opacity-70">
-                      Días antes de pausar tras vencimiento
-                    </p>
-                  </div>
-
-                  {/* 4. Precio Pactado & Productos */}
-                  <div className="bg-[var(--color-superficie)] p-3 rounded-xl border border-[var(--color-borde)]/80 space-y-1">
-                    <span className="text-[10px] uppercase font-semibold opacity-60 flex items-center gap-1">
-                      <CreditCard className="w-3 h-3" />
-                      <span>Precio & Límite Productos</span>
-                    </span>
-                    <div className="font-bold text-[#CA8A04] dark:text-[#FACC15] flex items-center justify-between">
-                      <span>${(store.precio_mensual ?? 0).toLocaleString('es-AR')} / mes</span>
-                      <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                        {store.product_count ?? 0} / {store.limite_productos ?? 50}
-                      </span>
-                    </div>
-                    {/* Barra de progreso de productos */}
-                    {(() => {
-                      const count = store.product_count ?? 0
-                      const max = store.limite_productos ?? 50
-                      const pct = Math.min(100, Math.round((count / max) * 100))
-                      const barColor =
-                        pct >= 90
-                          ? 'bg-red-500'
-                          : pct >= 70
-                          ? 'bg-amber-500'
-                          : 'bg-emerald-500'
-                      return (
-                        <div className="space-y-1">
-                          <div className="w-full h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-300 ${barColor}`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <p className="text-[10px] opacity-70 flex items-center justify-between">
-                            <span>{pct}% del cupo utilizado</span>
-                            {pct >= 100 && (
-                              <span className="text-red-500 font-bold">Cupo Lleno</span>
-                            )}
-                          </p>
-                        </div>
-                      )
-                    })()}
-                  </div>
-                </div>
-
-                {/* Notas Internas del Admin (si existen) */}
-                {store.notas_admin && (
-                  <div className="p-3 rounded-xl bg-amber-400/10 border border-amber-400/20 text-xs flex items-start gap-2">
-                    <FileText className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold text-amber-900 dark:text-amber-300 mr-1">Notas internas:</span>
-                      <span className="opacity-85">{store.notas_admin}</span>
-                    </div>
-                  </div>
-                )}
               </div>
             )
           })}
         </div>
       )}
 
-      {/* MODAL DE EDICIÓN COMPLETA DE CUENTA */}
-      {editingStore && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-150">
-          <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-2xl space-y-5 my-auto">
-            <div className="flex items-center justify-between border-b border-[var(--color-borde)] pb-4">
-              <div>
-                <h3 className="text-lg font-bold font-[var(--font-portal-heading)]">
-                  Gestionar Cuenta: {editingStore.nombre}
-                </h3>
-                <p className="text-xs opacity-70 mt-0.5">
-                  Modifica plan, fechas de cobro, tolerancia y notas de este cliente
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingStore(null)}
-                className="p-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 opacity-60 hover:opacity-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {/* =========================================================================
+          FICHA INTEGRAL DE TIENDA (DRAWER LATERAL EXPANSIVO)
+          ========================================================================= */}
+      {selectedStore && (
+        <div className="fixed inset-0 z-50 overflow-hidden flex justify-end animate-in fade-in duration-200">
+          {/* Fondo semi-transparente */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setSelectedStore(null)}
+          />
 
-            <form onSubmit={handleSaveEdit} className="space-y-4">
-              {/* Datos Básicos */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="text-xs font-semibold block mb-1">Nombre Comercial</label>
-                  <input
-                    type="text"
-                    required
-                    value={editForm.nombre || ''}
-                    onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })}
-                    className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
-                  />
-                </div>
+          {/* Panel Lateral Drawer */}
+          <div className="relative w-full max-w-2xl bg-[var(--color-superficie)] border-l border-[var(--color-borde)] h-full overflow-y-auto shadow-2xl z-10 flex flex-col justify-between">
+            {/* Cabecera del Drawer */}
+            <div>
+              <div className="p-5 sm:p-6 border-b border-[var(--color-borde)] bg-black/[0.015] dark:bg-white/[0.02]">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-14 h-14 rounded-2xl overflow-hidden border border-[var(--color-borde)] bg-white dark:bg-slate-900 flex items-center justify-center shrink-0 shadow-xs">
+                      {selectedStore.logo_url ? (
+                        <img src={selectedStore.logo_url} alt="" className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <span className="font-bold text-xl text-[#CA8A04] dark:text-[#FACC15]">
+                          {selectedStore.nombre.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                          {selectedStore.nombre}
+                        </h2>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${getSubscriptionInfo(selectedStore).badgeColor}`}>
+                          {getSubscriptionInfo(selectedStore).statusLabel}
+                        </span>
+                      </div>
+                      <p className="font-mono text-xs text-[#CA8A04] dark:text-[#FACC15] mt-0.5">
+                        {selectedStore.slug}.portalmaker.ar
+                      </p>
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="text-xs font-semibold block mb-1">Subdominio (Slug)</label>
-                  <input
-                    type="text"
-                    required
-                    value={editForm.slug || ''}
-                    onChange={(e) => setEditForm({ ...editForm, slug: e.target.value.toLowerCase().trim() })}
-                    className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold block mb-1">Email del Maker (Dueño)</label>
-                  <input
-                    type="email"
-                    required
-                    value={editForm.admin_email || ''}
-                    onChange={(e) => setEditForm({ ...editForm, admin_email: e.target.value })}
-                    className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold block mb-1">WhatsApp de Contacto</label>
-                  <input
-                    type="text"
-                    placeholder="Ej: 5491123456789"
-                    value={editForm.whatsapp_numero || ''}
-                    onChange={(e) => setEditForm({ ...editForm, whatsapp_numero: e.target.value })}
-                    className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Plan, Límite de Productos y Cobro */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-2 border-t border-[var(--color-borde)]">
-                <div>
-                  <label className="text-xs font-semibold block mb-1">Plan Contratado</label>
-                  <select
-                    value={editForm.plan || 'maker_pro'}
-                    onChange={(e) => {
-                      const newPlan = e.target.value
-                      const defaultLimits: Record<string, number> = {
-                        starter: 15,
-                        maker_pro: 50,
-                        enterprise: 500,
-                        bonificado: 100,
-                      }
-                      setEditForm({
-                        ...editForm,
-                        plan: newPlan,
-                        limite_productos: defaultLimits[newPlan] ?? 50,
-                      })
-                    }}
-                    className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium cursor-pointer"
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStore(null)}
+                    aria-label="Cerrar ficha"
+                    className="p-2 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 opacity-70 hover:opacity-100 cursor-pointer"
                   >
-                    <option value="maker_pro">Maker Pro (50 prod.)</option>
-                    <option value="starter">Starter (15 prod.)</option>
-                    <option value="enterprise">Enterprise (500 prod.)</option>
-                    <option value="bonificado">Bonificado / Beta (100 prod.)</option>
-                  </select>
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
 
-                <div>
-                  <label className="text-xs font-semibold block mb-1">Límite Máx. Productos</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10000"
-                    value={editForm.limite_productos ?? 50}
-                    onChange={(e) =>
-                      setEditForm({
-                        ...editForm,
-                        limite_productos: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-amber-600 dark:text-amber-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold block mb-1">Precio Mensual ($)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="any"
-                    value={editForm.precio_mensual ?? 0}
-                    onChange={(e) => setEditForm({ ...editForm, precio_mensual: parseFloat(e.target.value) || 0 })}
-                    className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold block mb-1">Estado del Cobro</label>
-                  <select
-                    value={editForm.estado_pago || 'al_dia'}
-                    onChange={(e) => setEditForm({ ...editForm, estado_pago: e.target.value })}
-                    className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium cursor-pointer"
+                {/* Accesos Rápidos Principales de la Tienda */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4 pt-3 border-t border-[var(--color-borde)]">
+                  <Link
+                    href={`/tienda/admin/productos?tenant=${selectedStore.slug}`}
+                    className="min-h-[40px] px-3 py-2 rounded-xl bg-amber-400/20 text-[#CA8A04] dark:text-[#FACC15] hover:bg-amber-400/30 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all"
                   >
-                    <option value="al_dia">Al Día</option>
-                    <option value="pendiente">Pendiente de Pago</option>
-                    <option value="bonificado">Bonificado</option>
-                    <option value="gracia">En Período de Gracia</option>
-                    <option value="vencido">Vencido</option>
-                  </select>
+                    <Package className="w-4 h-4" />
+                    <span>Panel Tienda</span>
+                  </Link>
+
+                  <Link
+                    href={`/tienda?tenant=${selectedStore.slug}`}
+                    target="_blank"
+                    className="min-h-[40px] px-3 py-2 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <ExternalLink className="w-4 h-4 opacity-70" />
+                    <span>Visitar Web</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    disabled={loadingId === selectedStore.id}
+                    onClick={() => toggleSuscripcion(selectedStore.id, selectedStore.suscripcion_activa)}
+                    className={`col-span-2 sm:col-span-1 min-h-[40px] px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      selectedStore.suscripcion_activa
+                        ? 'border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                        : 'border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
+                    }`}
+                  >
+                    {loadingId === selectedStore.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Power className="w-4 h-4" />
+                    )}
+                    <span>{selectedStore.suscripcion_activa ? 'Pausar Tienda' : 'Activar Tienda'}</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Fechas de Suscripción */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2 border-t border-[var(--color-borde)]">
-                <div>
-                  <label className="text-xs font-semibold block mb-1">Fecha de Inicio</label>
-                  <input
-                    type="date"
-                    value={editForm.fecha_inicio_suscripcion || ''}
-                    onChange={(e) => setEditForm({ ...editForm, fecha_inicio_suscripcion: e.target.value })}
-                    className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs cursor-pointer"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold block mb-1">Próximo Vencimiento</label>
-                  <input
-                    type="date"
-                    value={editForm.fecha_proximo_vencimiento || ''}
-                    onChange={(e) => setEditForm({ ...editForm, fecha_proximo_vencimiento: e.target.value })}
-                    className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs cursor-pointer"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold block mb-1">Días de Gracia (Tolerancia)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="60"
-                    value={editForm.dias_gracia ?? 3}
-                    onChange={(e) => setEditForm({ ...editForm, dias_gracia: parseInt(e.target.value) || 0 })}
-                    className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs"
-                  />
-                </div>
-              </div>
-
-              {/* Notas Internas del Superadmin */}
-              <div className="pt-2 border-t border-[var(--color-borde)]">
-                <label className="text-xs font-semibold block mb-1">
-                  Notas Internas del Superadmin (Solo visible para ti)
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Anotaciones sobre acuerdos de pago, comprobantes transferidos, pedidos del cliente..."
-                  value={editForm.notas_admin || ''}
-                  onChange={(e) => setEditForm({ ...editForm, notas_admin: e.target.value })}
-                  className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs resize-none"
-                />
-              </div>
-
-              {/* Toggle de Suscripción Activa */}
-              <div className="flex items-center justify-between p-3 rounded-xl bg-black/5 dark:bg-white/5">
-                <div>
-                  <span className="text-xs font-bold block">Tienda Habilitada en la Red</span>
-                  <span className="text-[11px] opacity-70">
-                    Si se desactiva, la tienda pública y el panel mostrarán aviso de mantenimiento / pausa
-                  </span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={Boolean(editForm.suscripcion_activa)}
-                  onChange={(e) => setEditForm({ ...editForm, suscripcion_activa: e.target.checked })}
-                  className="w-4 h-4 text-amber-500 rounded border-slate-300 cursor-pointer"
-                />
-              </div>
-
-              {/* Botones del Modal */}
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[var(--color-borde)]">
+              {/* Pestañas del Drawer */}
+              <div className="flex border-b border-[var(--color-borde)] px-4 sm:px-6 gap-2 overflow-x-auto scrollbar-none bg-[var(--color-superficie)]">
                 <button
                   type="button"
-                  onClick={() => setEditingStore(null)}
-                  className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold cursor-pointer"
+                  onClick={() => setActiveDrawerTab('pagos')}
+                  className={`min-h-[44px] pb-2 pt-3 px-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                    activeDrawerTab === 'pagos'
+                      ? 'border-[#CA8A04] text-[#CA8A04] dark:border-[#FACC15] dark:text-[#FACC15]'
+                      : 'border-transparent opacity-60 hover:opacity-100'
+                  }`}
                 >
-                  Cancelar
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Pagos & Cobros</span>
+                  <span className="text-[10px] px-1.5 rounded-full bg-black/5 dark:bg-white/10 font-bold">
+                    {storePayments.length}
+                  </span>
                 </button>
+
                 <button
-                  type="submit"
-                  disabled={savingEdit}
-                  style={{ color: '#1F2937' }}
-                  className="min-h-[44px] px-6 py-2 rounded-xl bg-[#FACC15] text-[#1F2937] text-xs font-bold hover:bg-[#eab308] flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
+                  type="button"
+                  onClick={() => setActiveDrawerTab('suscripcion')}
+                  className={`min-h-[44px] pb-2 pt-3 px-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                    activeDrawerTab === 'suscripcion'
+                      ? 'border-[#CA8A04] text-[#CA8A04] dark:border-[#FACC15] dark:text-[#FACC15]'
+                      : 'border-transparent opacity-60 hover:opacity-100'
+                  }`}
                 >
-                  {savingEdit ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
-                  ) : (
-                    <Save className="w-4 h-4 text-[#1F2937]" />
-                  )}
-                  <span>Guardar Cambios</span>
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>Vencimiento & Límites</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveDrawerTab('metricas')}
+                  className={`min-h-[44px] pb-2 pt-3 px-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                    activeDrawerTab === 'metricas'
+                      ? 'border-[#CA8A04] text-[#CA8A04] dark:border-[#FACC15] dark:text-[#FACC15]'
+                      : 'border-transparent opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  <span>Métricas & Salud</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveDrawerTab('contacto')}
+                  className={`min-h-[44px] pb-2 pt-3 px-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                    activeDrawerTab === 'contacto'
+                      ? 'border-[#CA8A04] text-[#CA8A04] dark:border-[#FACC15] dark:text-[#FACC15]'
+                      : 'border-transparent opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Maker & Contacto</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveDrawerTab('notas')}
+                  className={`min-h-[44px] pb-2 pt-3 px-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                    activeDrawerTab === 'notas'
+                      ? 'border-[#CA8A04] text-[#CA8A04] dark:border-[#FACC15] dark:text-[#FACC15]'
+                      : 'border-transparent opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Notas Internas</span>
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
 
-      {/* Toast Flotante de Confirmación */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-[#1F2937] text-white text-xs sm:text-sm font-medium shadow-2xl border border-white/10 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
-            <Check className="w-3.5 h-3.5" />
+              {/* Contenido según la pestaña activa */}
+              <div className="p-5 sm:p-6 space-y-6">
+                {/* ==============================================================
+                    PESTAÑA 1: PAGOS & HISTORIAL DE COBROS
+                    ============================================================== */}
+                {activeDrawerTab === 'pagos' && (
+                  <div className="space-y-5">
+                    {/* Tarjeta de Resumen de Facturación */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-[var(--color-borde)]">
+                        <span className="text-[10px] uppercase font-semibold opacity-60 block">Precio Pactado</span>
+                        <span className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                          {formatMoney(Number(selectedStore.precio_mensual) || 0)}
+                        </span>
+                        <span className="text-[10px] opacity-60 block">por mes</span>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-[var(--color-borde)]">
+                        <span className="text-[10px] uppercase font-semibold opacity-60 block">Próximo Vencimiento</span>
+                        <span className="text-base sm:text-lg font-bold text-amber-600 dark:text-amber-400">
+                          {selectedStore.fecha_proximo_vencimiento || 'Sin fecha'}
+                        </span>
+                        <span className="text-[10px] opacity-60 block">
+                          {getSubscriptionInfo(selectedStore).statusLabel}
+                        </span>
+                      </div>
+
+                      <div className="col-span-2 sm:col-span-1 p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-[var(--color-borde)]">
+                        <span className="text-[10px] uppercase font-semibold opacity-60 block">Cobros Registrados</span>
+                        <span className="text-base sm:text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                          {formatMoney(storePayments.reduce((acc, p) => acc + (Number(p.monto) || 0), 0))}
+                        </span>
+                        <span className="text-[10px] opacity-60 block">total histórico</span>
+                      </div>
+                    </div>
+
+                    {/* Botón para abrir formulario de pago */}
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                        <CreditCard className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                        <span>Registro de Pagos y Comprobantes</span>
+                      </h3>
+
+                      {!showNewPaymentForm && (
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPaymentForm(true)}
+                          className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-[#CA8A04] hover:bg-[#A16207] text-white font-semibold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Registrar Pago</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Formulario para Asentar Nuevo Pago */}
+                    {showNewPaymentForm && (
+                      <form
+                        onSubmit={handleCreatePayment}
+                        className="p-4 sm:p-5 rounded-2xl border-2 border-amber-400/40 bg-amber-400/[0.03] space-y-4 animate-in fade-in"
+                      >
+                        <div className="flex items-center justify-between border-b border-amber-400/20 pb-2">
+                          <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                            Cargar Cobro / Renovación de Suscripción
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPaymentForm(false)}
+                            className="p-1 rounded-lg opacity-60 hover:opacity-100 cursor-pointer"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <label className="block font-medium mb-1 opacity-80">Monto Abonado ($ ARS)</label>
+                            <input
+                              type="number"
+                              required
+                              value={paymentMonto}
+                              onChange={(e) => setPaymentMonto(Number(e.target.value))}
+                              placeholder="0"
+                              className="w-full h-10 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block font-medium mb-1 opacity-80">Método de Cobro</label>
+                            <select
+                              value={paymentMetodo}
+                              onChange={(e) => setPaymentMetodo(e.target.value)}
+                              className="w-full h-10 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                            >
+                              <option value="transferencia">Transferencia bancaria</option>
+                              <option value="efectivo">Efectivo / En mano</option>
+                              <option value="mercadopago">Mercado Pago</option>
+                              <option value="debito_automatico">Débito automático</option>
+                              <option value="otro">Otro acuerdo</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block font-medium mb-1 opacity-80">Período Abonado Desde</label>
+                            <input
+                              type="date"
+                              required
+                              value={paymentPeriodoDesde}
+                              onChange={(e) => setPaymentPeriodoDesde(e.target.value)}
+                              className="w-full h-10 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block font-medium mb-1 opacity-80">
+                              Período Abonado Hasta (Nuevo Vencimiento)
+                            </label>
+                            <input
+                              type="date"
+                              required
+                              value={paymentPeriodoHasta}
+                              onChange={(e) => setPaymentPeriodoHasta(e.target.value)}
+                              className="w-full h-10 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label className="block font-medium mb-1 opacity-80">
+                              Detalle / Notas de la Operación
+                            </label>
+                            <input
+                              type="text"
+                              value={paymentNotas}
+                              onChange={(e) => setPaymentNotas(e.target.value)}
+                              placeholder="Ej. Transferencia Banco Galicia comprobante #83921"
+                              className="w-full h-10 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-amber-400/20">
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPaymentForm(false)}
+                            className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[var(--color-borde)] text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={savingPayment}
+                            className="min-h-[36px] px-4 py-1.5 rounded-xl bg-[#CA8A04] hover:bg-[#A16207] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                          >
+                            {savingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                            <span>Guardar Cobro y Actualizar Vencimiento</span>
+                          </button>
+                        </div>
+                      </form>
+                    )}
+
+                    {/* Historial de Pagos Anteriores */}
+                    <div className="space-y-2">
+                      <span className="text-xs font-semibold opacity-70 block">
+                        Historial de transacciones registradas:
+                      </span>
+
+                      {loadingPayments ? (
+                        <div className="p-8 text-center text-xs opacity-60 flex items-center justify-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+                          <span>Cargando historial de pagos...</span>
+                        </div>
+                      ) : storePayments.length === 0 ? (
+                        <div className="p-6 text-center rounded-xl border border-dashed border-[var(--color-borde)] text-xs opacity-60 space-y-1">
+                          <CreditCard className="w-6 h-6 mx-auto opacity-30" />
+                          <p className="font-semibold">Sin pagos registrados aún</p>
+                          <p>Usa el botón &quot;Registrar Pago&quot; para asentar el primer cobro de esta tienda.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {storePayments.map((p) => (
+                            <div
+                              key={p.id}
+                              className="p-3.5 rounded-xl border border-[var(--color-borde)] bg-black/[0.015] dark:bg-white/[0.02] flex items-center justify-between gap-3 text-xs"
+                            >
+                              <div className="min-w-0 space-y-0.5">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-bold text-sm text-emerald-600 dark:text-emerald-400">
+                                    {formatMoney(Number(p.monto) || 0)}
+                                  </span>
+                                  <span className="text-[10px] px-2 py-0.2 rounded-md bg-black/5 dark:bg-white/10 font-semibold uppercase">
+                                    {p.metodo_pago || 'Pago'}
+                                  </span>
+                                </div>
+                                <span className="text-[11px] opacity-70 block">
+                                  Período cubierto: {p.periodo_desde} al {p.periodo_hasta}
+                                </span>
+                                {p.notas && (
+                                  <span className="text-[11px] opacity-80 italic block">
+                                    &ldquo;{p.notas}&rdquo;
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="text-right shrink-0">
+                                <span className="text-[10px] opacity-60 block">Fecha cobro:</span>
+                                <span className="font-medium text-[11px]">{p.fecha_pago}</span>
+                                {p.registrado_por && (
+                                  <span className="text-[10px] opacity-40 block truncate max-w-[120px]">
+                                    Por {p.registrado_por}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ==============================================================
+                    PESTAÑA 2: VENCIMIENTOS, LÍMITES Y SUSCRIPCIÓN
+                    ============================================================== */}
+                {activeDrawerTab === 'suscripcion' && (
+                  <form onSubmit={handleSaveSubEdit} className="space-y-5">
+                    {/* Acciones Rápidas de Extensión con 1 clic */}
+                    <div className="p-4 rounded-2xl bg-amber-400/[0.04] border border-amber-400/30 space-y-2">
+                      <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 block">
+                        Extender vencimiento rápidamente (+1 clic):
+                      </span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => extendDueDate(selectedStore, 30, '+1 Mes')}
+                          className="min-h-[36px] px-3 py-1.5 rounded-xl bg-[#CA8A04] hover:bg-[#A16207] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                        >
+                          +1 Mes (30 días)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => extendDueDate(selectedStore, 90, '+3 Meses')}
+                          className="min-h-[36px] px-3 py-1.5 rounded-xl border border-amber-500/40 hover:bg-amber-500/10 text-xs font-bold text-[#CA8A04] dark:text-[#FACC15] transition-all cursor-pointer"
+                        >
+                          +3 Meses
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => extendDueDate(selectedStore, 180, '+6 Meses')}
+                          className="min-h-[36px] px-3 py-1.5 rounded-xl border border-amber-500/40 hover:bg-amber-500/10 text-xs font-bold text-[#CA8A04] dark:text-[#FACC15] transition-all cursor-pointer"
+                        >
+                          +6 Meses
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => extendDueDate(selectedStore, 365, '+1 Año')}
+                          className="min-h-[36px] px-3 py-1.5 rounded-xl border border-amber-500/40 hover:bg-amber-500/10 text-xs font-bold text-[#CA8A04] dark:text-[#FACC15] transition-all cursor-pointer"
+                        >
+                          +1 Año
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                      <div>
+                        <label className="block font-medium mb-1.5 opacity-80">Plan Asignado</label>
+                        <select
+                          value={subEditForm.plan || 'maker_pro'}
+                          onChange={(e) => setSubEditForm({ ...subEditForm, plan: e.target.value })}
+                          className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                        >
+                          <option value="maker_pro">Maker Pro</option>
+                          <option value="starter">Starter</option>
+                          <option value="enterprise">Enterprise</option>
+                          <option value="bonificado">Bonificado / Beta tester</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block font-medium mb-1.5 opacity-80">Precio Mensual Acordado ($ ARS)</label>
+                        <input
+                          type="number"
+                          value={subEditForm.precio_mensual ?? 0}
+                          onChange={(e) => setSubEditForm({ ...subEditForm, precio_mensual: Number(e.target.value) })}
+                          className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-medium mb-1.5 opacity-80">Próximo Vencimiento</label>
+                        <input
+                          type="date"
+                          value={subEditForm.fecha_proximo_vencimiento || ''}
+                          onChange={(e) => setSubEditForm({ ...subEditForm, fecha_proximo_vencimiento: e.target.value })}
+                          className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-medium mb-1.5 opacity-80">Días de Gracia tras Vencimiento</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            value={subEditForm.dias_gracia ?? 3}
+                            onChange={(e) => setSubEditForm({ ...subEditForm, dias_gracia: Number(e.target.value) })}
+                            className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setSubEditForm((prev) => ({ ...prev, dias_gracia: (prev.dias_gracia ?? 3) + 7 }))}
+                            className="min-h-[44px] px-3 rounded-xl border border-[var(--color-borde)] text-[11px] font-semibold hover:bg-black/5 dark:hover:bg-white/5 shrink-0"
+                          >
+                            +7d
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block font-medium mb-1.5 opacity-80">Límite Máximo de Productos</label>
+                        <input
+                          type="number"
+                          value={subEditForm.limite_productos ?? 50}
+                          onChange={(e) => setSubEditForm({ ...subEditForm, limite_productos: Number(e.target.value) })}
+                          className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-medium mb-1.5 opacity-80">Estado de Pago Manual</label>
+                        <select
+                          value={subEditForm.estado_pago || 'al_dia'}
+                          onChange={(e) => setSubEditForm({ ...subEditForm, estado_pago: e.target.value })}
+                          className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                        >
+                          <option value="al_dia">Al Día</option>
+                          <option value="pendiente">Pendiente</option>
+                          <option value="bonificado">Bonificado</option>
+                          <option value="gracia">En Gracia</option>
+                          <option value="vencido">Vencido / En mora</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block font-medium mb-1.5 opacity-80">Modo de Operación</label>
+                        <select
+                          value={subEditForm.modo_operacion || 'vitrina'}
+                          onChange={(e) => setSubEditForm({ ...subEditForm, modo_operacion: e.target.value })}
+                          className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                        >
+                          <option value="vitrina">Solo Vitrina (sin carrito)</option>
+                          <option value="tienda">Tienda completa (con carrito y checkout)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block font-medium mb-1.5 opacity-80">Checkout y Carrito Activo</label>
+                        <select
+                          value={subEditForm.checkout_activo ? 'true' : 'false'}
+                          onChange={(e) => setSubEditForm({ ...subEditForm, checkout_activo: e.target.value === 'true' })}
+                          className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                        >
+                          <option value="true">Habilitado</option>
+                          <option value="false">Deshabilitado (solo WhatsApp)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-[var(--color-borde)] flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={savingSubEdit}
+                        className="min-h-[44px] px-6 rounded-xl bg-[#CA8A04] hover:bg-[#A16207] text-white text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+                      >
+                        {savingSubEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>Guardar Cambios de Suscripción</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* ==============================================================
+                    PESTAÑA 3: MÉTRICAS Y SALUD DEL NEGOCIO MAKER
+                    ============================================================== */}
+                {activeDrawerTab === 'metricas' && (
+                  <div className="space-y-4">
+                    <p className="text-xs opacity-70">
+                      Rendimiento comercial y actividad en tiempo real de <strong>{selectedStore.nombre}</strong>:
+                    </p>
+
+                    {loadingMetrics ? (
+                      <div className="p-8 text-center text-xs opacity-60 flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+                        <span>Calculando métricas de la tienda...</span>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-[var(--color-borde)] space-y-1">
+                          <span className="text-[10px] uppercase font-semibold opacity-60 flex items-center gap-1">
+                            <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+                            <span>Ventas de la Tienda</span>
+                          </span>
+                          <span className="text-xl font-bold text-zinc-900 dark:text-zinc-100 block">
+                            {formatMoney(storeMetrics?.totalSales || 0)}
+                          </span>
+                          <span className="text-[11px] opacity-60 block">en pedidos registrados</span>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-[var(--color-borde)] space-y-1">
+                          <span className="text-[10px] uppercase font-semibold opacity-60 flex items-center gap-1">
+                            <Package className="w-3.5 h-3.5 text-blue-500" />
+                            <span>Pedidos Recibidos</span>
+                          </span>
+                          <span className="text-xl font-bold text-zinc-900 dark:text-zinc-100 block">
+                            {storeMetrics?.totalOrders || 0}
+                          </span>
+                          <span className="text-[11px] opacity-60 block">órdenes procesadas</span>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-[var(--color-borde)] space-y-1">
+                          <span className="text-[10px] uppercase font-semibold opacity-60 flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5 text-purple-500" />
+                            <span>Clientes en CRM</span>
+                          </span>
+                          <span className="text-xl font-bold text-zinc-900 dark:text-zinc-100 block">
+                            {storeMetrics?.totalCustomers || 0}
+                          </span>
+                          <span className="text-[11px] opacity-60 block">usuarios registrados</span>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-[var(--color-borde)] space-y-1">
+                          <span className="text-[10px] uppercase font-semibold opacity-60 flex items-center gap-1">
+                            <Layers className="w-3.5 h-3.5 text-amber-500" />
+                            <span>Piezas en Catálogo</span>
+                          </span>
+                          <span className="text-xl font-bold text-zinc-900 dark:text-zinc-100 block">
+                            {selectedStore.product_count || 0}
+                          </span>
+                          <span className="text-[11px] opacity-60 block">
+                            de {selectedStore.limite_productos || 50} permitidos
+                          </span>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-[var(--color-borde)] space-y-1">
+                          <span className="text-[10px] uppercase font-semibold opacity-60 flex items-center gap-1">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                            <span>Colaboradores</span>
+                          </span>
+                          <span className="text-xl font-bold text-zinc-900 dark:text-zinc-100 block">
+                            {storeMetrics?.totalCollaborators || 0}
+                          </span>
+                          <span className="text-[11px] opacity-60 block">con acceso al taller</span>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-[var(--color-borde)] space-y-1">
+                          <span className="text-[10px] uppercase font-semibold opacity-60 flex items-center gap-1">
+                            <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
+                            <span>Reseñas de Clientes</span>
+                          </span>
+                          <span className="text-xl font-bold text-zinc-900 dark:text-zinc-100 block">
+                            {storeMetrics?.totalReviews || 0}
+                          </span>
+                          <span className="text-[11px] opacity-60 block">opiniones públicas</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ==============================================================
+                    PESTAÑA 4: MAKER & CONTACTO DIRECTO
+                    ============================================================== */}
+                {activeDrawerTab === 'contacto' && (
+                  <div className="space-y-4 text-xs">
+                    <div className="p-4 rounded-2xl border border-[var(--color-borde)] bg-black/[0.02] dark:bg-white/[0.02] space-y-3">
+                      <div>
+                        <span className="text-[10px] uppercase font-semibold opacity-60 block">Maker / Titular</span>
+                        <span className="font-semibold text-sm">{selectedStore.nombre}</span>
+                        {selectedStore.slogan && (
+                          <p className="opacity-70 text-xs mt-0.5">{selectedStore.slogan}</p>
+                        )}
+                      </div>
+
+                      <div className="pt-2 border-t border-[var(--color-borde)] flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] uppercase font-semibold opacity-60 block">Email del Administrador</span>
+                          <span className="font-mono text-xs">{selectedStore.admin_email}</span>
+                        </div>
+                        <a
+                          href={`mailto:${selectedStore.admin_email}`}
+                          className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 font-semibold flex items-center gap-1.5"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          <span>Enviar Mail</span>
+                        </a>
+                      </div>
+
+                      {selectedStore.whatsapp_numero && (
+                        <div className="pt-2 border-t border-[var(--color-borde)] flex items-center justify-between">
+                          <div>
+                            <span className="text-[10px] uppercase font-semibold opacity-60 block">WhatsApp de Soporte</span>
+                            <span className="font-semibold text-xs text-emerald-600 dark:text-emerald-400">
+                              {selectedStore.whatsapp_numero}
+                            </span>
+                          </div>
+                          <a
+                            href={`https://wa.me/${selectedStore.whatsapp_numero.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                              `Hola ${selectedStore.nombre}, te contacto desde el equipo de soporte de Portalmaker respecto a tu tienda...`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center gap-1.5 shadow-xs"
+                          >
+                            <WhatsAppIcon className="w-3.5 h-3.5" />
+                            <span>Abrir Chat WhatsApp</span>
+                          </a>
+                        </div>
+                      )}
+
+                      <div className="pt-2 border-t border-[var(--color-borde)]">
+                        <span className="text-[10px] uppercase font-semibold opacity-60 block">Fecha de Alta en la Red</span>
+                        <span>{selectedStore.created_at.split('T')[0]} ({getSubscriptionInfo(selectedStore).timeElapsed} de trayectoria)</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ==============================================================
+                    PESTAÑA 5: NOTAS INTERNAS DEL SUPERADMIN
+                    ============================================================== */}
+                {activeDrawerTab === 'notas' && (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+                        Anotaciones privadas de Superadmin
+                      </h4>
+                      <p className="text-xs opacity-70">
+                        Registra acuerdos particulares, descuentos acordados, historial de llamadas o requerimientos específicos de este Maker. Solo visible para platform admins.
+                      </p>
+                    </div>
+
+                    <textarea
+                      rows={8}
+                      value={subEditForm.notas_admin || ''}
+                      onChange={(e) => setSubEditForm({ ...subEditForm, notas_admin: e.target.value })}
+                      placeholder="Escribe aquí notas internas sobre este cliente maker..."
+                      className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+                    />
+
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={handleSaveQuickNotes}
+                        className="min-h-[44px] px-5 rounded-xl bg-[#CA8A04] hover:bg-[#A16207] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>Guardar Notas</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Pie del Drawer */}
+            <div className="p-4 border-t border-[var(--color-borde)] bg-black/[0.02] dark:bg-white/[0.02] flex items-center justify-between text-xs">
+              <span className="opacity-60 text-[11px]">ID: {selectedStore.id}</span>
+              <button
+                type="button"
+                onClick={() => setSelectedStore(null)}
+                className="min-h-[38px] px-4 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 font-semibold cursor-pointer"
+              >
+                Cerrar Ficha
+              </button>
+            </div>
           </div>
-          <span>{toastMessage}</span>
         </div>
       )}
     </div>

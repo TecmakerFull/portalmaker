@@ -576,5 +576,3 @@ export interface NewsletterSubscriber {
   activo: boolean;
   created_at: Timestamp;
 }
-
-
