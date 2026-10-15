@@ -1,6 +1,6 @@
 // =============================================================================
 // PORTALMAKER — Guía Paso a Paso Interactiva para Configurar la Tienda
-// Explicaciones ultra claras y sencillas para dejar la tienda lista en minutos.
+// Manual interactivo por temas con acordeones desplegables para profundizar.
 // =============================================================================
 
 'use client'
@@ -28,6 +28,11 @@ import {
   Phone,
   Power,
   Info,
+  Users,
+  UserCheck,
+  Star,
+  Mail,
+  Filter,
 } from 'lucide-react'
 import type { Store } from '@/types/database'
 
@@ -39,7 +44,8 @@ export default function GuiaView({
   tenantQuery: string
 }) {
   const [copiedLink, setCopiedLink] = useState(false)
-  const [expandedStep, setExpandedStep] = useState<number | null>(3) // Abrir paso 3 (productos) por defecto
+  const [expandedStep, setExpandedStep] = useState<number | null>(3) // Paso 3 abierto por defecto
+  const [filterCategory, setFilterCategory] = useState<'todos' | 'tienda' | 'avanzado'>('todos')
 
   const storeUrl = `https://${store.slug}.portalmaker.ar`
 
@@ -52,6 +58,7 @@ export default function GuiaView({
   const steps = [
     {
       num: 1,
+      category: 'tienda' as const,
       title: 'Tu Logo, Colores y WhatsApp',
       tag: 'La cara de tu negocio',
       icon: Palette,
@@ -76,6 +83,7 @@ export default function GuiaView({
     },
     {
       num: 2,
+      category: 'tienda' as const,
       title: 'Crea tus Categorías (Los cajones)',
       tag: 'Organización del catálogo',
       icon: FolderTree,
@@ -96,6 +104,7 @@ export default function GuiaView({
     },
     {
       num: 3,
+      category: 'tienda' as const,
       title: 'Productos y Variantes (Tu vidriera)',
       tag: 'La parte más importante',
       icon: Package,
@@ -124,6 +133,7 @@ export default function GuiaView({
     },
     {
       num: 4,
+      category: 'tienda' as const,
       title: 'Banners y Carrusel de Entrada',
       tag: 'Carteles de bienvenida',
       icon: Layers,
@@ -144,6 +154,7 @@ export default function GuiaView({
     },
     {
       num: 5,
+      category: 'tienda' as const,
       title: 'Sobre Nosotros (Tu historia y taller)',
       tag: 'Genera confianza',
       icon: HelpCircle,
@@ -164,6 +175,7 @@ export default function GuiaView({
     },
     {
       num: 6,
+      category: 'tienda' as const,
       title: 'Datos de Cobro y Transferencia',
       tag: 'Cómo te pagan',
       icon: CreditCard,
@@ -180,6 +192,7 @@ export default function GuiaView({
     },
     {
       num: 7,
+      category: 'tienda' as const,
       title: '¡Encender la Tienda y Compartir!',
       tag: 'Abre tus puertas',
       icon: Power,
@@ -198,23 +211,131 @@ export default function GuiaView({
         },
       ],
     },
+    {
+      num: 8,
+      category: 'avanzado' as const,
+      title: 'Colaboradores y Trabajo en Equipo',
+      tag: 'Gestión y accesos',
+      icon: UserCheck,
+      color: 'from-amber-500/20 to-amber-500/5 text-amber-600 dark:text-amber-400 border-amber-400/30',
+      href: `/tienda/admin/colaboradores${tenantQuery}`,
+      buttonText: 'Administrar Colaboradores',
+      summary: 'Invita a socios o ayudantes a cargar productos y atender pedidos sin compartir tu clave principal.',
+      details: [
+        {
+          sub: 'Invitar con un correo',
+          desc: 'Escribe el correo de tu colaborador y asígnale su rol (Colaborador para catálogo y pedidos, o Administrador).',
+        },
+        {
+          sub: 'Enlace de acceso directo',
+          desc: 'Copia el enlace de invitación con un clic y envíaselo por WhatsApp. El ayudante podrá ingresar con su cuenta de Google o correo.',
+        },
+        {
+          sub: 'Privacidad protegida',
+          desc: 'El colaborador puede ayudarte en el día a día sin tener acceso a los datos de facturación ni a las credenciales privadas del dueño.',
+        },
+      ],
+    },
+    {
+      num: 9,
+      category: 'avanzado' as const,
+      title: 'Clientes & Historial CRM',
+      tag: 'Tus compradores',
+      icon: Users,
+      color: 'from-indigo-500/20 to-indigo-500/5 text-indigo-600 dark:text-indigo-400 border-indigo-400/30',
+      href: `/tienda/admin/clientes${tenantQuery}`,
+      buttonText: 'Ver Clientes & CRM',
+      summary: 'Conoce a cada usuario registrado, su historial de compras, valoraciones y favoritos guardados.',
+      details: [
+        {
+          sub: 'Registro de clientes',
+          desc: 'Cada usuario que inicia sesión en tu tienda para guardar piezas o consultar queda registrado automáticamente con su fecha de último ingreso.',
+        },
+        {
+          sub: 'Ficha de historial completo',
+          desc: 'Toca el botón "Historial" en cualquier cliente para consultar cuántos pedidos realizó, el gasto acumulado en pesos y sus comentarios dejados.',
+        },
+        {
+          sub: 'Promoción a colaborador',
+          desc: 'Si un cliente de confianza o empleado tuyo necesita administrar la tienda, puedes promoverlo con el botón "Hacer Colaborador" de forma instantánea.',
+        },
+      ],
+    },
+    {
+      num: 10,
+      category: 'avanzado' as const,
+      title: 'Reseñas & Moderación de Opiniones',
+      tag: 'Calificaciones y opiniones',
+      icon: Star,
+      color: 'from-amber-500/20 to-amber-500/5 text-amber-600 dark:text-amber-400 border-amber-400/30',
+      href: `/tienda/admin/resenas${tenantQuery}`,
+      buttonText: 'Moderar Reseñas',
+      summary: 'Tus clientes registrados pueden calificar productos. Tú tienes el control de ocultar opiniones.',
+      details: [
+        {
+          sub: 'Calificación para usuarios de la tienda',
+          desc: 'Cualquier visitante registrado en tu tienda puede calificar piezas con 1 a 5 estrellas y escribir su experiencia en la pestaña de opiniones.',
+        },
+        {
+          sub: 'Control total de visibilidad',
+          desc: 'Desde el menú "Reseñas" puedes ver todas las opiniones recibidas y alternar el botón "Visible / Oculta" para pausar cualquier comentario no deseado.',
+        },
+        {
+          sub: 'Promedio dinámico',
+          desc: 'El sistema calcula automáticamente el promedio de estrellas y la cantidad de reseñas visibles en la ficha del producto y en el catálogo.',
+        },
+      ],
+    },
+    {
+      num: 11,
+      category: 'avanzado' as const,
+      title: 'Marketing & Suscriptores al Newsletter',
+      tag: 'Audiencia y difusión',
+      icon: Mail,
+      color: 'from-rose-500/20 to-rose-500/5 text-rose-600 dark:text-rose-400 border-rose-400/30',
+      href: `/tienda/admin/suscriptores${tenantQuery}`,
+      buttonText: 'Gestionar Suscriptores',
+      summary: 'Capta correos de visitantes interesados y envía campañas con novedades en copia oculta (CCO).',
+      details: [
+        {
+          sub: 'Captación en el pie de página',
+          desc: 'El formulario de newsletter en el pie de tu tienda guarda los correos en tiempo real para que construyas tu propia base de clientes.',
+        },
+        {
+          sub: 'Envío de campañas con copia oculta',
+          desc: 'Redacta el asunto y mensaje de tus novedades y pulsa "Abrir en mi Correo" para que tu cliente de email se abra con todos los contactos en CCO.',
+        },
+        {
+          sub: 'Exportar a CSV / Excel',
+          desc: 'Descarga el listado completo de correos con fecha de registro para respaldar tus contactos o cargarlos en herramientas de marketing.',
+        },
+      ],
+    },
   ]
+
+  // Filtrado por categoría temática
+  const filteredSteps = steps.filter((s) => {
+    if (filterCategory === 'todos') return true
+    if (filterCategory === 'tienda') return s.category === 'tienda'
+    if (filterCategory === 'avanzado') return s.category === 'avanzado'
+    return true
+  })
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 pb-12">
       {/* Encabezado Principal */}
       <div className="bg-[var(--color-superficie)] p-6 sm:p-8 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-4">
-        <div className="flex items-center gap-2.5 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+        <div className="flex items-center gap-2.5 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
           <Sparkles className="w-4 h-4" />
-          <span>Manual de Inicio Rápido</span>
+          <span>Manual de Usuario Interactivo</span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight font-[var(--font-heading)]">
-          Cómo Configurar tu Tienda Maker Paso a Paso
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight font-[var(--font-heading)]">
+          Guía Completa para Administrar tu Tienda Maker
         </h1>
 
-        <p className="text-sm sm:text-base opacity-75 max-w-2xl leading-relaxed">
-          Guía fácil y directa para dejar tu tienda online lista en pocos minutos. Sigue estos 7 pasos para configurar tus productos, colores, métodos de pago y empezar a recibir pedidos por WhatsApp.
+        <p className="text-xs sm:text-sm opacity-75 max-w-2xl leading-relaxed">
+          Aprende a configurar tu vidriera, gestionar pedidos, invitar colaboradores, moderar reseñas y enviar campañas publicitarias a tus suscriptores.
         </p>
 
         {/* Link de la Tienda con Botón de Copiar */}
@@ -227,7 +348,7 @@ export default function GuiaView({
           <button
             type="button"
             onClick={handleCopy}
-            className="min-h-[44px] px-4 py-2 rounded-2xl bg-amber-400/20 text-amber-800 dark:text-amber-300 hover:bg-amber-400/30 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0"
+            className="min-h-[44px] px-4 py-2 rounded-2xl bg-amber-400/20 text-amber-800 dark:text-amber-300 hover:bg-amber-400/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0"
           >
             {copiedLink ? (
               <>
@@ -253,55 +374,103 @@ export default function GuiaView({
         </div>
       </div>
 
-      {/* Lista de Pasos Desplegables */}
-      <div className="space-y-4">
-        {steps.map((step) => {
+      {/* Selector de Temas con Filtro Rápido */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs opacity-60 flex items-center gap-1 mr-1">
+          <Filter className="w-3.5 h-3.5" />
+          <span>Filtrar temas:</span>
+        </span>
+        <button
+          type="button"
+          onClick={() => setFilterCategory('todos')}
+          className={`min-h-[36px] px-3.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            filterCategory === 'todos'
+              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+              : 'border border-[var(--color-borde)] bg-[var(--color-superficie)] opacity-70 hover:opacity-100'
+          }`}
+        >
+          Todos los temas ({steps.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilterCategory('tienda')}
+          className={`min-h-[36px] px-3.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            filterCategory === 'tienda'
+              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+              : 'border border-[var(--color-borde)] bg-[var(--color-superficie)] opacity-70 hover:opacity-100'
+          }`}
+        >
+          Puesta a Punto de Tienda (7)
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilterCategory('avanzado')}
+          className={`min-h-[36px] px-3.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            filterCategory === 'avanzado'
+              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+              : 'border border-[var(--color-borde)] bg-[var(--color-superficie)] opacity-70 hover:opacity-100'
+          }`}
+        >
+          Clientes, Reseñas & Equipo (4)
+        </button>
+      </div>
+
+      {/* Lista de Pasos con Acordeón Desplegable */}
+      <div className="space-y-3.5">
+        {filteredSteps.map((step) => {
           const Icon = step.icon
           const isExpanded = expandedStep === step.num
 
           return (
             <div
               key={step.num}
-              className={`bg-[var(--color-superficie)] rounded-3xl border transition-all overflow-hidden ${
+              className={`rounded-3xl border transition-all duration-200 overflow-hidden ${
                 isExpanded
-                  ? 'border-amber-400/60 shadow-md ring-2 ring-amber-400/10'
-                  : 'border-[var(--color-borde)] hover:border-amber-400/40'
+                  ? 'bg-[var(--color-superficie)] border-amber-400/50 shadow-md ring-1 ring-amber-400/20'
+                  : 'bg-[var(--color-superficie)] border-[var(--color-borde)] hover:border-black/20 dark:hover:border-white/20'
               }`}
             >
-              {/* Cabecera del Paso */}
+              {/* Barra del Paso (Click para abrir o cerrar) */}
               <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setExpandedStep(isExpanded ? null : step.num)}
-                className="p-5 sm:p-6 flex items-start justify-between gap-4 cursor-pointer select-none"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setExpandedStep(isExpanded ? null : step.num)
+                  }
+                }}
+                className="w-full text-left p-4 sm:p-5 flex items-start sm:items-center justify-between gap-4 cursor-pointer select-none"
               >
-                <div className="flex items-start gap-4">
-                  {/* Número y Badge */}
+                <div className="flex items-start sm:items-center gap-3.5">
                   <div
-                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center font-bold text-sm sm:text-base shrink-0 bg-gradient-to-br ${step.color} border`}
+                    className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border bg-gradient-to-br ${step.color}`}
                   >
-                    <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <Icon className="w-5 h-5" />
                   </div>
 
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 opacity-80">
+                  <div className="space-y-0.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 uppercase tracking-wider text-slate-800 dark:text-slate-200">
                         Paso {step.num}
                       </span>
-                      <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                      <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
                         {step.tag}
                       </span>
                     </div>
 
-                    <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                    <h2 className="text-base sm:text-lg font-semibold text-[var(--color-texto)] leading-snug">
                       {step.title}
                     </h2>
 
-                    <p className="text-xs sm:text-sm opacity-70">
+                    <p className="text-xs opacity-70 line-clamp-1 max-w-xl">
                       {step.summary}
                     </p>
                   </div>
                 </div>
 
-                <div className="p-2 rounded-xl bg-black/5 dark:bg-white/5 opacity-60 shrink-0 mt-1">
+                <div className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-black/5 dark:bg-white/5 opacity-70 shrink-0 mt-1">
                   {isExpanded ? (
                     <ChevronUp className="w-4 h-4" />
                   ) : (
@@ -310,7 +479,7 @@ export default function GuiaView({
                 </div>
               </div>
 
-              {/* Contenido Expandido */}
+              {/* Contenido Expandido del Paso */}
               {isExpanded && (
                 <div className="px-5 sm:px-6 pb-6 pt-2 border-t border-[var(--color-borde)] space-y-5 animate-in fade-in duration-200">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -319,7 +488,7 @@ export default function GuiaView({
                         key={i}
                         className="p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-[var(--color-borde)]/60 space-y-1.5"
                       >
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <h4 className="text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                           <span>{d.sub}</span>
                         </h4>
@@ -335,7 +504,7 @@ export default function GuiaView({
                     <Link
                       href={step.href}
                       style={{ color: '#1F2937' }}
-                      className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] hover:bg-[#eab308] text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shadow-xs cursor-pointer"
+                      className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] hover:bg-[#eab308] text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shadow-xs cursor-pointer"
                     >
                       <span>{step.buttonText}</span>
                       <ArrowRight className="w-4 h-4 text-[#1F2937]" />
@@ -348,58 +517,63 @@ export default function GuiaView({
         })}
       </div>
 
-      {/* Preguntas Frecuentes / Consejos Clave */}
+      {/* Preguntas Frecuentes / Dudas Clave con Acordeones Desplegables */}
       <div className="bg-[var(--color-superficie)] p-6 sm:p-7 rounded-3xl border border-[var(--color-borde)] space-y-4">
-        <div className="flex items-center gap-2 text-sm font-bold">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-texto)]">
           <Info className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-          <span>Dudas Frecuentes del Maker</span>
+          <span>Dudas Frecuentes del Maker (Haz clic para ver la respuesta)</span>
         </div>
 
-        <div className="space-y-3 text-xs sm:text-sm opacity-85 leading-relaxed">
-          <div className="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 space-y-1">
-            <span className="font-bold block text-slate-900 dark:text-white">
-              ¿Las variantes (colores/talles) me descuentan cupo del límite de productos?
-            </span>
-            <p className="opacity-80">
-              No. Un producto con 10 colores cuenta como 1 solo producto de tu plan.
+        <div className="space-y-2 text-xs sm:text-sm leading-relaxed">
+          <details className="group p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 transition-colors cursor-pointer">
+            <summary className="font-semibold flex items-center justify-between text-slate-900 dark:text-white list-none">
+              <span>¿Las variantes (colores/talles) me descuentan cupo del límite de productos?</span>
+              <ChevronDown className="w-4 h-4 opacity-50 group-open:rotate-180 transition-transform shrink-0 ml-2" />
+            </summary>
+            <p className="opacity-80 pt-2 text-xs leading-relaxed border-t border-[var(--color-borde)]/40 mt-2">
+              No. Un producto con 10 colores cuenta como 1 solo producto de tu plan. Puedes crear todas las variantes que necesites.
             </p>
-          </div>
+          </details>
 
-          <div className="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 space-y-1">
-            <span className="font-bold block text-slate-900 dark:text-white">
-              ¿Tengo que achicar o comprimir las fotos antes de subirlas?
-            </span>
-            <p className="opacity-80">
+          <details className="group p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 transition-colors cursor-pointer">
+            <summary className="font-semibold flex items-center justify-between text-slate-900 dark:text-white list-none">
+              <span>¿Tengo que achicar o comprimir las fotos antes de subirlas?</span>
+              <ChevronDown className="w-4 h-4 opacity-50 group-open:rotate-180 transition-transform shrink-0 ml-2" />
+            </summary>
+            <p className="opacity-80 pt-2 text-xs leading-relaxed border-t border-[var(--color-borde)]/40 mt-2">
               No es necesario. Portalmaker cuenta con optimizador WebP automático integrado: sube fotos de celular de cualquier tamaño y el sistema las comprime en el navegador sin perder calidad.
             </p>
-          </div>
+          </details>
 
-          <div className="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 space-y-1">
-            <span className="font-bold block text-slate-900 dark:text-white">
-              ¿Cómo sé cuándo me entra un pedido?
-            </span>
-            <p className="opacity-80">
-              El comprador armará su carrito y al hacer clic en "Pedir por WhatsApp" te llegará un mensaje pre-armado a tu número con la lista exacta de productos, variantes elegidas, total en pesos y datos de entrega.
+          <details className="group p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 transition-colors cursor-pointer">
+            <summary className="font-semibold flex items-center justify-between text-slate-900 dark:text-white list-none">
+              <span>¿Cómo sé cuándo me entra un pedido?</span>
+              <ChevronDown className="w-4 h-4 opacity-50 group-open:rotate-180 transition-transform shrink-0 ml-2" />
+            </summary>
+            <p className="opacity-80 pt-2 text-xs leading-relaxed border-t border-[var(--color-borde)]/40 mt-2">
+              El comprador armará su carrito y al hacer clic en "Pedir por WhatsApp" te llegará un mensaje pre-armado a tu número con la lista exacta de productos, variantes elegidas, total en pesos y datos de entrega. Además, queda guardado en tu menú "Ventas & Pedidos".
             </p>
-          </div>
+          </details>
 
-          <div className="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 space-y-1">
-            <span className="font-bold block text-slate-900 dark:text-white">
-              ¿Inicié sesión con Google y ahora quiero entrar con correo y contraseña, se puede?
-            </span>
-            <p className="opacity-80">
-              ¡Sí, totalmente! Al entrar con Google por primera vez, el sistema crea tu cuenta pero todavía no tiene contraseña. Para activarla, ve a la pantalla de ingreso (/login), toca en "¿Olvidaste tu contraseña?" y escribe tu correo de Gmail. El sistema te enviará un email con un enlace seguro para escribir tu contraseña. A partir de allí podrás entrar con un clic en Google o escribiendo tu correo y clave.
+          <details className="group p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 transition-colors cursor-pointer">
+            <summary className="font-semibold flex items-center justify-between text-slate-900 dark:text-white list-none">
+              <span>¿Cómo modero o elimino las reseñas que dejan los clientes?</span>
+              <ChevronDown className="w-4 h-4 opacity-50 group-open:rotate-180 transition-transform shrink-0 ml-2" />
+            </summary>
+            <p className="opacity-80 pt-2 text-xs leading-relaxed border-t border-[var(--color-borde)]/40 mt-2">
+              Desde el menú lateral "Reseñas" verás todas las valoraciones recibidas. Cada tarjeta tiene un botón "Visible / Oculta" para pausar cualquier opinión con un solo clic, sin que aparezca en tu tienda pública.
             </p>
-          </div>
+          </details>
 
-          <div className="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 space-y-1">
-            <span className="font-bold block text-slate-900 dark:text-white">
-              ¿Puedo invitar a alguien para que me ayude a administrar la tienda?
-            </span>
-            <p className="opacity-80">
-              Sí. Desde el menú lateral en "Colaboradores" puedes ingresar el correo de tu socio o ayudante para enviarle una invitación. El colaborador podrá crear su propia contraseña o entrar con Google para ayudarte a cargar productos, precios y banners, manteniendo protegida tu información privada de facturación.
+          <details className="group p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 transition-colors cursor-pointer">
+            <summary className="font-semibold flex items-center justify-between text-slate-900 dark:text-white list-none">
+              <span>¿Puedo convertir a un cliente frecuente en colaborador de mi tienda?</span>
+              <ChevronDown className="w-4 h-4 opacity-50 group-open:rotate-180 transition-transform shrink-0 ml-2" />
+            </summary>
+            <p className="opacity-80 pt-2 text-xs leading-relaxed border-t border-[var(--color-borde)]/40 mt-2">
+              Sí. En el menú "Clientes & CRM", cada usuario tiene un botón "Hacer Colaborador". Al tocarlo, se le habilitan los permisos para ingresar al panel de administración de tu tienda y ayudarte con la carga de productos y pedidos.
             </p>
-          </div>
+          </details>
         </div>
       </div>
     </div>

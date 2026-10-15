@@ -92,7 +92,22 @@ export async function isStoreAdmin(store: Store): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user?.email) return false
-  return user.email === store.admin_email
+  if (user.email === store.admin_email) return true
+
+  // Verificar si es colaborador activo de la tienda
+  try {
+    const { data: collab } = await supabase
+      .from('store_collaborators')
+      .select('id')
+      .eq('store_id', store.id)
+      .eq('email', user.email)
+      .eq('estado', 'activo')
+      .maybeSingle()
+
+    return !!collab
+  } catch {
+    return false
+  }
 }
 
 /**

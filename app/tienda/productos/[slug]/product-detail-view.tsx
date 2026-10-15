@@ -5,10 +5,11 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import type { Product, Store, ProductVariant, ProductDetails } from '@/types/database'
+import type { Product, Store, ProductVariant, ProductDetails, ProductReview } from '@/types/database'
+import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import ProductGallery from './product-gallery'
 import ProductCard from '../../product-card'
 import { useCart } from '@/lib/cart-context'
@@ -29,6 +30,9 @@ import {
   Heart,
   Star,
   Sparkles,
+  Loader2,
+  User,
+  AlertCircle,
 } from 'lucide-react'
 import WhatsAppIcon from '../../sections/whatsapp-icon'
 
@@ -38,6 +42,7 @@ interface ProductDetailViewProps {
   variants: ProductVariant[]
   details?: ProductDetails | null
   relatedProducts?: (Product & { category?: { nombre: string } | null })[]
+  initialReviews?: ProductReview[]
   tenantQuery?: string
 }
 
@@ -47,9 +52,11 @@ export default function ProductDetailView({
   variants = [],
   details,
   relatedProducts = [],
+  initialReviews = [],
   tenantQuery = '',
 }: ProductDetailViewProps) {
   const router = useRouter()
+  const supabase = createSupabaseBrowserClient()
   const { addItem, openCart, favorites, toggleFavorite, isFavorite } = useCart()
 
   const isFav = isFavorite(product.id)
@@ -62,6 +69,73 @@ export default function ProductDetailView({
   const [activeTab, setActiveTab] = useState<'descripcion' | 'tecnicos' | 'valoraciones'>('descripcion')
   const [addedSuccess, setAddedSuccess] = useState(false)
   const [cartFeedback, setCartFeedback] = useState<string | null>(null)
+
+  // Reseñas dinámicas y usuario actual
+  const [reviewsList, setReviewsList] = useState<ProductReview[]>(initialReviews)
+  const [currentUser, setCurrentUser] = useState<{ email: string; nombre: string } | null>(null)
+  const [newRating, setNewRating] = useState(5)
+  const [newComment, setNewComment] = useState('')
+  const [submittingReview, setSubmittingReview] = useState(false)
+  const [reviewSuccess, setReviewSuccess] = useState(false)
+  const [reviewError, setReviewError] = useState<string | null>(null)
+
+  // Consultar usuario logueado en la tienda al montar
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) {
+        setCurrentUser({
+          email: user.email,
+          nombre: user.user_metadata?.nombre || user.email.split('@')[0],
+        })
+      }
+    })
+  }, [])
+
+  // Promedio de estrellas
+  const totalReviewsCount = reviewsList.length
+  const avgRating = totalReviewsCount > 0
+    ? (reviewsList.reduce((acc, r) => acc + r.rating, 0) / totalReviewsCount).toFixed(1)
+    : null
+
+  // Enviar nueva reseña
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!currentUser) return
+    if (!newComment.trim()) return
+
+    setSubmittingReview(true)
+    setReviewError(null)
+
+    try {
+      const reviewPayload = {
+        store_id: store.id,
+        product_id: product.id,
+        user_email: currentUser.email.toLowerCase(),
+        user_name: currentUser.nombre,
+        rating: newRating,
+        comentario: newComment.trim(),
+        visible: true,
+      }
+
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .insert([reviewPayload])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setReviewsList([data as ProductReview, ...reviewsList])
+      setNewComment('')
+      setReviewSuccess(true)
+      setTimeout(() => setReviewSuccess(false), 5000)
+    } catch (err: any) {
+      console.error('Error al enviar reseña:', err)
+      setReviewError(err.message || 'No se pudo guardar tu reseña.')
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
 
   // Imágenes combinadas
   const rawImages = product.imagenes && product.imagenes.length > 0 ? product.imagenes : []
@@ -215,15 +289,30 @@ export default function ProductDetailView({
               {product.nombre}
             </h1>
 
-            {/* Estrellas y Reseñas */}
+            {/* Estrellas y Reseñas Dinámicas */}
             <div className="mt-3 flex items-center gap-2 text-xs font-medium">
               <div className="flex gap-0.5">
                 {[1, 2, 3, 4, 5].map((n) => (
-                  <Star key={n} className="w-3.5 h-3.5 fill-[var(--color-primario)] text-[var(--color-primario)]" />
+                  <Star
+                    key={n}
+                    className={`w-3.5 h-3.5 ${
+                      avgRating && n <= Math.round(Number(avgRating))
+                        ? 'fill-[var(--color-primario)] text-[var(--color-primario)]'
+                        : 'text-slate-300 dark:text-slate-700'
+                    }`}
+                  />
                 ))}
               </div>
-              <span>4.9</span>
-              <span className="opacity-50">· 24 valoraciones de ejemplo</span>
+              {avgRating ? (
+                <>
+                  <span className="font-bold">{avgRating}</span>
+                  <span className="opacity-60">
+                    · {totalReviewsCount} {totalReviewsCount === 1 ? 'opinión' : 'opiniones'}
+                  </span>
+                </>
+              ) : (
+                <span className="opacity-60">Sin opiniones aún</span>
+              )}
             </div>
           </div>
 
@@ -537,23 +626,159 @@ export default function ProductDetailView({
           )}
 
           {activeTab === 'valoraciones' && (
-            <div className="max-w-2xl space-y-6">
-              <p className="text-xs opacity-60">Valoraciones de clientes que ya disfrutan esta pieza.</p>
-              <div className="space-y-4 divide-y divide-black/10 dark:divide-white/10">
-                {[
-                  { text: '“Acabados preciosos y una calidad que se nota al primer instante.”', author: 'María C.' },
-                  { text: '“Justo lo que buscaba para mi espacio de trabajo. Muy recomendado.”', author: 'Alex R.' },
-                ].map(({ text, author }) => (
-                  <div key={author} className="pt-4 first:pt-0 space-y-2">
-                    <div className="flex gap-0.5">
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <Star key={n} className="w-3 h-3 fill-[var(--color-primario)] text-[var(--color-primario)]" />
-                      ))}
+            <div className="max-w-2xl space-y-8">
+              {/* Formulario para Dejar Reseña (Solo para usuarios registrados de la tienda) */}
+              <div className="p-5 sm:p-6 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.01] dark:bg-white/[0.02] space-y-4">
+                <h3 className="text-sm sm:text-base font-semibold text-[var(--color-texto)] flex items-center gap-2">
+                  <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                  <span>Tu opinión sobre esta pieza</span>
+                </h3>
+
+                {currentUser ? (
+                  <form onSubmit={handleSubmitReview} className="space-y-4">
+                    <p className="text-xs opacity-70">
+                      Publicando como <b className="text-[var(--color-texto)]">{currentUser.nombre}</b> ({currentUser.email})
+                    </p>
+
+                    {reviewSuccess && (
+                      <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2">
+                        <Check className="w-4 h-4 shrink-0" />
+                        <span>¡Muchas gracias! Tu reseña ha sido publicada y es visible para la comunidad.</span>
+                      </div>
+                    )}
+
+                    {reviewError && (
+                      <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>{reviewError}</span>
+                      </div>
+                    )}
+
+                    {/* Selector de Estrellas */}
+                    <div>
+                      <label className="block text-xs font-medium mb-1.5 opacity-80">
+                        Calificación:
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setNewRating(star)}
+                            className="p-1 rounded-lg hover:scale-110 active:scale-95 transition-transform cursor-pointer"
+                            aria-label={`Calificar con ${star} estrellas`}
+                          >
+                            <Star
+                              className={`w-6 h-6 ${
+                                star <= newRating
+                                  ? 'fill-amber-400 text-amber-400'
+                                  : 'text-slate-300 dark:text-slate-700'
+                              }`}
+                            />
+                          </button>
+                        ))}
+                        <span className="text-xs font-bold ml-2 text-[var(--color-texto)]">
+                          {newRating} de 5 estrellas
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-xs sm:text-sm font-medium">{text}</p>
-                    <p className="text-[11px] opacity-60">{author} · Opinión verificada</p>
+
+                    {/* Comentario */}
+                    <div>
+                      <label className="block text-xs font-medium mb-1.5 opacity-80">
+                        Comentario / Experiencia con la pieza:
+                      </label>
+                      <textarea
+                        rows={3}
+                        required
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder="Comparte los acabados, durabilidad o qué te pareció..."
+                        className="w-full p-3.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm outline-none focus:border-[var(--color-primario)] text-[var(--color-texto)] leading-relaxed"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={submittingReview}
+                      className="min-h-[44px] px-5 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs font-semibold flex items-center justify-center gap-2 shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      {submittingReview ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Star className="w-4 h-4 fill-current" />
+                          <span>Publicar mi Reseña</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="space-y-3 pt-1">
+                    <p className="text-xs opacity-75 leading-relaxed">
+                      Para poder dejar una reseña sobre este producto debes ser un usuario de la tienda. Puedes ingresar o registrarte en pocos segundos.
+                    </p>
+                    <Link
+                      href={tenantQuery ? `/tienda/cuenta?${tenantQuery.replace('?', '')}` : '/tienda/cuenta'}
+                      className="min-h-[44px] px-4 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs font-semibold inline-flex items-center gap-2 shadow-xs hover:opacity-95 cursor-pointer"
+                    >
+                      <User className="w-4 h-4" />
+                      <span>Iniciar Sesión para Calificar</span>
+                    </Link>
                   </div>
-                ))}
+                )}
+              </div>
+
+              {/* Lista de Reseñas de Clientes */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-[var(--color-texto)] flex items-center justify-between">
+                  <span>Opiniones de la comunidad</span>
+                  <span className="text-xs opacity-60 font-normal">
+                    {reviewsList.length} {reviewsList.length === 1 ? 'reseña' : 'reseñas'}
+                  </span>
+                </h4>
+
+                {reviewsList.length === 0 ? (
+                  <div className="p-8 text-center rounded-xl border border-dashed border-black/15 dark:border-white/15 text-xs opacity-60">
+                    Todavía no hay reseñas para esta publicación. ¡Sé el primero en compartir tu experiencia!
+                  </div>
+                ) : (
+                  <div className="space-y-3 divide-y divide-black/10 dark:divide-white/10">
+                    {reviewsList.map((rev) => (
+                      <div key={rev.id} className="pt-3.5 first:pt-0 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex gap-0.5">
+                              {[1, 2, 3, 4, 5].map((n) => (
+                                <Star
+                                  key={n}
+                                  className={`w-3.5 h-3.5 ${
+                                    n <= rev.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-700'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-xs font-bold text-[var(--color-texto)]">{rev.rating}/5</span>
+                          </div>
+                          <span className="text-[10px] opacity-50">
+                            {new Date(rev.created_at).toLocaleDateString('es-AR', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        </div>
+
+                        <p className="text-xs sm:text-sm text-[var(--color-texto)] leading-relaxed italic">
+                          &ldquo;{rev.comentario}&rdquo;
+                        </p>
+                        <p className="text-[11px] opacity-60 font-medium">
+                          {rev.user_name} · Cliente de la tienda
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

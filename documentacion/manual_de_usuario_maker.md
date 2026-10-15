@@ -16,8 +16,11 @@
 8. [Formulario de Contacto, Ubicación y Redes Sociales](#10-formulario-de-contacto-ubicación-y-redes-sociales)
 9. [Experiencia Móvil y Administración desde el Celular](#11-experiencia-móvil-y-administración-desde-el-celular-mobile-first)
 10. [Cómo Vincular tu Dominio Propio (.com.ar)](#12-cómo-vincular-tu-dominio-propio-comar-directamente-en-nicar)
-11. [Colaboradores y Trabajo en Equipo (Cómo invitar y cómo entra cada uno)](#13-colaboradores-y-trabajo-en-equipo-cómo-invitar-y-cómo-entra-cada-uno)
-12. [Preguntas Frecuentes y Soporte](#14-preguntas-frecuentes-y-soporte)
+11. [Colaboradores y Trabajo en Equipo](#13-colaboradores-y-trabajo-en-equipo)
+12. [Clientes & Historial CRM](#14-clientes--historial-crm)
+13. [Reseñas y Moderación de Opiniones](#15-reseñas-y-moderación-de-opiniones)
+14. [Marketing, Suscriptores y Campañas Publicitarias](#16-marketing-suscriptores-y-campañas-publicitarias)
+15. [Preguntas Frecuentes y Soporte](#17-preguntas-frecuentes-y-soporte)
 
 ---
 
@@ -248,59 +251,124 @@ Puedes conectar tu propio dominio de forma 100% directa:
 
 ---
 
-## 13. Colaboradores y Trabajo en Equipo (Cómo invitar y cómo entra cada uno)
+## 13. Colaboradores y Trabajo en Equipo
+
+<details>
+<summary><b>Ver cómo invitar socios, ayudantes y cómo ingresa cada uno</b></summary>
 
 Si trabajas con un socio, diseñador o ayudante en el taller, puedes invitarlo a colaborar en tu tienda para que te ayude a cargar productos, ajustar fotos o cambiar precios, sin necesidad de compartirle tu propia contraseña ni tu cuenta de Google.
 
 ### ¿Cómo funciona para el Dueño de la Tienda?
 1. **Invitar a un nuevo colaborador**:
    - Ingresa a tu panel de administración y entra en **Colaboradores** (ícono de equipo en el menú lateral).
-   - Escribe el correo electrónico de la persona que quieres invitar y haz clic en **"Enviar Invitación"**.
-   - El sistema generará un enlace de invitación único y seguro. Puedes copiarlo con un solo clic y enviárselo directamente por WhatsApp o correo.
+   - Escribe el correo electrónico de la persona que quieres invitar y selecciona su rol (`Colaborador` o `Administrador`).
+   - El sistema generará un enlace de acceso directo. Puedes copiarlo con el botón **"Copiar Enlace"** y enviárselo directamente por WhatsApp o correo.
 2. **Gestionar a tu equipo**:
-   - En esa misma pantalla verás a todos tus colaboradores con su estado en tiempo real:
-     - **Invitación enviada**: El colaborador fue invitado pero aún no activó su cuenta.
-     - **Activo**: Ya ingresó y está habilitado para colaborar en la tienda.
-   - Si en algún momento dejas de trabajar con esa persona, simplemente pulsas **"Revocar Acceso"** o **"Eliminar"** y el sistema le quitará el acceso a tu tienda de manera instantánea.
-
----
+   - En esa misma pantalla verás a todos tus colaboradores con su rol y fecha de alta.
+   - Si en algún momento dejas de trabajar con esa persona, simplemente pulsas el botón del tacho de basura para **remover el acceso** de forma instantánea.
 
 ### ¿Cómo tiene que hacer el Colaborador para entrar?
-El proceso para la persona invitada es directo y muy sencillo:
-
-1. **Abrir el enlace de invitación**:
-   - El colaborador abre el enlace que le compartió el dueño desde su computadora o celular.
-2. **Crear su contraseña o entrar con Google**:
-   - **Si usa Gmail o ya tiene cuenta en la plataforma**: Puede hacer clic directamente en **"Continuar con Google"**.
-   - **Si es su primera vez**: Escribe la contraseña que prefiera usar para su cuenta y presiona **"Aceptar invitación y crear cuenta"**.
-3. **Acceso directo al panel de la tienda**:
-   - Una vez adentro, el sistema lo reconoce automáticamente como colaborador autorizado de la tienda.
-   - Podrá ingresar en cualquier momento futuro desde `/login` usando su **Correo y Contraseña** (o el botón de Google).
-   - Tendrá acceso para cargar y editar productos, categorías, fotos y banners, mientras que los datos sensibles (como la suscripción y pagos de la plataforma) quedan reservados exclusivamente para el dueño.
-4. **¿Y si olvida su contraseña?**:
-   - Al igual que cualquier usuario, puede ir a `/login`, hacer clic en **"¿Olvidaste tu contraseña?"**, ingresar su correo y el sistema le enviará un mensaje seguro con un enlace para definir una nueva clave.
+1. **Abrir el enlace de invitación**: El colaborador abre el enlace que le compartió el dueño desde su computadora o celular.
+2. **Identificarse**: Puede pulsar **"Continuar con Google"** o ingresar con su correo y contraseña personal de Portalmaker.
+3. **Acceso directo al panel**: El sistema lo reconoce automáticamente como colaborador autorizado de la tienda y le habilita el panel para editar productos, precios y pedidos, manteniendo protegidos los datos privados de facturación del dueño.
+</details>
 
 ---
 
-## 14. Preguntas Frecuentes y Soporte
+## 14. Clientes & Historial CRM
 
-* **¿Inicié sesión con Google y ahora quiero entrar con correo y contraseña, se puede?**
-  ¡Sí! Cuando entras por primera vez con Google, el sistema crea tu cuenta pero no tiene contraseña asignada. Para activarla:
-  1. En la pantalla de ingreso (`/login`), haz clic en **"¿Olvidaste tu contraseña?"**.
-  2. Escribe tu correo de Gmail y solicita el enlace.
-  3. Revisa tu correo, abre el enlace y escribe la contraseña que quieras.
-  A partir de ese momento, podrás entrar tanto con el botón de Google como escribiendo tu correo y tu contraseña.
-* **¿Puedo invitar a más de un colaborador a mi tienda?**
-  Sí, puedes invitar a los miembros de tu equipo desde el menú **Colaboradores**. Cada uno ingresa con su propia cuenta y contraseña personal.
-* **¿Puedo vender piezas que no tengo en stock?**
-  Sí, el sistema clasifica automáticamente los productos sin stock como "Bajo pedido / Reserva" para que los clientes puedan solicitarlos.
-* **¿Cómo se descuenta el stock?**
-  El stock no se descuenta hasta que el dueño de la tienda lo confirme en el panel (**Ventas & Pedidos → Confirmar Venta y Descontar Stock**), asegurando control total sobre el inventario.
-* **¿Qué métodos de pago puedo ofrecer?**
-  Transferencia bancaria directa (con copia rápida de alias/CBU), efectivo y acuerdos por WhatsApp. Próximamente se integrará Mercado Pago y couriers automáticos.
+<details>
+<summary><b>Ver cómo funciona el registro de clientes, historial de pedidos y promoción a colaborador</b></summary>
+
+Tu tienda cuenta con un CRM integrado para conocer a tus compradores y darles seguimiento personalizado.
+
+### Funcionalidades de Clientes & CRM:
+1. **Registro automático**:
+   - Cada visitante que crea una cuenta o inicia sesión en tu tienda pública queda registrado automáticamente en tu panel con su nombre, correo y fecha de último ingreso.
+2. **Historial de compras y pedidos**:
+   - Desde **Clientes & CRM**, haz clic en el botón **"Historial"** de cualquier cliente. Podrás ver:
+     - Cuántas compras ha realizado y el monto total gastado en pesos ($ ARS).
+     - El detalle de cada pedido (estado de producción, método de pago y fecha).
+     - Las reseñas y valoraciones que ha dejado en tus productos.
+3. **Promover a Colaborador con 1 clic**:
+   - Si tienes un cliente frecuente, socio o ayudante registrado, puedes presionar el botón **"Hacer Colaborador"** directamente desde su fila. El usuario pasará a tener permisos para entrar a tu panel de administración.
+</details>
+
+---
+
+## 15. Reseñas y Moderación de Opiniones
+
+<details>
+<summary><b>Ver cómo califican los clientes y cómo el administrador modera y oculta opiniones</b></summary>
+
+Las opiniones de clientes aportan credibilidad y confianza en tu taller maker.
+
+### ¿Quiénes pueden opinar?
+- Para mantener la tienda limpia de spam y bots publicitarios, **cualquier usuario registrado en tu tienda puede calificar** productos (sin necesidad de haber comprado).
+- En la pestaña **"Opiniones"** de la ficha del producto, el usuario selecciona de 1 a 5 estrellas y escribe su experiencia con la pieza.
+
+### Control total para el Administrador:
+- Desde el menú lateral **Reseñas**, el dueño de la tienda tiene una bandeja con todas las opiniones recibidas.
+- **Ocultar / Mostrar opiniones**: Si un comentario es injusto, inapropiado o contiene datos sensibles, el admin puede presionar el botón **"Visible"** para cambiarlo a **"Oculta"** al instante. La reseña no se mostrará en la tienda pública pero queda guardada en el panel.
+- **Eliminar definitivamente**: Permite borrar de raíz cualquier mensaje de spam.
+- **Cálculo automático de estrellas**: El promedio general y la cantidad de opiniones se actualizan en tiempo real en la cabecera del producto.
+</details>
+
+---
+
+## 16. Marketing, Suscriptores y Campañas Publicitarias
+
+<details>
+<summary><b>Ver captación de newsletter, exportación CSV y envío masivo con copia oculta (CCO)</b></summary>
+
+En el pie de página de tu tienda pública hay un bloque de suscripción para que los visitantes reciban novedades y lanzamientos de tu taller.
+
+### Gestión de Suscriptores:
+1. **Bandeja de Marketing**:
+   - En el menú lateral **Suscriptores**, verás la lista de correos captados con su fecha de suscripción.
+2. **Exportar a Excel / CSV**:
+   - Pulsa el botón **"Exportar a CSV"** para descargar la lista completa con un clic y guardarla en tu computadora.
+3. **Envío de Campañas por Correo**:
+   - Puedes redactar el **Asunto** y el **Mensaje** de tu promoción o lanzamiento.
+   - **Copiar Lista (CCO)**: Copia todos los correos seleccionados separados por comas para pegarlos en el campo CCO de tu Gmail u Outlook.
+   - **Abrir en mi Correo**: Abre automáticamente tu aplicación de correo favorita con el asunto, mensaje y los destinatarios ya cargados en copia oculta, garantizando la privacidad de tus clientes.
+</details>
+
+---
+
+## 17. Preguntas Frecuentes y Soporte
+
+<details>
+<summary><b>¿Inicié sesión con Google y ahora quiero entrar con correo y contraseña, se puede?</b></summary>
+
+¡Sí! Cuando entras por primera vez con Google, el sistema crea tu cuenta pero no tiene contraseña asignada. Para activarla:
+1. En la pantalla de ingreso (`/login`), haz clic en **"¿Olvidaste tu contraseña?"**.
+2. Escribe tu correo de Gmail y solicita el enlace.
+3. Revisa tu correo, abre el enlace y escribe la contraseña que quieras.
+A partir de ese momento, podrás entrar tanto con el botón de Google como escribiendo tu correo y tu contraseña.
+</details>
+
+<details>
+<summary><b>¿Las variantes (colores/talles) me descuentan cupo del límite de productos?</b></summary>
+
+No. Un producto con 10 colores cuenta como 1 solo producto de tu plan. Puedes crear todas las variantes que necesites sin costo adicional.
+</details>
+
+<details>
+<summary><b>¿Cómo se descuenta el stock?</b></summary>
+
+El stock no se descuenta hasta que el dueño de la tienda lo confirme en el panel (**Ventas & Pedidos → Confirmar Venta y Descontar Stock**), asegurando control total sobre el inventario.
+</details>
+
+<details>
+<summary><b>¿Qué métodos de pago puedo ofrecer?</b></summary>
+
+Transferencia bancaria directa (con copia rápida de alias/CBU), efectivo y acuerdos por WhatsApp.
+</details>
 
 ---
 
 *Portalmaker — El portal del Maker* | portalmaker.com.ar
+
 
 

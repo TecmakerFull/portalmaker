@@ -84,6 +84,14 @@ export default async function ProductoDetallePage({ params }: PageProps) {
     hasSobreNosotros
   )
 
+  // 7. Obtener reseñas visibles del producto
+  const { data: reviews } = await supabase
+    .from('product_reviews')
+    .select('*')
+    .eq('product_id', product.id)
+    .eq('visible', true)
+    .order('created_at', { ascending: false })
+
   return (
     <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] transition-colors duration-200 flex flex-col justify-between">
       <div>
@@ -102,6 +110,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
             variants={variants ?? []}
             details={details}
             relatedProducts={relatedProducts ?? []}
+            initialReviews={reviews ?? []}
             tenantQuery={tenantQuery}
           />
         </main>

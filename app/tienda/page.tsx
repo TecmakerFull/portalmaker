@@ -161,7 +161,7 @@ export default async function TiendaPage() {
         />
 
         {/* 6. Suscripción a Novedades (Newsletter) */}
-        <NewsletterSection storeName={store.nombre} />
+        <NewsletterSection storeId={store.id} storeName={store.nombre} />
       </div>
 
       {/* 7. Footer de 4 Columnas con Medios de Pago y Enlaces Legales */}

@@ -6,20 +6,40 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowRight, Check, Sparkles } from 'lucide-react'
+import { ArrowRight, Check, Sparkles, Loader2 } from 'lucide-react'
+import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 
 interface NewsletterSectionProps {
+  storeId?: string
   storeName?: string
 }
 
-export default function NewsletterSection({ storeName = 'nuestra tienda' }: NewsletterSectionProps) {
+export default function NewsletterSection({ storeId, storeName = 'nuestra tienda' }: NewsletterSectionProps) {
   const [email, setEmail] = useState('')
   const [subscribed, setSubscribed] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const supabase = createSupabaseBrowserClient()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email.trim()) return
-    setSubscribed(true)
+    const cleanEmail = email.trim().toLowerCase()
+    if (!cleanEmail) return
+
+    setLoading(true)
+    try {
+      if (storeId) {
+        await supabase
+          .from('newsletter_subscribers')
+          .upsert([{ store_id: storeId, email: cleanEmail, activo: true }], { onConflict: 'store_id,email' })
+      }
+      setSubscribed(true)
+    } catch (err) {
+      console.error('Error al suscribir al newsletter:', err)
+      // Aun con error mostramos éxito al usuario para no friccionar
+      setSubscribed(true)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

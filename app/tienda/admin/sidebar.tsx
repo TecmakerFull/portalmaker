@@ -30,6 +30,10 @@ import {
   ShoppingBag,
   CreditCard,
   BookOpen,
+  Users,
+  Star,
+  UserCheck,
+  Mail,
 } from 'lucide-react'
 import type { Store as StoreType } from '@/types/database'
 
@@ -61,6 +65,10 @@ export default function AdminSidebar({
   const isInicio = pathname === '/tienda/admin'
   const isGuia = pathname.includes('/tienda/admin/guia')
   const isVentas = pathname.includes('/tienda/admin/ventas')
+  const isClientes = pathname.includes('/tienda/admin/clientes')
+  const isResenas = pathname.includes('/tienda/admin/resenas')
+  const isColaboradores = pathname.includes('/tienda/admin/colaboradores')
+  const isSuscriptores = pathname.includes('/tienda/admin/suscriptores')
   const isCategorias = pathname.includes('/tienda/admin/categorias')
   const isNuevoProducto = pathname.includes('/tienda/admin/productos/nuevo')
   const isProductosAdmin =
@@ -194,6 +202,66 @@ export default function AdminSidebar({
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
             Nuevo
           </span>
+        </Link>
+
+        {/* Clientes & CRM */}
+        <Link
+          href={`/tienda/admin/clientes${tenantQuery}`}
+          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            isClientes
+              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <Users className="w-4 h-4" />
+            <span>Clientes & CRM</span>
+          </div>
+        </Link>
+
+        {/* Reseñas */}
+        <Link
+          href={`/tienda/admin/resenas${tenantQuery}`}
+          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            isResenas
+              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <Star className="w-4 h-4" />
+            <span>Reseñas</span>
+          </div>
+        </Link>
+
+        {/* Colaboradores */}
+        <Link
+          href={`/tienda/admin/colaboradores${tenantQuery}`}
+          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            isColaboradores
+              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <UserCheck className="w-4 h-4 text-amber-500" />
+            <span>Colaboradores</span>
+          </div>
+        </Link>
+
+        {/* Marketing & Suscriptores */}
+        <Link
+          href={`/tienda/admin/suscriptores${tenantQuery}`}
+          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            isSuscriptores
+              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <Mail className="w-4 h-4" />
+            <span>Suscriptores</span>
+          </div>
         </Link>
 
         {/* Grupo: Mi Tienda */}

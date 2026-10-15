@@ -525,3 +525,56 @@ export interface StoreSection<TSettings = any, TContent = any> {
   updated_at: Timestamp;
 }
 
+// =============================================================================
+// STORE_COLLABORATORS — Colaboradores y miembros de equipo
+// =============================================================================
+export interface StoreCollaborator {
+  id: UUID;
+  store_id: UUID;
+  email: string;
+  rol: 'colaborador' | 'editor' | 'admin';
+  estado: 'activo' | 'invitado' | 'inactivo';
+  invitado_por?: string | null;
+  created_at: Timestamp;
+}
+
+// =============================================================================
+// STORE_CUSTOMERS — Clientes registrados en la tienda
+// =============================================================================
+export interface StoreCustomer {
+  id: UUID;
+  store_id: UUID;
+  email: string;
+  nombre?: string | null;
+  telefono?: string | null;
+  created_at: Timestamp;
+  ultimo_login: Timestamp;
+}
+
+// =============================================================================
+// PRODUCT_REVIEWS — Reseñas y valoraciones de productos
+// =============================================================================
+export interface ProductReview {
+  id: UUID;
+  store_id: UUID;
+  product_id: UUID;
+  user_email: string;
+  user_name: string;
+  rating: number; // 1 a 5
+  comentario: string;
+  visible: boolean;
+  created_at: Timestamp;
+}
+
+// =============================================================================
+// NEWSLETTER_SUBSCRIBERS — Suscriptores de novedades
+// =============================================================================
+export interface NewsletterSubscriber {
+  id: UUID;
+  store_id: UUID;
+  email: string;
+  activo: boolean;
+  created_at: Timestamp;
+}
+
+
