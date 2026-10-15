@@ -4,10 +4,14 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { Store } from '@/types/database'
+import {
+  saveCustomDomainAction,
+  removeCustomDomainAction,
+  checkCustomDomainAction,
+} from './actions'
 import {
   Globe,
   Check,
@@ -21,6 +25,7 @@ import {
   BookOpen,
   Sparkles,
   Server,
+  RefreshCw,
 } from 'lucide-react'
 
 export default function DominioManager({
@@ -31,18 +36,46 @@ export default function DominioManager({
   tenantQuery: string
 }) {
   const router = useRouter()
-  const supabase = createSupabaseBrowserClient()
 
   const [customDomain, setCustomDomain] = useState(store.custom_domain ?? '')
   const [loading, setLoading] = useState(false)
+  const [verifying, setVerifying] = useState(false)
+  const [verificationResult, setVerificationResult] = useState<{
+    configured: boolean
+    verified: boolean
+    misconfigured: boolean
+    error?: string
+  } | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  // Comprobar estado si ya tiene un dominio vinculado
+  useEffect(() => {
+    if (store.custom_domain) {
+      checkCustomDomainAction(store.custom_domain).then((res) => {
+        setVerificationResult(res)
+      })
+    }
+  }, [store.custom_domain])
 
   const handleCopy = (text: string, fieldId: string) => {
     navigator.clipboard.writeText(text)
     setCopiedField(fieldId)
     setTimeout(() => setCopiedField(null), 2000)
+  }
+
+  const handleCheckStatus = async () => {
+    if (!store.custom_domain) return
+    setVerifying(true)
+    try {
+      const res = await checkCustomDomainAction(store.custom_domain)
+      setVerificationResult(res)
+    } catch (e: any) {
+      console.error(e)
+    } finally {
+      setVerifying(false)
+    }
   }
 
   const handleSaveDomain = async (e: React.FormEvent) => {
@@ -57,24 +90,22 @@ export default function DominioManager({
       .replace(/^https?:\/\//, '')
       .replace(/\/$/, '')
 
-    try {
-      const { error } = await supabase
-        .from('stores')
-        .update({
-          custom_domain: cleanDomain || null,
-        })
-        .eq('id', store.id)
+    if (!cleanDomain) {
+      setErrorMsg('Ingresa un nombre de dominio válido.')
+      setLoading(false)
+      return
+    }
 
-      if (error) throw error
+    try {
+      // Guarda en Supabase y da de alta automáticamente en Vercel
+      const res = await saveCustomDomainAction(store.id, cleanDomain)
 
       setSuccessMsg(
-        cleanDomain
-          ? '¡Dominio guardado con éxito! Ahora delégalo en NIC.ar con los servidores abajo.'
-          : 'Dominio propio desvinculado con éxito.'
+        '¡Dominio vinculado y registrado automáticamente en la infraestructura! Ahora solo delégalo en NIC Argentina con los servidores de abajo.'
       )
       setCustomDomain(cleanDomain)
       router.refresh()
-      setTimeout(() => setSuccessMsg(null), 5000)
+      setTimeout(() => setSuccessMsg(null), 6000)
     } catch (err: any) {
       setErrorMsg(err?.message || 'Error al guardar el dominio.')
     } finally {
@@ -87,15 +118,12 @@ export default function DominioManager({
 
     setLoading(true)
     try {
-      const { error } = await supabase
-        .from('stores')
-        .update({ custom_domain: null })
-        .eq('id', store.id)
-
-      if (error) throw error
+      // Elimina de Supabase y borra de Vercel automáticamente
+      await removeCustomDomainAction(store.id, store.custom_domain || '')
 
       setCustomDomain('')
-      setSuccessMsg('Dominio propio desvinculado correctamente.')
+      setVerificationResult(null)
+      setSuccessMsg('Dominio propio desvinculado correctamente de la plataforma.')
       router.refresh()
       setTimeout(() => setSuccessMsg(null), 4000)
     } catch (err: any) {
@@ -174,21 +202,72 @@ export default function DominioManager({
         </form>
 
         {store.custom_domain && (
-          <div className="pt-3 border-t border-[var(--color-borde)] flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="opacity-80">
-                Dominio guardado: <strong>{store.custom_domain}</strong>
-              </span>
+          <div className="pt-4 border-t border-[var(--color-borde)] space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--color-fondo)] border border-[var(--color-borde)]">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full ${
+                      verificationResult?.verified
+                        ? 'bg-emerald-500'
+                        : 'bg-amber-500 animate-pulse'
+                    }`}
+                  />
+                  <span className="text-sm font-bold text-[var(--color-texto)] font-mono">
+                    {store.custom_domain}
+                  </span>
+                  {verificationResult?.verified ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Activo y Verificado
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      <RefreshCw className="w-3 h-3" />
+                      Esperando DNS / Propagación
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs opacity-70">
+                  {verificationResult?.verified
+                    ? 'Tu dominio está activo con certificado SSL automático y conectado al portal.'
+                    : 'Si recién realizaste la delegación en NIC.ar o DNS, la propagación suele tardar entre 1 y 24 horas.'}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleCheckStatus}
+                  disabled={verifying}
+                  className="px-3 py-1.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${verifying ? 'animate-spin' : ''}`} />
+                  <span>{verifying ? 'Comprobando...' : 'Comprobar estado'}</span>
+                </button>
+
+                {verificationResult?.verified && (
+                  <a
+                    href={`https://${store.custom_domain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
+                    <span>Visitar</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleRemoveDomain}
+                  className="px-3 py-1.5 rounded-xl border border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-500/10 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Desvincular</span>
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={handleRemoveDomain}
-              className="text-xs font-semibold text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Desvincular</span>
-            </button>
           </div>
         )}
       </div>
