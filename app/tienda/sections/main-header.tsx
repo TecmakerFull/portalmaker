@@ -17,6 +17,7 @@ import {
   ShoppingBag,
   Heart,
   UserRound,
+  UserCheck,
   Menu,
   X,
   ArrowRight,
@@ -202,18 +203,16 @@ export default function MainHeader({
                   ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email})`
                   : 'Ingresar a mi cuenta'
               }
-              className={`relative min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
+              className={`min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
                 activeCustomer
                   ? 'border-[var(--color-primario)]/50 bg-[var(--color-primario)]/15 text-[var(--color-primario)] ring-1 ring-[var(--color-primario)]/30'
                   : 'border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)]'
               }`}
             >
-              <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-90" />
-              {activeCustomer && (
-                <span
-                  title="Sesión activa"
-                  className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900"
-                />
+              {activeCustomer ? (
+                <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primario)]" />
+              ) : (
+                <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-90" />
               )}
             </Link>
 
@@ -283,18 +282,16 @@ export default function MainHeader({
                   ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email})`
                   : 'Ingresar a mi cuenta'
               }
-              className={`relative min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
+              className={`min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
                 activeCustomer
                   ? 'border-[var(--color-primario)]/50 bg-[var(--color-primario)]/15 text-[var(--color-primario)] ring-1 ring-[var(--color-primario)]/30'
                   : 'border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)]'
               }`}
             >
-              <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-90" />
-              {activeCustomer && (
-                <span
-                  title="Sesión activa"
-                  className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900"
-                />
+              {activeCustomer ? (
+                <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primario)]" />
+              ) : (
+                <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-90" />
               )}
             </Link>
 
@@ -400,11 +397,15 @@ export default function MainHeader({
               }`}
             >
               <div className="flex items-center gap-2">
+                {activeCustomer ? (
+                  <UserCheck className="w-4 h-4 text-[var(--color-primario)]" />
+                ) : (
+                  <UserRound className="w-4 h-4 opacity-70" />
+                )}
                 <span>Mi cuenta</span>
                 {activeCustomer && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>Conectado</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-primario)]/15 text-[var(--color-primario)] font-medium">
+                    Conectado
                   </span>
                 )}
               </div>
