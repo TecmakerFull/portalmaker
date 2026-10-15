@@ -242,13 +242,78 @@ Tanto la **Tienda Pública** como el **Panel de Administración del Maker** est�
 ---
 
 ## 12. Cómo Vincular tu Dominio Propio (.com.ar / .ar)
-Puedes conectar tu propio dominio registrado en NIC Argentina:
-1. En [nic.ar](https://nic.ar), pulsa **"Delegar"** en tu dominio y agrega estos servidores:
-   * **Host 1**: `ns1.vercel-dns.com`
-   * **Host 2**: `ns2.vercel-dns.com`
-   *(Si usas Cloudflare o DonWeb para tus DNS, apunta el registro A a `76.76.21.21` y el CNAME www a `cname.vercel-dns.com`)*.
-2. En tu panel de Portalmaker (**Mi tienda → Dominio Propio**), ingresa tu dominio y pulsa **"Guardar Dominio"**.
-3. La propagación en NIC Argentina demora habitualmente entre 2 y 12 horas, tras lo cual el certificado SSL (HTTPS) queda activo automáticamente.
+
+<details>
+<summary><b>Ver la guía completa explicada paso a paso (Opción NIC.ar y Opción Cloudflare/DonWeb)</b></summary>
+
+### ¿Qué es un dominio propio?
+Imagínate que tu tienda es una casa:
+* Tu subdominio gratuito (`mitienda.portalmaker.ar`) es la dirección oficial que te damos en el barrio de Portalmaker.
+* Tu **dominio propio** (por ejemplo `mitienda.com.ar` o `mitienda.ar`) es como ponerle tu propio cartel en la puerta con el nombre oficial que compraste en el registro de dominios de Argentina (NIC.ar).
+
+---
+
+### Paso 1: Guardar tu dominio en Portalmaker
+1. Entra a tu panel de administración.
+2. En el menú lateral, haz clic en **Dominio Propio** (ícono del planeta Tierra).
+3. Escribe tu dominio tal cual (por ejemplo: `armoniashop.com.ar` o `taller3d.ar`), sin `http://` ni barras.
+4. Presiona el botón amarillo **"Guardar Dominio"**.
+*(Listo, tu tienda en Portalmaker ya sabe que ese es su nuevo nombre)*.
+
+---
+
+### Paso 2: Conectar los cables en internet (Elige el Camino A o el Camino B)
+
+Solo debes elegir **uno** de estos dos caminos, según dónde administres tu dominio:
+
+---
+
+#### 🌟 CAMINO A: Si compraste tu dominio en NIC Argentina y no usas nada más (La opción más fácil)
+Si compraste tu `.com.ar` o `.ar` en NIC Argentina y no tienes hosting ni paneles externos:
+1. Entra en **[nic.ar](https://nic.ar)** con tu CUIT y Clave Fiscal AFIP.
+2. Ve a tu lista de dominios registrados y busca tu dominio.
+3. Haz clic en el botón **"Delegar"** al lado de tu nombre de dominio.
+4. Presiona **"Agregar Servidor"** y coloca estos dos nombres:
+   * **Servidor 1 (Host 1):** `ns1.vercel-dns.com`
+   * **Servidor 2 (Host 2):** `ns2.vercel-dns.com`
+5. Presiona **"Guardar cambios"** en NIC.ar.
+*(¡Eso es todo! Ya le dijiste a NIC Argentina que tu dominio apunta a la infraestructura de Portalmaker)*.
+
+---
+
+#### ⚙️ CAMINO B: Si gestionas tus DNS en Cloudflare, DonWeb, cPanel, GoDaddy u otro panel (Registros A y CNAME)
+Si no delegas los servidores en NIC.ar porque ya usas un administrador de DNS como **Cloudflare**, **DonWeb**, **cPanel** o similar, solo tienes que crear **dos registros sencillos**:
+
+##### 1. Primer registro: El "Registro A" (para cuando la gente escribe tu web sin www)
+* **¿Qué hace?**: Le dice a internet: *"Cuando alguien escriba `mitienda.com.ar`, mándalo directo a la computadora de Portalmaker"*.
+* **¿Cómo lo configuras en tu panel?**:
+  * **Tipo**: Elige la letra **`A`**
+  * **Nombre / Host**: Escribe **`@`** (o escribe tu dominio sin www, ej: `armoniashop.com.ar`).
+  * **Destino / Valor / Dirección IPv4**: Escribe exactamente **`76.76.21.21`**
+  * **TTL**: Déjalo en **Automático** (o 3600).
+  * *(Si estás en Cloudflare, la nubecita naranja puede quedar activada o en gris; ambas funcionan)*.
+  * Presiona **Guardar**.
+
+##### 2. Segundo registro: El "Registro CNAME" (para cuando la gente escribe con www)
+* **¿Qué hace?**: Le dice a internet: *"Cuando alguien escriba `www.mitienda.com.ar`, mándalo también a Portalmaker"*.
+* **¿Cómo lo configuras en tu panel?**:
+  * **Tipo**: Elige **`CNAME`**
+  * **Nombre / Host**: Escribe exactamente **`www`**
+  * **Destino / Valor / Apunta a**: Escribe exactamente **`cname.vercel-dns.com`**
+  * **TTL**: Déjalo en **Automático** (o 3600).
+  * Presiona **Guardar**.
+
+---
+
+### ¿Cuánto tiempo tarda en funcionar y qué pasa después?
+
+1. **Tiempo de espera (Propagación en internet)**:
+   En internet los cambios no son instantáneos de un segundo al otro. NIC Argentina y los proveedores de internet de cada compañía (Fibertel, Personal, Claro, Movistar) demoran habitualmente entre **2 y 12 horas** en enterarse de que tu dominio cambió de dirección. Es completamente normal que al principio no abra de inmediato.
+2. **Candado de seguridad gratuito (HTTPS / SSL)**:
+   No tienes que comprar certificados caros ni hacer configuraciones difíciles. En cuanto el dominio termina de propagarse, Portalmaker y la infraestructura activan automáticamente el candado de seguridad verde (HTTPS) para que tus clientes compren con total confianza.
+3. **Tu dirección gratuita sigue funcionando**:
+   Tu tienda nunca dejará de funcionar en `mitienda.portalmaker.ar`. Quien entre por la dirección de Portalmaker o por tu dominio propio llegará siempre al mismo catálogo.
+</details>
 
 ---
 

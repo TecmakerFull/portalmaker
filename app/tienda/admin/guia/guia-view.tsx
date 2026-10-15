@@ -311,6 +311,31 @@ export default function GuiaView({
         },
       ],
     },
+    {
+      num: 12,
+      category: 'avanzado' as const,
+      title: 'Vincular tu Dominio Propio (.com.ar / .ar)',
+      tag: 'Identidad y presencia oficial',
+      icon: Globe,
+      color: 'from-amber-500/20 to-amber-500/5 text-amber-600 dark:text-amber-400 border-amber-400/30',
+      href: `/tienda/admin/dominio${tenantQuery}`,
+      buttonText: 'Configurar Dominio Propio',
+      summary: 'Conecta tu dominio propio (.com.ar o .ar) mediante delegación en NIC.ar o registros A y CNAME en Cloudflare / DonWeb.',
+      details: [
+        {
+          sub: 'Opción 1: Delegar directo en NIC.ar (La más fácil)',
+          desc: 'En nic.ar pulsa "Delegar" y pega: Servidor 1: ns1.vercel-dns.com y Servidor 2: ns2.vercel-dns.com.',
+        },
+        {
+          sub: 'Opción 2: Usar registros A y CNAME (Cloudflare / DonWeb)',
+          desc: 'Crea un Registro A con nombre @ apuntando a 76.76.21.21 y un Registro CNAME con nombre www apuntando a cname.vercel-dns.com.',
+        },
+        {
+          sub: 'Propagación y Candado SSL Gratis',
+          desc: 'La propagación demora entre 2 y 12 horas. Una vez propagado, el certificado de seguridad HTTPS se activa automáticamente sin costo.',
+        },
+      ],
+    },
   ]
 
   // Filtrado por categoría temática
