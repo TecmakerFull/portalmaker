@@ -28,23 +28,7 @@ export async function addDomainToVercel(rawDomain: string): Promise<VercelDomain
   const wwwDomain = `www.${apexDomain}`
 
   try {
-    // 1. Agregar apex domain con redirección recomendada a www
-    const resApex = await fetch(`https://api.vercel.com/v10/projects/${projectId}/domains`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: apexDomain,
-        redirect: wwwDomain,
-        redirectStatusCode: 308,
-      }),
-    })
-
-    const dataApex = await resApex.json()
-
-    // 2. Agregar www domain
+    // 1. Agregar primero la variante www al proyecto para que el apex pueda redirigir a ella sin error 400
     const resWww = await fetch(`https://api.vercel.com/v10/projects/${projectId}/domains`, {
       method: 'POST',
       headers: {
@@ -57,6 +41,24 @@ export async function addDomainToVercel(rawDomain: string): Promise<VercelDomain
     })
 
     const dataWww = await resWww.json()
+
+    // 2. Agregar el apex domain con zone: true (para habilitar la Zona DNS de Vercel y resolver el desafío ACME)
+    // y configurar la redirección permanente (308) a wwwDomain
+    const resApex = await fetch(`https://api.vercel.com/v10/projects/${projectId}/domains`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: apexDomain,
+        zone: true,
+        redirect: wwwDomain,
+        redirectStatusCode: 308,
+      }),
+    })
+
+    const dataApex = await resApex.json()
 
     if (dataApex.error && dataApex.error.code !== 'domain_already_in_use') {
       console.warn('Apex domain Vercel warning:', dataApex.error)
@@ -129,15 +131,17 @@ export async function checkDomainStatusInVercel(rawDomain: string): Promise<{
   const domainToCheck = cleanDomain.startsWith('www.') ? cleanDomain : `www.${cleanDomain}`
 
   try {
-    const res = await fetch(`https://api.vercel.com/v9/projects/${projectId}/domains/${domainToCheck}/config`, {
+    const res = await fetch(`https://api.vercel.com/v6/domains/${domainToCheck}/config`, {
       headers: { Authorization: `Bearer ${token}` },
     })
 
     const data = await res.json()
+    const isConfigured = Boolean(data.configuredBy) && !data.misconfigured
+
     return {
-      configured: Boolean(data.configuredBy),
+      configured: isConfigured,
       misconfigured: Boolean(data.misconfigured),
-      verified: !data.misconfigured,
+      verified: isConfigured,
     }
   } catch (err: any) {
     return { configured: false, verified: false, misconfigured: true, error: err.message }
