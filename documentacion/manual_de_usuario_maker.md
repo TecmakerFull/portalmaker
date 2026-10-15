@@ -241,13 +241,14 @@ Tanto la **Tienda Pública** como el **Panel de Administración del Maker** est�
 
 ---
 
-## 12. Cómo Vincular tu Dominio Propio (.com.ar) directamente en NIC.ar
-
-Puedes conectar tu propio dominio de forma 100% directa:
-1. En [nic.ar](https://nic.ar), delega tu dominio a:
-   * **Host 1**: `ns1.portalmaker.com.ar`
-   * **Host 2**: `ns2.portalmaker.com.ar`
+## 12. Cómo Vincular tu Dominio Propio (.com.ar / .ar)
+Puedes conectar tu propio dominio registrado en NIC Argentina:
+1. En [nic.ar](https://nic.ar), pulsa **"Delegar"** en tu dominio y agrega estos servidores:
+   * **Host 1**: `ns1.vercel-dns.com`
+   * **Host 2**: `ns2.vercel-dns.com`
+   *(Si usas Cloudflare o DonWeb para tus DNS, apunta el registro A a `76.76.21.21` y el CNAME www a `cname.vercel-dns.com`)*.
 2. En tu panel de Portalmaker (**Mi tienda → Dominio Propio**), ingresa tu dominio y pulsa **"Guardar Dominio"**.
+3. La propagación en NIC Argentina demora habitualmente entre 2 y 12 horas, tras lo cual el certificado SSL (HTTPS) queda activo automáticamente.
 
 ---
 

@@ -193,16 +193,16 @@ export default function DominioManager({
         )}
       </div>
 
-      {/* 2. Servidores DNS para delegar en NIC.ar (Forma Directa y Simple) */}
-      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
+      {/* 2. Configuración de DNS para NIC Argentina (nic.ar) */}
+      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-5">
         <div>
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#CA8A04] dark:text-[#FACC15] mb-1">
             <Server className="w-4 h-4" />
-            <span>Paso Directo</span>
+            <span>Configuración de DNS</span>
           </div>
-          <h2 className="text-base font-bold">2. Servidores para delegar en NIC.ar</h2>
+          <h2 className="text-base font-bold">2. Servidores para delegar en NIC Argentina</h2>
           <p className="text-xs opacity-70 mt-0.5">
-            Ingresa a <strong>NIC Argentina</strong>, haz clic en el botón <strong>"Delegar"</strong> de tu dominio y pega estos dos servidores de Portalmaker:
+            Ingresa al portal de <strong>NIC.ar</strong> con tu CUIT y Clave Fiscal, busca tu dominio, presiona <strong>&quot;Delegar&quot;</strong> e ingresa estos servidores de nombres:
           </p>
         </div>
 
@@ -212,7 +212,7 @@ export default function DominioManager({
             <thead className="bg-[var(--color-fondo)]/80 text-[var(--color-texto)] font-bold uppercase tracking-wider text-[10px]">
               <tr>
                 <th className="p-3.5">Servidor</th>
-                <th className="p-3.5">Host / Dirección</th>
+                <th className="p-3.5">Host / Nombre de Servidor</th>
                 <th className="p-3.5 text-right">Copiar</th>
               </tr>
             </thead>
@@ -220,12 +220,12 @@ export default function DominioManager({
               <tr className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
                 <td className="p-3.5 font-bold">Servidor DNS 1 (Primario)</td>
                 <td className="p-3.5 font-mono font-bold text-[#CA8A04] dark:text-[#FACC15]">
-                  ns1.portalmaker.com.ar
+                  ns1.vercel-dns.com
                 </td>
                 <td className="p-3.5 text-right">
                   <button
                     type="button"
-                    onClick={() => handleCopy('ns1.portalmaker.com.ar', 'ns1')}
+                    onClick={() => handleCopy('ns1.vercel-dns.com', 'ns1')}
                     className="p-1.5 rounded-lg border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer inline-flex items-center gap-1 text-[11px] font-semibold"
                   >
                     {copiedField === 'ns1' ? (
@@ -246,12 +246,12 @@ export default function DominioManager({
               <tr className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
                 <td className="p-3.5 font-bold">Servidor DNS 2 (Secundario)</td>
                 <td className="p-3.5 font-mono font-bold text-[#CA8A04] dark:text-[#FACC15]">
-                  ns2.portalmaker.com.ar
+                  ns2.vercel-dns.com
                 </td>
                 <td className="p-3.5 text-right">
                   <button
                     type="button"
-                    onClick={() => handleCopy('ns2.portalmaker.com.ar', 'ns2')}
+                    onClick={() => handleCopy('ns2.vercel-dns.com', 'ns2')}
                     className="p-1.5 rounded-lg border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer inline-flex items-center gap-1 text-[11px] font-semibold"
                   >
                     {copiedField === 'ns2' ? (
@@ -271,6 +271,38 @@ export default function DominioManager({
             </tbody>
           </table>
         </div>
+
+        {/* Alternativa con Registros A y CNAME */}
+        <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-[var(--color-borde)] space-y-2 text-xs">
+          <span className="font-bold block opacity-90">
+            ¿Gestionas tu zona DNS en Cloudflare, DonWeb u otro panel?
+          </span>
+          <p className="opacity-75 leading-relaxed">
+            Si no delegas los servidores completos en NIC.ar y usas tu propia zona DNS, puedes apuntar directamente con estos registros:
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-[11px] pt-1">
+            <div className="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 flex items-center justify-between">
+              <span>Registro <b>A</b> (@): <b>76.76.21.21</b></span>
+              <button
+                type="button"
+                onClick={() => handleCopy('76.76.21.21', 'ip')}
+                className="opacity-60 hover:opacity-100 p-1 cursor-pointer"
+              >
+                <Copy className="w-3 h-3" />
+              </button>
+            </div>
+            <div className="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 flex items-center justify-between">
+              <span>Registro <b>CNAME</b> (www): <b>cname.vercel-dns.com</b></span>
+              <button
+                type="button"
+                onClick={() => handleCopy('cname.vercel-dns.com', 'cname')}
+                className="opacity-60 hover:opacity-100 p-1 cursor-pointer"
+              >
+                <Copy className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 3. Tutorial Ilustrado Paso a Paso */}
@@ -284,7 +316,7 @@ export default function DominioManager({
             Paso a paso en NIC Argentina (nic.ar)
           </h2>
           <p className="text-xs opacity-70 mt-0.5">
-            No necesitas contratar hosting adicional ni crear cuentas externas. Solo sigue estos 3 pasos:
+            Sigue estos pasos para conectar tu dominio propio a la infraestructura de Portalmaker:
           </p>
         </div>
 
@@ -296,7 +328,7 @@ export default function DominioManager({
                 <span className="w-6 h-6 rounded-full bg-[#FACC15] text-[#1F2937] font-bold text-xs flex items-center justify-center shrink-0">
                   1
                 </span>
-                <h3 className="font-bold text-sm">Comprar o registrar tu dominio</h3>
+                <h3 className="font-bold text-sm">Ingresar a NIC Argentina</h3>
               </div>
               <a
                 href="https://nic.ar"
@@ -309,7 +341,7 @@ export default function DominioManager({
               </a>
             </div>
             <p className="text-xs opacity-75 pl-8 leading-relaxed">
-              Ingresa en <a href="https://nic.ar" target="_blank" rel="noopener noreferrer" className="underline font-semibold">nic.ar</a> con tu CUIT y Clave Fiscal AFIP. Si aún no tienes dominio, búscalo y abona el registro oficial.
+              Ingresa en <a href="https://nic.ar" target="_blank" rel="noopener noreferrer" className="underline font-semibold">nic.ar</a> con tu CUIT y Clave Fiscal AFIP y ve a tu lista de dominios registrados.
             </p>
           </div>
 
@@ -319,17 +351,17 @@ export default function DominioManager({
               <span className="w-6 h-6 rounded-full bg-[#FACC15] text-[#1F2937] font-bold text-xs flex items-center justify-center shrink-0">
                 2
               </span>
-              <h3 className="font-bold text-sm">Hacer clic en "Delegar" en tu lista de dominios</h3>
+              <h3 className="font-bold text-sm">Hacer clic en &quot;Delegar&quot;</h3>
             </div>
             <p className="text-xs opacity-75 pl-8 leading-relaxed">
-              En tu lista de dominios registrados de NIC.ar, pulsa el botón <strong>"Delegar"</strong> al lado de tu dominio. Haz clic en <strong>"Agregar Servidor"</strong> y pega:
+              Al lado de tu dominio, pulsa el botón <strong>&quot;Delegar&quot;</strong>, haz clic en <strong>&quot;Agregar Servidor&quot;</strong> y pega los dos servidores de arriba:
             </p>
             <div className="pl-8 pt-1 space-y-1 font-mono text-xs text-[#CA8A04] dark:text-[#FACC15]">
               <div className="p-2 rounded-lg bg-black/5 dark:bg-white/5 font-bold">
-                Host 1: ns1.portalmaker.com.ar
+                Host 1: ns1.vercel-dns.com
               </div>
               <div className="p-2 rounded-lg bg-black/5 dark:bg-white/5 font-bold">
-                Host 2: ns2.portalmaker.com.ar
+                Host 2: ns2.vercel-dns.com
               </div>
             </div>
           </div>
@@ -340,14 +372,14 @@ export default function DominioManager({
               <span className="w-6 h-6 rounded-full bg-[#FACC15] text-[#1F2937] font-bold text-xs flex items-center justify-center shrink-0">
                 3
               </span>
-              <h3 className="font-bold text-sm">Guardar y esperar la activación automática</h3>
+              <h3 className="font-bold text-sm">Propagación y Certificado de Seguridad</h3>
             </div>
             <p className="text-xs opacity-75 pl-8 leading-relaxed">
-              Guarda los cambios en NIC.ar y en este panel. La delegación suele demorar entre <strong>2 y 12 horas</strong> en propagarse por internet.
+              Guarda los cambios en NIC.ar y en este panel. La propagación en los DNS de Argentina suele demorar entre <strong>2 y 12 horas</strong>. Una vez propagado, el certificado SSL (candado HTTPS) se activa de forma automática y gratuita.
             </p>
             <div className="pl-8 pt-1 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
               <CheckCircle2 className="w-4 h-4" />
-              <span>Portalmaker activa tu certificado SSL (candado de seguridad HTTPS) de forma automática y gratuita.</span>
+              <span>Portalmaker mantiene tu tienda siempre segura bajo HTTPS sin costo adicional.</span>
             </div>
           </div>
         </div>
