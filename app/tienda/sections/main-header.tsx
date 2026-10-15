@@ -5,12 +5,13 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { Store, HeaderSettings } from '@/types/database'
 import ThemeToggle from '../theme-toggle'
 import { useCart } from '@/lib/cart-context'
+import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import {
   Search,
   ShoppingBag,
@@ -33,7 +34,41 @@ export default function MainHeader({
   tenantQuery,
 }: MainHeaderProps) {
   const router = useRouter()
+  const supabase = createSupabaseBrowserClient()
   const { totalItems, toggleCart, favorites } = useCart()
+
+  // Estado del cliente con sesión activa
+  const [activeCustomer, setActiveCustomer] = useState<{ email: string; nombre?: string } | null>(null)
+
+  useEffect(() => {
+    // 1. Obtener sesión actual
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) {
+        setActiveCustomer({
+          email: user.email,
+          nombre: user.user_metadata?.nombre || user.email.split('@')[0],
+        })
+      } else {
+        setActiveCustomer(null)
+      }
+    })
+
+    // 2. Escuchar cambios de sesión en tiempo real (login / logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.email) {
+        setActiveCustomer({
+          email: session.user.email,
+          nombre: session.user.user_metadata?.nombre || session.user.email.split('@')[0],
+        })
+      } else {
+        setActiveCustomer(null)
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
 
   const {
     mostrar_nombre = true,
@@ -154,13 +189,32 @@ export default function MainHeader({
           <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-3">
             {mostrar_tema_toggle && <ThemeToggle />}
 
+            {/* Botón Mi Cuenta (Diferenciado si está logueado) */}
             <Link
               href={withTenant('/tienda/cuenta')}
-              title="Mi cuenta"
-              aria-label="Mi cuenta"
-              className="min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+              title={
+                activeCustomer
+                  ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email}) - Conectado`
+                  : 'Ingresar a mi cuenta'
+              }
+              aria-label={
+                activeCustomer
+                  ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email})`
+                  : 'Ingresar a mi cuenta'
+              }
+              className={`relative min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
+                activeCustomer
+                  ? 'border-[var(--color-primario)]/50 bg-[var(--color-primario)]/15 text-[var(--color-primario)] ring-1 ring-[var(--color-primario)]/30'
+                  : 'border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)]'
+              }`}
             >
-              <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" />
+              <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-90" />
+              {activeCustomer && (
+                <span
+                  title="Sesión activa"
+                  className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900"
+                />
+              )}
             </Link>
 
             <Link
@@ -219,11 +273,29 @@ export default function MainHeader({
 
             <Link
               href={withTenant('/tienda/cuenta')}
-              title="Mi cuenta"
-              aria-label="Mi cuenta"
-              className="min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+              title={
+                activeCustomer
+                  ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email}) - Conectado`
+                  : 'Ingresar a mi cuenta'
+              }
+              aria-label={
+                activeCustomer
+                  ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email})`
+                  : 'Ingresar a mi cuenta'
+              }
+              className={`relative min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
+                activeCustomer
+                  ? 'border-[var(--color-primario)]/50 bg-[var(--color-primario)]/15 text-[var(--color-primario)] ring-1 ring-[var(--color-primario)]/30'
+                  : 'border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)]'
+              }`}
             >
-              <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" />
+              <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-90" />
+              {activeCustomer && (
+                <span
+                  title="Sesión activa"
+                  className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900"
+                />
+              )}
             </Link>
 
             <Link
@@ -321,9 +393,21 @@ export default function MainHeader({
             </Link>
             <Link
               href={withTenant('/tienda/cuenta')}
-              className="py-2.5 px-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-between"
+              className={`py-2.5 px-3 rounded-lg flex items-center justify-between ${
+                activeCustomer
+                  ? 'bg-[var(--color-primario)]/10 text-[var(--color-primario)] font-semibold'
+                  : 'hover:bg-black/5 dark:hover:bg-white/5'
+              }`}
             >
-              <span>Mi cuenta</span>
+              <div className="flex items-center gap-2">
+                <span>Mi cuenta</span>
+                {activeCustomer && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Conectado</span>
+                  </span>
+                )}
+              </div>
               <ArrowRight className="w-3.5 h-3.5 opacity-40" />
             </Link>
             <Link

@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { useCart } from '@/lib/cart-context'
@@ -45,6 +45,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
   const [email, setEmail] = useState('')
+  const [isAutoFilled, setIsAutoFilled] = useState(false)
 
   // Opciones de entrega: 'acordar' | 'retiro' | 'envio'
   const [tipoEntrega, setTipoEntrega] = useState<'acordar' | 'retiro' | 'envio'>('acordar')
@@ -56,6 +57,42 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
   const [provincia, setProvincia] = useState('')
   const [codigoPostal, setCodigoPostal] = useState('')
   const [aclaracionesEntrega, setAclaracionesEntrega] = useState('')
+
+  // Precargar datos del usuario logueado si tiene sesión activa
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user?.email) {
+        setEmail(user.email)
+        const meta = user.user_metadata || {}
+        if (meta.nombre) setNombre(meta.nombre)
+        if (meta.telefono) setTelefono(meta.telefono)
+        if (meta.direccion || meta.calleNumero) setCalleNumero(meta.direccion || meta.calleNumero)
+        if (meta.pisoDpto) setPisoDpto(meta.pisoDpto)
+        if (meta.ciudad) setCiudad(meta.ciudad)
+        if (meta.provincia) setProvincia(meta.provincia)
+        if (meta.codigoPostal) setCodigoPostal(meta.codigoPostal)
+
+        // Consultar también datos guardados en store_customers de esta tienda
+        try {
+          const { data: cust } = await supabase
+            .from('store_customers')
+            .select('*')
+            .eq('store_id', store.id)
+            .eq('email', user.email.toLowerCase())
+            .maybeSingle()
+
+          if (cust) {
+            if (cust.nombre && !meta.nombre) setNombre(cust.nombre)
+            if (cust.telefono && !meta.telefono) setTelefono(cust.telefono)
+          }
+        } catch (e) {
+          console.error('Error al precargar cliente en checkout:', e)
+        }
+
+        setIsAutoFilled(true)
+      }
+    })
+  }, [store.id])
 
   // Opciones de pago: 'transferencia' | 'efectivo' | 'acordar'
   const [metodoPago, setMetodoPago] = useState<'transferencia' | 'efectivo' | 'acordar'>('transferencia')
@@ -172,6 +209,36 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
       const { error: insertError } = await supabase.from('orders').insert(orderPayload)
 
       if (insertError) throw insertError
+
+      // Sincronizar datos del cliente en CRM y sesión de usuario
+      try {
+        await supabase.from('store_customers').upsert(
+          {
+            store_id: store.id,
+            email: email.trim().toLowerCase(),
+            nombre: nombre.trim(),
+            telefono: telefono.trim() || null,
+            ultimo_login: new Date().toISOString(),
+          },
+          { onConflict: 'store_id,email' }
+        )
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user && user.email?.toLowerCase() === email.trim().toLowerCase()) {
+          await supabase.auth.updateUser({
+            data: {
+              nombre: nombre.trim(),
+              telefono: telefono.trim(),
+              calleNumero: calleNumero.trim() || user.user_metadata?.calleNumero,
+              pisoDpto: pisoDpto.trim() || user.user_metadata?.pisoDpto,
+              ciudad: ciudad.trim() || user.user_metadata?.ciudad,
+              provincia: provincia.trim() || user.user_metadata?.provincia,
+              codigoPostal: codigoPostal.trim() || user.user_metadata?.codigoPostal,
+            },
+          })
+        }
+      } catch (syncErr) {
+        console.error('Error al sincronizar datos del cliente:', syncErr)
+      }
 
       // 2. Construir mensaje de WhatsApp
       let entregaLabel = 'A convenir / coordinar por WhatsApp'
@@ -370,6 +437,15 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
             </span>
             <span>Tus Datos de Contacto</span>
           </h2>
+
+          {isAutoFilled && (
+            <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs flex items-center justify-between">
+              <span className="flex items-center gap-1.5 font-medium">
+                <Check className="w-4 h-4 shrink-0 text-emerald-600" />
+                <span>Sesión activa como <b>{email}</b> · Tus datos fueron precargados</span>
+              </span>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
             <div className="space-y-1.5 sm:col-span-2">

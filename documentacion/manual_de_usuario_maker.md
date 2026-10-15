@@ -290,7 +290,13 @@ Tu tienda cuenta con un CRM integrado para conocer a tus compradores y darles se
      - Cuántas compras ha realizado y el monto total gastado en pesos ($ ARS).
      - El detalle de cada pedido (estado de producción, método de pago y fecha).
      - Las reseñas y valoraciones que ha dejado en tus productos.
-3. **Promover a Colaborador con 1 clic**:
+3. **Experiencia del comprador en su cuenta de tienda**:
+   - **Indicador de sesión activa**: En la cabecera de la tienda, el ícono de la persona destaca con el color de la tienda y un indicador verde cuando el usuario está logueado.
+   - **Precarga en checkout**: Al comprar con sesión iniciada, sus datos de contacto y dirección se precargan automáticamente en el formulario.
+   - **Gestión de datos del cliente**: En la pestaña **"Mis Datos"** de su cuenta, el comprador puede actualizar su nombre, WhatsApp y dirección de entrega, además de cerrar sesión.
+   - **Detalle de productos en "Mis Pedidos"**: Cada pedido en su historial muestra no solo el número y total, sino el listado completo de productos, variantes, cantidades y método de entrega.
+   - **Seguridad y recuperación de contraseña**: Flujo de confirmación por correo y restablecimiento de contraseña olvidada asociado con el nombre de tu tienda.
+4. **Promover a Colaborador con 1 clic**:
    - Si tienes un cliente frecuente, socio o ayudante registrado, puedes presionar el botón **"Hacer Colaborador"** directamente desde su fila. El usuario pasará a tener permisos para entrar a tu panel de administración.
 </details>
 
