@@ -12,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   if (!tenant) return {};
 
   const { store } = tenant;
-  const storeIcon = store.favicon_url || store.icono_url || store.logo_url || "/icon.svg";
+  const storeIcon = store.favicon_url || store.icono_url || store.logo_url || "/logo.png";
 
   return {
     title: {
@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: store.meta_description || store.slogan || `Catálogo oficial de ${store.nombre}`,
     icons: {
-      icon: [{ url: storeIcon }],
+      icon: [{ url: storeIcon }, { url: "/favicon.ico" }],
       shortcut: [{ url: storeIcon }],
       apple: [{ url: storeIcon }],
     },
