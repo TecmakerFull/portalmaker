@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: store.meta_description || store.slogan || `Catálogo oficial de ${store.nombre}`,
     icons: {
-      icon: [{ url: storeIcon }, { url: "/favicon.ico" }],
+      icon: [{ url: storeIcon }],
       shortcut: [{ url: storeIcon }],
       apple: [{ url: storeIcon }],
     },
@@ -114,7 +114,10 @@ export default async function TiendaLayout({
       style={tenantStyles}
       data-store-slug={store.slug}
     >
-      <StoreThemeSync defaultTheme={store.tema_por_defecto} />
+      <StoreThemeSync
+        defaultTheme={store.tema_por_defecto}
+        faviconUrl={store.favicon_url || store.icono_url || store.logo_url || "/logo.png"}
+      />
 
       {/* Google Analytics */}
       {store.ga_measurement_id && (

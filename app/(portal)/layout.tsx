@@ -27,6 +27,14 @@ export const metadata: Metadata = {
   },
   description:
     "La plataforma e-commerce para talleres maker argentinos. Impresión 3D, grabado láser, corte láser.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    shortcut: [{ url: "/favicon.ico" }],
+    apple: [{ url: "/icon.png" }],
+  },
 };
 
 const jsonLd = {
