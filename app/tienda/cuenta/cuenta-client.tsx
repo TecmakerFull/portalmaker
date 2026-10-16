@@ -51,10 +51,10 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
   const supabase = createSupabaseBrowserClient()
   const { favorites } = useCart()
 
-  // Estados de autenticación
+  // Estados de autenticación — Por defecto 'magic-link' (acceso sin contraseñas estilo Shopify)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [currentUser, setCurrentUser] = useState<{ email: string; nombre: string } | null>(null)
-  const [authMode, setAuthMode] = useState<AuthMode>('login')
+  const [authMode, setAuthMode] = useState<AuthMode>('magic-link')
   const [emailInput, setEmailInput] = useState('')
   const [passwordInput, setPasswordInput] = useState('')
   const [newPasswordInput, setNewPasswordInput] = useState('')
@@ -184,6 +184,7 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
 
   // Comprobar sesión de Supabase al montar y escuchar cambios de auth
   useEffect(() => {
+    const cacheKey = `pm_device_cust_${store.id}`
     const isResetMode =
       typeof window !== 'undefined' &&
       new URLSearchParams(window.location.search).get('mode') === 'reset'
@@ -191,6 +192,20 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
     if (isResetMode) {
       setAuthMode('reset')
       setIsLoggedIn(false)
+    } else if (typeof window !== 'undefined') {
+      // Carga inmediata del perfil guardado en el equipo para evitar parpadeos
+      try {
+        const cachedRaw = localStorage.getItem(cacheKey)
+        if (cachedRaw) {
+          const cached = JSON.parse(cachedRaw)
+          if (cached?.email) {
+            setCurrentUser(cached)
+            setIsLoggedIn(true)
+          }
+        }
+      } catch (err) {
+        console.warn('Error leyendo persistencia local:', err)
+      }
     }
 
     const checkUser = async () => {
@@ -207,9 +222,19 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
         const name = user.user_metadata?.nombre || user.email.split('@')[0]
         setCurrentUser({ email: user.email, nombre: name })
         setIsLoggedIn(true)
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({ email: user.email, nombre: name }))
+        } catch {}
         await populateProfileData(user)
         await syncCustomerCrm(user.email, name, user.user_metadata?.telefono)
         await loadCustomerData(user.email)
+      } else if (!isResetMode) {
+        // Si no hay sesión activa en Supabase, limpiar cache local
+        try {
+          localStorage.removeItem(cacheKey)
+        } catch {}
+        setIsLoggedIn(false)
+        setCurrentUser(null)
       }
     }
 
@@ -233,10 +258,16 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
         const name = session.user.user_metadata?.nombre || session.user.email.split('@')[0]
         setCurrentUser({ email: session.user.email, nombre: name })
         setIsLoggedIn(true)
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({ email: session.user.email, nombre: name }))
+        } catch {}
         await populateProfileData(session.user)
       } else if (event === 'SIGNED_OUT') {
         setIsLoggedIn(false)
         setCurrentUser(null)
+        try {
+          localStorage.removeItem(cacheKey)
+        } catch {}
       }
     })
 
@@ -428,6 +459,9 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
   // Cerrar sesión
   const handleLogout = async () => {
     await supabase.auth.signOut()
+    try {
+      localStorage.removeItem(`pm_device_cust_${store.id}`)
+    } catch {}
     setIsLoggedIn(false)
     setCurrentUser(null)
     setOrders([])
@@ -435,7 +469,7 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
     setEmailInput('')
     setPasswordInput('')
     setNombreInput('')
-    setAuthMode('login')
+    setAuthMode('magic-link')
   }
 
   // Helper para renderizar items de una orden de forma segura
@@ -940,9 +974,24 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
       ) : (
         /* VISTA DE LOGIN / REGISTRO / RECUPERACIÓN */
         <div className="p-5 sm:p-6 rounded-2xl bg-[var(--color-superficie)] border border-black/10 dark:border-white/10 shadow-xs space-y-5">
-          {/* Selector de Pestaña principal para Login vs Registro */}
+          {/* Selector de Pestaña principal para Acceso sin contraseña (Shopify style) vs Contraseña */}
           {(authMode === 'login' || authMode === 'register' || authMode === 'magic-link') && (
             <div className="grid grid-cols-2 p-1 rounded-xl bg-black/5 dark:bg-white/5 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('magic-link')
+                  setAuthError(null)
+                  setAuthSuccess(null)
+                }}
+                className={`min-h-[40px] rounded-lg transition-all cursor-pointer ${
+                  authMode === 'magic-link'
+                    ? 'bg-[var(--color-superficie)] text-[var(--color-texto)] shadow-xs'
+                    : 'opacity-60 hover:opacity-100'
+                }`}
+              >
+                Acceso sin contraseña (Recomendado)
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -951,27 +1000,12 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
                   setAuthSuccess(null)
                 }}
                 className={`min-h-[40px] rounded-lg transition-all cursor-pointer ${
-                  authMode === 'login' || authMode === 'magic-link'
+                  authMode === 'login' || authMode === 'register'
                     ? 'bg-[var(--color-superficie)] text-[var(--color-texto)] shadow-xs'
                     : 'opacity-60 hover:opacity-100'
                 }`}
               >
-                Iniciar Sesión
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode('register')
-                  setAuthError(null)
-                  setAuthSuccess(null)
-                }}
-                className={`min-h-[40px] rounded-lg transition-all cursor-pointer ${
-                  authMode === 'register'
-                    ? 'bg-[var(--color-superficie)] text-[var(--color-texto)] shadow-xs'
-                    : 'opacity-60 hover:opacity-100'
-                }`}
-              >
-                Crear Cuenta
+                Con contraseña
               </button>
             </div>
           )}
