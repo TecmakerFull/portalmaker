@@ -356,7 +356,7 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
           `Solicitud enviada para ${store.nombre}. Te enviamos un enlace de acceso seguro a ${cleanEmail}. Ábrelo para ingresar sin contraseña.`
         )
       } else if (authMode === 'recover') {
-        // Solicitud de recuperación de contraseña con callback explícito para no perder la tienda
+        // Solicitud de recuperación de contraseña con callback explícito y contexto de tienda
         const storeAccountPath = `/tienda/cuenta${
           tenantQuery
             ? tenantQuery.startsWith('?')
@@ -366,11 +366,28 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
         }`
         const resetRedirect = `${origin}/auth/callback?next=${encodeURIComponent(storeAccountPath)}`
 
-        const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-          redirectTo: resetRedirect,
-        })
-
-        if (error) throw error
+        try {
+          const res = await fetch('/api/auth/store-recover', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: cleanEmail,
+              storeName: store.nombre,
+              storeSlug: store.slug,
+              redirectTo: resetRedirect,
+            }),
+          })
+          const resJson = await res.json()
+          if (!res.ok) {
+            throw new Error(resJson.error || 'Error al solicitar recuperación')
+          }
+        } catch (apiErr) {
+          // Fallback a llamada directa de Supabase si la API interna tuviera algún problema
+          const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+            redirectTo: resetRedirect,
+          })
+          if (error) throw error
+        }
 
         setAuthSuccess(
           `Se enviaron instrucciones de recuperación a ${cleanEmail} para tu cuenta en ${store.nombre}. Revisa tu bandeja de entrada o correo no deseado.`
