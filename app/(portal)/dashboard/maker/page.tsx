@@ -7,7 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import ThemeToggle from '@/app/tienda/theme-toggle'
-import { Store, ExternalLink, LogOut, Package, Palette } from 'lucide-react'
+import { Store, ExternalLink, LogOut, Package, Palette, Users, ShieldCheck } from 'lucide-react'
 import CrearTiendaForm from './crear-tienda-form'
 
 export default async function MakerDashboardPage() {
@@ -29,7 +29,7 @@ export default async function MakerDashboardPage() {
 
   const isSuperadmin = Boolean(platformAdmin) || user.email === 'temperini@gmail.com'
 
-  // 3. Buscar si el maker ya tiene una tienda asignada
+  // 3. Buscar si el maker es dueño de tiendas
   const { data: stores } = await supabase
     .from('stores')
     .select('*')
@@ -38,10 +38,34 @@ export default async function MakerDashboardPage() {
 
   const userStores = stores ?? []
 
-  // Si el usuario ya tiene su tienda, enviarlo directamente a su panel admin de tienda
-  if (userStores.length === 1) {
+  // 4. Buscar si el usuario es colaborador activo de alguna tienda
+  const { data: collabs } = await supabase
+    .from('store_collaborators')
+    .select('id, rol, store:stores(*)')
+    .eq('email', user.email)
+    .eq('estado', 'activo')
+
+  const rawCollabs = collabs ?? []
+  const collaboratedStores = rawCollabs
+    .map((c: any) => ({
+      ...(c.store || {}),
+      collabRol: c.rol,
+      collabId: c.id,
+    }))
+    .filter((s: any) => Boolean(s?.id && s?.slug))
+
+  // Redirección inteligente:
+  // Si el usuario solo tiene 1 tienda propia y no colabora en ninguna otra -> directo al admin
+  if (userStores.length === 1 && collaboratedStores.length === 0) {
     redirect(`/tienda/admin?tenant=${userStores[0].slug}`)
   }
+
+  // Si el usuario no tiene tiendas propias pero colabora en exactamente 1 tienda -> directo al admin de esa tienda
+  if (userStores.length === 0 && collaboratedStores.length === 1) {
+    redirect(`/tienda/admin?tenant=${collaboratedStores[0].slug}`)
+  }
+
+  const hasAnyStores = userStores.length > 0 || collaboratedStores.length > 0
 
   return (
     <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-portal-body)] pb-16 transition-colors duration-200">
@@ -92,109 +116,181 @@ export default async function MakerDashboardPage() {
 
       {/* Contenido Principal */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 sm:pt-10">
-        {userStores.length > 0 ? (
-          <div>
-            <div className="mb-8">
+        {hasAnyStores ? (
+          <div className="space-y-10">
+            <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight font-[var(--font-portal-heading)]">
                 Panel de Maker
               </h1>
               <p className="text-sm opacity-70 mt-1">
-                Gestiona tus tiendas virtuales, productos y configuración de marca.
+                Gestiona tus tiendas virtuales, productos y colaboraciones autorizadas.
               </p>
             </div>
 
-            <div className="space-y-6">
-              <h2 className="text-lg font-bold flex items-center gap-2">
-                <Store className="w-5 h-5 text-[#CA8A04] dark:text-[#FACC15]" />
-                <span>Tus Tiendas Activas</span>
-              </h2>
+            {/* SECCIÓN 1: Tiendas Propias */}
+            {userStores.length > 0 && (
+              <div className="space-y-5">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <Store className="w-5 h-5 text-[#CA8A04] dark:text-[#FACC15]" />
+                  <span>Tus Tiendas Activas</span>
+                </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {userStores.map((store) => (
-                  <div
-                    key={store.id}
-                    className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div>
-                          <h3 className="text-xl font-bold font-[var(--font-portal-heading)]">{store.nombre}</h3>
-                          <p className="text-xs font-mono opacity-60 mt-0.5">
-                            {store.slug}.portalmaker.ar
-                          </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {userStores.map((store) => (
+                    <div
+                      key={store.id}
+                      className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div>
+                            <h3 className="text-xl font-bold font-[var(--font-portal-heading)]">{store.nombre}</h3>
+                            <p className="text-xs font-mono opacity-60 mt-0.5">
+                              {store.custom_domain || `${store.slug}.portalmaker.ar`}
+                            </p>
+                          </div>
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                            {store.suscripcion_activa ? 'Activa' : 'En prueba'}
+                          </span>
                         </div>
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                          {store.suscripcion_activa ? 'Activa' : 'En prueba'}
-                        </span>
+
+                        {store.slogan && (
+                          <p className="text-sm opacity-75 mb-4 italic">
+                            &quot;{store.slogan}&quot;
+                          </p>
+                        )}
+
+                        {/* Previsualización rápida de paleta */}
+                        <div className="flex items-center gap-2 py-3 px-3.5 bg-black/5 dark:bg-white/5 rounded-2xl mb-5">
+                          <span className="text-xs font-bold opacity-60">Colores:</span>
+                          <div
+                            className="w-4 h-4 rounded-full border border-black/20 dark:border-white/20 shadow-xs"
+                            style={{ backgroundColor: store.color_primario }}
+                            title="Color primario"
+                          />
+                          <div
+                            className="w-4 h-4 rounded-full border border-black/20 dark:border-white/20 shadow-xs"
+                            style={{ backgroundColor: store.color_secundario }}
+                            title="Color secundario"
+                          />
+                          <div
+                            className="w-4 h-4 rounded-full border border-black/20 dark:border-white/20 shadow-xs"
+                            style={{ backgroundColor: store.color_fondo }}
+                            title="Color fondo"
+                          />
+                          <span className="text-xs opacity-50 ml-auto font-mono">
+                            {store.font_heading || 'Inter'}
+                          </span>
+                        </div>
                       </div>
 
-                      {store.slogan && (
-                        <p className="text-sm opacity-75 mb-4 italic">
-                          &quot;{store.slogan}&quot;
-                        </p>
-                      )}
-
-                      {/* Previsualización rápida de paleta */}
-                      <div className="flex items-center gap-2 py-3 px-3.5 bg-black/5 dark:bg-white/5 rounded-2xl mb-5">
-                        <span className="text-xs font-bold opacity-60">Colores:</span>
-                        <div
-                          className="w-4 h-4 rounded-full border border-black/20 dark:border-white/20 shadow-xs"
-                          style={{ backgroundColor: store.color_primario }}
-                          title="Color primario"
-                        />
-                        <div
-                          className="w-4 h-4 rounded-full border border-black/20 dark:border-white/20 shadow-xs"
-                          style={{ backgroundColor: store.color_secundario }}
-                          title="Color secundario"
-                        />
-                        <div
-                          className="w-4 h-4 rounded-full border border-black/20 dark:border-white/20 shadow-xs"
-                          style={{ backgroundColor: store.color_fondo }}
-                          title="Color fondo"
-                        />
-                        <span className="text-xs opacity-50 ml-auto font-mono">
-                          {store.font_heading || 'Inter'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Acciones principales */}
-                    <div className="space-y-2 pt-2 border-t border-[var(--color-borde)]">
-                      <Link
-                        href={`/tienda/admin?tenant=${store.slug}`}
-                        style={{ color: '#1F2937' }}
-                        className="w-full min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] transition-all shadow-xs"
-                      >
-                        <Store className="w-4 h-4 text-[#1F2937]" />
-                        <span>Administrar Mi Tienda</span>
-                      </Link>
-
-                      <div className="grid grid-cols-2 gap-2">
+                      {/* Acciones principales */}
+                      <div className="space-y-2 pt-2 border-t border-[var(--color-borde)]">
                         <Link
-                          href={`/tienda/admin/productos?tenant=${store.slug}`}
-                          className="min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--color-borde)] text-xs sm:text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all opacity-85 hover:opacity-100"
+                          href={`/tienda/admin?tenant=${store.slug}`}
+                          style={{ color: '#1F2937' }}
+                          className="w-full min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] transition-all shadow-xs"
                         >
-                          <Package className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-                          <span>Productos</span>
+                          <Store className="w-4 h-4 text-[#1F2937]" />
+                          <span>Administrar Mi Tienda</span>
                         </Link>
 
-                        <Link
-                          href={`/tienda?tenant=${store.slug}`}
-                          target="_blank"
-                          className="min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--color-borde)] text-xs sm:text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all opacity-85 hover:opacity-100"
-                        >
-                          <ExternalLink className="w-4 h-4 opacity-60" />
-                          <span>Ver Tienda</span>
-                        </Link>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Link
+                            href={`/tienda/admin/productos?tenant=${store.slug}`}
+                            className="min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--color-borde)] text-xs sm:text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all opacity-85 hover:opacity-100"
+                          >
+                            <Package className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                            <span>Productos</span>
+                          </Link>
+
+                          <Link
+                            href={store.custom_domain ? `https://${store.custom_domain}` : `/tienda?tenant=${store.slug}`}
+                            target="_blank"
+                            className="min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--color-borde)] text-xs sm:text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all opacity-85 hover:opacity-100"
+                          >
+                            <ExternalLink className="w-4 h-4 opacity-60" />
+                            <span>Ver Tienda</span>
+                          </Link>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* SECCIÓN 2: Tiendas donde Colaboras */}
+            {collaboratedStores.length > 0 && (
+              <div className="space-y-5">
+                <h2 className="text-lg font-bold flex items-center gap-2 text-[var(--color-texto)]">
+                  <Users className="w-5 h-5 text-indigo-500" />
+                  <span>Tiendas donde Colaboras</span>
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {collaboratedStores.map((store: any) => (
+                    <div
+                      key={store.id}
+                      className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div>
+                            <h3 className="text-xl font-bold font-[var(--font-portal-heading)]">{store.nombre}</h3>
+                            <p className="text-xs font-mono opacity-60 mt-0.5">
+                              {store.custom_domain || `${store.slug}.portalmaker.ar`}
+                            </p>
+                          </div>
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            <span>{store.collabRol === 'admin' ? 'Administrador' : 'Colaborador'}</span>
+                          </span>
+                        </div>
+
+                        <p className="text-xs opacity-70 mb-4">
+                          Propietario: <span className="font-mono">{store.admin_email}</span>
+                        </p>
+                      </div>
+
+                      {/* Acciones principales del colaborador */}
+                      <div className="space-y-2 pt-2 border-t border-[var(--color-borde)]">
+                        <Link
+                          href={`/tienda/admin?tenant=${store.slug}`}
+                          style={{ color: '#1F2937' }}
+                          className="w-full min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] transition-all shadow-xs"
+                        >
+                          <Store className="w-4 h-4 text-[#1F2937]" />
+                          <span>Gestionar Tienda ({store.collabRol === 'admin' ? 'Admin' : 'Colaborador'})</span>
+                        </Link>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <Link
+                            href={`/tienda/admin/productos?tenant=${store.slug}`}
+                            className="min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--color-borde)] text-xs sm:text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all opacity-85 hover:opacity-100"
+                          >
+                            <Package className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                            <span>Productos</span>
+                          </Link>
+
+                          <Link
+                            href={store.custom_domain ? `https://${store.custom_domain}` : `/tienda?tenant=${store.slug}`}
+                            target="_blank"
+                            className="min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--color-borde)] text-xs sm:text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all opacity-85 hover:opacity-100"
+                          >
+                            <ExternalLink className="w-4 h-4 opacity-60" />
+                            <span>Ver Tienda</span>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
-          /* Maker sin tienda creada: Formulario de bienvenida perfectamente centrado */
+          /* Usuario nuevo sin tiendas propias ni colaboraciones: Formulario de creación */
           <div className="min-h-[calc(100vh-140px)] flex flex-col items-center justify-center py-6">
             <div className="w-full max-w-lg bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-6 sm:p-9 shadow-xl transition-colors duration-200">
               <div className="text-center mb-6">

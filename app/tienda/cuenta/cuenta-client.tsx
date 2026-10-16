@@ -285,7 +285,21 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
 
     const cleanEmail = emailInput.trim().toLowerCase()
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const redirectUrl = `${origin}/tienda/cuenta${tenantQuery ? (tenantQuery.startsWith('?') ? `${tenantQuery}` : `?${tenantQuery}`) : ''}`
+    const isCustomDomain =
+      Boolean(origin) &&
+      !origin.includes('localhost') &&
+      !origin.includes('portalmaker.ar') &&
+      !origin.includes('portalmaker.com.ar') &&
+      !origin.includes('portalmaker.vercel.app')
+    const portalBase = 'https://portalmaker.ar'
+
+    // Ruta destino dentro de la tienda
+    const storePath = `/tienda/cuenta${tenantQuery ? (tenantQuery.startsWith('?') ? `${tenantQuery}` : `?${tenantQuery}`) : ''}`
+    // Si estamos en un dominio propio del maker (ej: armoniashop.com.ar), pasamos por el puente de portalmaker.ar
+    // para garantizar que la whitelist de Supabase nunca rechace la redirección
+    const redirectUrl = isCustomDomain
+      ? `${portalBase}/auth/callback?store_origin=${encodeURIComponent(origin)}&next=${encodeURIComponent(storePath)}`
+      : `${origin}/auth/callback?next=${encodeURIComponent(storePath)}`
 
     try {
       if (authMode === 'register') {
@@ -364,7 +378,9 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
               : `?${tenantQuery}&mode=reset`
             : '?mode=reset'
         }`
-        const resetRedirect = `${origin}/auth/callback?next=${encodeURIComponent(storeAccountPath)}`
+        const resetRedirect = isCustomDomain
+          ? `${portalBase}/auth/callback?store_origin=${encodeURIComponent(origin)}&next=${encodeURIComponent(storeAccountPath)}`
+          : `${origin}/auth/callback?next=${encodeURIComponent(storeAccountPath)}`
 
         try {
           const res = await fetch('/api/auth/store-recover', {

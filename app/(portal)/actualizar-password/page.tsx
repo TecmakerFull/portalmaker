@@ -49,7 +49,8 @@ export default function ActualizarPasswordPage() {
 
       setSuccess(true)
       setTimeout(() => {
-        router.push('/dashboard/maker')
+        const nextParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('next') : null
+        router.push(nextParam || '/dashboard/maker')
         router.refresh()
       }, 2000)
     } catch (err: unknown) {

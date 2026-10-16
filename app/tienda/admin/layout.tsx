@@ -26,6 +26,12 @@ export default async function AdminLayout({
   const tenantQuery = context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''
 
   if (!isAdmin) {
+    const isCustom = context.resolved_by === 'custom_domain'
+    const adminDestination = `/tienda/admin?tenant=${store.slug}`
+    const loginUrl = isCustom
+      ? `https://portalmaker.ar/login?next=${encodeURIComponent(`https://portalmaker.ar${adminDestination}`)}`
+      : `/login?next=${encodeURIComponent(tenantQuery ? `/tienda/admin${tenantQuery}` : adminDestination)}`
+
     return (
       <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-6 sm:p-8 text-center shadow-lg">
@@ -34,11 +40,11 @@ export default async function AdminLayout({
           </div>
           <h2 className="text-xl font-bold font-[var(--font-heading)] mb-2">Acceso a la Administración</h2>
           <p className="text-sm opacity-70 mb-6">
-            Para gestionar la tienda <strong>{store.nombre}</strong> debes iniciar sesión con la cuenta administradora (<code>{store.admin_email}</code>).
+            Para gestionar la tienda <strong>{store.nombre}</strong> debes iniciar sesión con una cuenta autorizada (propietario o colaborador invitado).
           </p>
           <div className="space-y-3">
             <Link
-              href="/login"
+              href={loginUrl}
               style={{ color: '#1F2937' }}
               className="w-full min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] transition-all shadow-xs"
             >

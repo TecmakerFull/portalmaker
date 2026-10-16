@@ -61,21 +61,26 @@ function LoginFormContent() {
     setSuccessMsg(null)
     setLoading(true)
 
+    const nextParam = searchParams.get('next')
+
     try {
       if (mode === 'register') {
         // Registro
+        const callbackUrl = new URL('/auth/callback', window.location.origin)
+        if (nextParam) callbackUrl.searchParams.set('next', nextParam)
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            emailRedirectTo: callbackUrl.toString(),
           },
         })
 
         if (error) throw error
 
         if (data.session) {
-          router.push('/dashboard/maker')
+          router.push(nextParam || '/dashboard/maker')
           router.refresh()
         } else {
           setSignupPendingVerification(true)
@@ -89,12 +94,15 @@ function LoginFormContent() {
 
         if (error) throw error
 
-        router.push('/dashboard/maker')
+        router.push(nextParam || '/dashboard/maker')
         router.refresh()
       } else if (mode === 'forgot') {
         // Recuperar Contraseña
+        const callbackUrl = new URL('/auth/callback', window.location.origin)
+        callbackUrl.searchParams.set('next', nextParam ? `/actualizar-password?next=${encodeURIComponent(nextParam)}` : '/actualizar-password')
+
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth/callback?next=/actualizar-password`,
+          redirectTo: callbackUrl.toString(),
         })
 
         if (error) throw error
@@ -113,12 +121,16 @@ function LoginFormContent() {
     if (!email) return
     setResending(true)
     setErrorMsg(null)
+    const nextParam = searchParams.get('next')
+    const callbackUrl = new URL('/auth/callback', window.location.origin)
+    if (nextParam) callbackUrl.searchParams.set('next', nextParam)
+
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: callbackUrl.toString(),
         },
       })
       if (error) throw error
@@ -135,9 +147,13 @@ function LoginFormContent() {
     if (!email) return
     setResending(true)
     setErrorMsg(null)
+    const nextParam = searchParams.get('next')
+    const callbackUrl = new URL('/auth/callback', window.location.origin)
+    callbackUrl.searchParams.set('next', nextParam ? `/actualizar-password?next=${encodeURIComponent(nextParam)}` : '/actualizar-password')
+
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/actualizar-password`,
+        redirectTo: callbackUrl.toString(),
       })
       if (error) throw error
       setSuccessMsg('¡Enlace de recuperación reenviado! Revisa tu casilla.')
@@ -153,10 +169,16 @@ function LoginFormContent() {
     setErrorMsg(null)
     setLoading(true)
     try {
+      const nextParam = searchParams.get('next')
+      const callbackUrl = new URL('/auth/callback', window.location.origin)
+      if (nextParam) {
+        callbackUrl.searchParams.set('next', nextParam)
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: callbackUrl.toString(),
         },
       })
       if (error) throw error

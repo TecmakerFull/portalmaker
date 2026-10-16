@@ -45,9 +45,8 @@ export default function ColaboradoresManager({
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [copiedLink, setCopiedLink] = useState(false)
 
-  // URL de acceso directo para compartir con el colaborador
-  const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://portalmaker.ar'
-  const inviteLink = `${appOrigin}/tienda/admin${tenantQuery}`
+  // URL de acceso directo para compartir con el colaborador (vía portal central)
+  const inviteLink = `https://portalmaker.ar/tienda/admin?tenant=${store.slug}`
 
   // Copiar link de acceso rápido al portapapeles
   const handleCopyLink = async () => {
