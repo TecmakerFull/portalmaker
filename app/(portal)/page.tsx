@@ -267,10 +267,18 @@ export default function PortalHomePage() {
 
       {/* Footer */}
       <footer className="mt-16 border-t border-[var(--color-borde)] py-10 text-center text-xs opacity-70 space-y-3">
-        <div className="flex items-center justify-center gap-4 font-medium">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 font-medium">
           <a href="#contacto" className="hover:underline">
             Contacto & Soporte
           </a>
+          <span>•</span>
+          <Link href="/privacidad" className="hover:underline">
+            Política de Privacidad
+          </Link>
+          <span>•</span>
+          <Link href="/terminos" className="hover:underline">
+            Términos del Servicio
+          </Link>
           <span>•</span>
           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
             WhatsApp
