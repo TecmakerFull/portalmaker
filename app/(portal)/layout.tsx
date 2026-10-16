@@ -29,6 +29,37 @@ export const metadata: Metadata = {
     "La plataforma e-commerce para talleres maker argentinos. Impresión 3D, grabado láser, corte láser.",
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://portalmaker.ar/#website",
+      "url": "https://portalmaker.ar",
+      "name": "Portalmaker",
+      "description": "La plataforma e-commerce para talleres maker argentinos.",
+      "inLanguage": "es-AR",
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://portalmaker.ar/#organization",
+      "name": "Portalmaker",
+      "url": "https://portalmaker.ar",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://portalmaker.ar/logo.png",
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+5493415866464",
+        "contactType": "customer service",
+        "areaServed": "AR",
+        "availableLanguage": "es",
+      },
+    },
+  ],
+};
+
 export default function PortalLayout({
   children,
 }: {
@@ -38,6 +69,10 @@ export default function PortalLayout({
     // Contenedor del portal con la paleta de colores del portal (no del tenant)
     // Los colores de la plataforma se definen en globals.css como paleta "Industrial"
     <div className="portal-root" style={{ fontFamily: "var(--font-portal-body)" }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {children}
     </div>
   );
