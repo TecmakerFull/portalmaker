@@ -127,6 +127,6 @@ export const config = {
      * - _next/static, _next/image, favicon.ico, auth/callback
      * - Archivos estáticos con extensión
      */
-    '/((?!_next/static|_next/image|favicon.ico|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf|html)$).*)',
   ],
 }

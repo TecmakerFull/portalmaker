@@ -78,6 +78,9 @@ export const metadata: Metadata = {
   },
   description: "La plataforma e-commerce para talleres maker. Impresión 3D, grabado láser, corte láser y más.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://portalmaker.com.ar"),
+  verification: {
+    google: "57342d55c28c6310",
+  },
 };
 
 export default function RootLayout({
