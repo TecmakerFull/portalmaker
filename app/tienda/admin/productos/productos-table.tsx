@@ -592,7 +592,7 @@ export default function ProductosTable({
                   <th className="py-3.5 px-3 w-14 text-center">Foto</th>
                   <th className="py-3.5 px-3 min-w-[200px]">Producto / Variante</th>
                   <th className="py-3.5 px-3 w-32 min-w-[110px]">Categoría</th>
-                  <th className="py-3.5 px-3 w-28 min-w-[100px]">Precio (ARS)</th>
+                  <th className="py-3.5 px-3 w-44 min-w-[150px]">Precio (ARS)</th>
                   <th className="py-3.5 px-3 w-28 min-w-[95px]">Stock</th>
                   <th className="py-3.5 px-3 w-24 text-center">En Tienda</th>
                   <th className="py-3.5 px-3 w-24 text-right">Acciones</th>
@@ -739,8 +739,8 @@ export default function ProductosTable({
 
                         {/* Precio Base Editable In-Line */}
                         <td className="py-3 px-3">
-                          <div className="relative flex items-center">
-                            <span className="absolute left-2 text-xs opacity-50 font-bold pointer-events-none">$</span>
+                          <div className="relative flex items-center w-full min-w-[125px] max-w-[150px]">
+                            <span className="absolute left-2.5 text-xs font-bold text-slate-400 select-none pointer-events-none">$</span>
                             <input
                               type="number"
                               step="any"
@@ -756,13 +756,13 @@ export default function ProductosTable({
                                   ;(e.target as HTMLInputElement).blur()
                                 }
                               }}
-                              className="w-full min-w-[75px] pl-5 pr-5 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition-all"
+                              className="w-full pl-6 pr-7 py-1.5 text-xs sm:text-sm font-semibold tabular-nums rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
                             {priceSaving && (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500 absolute right-1.5" />
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500 absolute right-2 pointer-events-none" />
                             )}
                             {priceSaved && (
-                              <Check className="w-3.5 h-3.5 text-emerald-500 absolute right-1.5" />
+                              <Check className="w-3.5 h-3.5 text-emerald-500 absolute right-2 pointer-events-none" />
                             )}
                           </div>
                         </td>
@@ -963,8 +963,8 @@ export default function ProductosTable({
 
                                 {/* Precio Final de Variante Editable */}
                                 <td className="py-2.5 px-3">
-                                  <div className="relative flex items-center">
-                                    <span className="absolute left-2 text-xs opacity-50 font-bold pointer-events-none">$</span>
+                                  <div className="relative flex items-center w-full min-w-[125px] max-w-[150px]">
+                                    <span className="absolute left-2.5 text-xs font-bold text-slate-400 select-none pointer-events-none">$</span>
                                     <input
                                       type="number"
                                       step="any"
@@ -986,13 +986,13 @@ export default function ProductosTable({
                                           ;(e.target as HTMLInputElement).blur()
                                         }
                                       }}
-                                      className="w-full min-w-[75px] pl-5 pr-5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition-all"
+                                      className="w-full pl-6 pr-7 py-1 text-xs sm:text-sm font-semibold tabular-nums rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                     />
                                     {varPriceSaving && (
-                                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500 absolute right-1.5" />
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500 absolute right-2 pointer-events-none" />
                                     )}
                                     {varPriceSaved && (
-                                      <Check className="w-3.5 h-3.5 text-emerald-500 absolute right-1.5" />
+                                      <Check className="w-3.5 h-3.5 text-emerald-500 absolute right-2 pointer-events-none" />
                                     )}
                                   </div>
                                   {variant.precio_adicional !== 0 && (
