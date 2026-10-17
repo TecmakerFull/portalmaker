@@ -48,10 +48,23 @@ export default function AdminSidebar({
   const router = useRouter()
   const supabase = createSupabaseBrowserClient()
 
-  // Estados de navegación
+  const isTiendaRoute =
+    pathname.includes('/tienda/admin/branding') ||
+    pathname.includes('/tienda/admin/diseno') ||
+    pathname.includes('/tienda/admin/banners') ||
+    pathname.includes('/tienda/admin/sobre-nosotros') ||
+    pathname.includes('/tienda/admin/contacto') ||
+    pathname.includes('/tienda/admin/pagos') ||
+    pathname.includes('/tienda/admin/dominio')
+
+  const isProductosRoute =
+    pathname.includes('/tienda/admin/productos') ||
+    pathname.includes('/tienda/admin/categorias')
+
+  // Estados de navegación (cerrados por defecto salvo que se navegue activamente dentro de su sub-ruta)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [openTienda, setOpenTienda] = useState(true)
-  const [openProductos, setOpenProductos] = useState(true)
+  const [openTienda, setOpenTienda] = useState(isTiendaRoute)
+  const [openProductos, setOpenProductos] = useState(isProductosRoute)
 
   // Cerrar menú móvil al cambiar de ruta
   useEffect(() => {
