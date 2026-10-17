@@ -21,6 +21,7 @@ import {
   Info,
   Loader2,
   ShieldAlert,
+  Send,
 } from 'lucide-react'
 
 interface ColaboradoresManagerProps {
@@ -41,6 +42,7 @@ export default function ColaboradoresManager({
   const [emailInput, setEmailInput] = useState('')
   const [rolInput, setRolInput] = useState<'colaborador' | 'admin'>('colaborador')
   const [loading, setLoading] = useState(false)
+  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [copiedLink, setCopiedLink] = useState(false)
@@ -56,6 +58,39 @@ export default function ColaboradoresManager({
       setTimeout(() => setCopiedLink(false), 2500)
     } catch (e) {
       console.error('Error al copiar enlace:', e)
+    }
+  }
+
+  // Reenviar invitación por correo electrónico vía Resend
+  const handleResendInvite = async (id: string, email: string, rol: string) => {
+    setSendingEmailId(id)
+    setErrorMsg(null)
+    setSuccessMsg(null)
+
+    try {
+      const res = await fetch('/api/colaboradores/invitar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          rol,
+          storeName: store.nombre,
+          storeSlug: store.slug,
+          invitadoPor: store.admin_email,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data?.error || 'No se pudo enviar el correo de invitación.')
+      }
+
+      setSuccessMsg(`Invitación reenviada correctamente a ${email}.`)
+      setTimeout(() => setSuccessMsg(null), 4000)
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Error al enviar el correo de invitación.')
+    } finally {
+      setSendingEmailId(null)
     }
   }
 
@@ -101,7 +136,29 @@ export default function ColaboradoresManager({
 
       setCollaborators([data as StoreCollaborator, ...collaborators])
       setEmailInput('')
-      setSuccessMsg(`Colaborador ${cleanEmail} agregado exitosamente.`)
+
+      // Despachar correo automático de bienvenida con Resend
+      let emailNotice = ''
+      try {
+        const emailRes = await fetch('/api/colaboradores/invitar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: cleanEmail,
+            rol: rolInput,
+            storeName: store.nombre,
+            storeSlug: store.slug,
+            invitadoPor: store.admin_email,
+          }),
+        })
+        if (emailRes.ok) {
+          emailNotice = ' e invitación enviada por correo'
+        }
+      } catch (eErr) {
+        console.warn('Fallo envío de correo con Resend:', eErr)
+      }
+
+      setSuccessMsg(`Colaborador ${cleanEmail} agregado exitosamente${emailNotice}.`)
       router.refresh()
     } catch (err: any) {
       console.error('Error al agregar colaborador:', err)
@@ -322,10 +379,25 @@ export default function ColaboradoresManager({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-3">
+                <div className="flex items-center justify-between sm:justify-end gap-2">
                   <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
                     {c.estado === 'activo' ? 'Habilitado' : 'Pendiente'}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => handleResendInvite(c.id, c.email, c.rol)}
+                    disabled={sendingEmailId === c.id}
+                    title="Reenviar invitación por correo electrónico"
+                    aria-label={`Reenviar invitación a ${c.email}`}
+                    className="min-h-[44px] px-3 py-1.5 flex items-center gap-1.5 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold opacity-80 hover:opacity-100 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {sendingEmailId === c.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Send className="w-3.5 h-3.5" />
+                    )}
+                    <span className="hidden sm:inline">Reenviar correo</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => handleDeleteCollaborator(c.id, c.email)}

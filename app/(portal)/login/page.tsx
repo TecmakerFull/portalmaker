@@ -94,7 +94,10 @@ function LoginFormContent() {
 
         if (error) throw error
 
-        router.push(nextParam || '/dashboard/maker')
+        const isSuperadminEmail = email.trim().toLowerCase() === 'temperini@gmail.com'
+        const destination = nextParam || (isSuperadminEmail ? '/dashboard/admin' : '/dashboard/maker')
+
+        router.push(destination)
         router.refresh()
       } else if (mode === 'forgot') {
         // Recuperar Contraseña

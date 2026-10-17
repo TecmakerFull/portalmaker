@@ -3,6 +3,7 @@
 // "El portal del Maker" | portalmaker.com.ar
 // =============================================================================
 
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
@@ -13,6 +14,58 @@ import { getStoreSections } from '@/lib/store-sections'
 
 interface PageProps {
   params: Promise<{ slug: string }>
+}
+
+// Generación dinámica de metadatos SEO (Meta Title, Description, Tags y OpenGraph)
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params
+  const tenant = await getTenantStore()
+  if (!tenant) return {}
+  const { store } = tenant
+
+  const supabase = await createSupabaseServerClient()
+  const { data: product } = await supabase
+    .from('products')
+    .select('id, nombre, descripcion, imagenes')
+    .eq('store_id', store.id)
+    .eq('slug', slug)
+    .eq('visible', true)
+    .maybeSingle()
+
+  if (!product) return {}
+
+  const { data: details } = await supabase
+    .from('product_details')
+    .select('meta_title, meta_description, tags')
+    .eq('product_id', product.id)
+    .maybeSingle()
+
+  const title = details?.meta_title || `${product.nombre} | ${store.nombre}`
+  const description =
+    details?.meta_description ||
+    product.descripcion?.slice(0, 160).replace(/[*#_]/g, '') ||
+    `Descubrí ${product.nombre} en ${store.nombre}. Calidad de taller y envíos directos.`
+
+  const rawImages = Array.isArray(product.imagenes) ? (product.imagenes as string[]) : []
+  const ogImages = rawImages.length > 0 ? [{ url: rawImages[0] }] : []
+
+  return {
+    title,
+    description,
+    keywords: Array.isArray(details?.tags) && details.tags.length > 0 ? details.tags : undefined,
+    openGraph: {
+      title,
+      description,
+      images: ogImages,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ogImages.map((img) => img.url),
+    },
+  }
 }
 
 export default async function ProductoDetallePage({ params }: PageProps) {

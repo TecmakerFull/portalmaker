@@ -33,6 +33,8 @@ import {
   Loader2,
   User,
   AlertCircle,
+  HelpCircle,
+  ChevronDown,
 } from 'lucide-react'
 import WhatsAppIcon from '../../sections/whatsapp-icon'
 
@@ -66,9 +68,15 @@ export default function ProductDetailView({
   )
   const [variantImageOverride, setVariantImageOverride] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
-  const [activeTab, setActiveTab] = useState<'descripcion' | 'tecnicos' | 'valoraciones'>('descripcion')
+  const [activeTab, setActiveTab] = useState<'descripcion' | 'tecnicos' | 'valoraciones' | 'faqs'>('descripcion')
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
   const [addedSuccess, setAddedSuccess] = useState(false)
   const [cartFeedback, setCartFeedback] = useState<string | null>(null)
+
+  // Lista de preguntas frecuentes de la ficha técnica
+  const faqsList: { pregunta: string; respuesta: string }[] = Array.isArray(details?.preguntas_frecuentes)
+    ? (details.preguntas_frecuentes as { pregunta: string; respuesta: string }[])
+    : []
 
   // Reseñas dinámicas y usuario actual
   const [reviewsList, setReviewsList] = useState<ProductReview[]>(initialReviews)
@@ -550,8 +558,23 @@ export default function ProductDetailView({
                 : 'opacity-60 hover:opacity-100'
             }`}
           >
-            Valoraciones (24)
+            Valoraciones ({totalReviewsCount})
           </button>
+          {faqsList.length > 0 && (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'faqs'}
+              onClick={() => setActiveTab('faqs')}
+              className={`pb-4 text-xs sm:text-sm font-semibold transition-all relative cursor-pointer ${
+                activeTab === 'faqs'
+                  ? 'text-[var(--color-primario-legible)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario-legible)]'
+                  : 'opacity-60 hover:opacity-100'
+              }`}
+            >
+              Preguntas frecuentes ({faqsList.length})
+            </button>
+          )}
         </div>
 
         {/* Panel de Contenido de la Pestaña Activa */}
@@ -780,6 +803,77 @@ export default function ProductDetailView({
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {activeTab === 'faqs' && (
+            <div className="max-w-3xl space-y-4">
+              <div className="flex items-center gap-2 pb-2">
+                <HelpCircle className="w-5 h-5 text-[var(--color-primario)]" />
+                <h3 className="text-base font-semibold text-[var(--color-texto)] font-[var(--font-heading)]">
+                  Preguntas habituales sobre este producto
+                </h3>
+              </div>
+
+              {faqsList.length === 0 ? (
+                <div className="p-8 text-center rounded-xl border border-dashed border-black/15 dark:border-white/15 text-xs opacity-60">
+                  No hay preguntas frecuentes registradas aún para este producto.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {faqsList.map((faq, idx) => {
+                    const isOpen = openFaqIndex === idx
+                    return (
+                      <div
+                        key={idx}
+                        className="rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.01] dark:bg-white/[0.02] overflow-hidden transition-all"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                          aria-expanded={isOpen}
+                          className="w-full min-h-[48px] p-4 sm:p-5 text-left flex items-center justify-between gap-4 cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors"
+                        >
+                          <span className="text-xs sm:text-sm font-semibold text-[var(--color-texto)] leading-snug">
+                            {faq.pregunta}
+                          </span>
+                          <ChevronDown
+                            className={`w-4 h-4 text-slate-500 shrink-0 transition-transform duration-200 ${
+                              isOpen ? 'rotate-180 text-[var(--color-primario)]' : ''
+                            }`}
+                          />
+                        </button>
+                        {isOpen && (
+                          <div className="px-4 sm:px-5 pb-5 pt-1 text-xs sm:text-sm leading-relaxed opacity-80 border-t border-black/5 dark:border-white/5 text-[var(--color-texto)]">
+                            {faq.respuesta}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Schema.org FAQPage Structured Data (Google Rich Snippets) */}
+              {faqsList.length > 0 && (
+                <script
+                  type="application/ld+json"
+                  dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                      '@context': 'https://schema.org',
+                      '@type': 'FAQPage',
+                      mainEntity: faqsList.map((faq) => ({
+                        '@type': 'Question',
+                        name: faq.pregunta,
+                        acceptedAnswer: {
+                          '@type': 'Answer',
+                          text: faq.respuesta,
+                        },
+                      })),
+                    }),
+                  }}
+                />
+              )}
             </div>
           )}
         </div>

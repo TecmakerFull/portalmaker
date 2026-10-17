@@ -70,6 +70,8 @@ export interface Store {
   hero_banner_url: string | null;
   banners_activo?: boolean;
   slogan: string | null;
+  logo_tamano?: 'chico' | 'mediano' | 'grande' | 'xl';
+  mostrar_nombre_header?: boolean;
 
   // Branding — Paleta de colores (modo claro)
   color_primario: string;
@@ -240,6 +242,7 @@ export interface ProductDetails {
   meta_title: string | null;
   meta_description: string | null;
   productos_relacionados: UUID[];
+  preguntas_frecuentes?: { pregunta: string; respuesta: string }[] | null;
   created_at: Timestamp;
   updated_at: Timestamp;
 }

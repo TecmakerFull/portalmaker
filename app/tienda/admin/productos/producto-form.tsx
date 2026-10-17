@@ -34,9 +34,15 @@ import {
   Layers,
   Scale,
   Image as ImageIcon,
+  Sparkles,
+  Globe,
+  Search,
+  Tag,
+  MessageCircleQuestion,
 } from 'lucide-react'
 
 import { compressImageFile } from '@/lib/image-compression'
+import AiDescriptionModal from './ai-description-modal'
 
 interface LocalVariant {
   id?: string
@@ -95,6 +101,7 @@ export default function ProductoForm({
 
   // 2. Descripción con Formato
   const [descripcion, setDescripcion] = useState(initialProduct?.descripcion ?? '')
+  const [showAiModal, setShowAiModal] = useState(false)
 
   // 3. Fotos (hasta 10)
   const [imagenes, setImagenes] = useState<string[]>(initialProduct?.imagenes ?? [])
@@ -118,6 +125,20 @@ export default function ProductoForm({
   const [altoCm, setAltoCm] = useState(initialDetails?.alto_cm?.toString() ?? '')
   const [anchoCm, setAnchoCm] = useState(initialDetails?.ancho_cm?.toString() ?? '')
   const [profundidadCm, setProfundidadCm] = useState(initialDetails?.profundidad_cm?.toString() ?? '')
+
+  // 8. Optimización SEO en Google (Meta tags & Tags)
+  const [metaTitle, setMetaTitle] = useState(initialDetails?.meta_title ?? '')
+  const [metaDescription, setMetaDescription] = useState(initialDetails?.meta_description ?? '')
+  const [tagsInput, setTagsInput] = useState(initialDetails?.tags?.join(', ') ?? '')
+  const [optimizingSeo, setOptimizingSeo] = useState(false)
+  const [seoNotice, setSeoNotice] = useState<string | null>(null)
+
+  // 9. Preguntas Frecuentes del Producto (FAQ)
+  const [faqs, setFaqs] = useState<{ pregunta: string; respuesta: string }[]>(
+    initialDetails?.preguntas_frecuentes ?? []
+  )
+  const [generatingFaq, setGeneratingFaq] = useState(false)
+  const [faqNotice, setFaqNotice] = useState<string | null>(null)
 
   // 7. Atributos / Variantes
   const [variants, setVariants] = useState<LocalVariant[]>(() => {
@@ -462,6 +483,105 @@ export default function ProductoForm({
     setVariants((prev) => prev.filter((_, i) => i !== index))
   }
 
+  // Optimizar SEO con IA (Google Meta Tags & Keywords)
+  const handleOptimizeSeoWithAi = async () => {
+    if (!nombre.trim()) {
+      alert('Ingresa primero el nombre del producto para optimizar el SEO.')
+      return
+    }
+
+    setOptimizingSeo(true)
+    setSeoNotice(null)
+
+    try {
+      const activeCat = categoryList.find(
+        (c) => c.id === selectedSubCatId || c.id === selectedParentCatId
+      )
+
+      const res = await fetch('/api/ai/optimize-seo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: nombre.trim(),
+          descripcion: descripcion.trim(),
+          categoria: activeCat?.nombre,
+          storeName: store.nombre,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Error al optimizar SEO.')
+
+      if (data.meta_title) setMetaTitle(data.meta_title)
+      if (data.meta_description) setMetaDescription(data.meta_description)
+      if (data.tags && Array.isArray(data.tags)) setTagsInput(data.tags.join(', '))
+
+      setSeoNotice('Metadatos SEO generados y optimizados con IA.')
+      setTimeout(() => setSeoNotice(null), 4000)
+    } catch (err: any) {
+      alert(err?.message || 'Error al generar SEO con IA.')
+    } finally {
+      setOptimizingSeo(false)
+    }
+  }
+
+  // Generar Preguntas Frecuentes con IA (FAQ)
+  const handleGenerateFaqWithAi = async () => {
+    if (!nombre.trim()) {
+      alert('Ingresa primero el nombre del producto para generar las preguntas frecuentes.')
+      return
+    }
+
+    setGeneratingFaq(true)
+    setFaqNotice(null)
+
+    try {
+      const activeCat = categoryList.find(
+        (c) => c.id === selectedSubCatId || c.id === selectedParentCatId
+      )
+
+      const res = await fetch('/api/ai/generate-faq', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: nombre.trim(),
+          descripcion: descripcion.trim(),
+          categoria: activeCat?.nombre,
+          tiempoFabricacion,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Error al generar preguntas frecuentes.')
+
+      if (data.faqs && Array.isArray(data.faqs)) {
+        setFaqs((prev) => [...prev, ...data.faqs])
+        setFaqNotice(`${data.faqs.length} preguntas frecuentes agregadas exitosamente.`)
+        setTimeout(() => setFaqNotice(null), 4000)
+      }
+    } catch (err: any) {
+      alert(err?.message || 'Error al generar preguntas frecuentes con IA.')
+    } finally {
+      setGeneratingFaq(false)
+    }
+  }
+
+  const handleAddFaq = () => {
+    setFaqs((prev) => [...prev, { pregunta: '', respuesta: '' }])
+  }
+
+  const handleUpdateFaq = (index: number, field: 'pregunta' | 'respuesta', val: string) => {
+    setFaqs((prev) => {
+      const copy = [...prev]
+      copy[index] = { ...copy[index], [field]: val }
+      return copy
+    })
+  }
+
+  const handleRemoveFaq = (index: number) => {
+    setFaqs((prev) => prev.filter((_, i) => i !== index))
+  }
+
   // Guardar Producto
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -519,11 +639,20 @@ export default function ProductoForm({
 
       if (!targetProductId) throw new Error('No se pudo resolver el ID del producto.')
 
-      // 2. Guardar en tabla PRODUCT_DETAILS (Dimensiones y Peso)
+      // 2. Guardar en tabla PRODUCT_DETAILS (Dimensiones, SEO y FAQ)
       const numPeso = pesoKg ? parseFloat(pesoKg) : null
       const numAlto = altoCm ? parseFloat(altoCm) : null
       const numAncho = anchoCm ? parseFloat(anchoCm) : null
       const numProfundidad = profundidadCm ? parseFloat(profundidadCm) : null
+
+      const tagsArray = tagsInput
+        .split(',')
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean)
+
+      const validFaqs = faqs.filter(
+        (f) => f.pregunta.trim() !== '' && f.respuesta.trim() !== ''
+      )
 
       const detailsPayload = {
         product_id: targetProductId,
@@ -531,6 +660,10 @@ export default function ProductoForm({
         alto_cm: numAlto,
         ancho_cm: numAncho,
         profundidad_cm: numProfundidad,
+        meta_title: metaTitle.trim() || null,
+        meta_description: metaDescription.trim() || null,
+        tags: tagsArray.length > 0 ? tagsArray : null,
+        preguntas_frecuentes: validFaqs,
       }
 
       const { error: detailsError } = await supabase
@@ -839,6 +972,18 @@ export default function ProductoForm({
             >
               <Heading className="w-4 h-4" />
             </button>
+
+            <span className="w-px h-5 bg-[var(--color-borde)] mx-1" />
+
+            <button
+              type="button"
+              onClick={() => setShowAiModal(true)}
+              title="Generar descripción con Inteligencia Artificial"
+              className="px-3 py-1.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ml-auto sm:ml-0"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>Generar con IA</span>
+            </button>
           </div>
 
           <textarea
@@ -849,6 +994,23 @@ export default function ProductoForm({
             placeholder="Describe las características de tu producto: filamentos utilizados (PLA, PETG, Resina), dimensiones, tolerancias, cuidados, o agrega enlaces..."
             className="w-full p-4 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 leading-relaxed transition-all shadow-xs"
           />
+
+          {showAiModal && (
+            <AiDescriptionModal
+              initialProductName={nombre}
+              categoryName={
+                categoryList.find((c) => c.id === selectedSubCatId || c.id === selectedParentCatId)?.nombre
+              }
+              onApply={(generated, mode) => {
+                if (mode === 'replace') {
+                  setDescripcion(generated)
+                } else {
+                  setDescripcion((prev) => (prev ? `${prev}\n\n${generated}` : generated))
+                }
+              }}
+              onClose={() => setShowAiModal(false)}
+            />
+          )}
         </div>
 
         {/* 3. Imágenes de tu producto (Hasta 10 fotos) */}
@@ -1325,6 +1487,247 @@ export default function ProductoForm({
                   </div>
                 )
               })}
+            </div>
+          )}
+        </div>
+
+        {/* 7. Posicionamiento en Google (SEO & Meta-tags) */}
+        <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                  <span>Posicionamiento en Google (SEO)</span>
+                </h2>
+                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-800 dark:text-amber-300">
+                  Estilo Shopify Magic
+                </span>
+              </div>
+              <p className="text-xs opacity-70 mt-0.5">
+                Optimiza cómo se verá este producto en los resultados de búsqueda de Google y redes sociales.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleOptimizeSeoWithAi}
+              disabled={optimizingSeo}
+              className="min-h-[40px] px-4 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-800 dark:text-amber-300 text-xs font-bold transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer disabled:opacity-50"
+            >
+              {optimizingSeo ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-600 dark:text-amber-400" />
+                  <span>Analizando SEO con IA...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <span>Optimizar SEO con IA</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {seoNotice && (
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in">
+              <Check className="w-4 h-4 shrink-0" />
+              <span>{seoNotice}</span>
+            </div>
+          )}
+
+          {/* Google Search Snippet Preview */}
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-1">
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate">
+              <Search className="w-3 h-3 shrink-0" />
+              <span>
+                https://{store.slug}.portalmaker.ar › productos › {slug || 'producto'}
+              </span>
+            </div>
+            <div className="text-sm font-semibold text-blue-700 dark:text-blue-400 hover:underline cursor-pointer truncate">
+              {metaTitle || `${nombre || 'Título del producto'} | ${store.nombre}`}
+            </div>
+            <div className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+              {metaDescription ||
+                descripcion.substring(0, 150) ||
+                'Compra online con envío a todo el país. Calidad garantizada y atención personalizada en nuestro taller maker.'}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {/* Meta Title */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider opacity-75">
+                  Título en Google (Meta Title)
+                </label>
+                <span
+                  className={`text-[11px] font-mono font-bold ${
+                    metaTitle.length > 60
+                      ? 'text-red-500'
+                      : metaTitle.length > 40
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'opacity-50'
+                  }`}
+                >
+                  {metaTitle.length}/60 caracteres
+                </span>
+              </div>
+              <input
+                type="text"
+                value={metaTitle}
+                onChange={(e) => setMetaTitle(e.target.value)}
+                placeholder={`${nombre || 'Nombre del producto'} | ${store.nombre}`}
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+              />
+            </div>
+
+            {/* Meta Description */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider opacity-75">
+                  Descripción en Google (Meta Description)
+                </label>
+                <span
+                  className={`text-[11px] font-mono font-bold ${
+                    metaDescription.length > 160
+                      ? 'text-red-500'
+                      : metaDescription.length >= 120
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'opacity-50'
+                  }`}
+                >
+                  {metaDescription.length}/160 caracteres
+                </span>
+              </div>
+              <textarea
+                rows={2}
+                value={metaDescription}
+                onChange={(e) => setMetaDescription(e.target.value)}
+                placeholder="Breve resumen persuasivo que invita al usuario a hacer clic en Google..."
+                className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs leading-relaxed focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+              />
+            </div>
+
+            {/* Tags / Palabras clave */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5 flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5" />
+                <span>Etiquetas y Palabras Clave (Separadas por coma)</span>
+              </label>
+              <input
+                type="text"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+                placeholder="ej: soporte, auriculares, gaming, pla, impresion 3d"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 8. Preguntas Frecuentes del Producto (FAQ) */}
+        <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold flex items-center gap-2">
+                  <MessageCircleQuestion className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                  <span>Preguntas Frecuentes del Producto (FAQ)</span>
+                </h2>
+                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-400">
+                  Estilo Amazon
+                </span>
+              </div>
+              <p className="text-xs opacity-70 mt-0.5">
+                Anticípate a las dudas de tus compradores (materiales, resistencia, tiempos o personalizaciones) para reducir consultas repetitivas en WhatsApp.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={handleGenerateFaqWithAi}
+                disabled={generatingFaq}
+                className="min-h-[40px] px-4 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-800 dark:text-amber-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {generatingFaq ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-amber-600 dark:text-amber-400" />
+                    <span>Generando FAQ...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span>Generar FAQ con IA</span>
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={handleAddFaq}
+                className="min-h-[40px] px-3.5 py-2 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Agregar</span>
+              </button>
+            </div>
+          </div>
+
+          {faqNotice && (
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in">
+              <Check className="w-4 h-4 shrink-0" />
+              <span>{faqNotice}</span>
+            </div>
+          )}
+
+          {/* Listado de Preguntas y Respuestas */}
+          {faqs.length === 0 ? (
+            <div className="p-8 text-center border-2 border-dashed border-[var(--color-borde)] rounded-2xl space-y-2">
+              <HelpCircle className="w-8 h-8 opacity-40 mx-auto text-amber-500" />
+              <p className="text-xs font-bold opacity-80">
+                No tienes preguntas frecuentes cargadas todavía.
+              </p>
+              <p className="text-[11px] opacity-60 max-w-sm mx-auto">
+                Toca en <strong>«Generar FAQ con IA»</strong> para que el asistente cree automáticamente las respuestas a las dudas más comunes de tus clientes.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3 pt-1">
+              {faqs.map((faq, idx) => (
+                <div
+                  key={idx}
+                  className="p-4 rounded-2xl bg-[var(--color-fondo)]/50 border border-[var(--color-borde)] space-y-2.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                      Pregunta #{idx + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFaq(idx)}
+                      className="p-1 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      title="Eliminar pregunta"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={faq.pregunta}
+                    onChange={(e) => handleUpdateFaq(idx, 'pregunta', e.target.value)}
+                    placeholder="¿Qué resistencia tiene el producto?"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:border-amber-400 dark:focus:border-amber-400"
+                  />
+                  <textarea
+                    rows={2}
+                    value={faq.respuesta}
+                    onChange={(e) => handleUpdateFaq(idx, 'respuesta', e.target.value)}
+                    placeholder="Respuesta concisa y directa..."
+                    className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs leading-relaxed focus:outline-none focus:border-amber-400 dark:focus:border-amber-400"
+                  />
+                </div>
+              ))}
             </div>
           )}
         </div>

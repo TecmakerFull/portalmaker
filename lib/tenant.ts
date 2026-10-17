@@ -92,7 +92,24 @@ export async function isStoreAdmin(store: Store): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user?.email) return false
+
+  // El dueño de la tienda siempre tiene acceso
   if (user.email === store.admin_email) return true
+
+  // El dueño del portal / superadmin (temperini@gmail.com o miembros de platform_admins) tiene acceso universal
+  if (user.email === 'temperini@gmail.com') return true
+
+  try {
+    const { data: platformAdmin } = await supabase
+      .from('platform_admins')
+      .select('id')
+      .eq('email', user.email)
+      .maybeSingle()
+
+    if (platformAdmin) return true
+  } catch {
+    // Si falla la consulta de platform_admins, continuar con colaboradores
+  }
 
   // Verificar si es colaborador activo de la tienda
   try {
@@ -121,12 +138,13 @@ export async function isPlatformAdmin(): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user?.email) return false
+  if (user.email === 'temperini@gmail.com') return true
 
   const { data } = await supabase
     .from('platform_admins')
     .select('id')
     .eq('email', user.email)
-    .single()
+    .maybeSingle()
 
   return !!data
 }

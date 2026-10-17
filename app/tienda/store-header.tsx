@@ -61,16 +61,30 @@ export default function StoreHeader({
           <div className="flex flex-col items-center justify-center text-center">
             <Link
               href={`/tienda${tenantQuery}`}
-              className="group flex flex-col items-center justify-center focus:outline-none"
+              className="group flex flex-col items-center justify-center focus:outline-none py-1"
             >
-              {store.logo_url ? (
+              {/* Logo con escala configurada */}
+              {store.logo_url && (
                 <img
                   src={store.logo_url}
                   alt={store.nombre}
-                  className="h-9 sm:h-12 w-auto max-w-[170px] sm:max-w-[220px] object-contain rounded-lg"
+                  className={`w-auto object-contain rounded-lg transition-all ${
+                    store.logo_tamano === 'chico'
+                      ? 'h-8 sm:h-9 max-w-[140px]'
+                      : store.logo_tamano === 'grande'
+                      ? 'h-14 sm:h-16 max-w-[260px]'
+                      : store.logo_tamano === 'xl'
+                      ? 'h-18 sm:h-20 max-w-[320px]'
+                      : 'h-10 sm:h-12 max-w-[200px]'
+                  }`}
                 />
-              ) : (
-                <h1 className="text-xl sm:text-3xl font-bold tracking-tight sm:tracking-wide font-[var(--font-heading)] text-[var(--color-primario)] group-hover:opacity-90 transition-opacity uppercase">
+              )}
+
+              {/* Nombre de la tienda (se muestra si no hay logo, o si mostrar_nombre_header está habilitado) */}
+              {(!store.logo_url || store.mostrar_nombre_header !== false) && (
+                <h1 className={`font-bold tracking-tight font-[var(--font-heading)] text-[var(--color-primario)] group-hover:opacity-90 transition-opacity uppercase ${
+                  store.logo_url ? 'text-xs sm:text-sm mt-1 tracking-wider' : 'text-xl sm:text-3xl sm:tracking-wide'
+                }`}>
                   {store.nombre}
                 </h1>
               )}

@@ -25,6 +25,16 @@ import { createBrowserClient } from '@supabase/ssr'
  * Maneja automáticamente la sesión del usuario via cookies del navegador.
  */
 export function createSupabaseBrowserClient() {
+  let cookieDomain: string | undefined = undefined
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname.toLowerCase()
+    if (hostname.endsWith('portalmaker.ar')) {
+      cookieDomain = '.portalmaker.ar'
+    } else if (hostname.endsWith('portalmaker.com.ar')) {
+      cookieDomain = '.portalmaker.com.ar'
+    }
+  }
+
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -33,6 +43,7 @@ export function createSupabaseBrowserClient() {
         maxAge: 60 * 60 * 24 * 365, // 1 año persistente en el dispositivo del cliente
         sameSite: 'lax',
         path: '/',
+        ...(cookieDomain ? { domain: cookieDomain } : {}),
       },
     }
   )

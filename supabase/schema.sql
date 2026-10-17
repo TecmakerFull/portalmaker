@@ -117,6 +117,8 @@ create table stores (
   hero_banner_url text,  -- imagen principal del home (se complementa con tabla banners)
   banners_activo  boolean default false, -- habilita carrusel de banners promocionales
   slogan         text,   -- texto corto bajo el logo
+  logo_tamano    text    default 'mediano', -- 'chico' | 'mediano' | 'grande' | 'xl'
+  mostrar_nombre_header boolean default true, -- si se muestra el nombre escrito junto al logo en el header
 
   -- Branding — Paleta de colores (modo claro)
   -- Si el admin elige un preset, se completan los 8 campos (claro + oscuro).
@@ -383,6 +385,9 @@ create table product_details (
   -- Productos relacionados (IDs de otros products de la misma tienda)
   -- Se muestran al final de la página de producto como "También te puede interesar"
   productos_relacionados uuid[] default '{}',
+
+  -- Preguntas Frecuentes específicas del producto (FAQ)
+  preguntas_frecuentes   jsonb default '[]'::jsonb,
 
   created_at timestamptz default now(),
   updated_at timestamptz default now()
