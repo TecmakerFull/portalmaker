@@ -1110,9 +1110,13 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
           </div>
         </div>
 
-        {/* Caja de Preview con los estilos dinámicos modernos */}
+        {/* Caja de Preview con los estilos dinámicos modernos (no cliqueable) */}
         <div
-          className="rounded-3xl transition-colors duration-300 border border-slate-300 dark:border-slate-700 shadow-xl overflow-hidden relative"
+          className="rounded-3xl transition-colors duration-300 border border-slate-300 dark:border-slate-700 shadow-xl overflow-hidden relative cursor-default select-none pointer-events-none [&_*]:pointer-events-none"
+          onClickCapture={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
           style={{
             backgroundColor: currentFondo,
             color: currentTexto,

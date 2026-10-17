@@ -253,6 +253,7 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
           className="relative transition-all duration-300 mx-auto"
         >
           {/* Elemento virtual con dimensiones reales escalado con CSS transform */}
+          {/* pointer-events-none y select-none evitan clics accidentales y navegacion 404 */}
           <div
             ref={contentRef}
             style={{
@@ -261,9 +262,13 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
               transformOrigin: 'top left',
               ...getTenantCSSVars(store),
             }}
-            className={`tienda-root rounded-2xl shadow-xl overflow-hidden border border-zinc-300/80 dark:border-zinc-700/80 ${
+            className={`tienda-root rounded-2xl shadow-xl overflow-hidden border border-zinc-300/80 dark:border-zinc-700/80 cursor-default select-none pointer-events-none [&_*]:pointer-events-none ${
               previewTheme === 'dark' ? 'dark bg-zinc-950 text-zinc-100' : 'bg-white text-zinc-900'
             }`}
+            onClickCapture={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           >
             {/* Barra superior de navegador simulada */}
             <div className="bg-zinc-200 dark:bg-zinc-800 px-4 py-2 border-b border-zinc-300 dark:border-zinc-700 flex items-center gap-2 select-none">
