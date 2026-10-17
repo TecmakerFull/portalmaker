@@ -81,6 +81,8 @@ function MainHeaderInner({
   }, [])
 
   const {
+    mostrar_logo = true,
+    logo_tamano = 'mediano',
     mostrar_nombre = true,
     mostrar_slogan = true,
     tamano_slogan = 'mediano',
@@ -91,13 +93,21 @@ function MainHeaderInner({
     sticky = true,
   } = settings || {}
 
+  const logoSizeClasses = {
+    chico: 'h-7 sm:h-8 max-w-[100px] sm:max-w-[130px]',
+    mediano: 'h-9 sm:h-12 max-w-[130px] sm:max-w-[180px]',
+    grande: 'h-12 sm:h-16 max-w-[160px] sm:max-w-[220px]',
+    xl: 'h-14 sm:h-20 max-w-[200px] sm:max-w-[280px]',
+  }[logo_tamano || store.logo_tamano || 'mediano'] || 'h-9 sm:h-12 max-w-[130px] sm:max-w-[180px]'
+
   const sloganSizeClasses = {
     chico: 'text-[10px]',
     mediano: 'text-[11px] sm:text-xs',
     grande: 'text-xs sm:text-sm font-medium',
   }[tamano_slogan || 'mediano'] || 'text-[11px] sm:text-xs'
 
-  const shouldShowName = !store.logo_url || (store.mostrar_nombre_header !== false && mostrar_nombre !== false)
+  const shouldShowLogo = Boolean(store.logo_url && mostrar_logo !== false)
+  const shouldShowName = !shouldShowLogo || mostrar_nombre !== false
   const shouldShowSlogan = Boolean(store.slogan && mostrar_slogan !== false)
 
   const isCenter = logo_posicion === 'centro'
@@ -146,13 +156,13 @@ function MainHeaderInner({
         centered ? 'justify-center text-center' : 'justify-start'
       }`}
     >
-      {store.logo_url ? (
+      {shouldShowLogo && (
         <img
-          src={store.logo_url}
+          src={store.logo_url!}
           alt={store.nombre}
-          className="h-8 sm:h-11 w-auto max-w-[130px] sm:max-w-[180px] object-contain rounded-lg shrink-0"
+          className={`${logoSizeClasses} object-contain rounded-lg shrink-0`}
         />
-      ) : null}
+      )}
 
       {(shouldShowName || shouldShowSlogan) && (
         <div className={`min-w-0 ${centered ? 'text-center' : 'text-left'}`}>

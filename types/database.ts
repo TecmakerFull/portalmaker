@@ -459,6 +459,8 @@ export interface TopBarSettings {
 
 // 2. HEADER
 export interface HeaderSettings {
+  mostrar_logo?: boolean;
+  logo_tamano?: 'chico' | 'mediano' | 'grande' | 'xl';
   mostrar_nombre?: boolean;
   mostrar_slogan?: boolean;
   tamano_slogan?: 'chico' | 'mediano' | 'grande';

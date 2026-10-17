@@ -416,65 +416,6 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
           className="hidden"
         />
 
-        {/* Opciones de Presentación en el Encabezado */}
-        {logoUrl && (
-          <div className="pt-4 border-t border-[var(--color-borde)] space-y-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-2">
-                Tamaño del Logo en el Encabezado
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {[
-                  { id: 'chico', label: 'Chico', desc: 'Discreto (32px)' },
-                  { id: 'mediano', label: 'Mediano', desc: 'Estándar (48px)' },
-                  { id: 'grande', label: 'Grande', desc: 'Destacado (64px)' },
-                  { id: 'xl', label: 'Extra Grande', desc: 'Protagonista (80px)' },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setLogoTamano(item.id as any)}
-                    className={`p-3 rounded-2xl border text-left transition-all ${
-                      logoTamano === item.id
-                        ? 'border-[#FACC15] bg-[#FACC15]/10 shadow-xs'
-                        : 'border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 opacity-80'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold">{item.label}</span>
-                      {logoTamano === item.id && (
-                        <Check className="w-3.5 h-3.5 text-[#CA8A04] dark:text-[#FACC15]" />
-                      )}
-                    </div>
-                    <span className="text-[11px] opacity-60 block mt-0.5">{item.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Switch de Visibilidad de Nombre de Tienda */}
-            <div className="flex items-start sm:items-center justify-between gap-4 p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-[var(--color-borde)]">
-              <div>
-                <p className="text-xs font-bold text-[var(--color-texto)]">
-                  Mostrar nombre escrito junto al logotipo
-                </p>
-                <p className="text-[11px] opacity-70 mt-0.5 max-w-lg">
-                  Si tu logo ya incluye tipográficamente el nombre de tu marca, puedes desactivar esta opción para mostrar únicamente el logotipo y que luzca más limpio o en mayor tamaño. (Es la misma opción sincronizada con Diseño de Tienda &rarr; Header Principal).
-                </p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1 sm:mt-0">
-                <input
-                  type="checkbox"
-                  checked={mostrarNombreHeader}
-                  onChange={(e) => setMostrarNombreHeader(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FACC15]"></div>
-              </label>
-            </div>
-          </div>
-        )}
-
         {/* Opción alternativa: Cargar por URL */}
         <div className="pt-2">
           <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5 flex items-center gap-1.5">

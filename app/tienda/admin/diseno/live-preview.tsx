@@ -61,6 +61,8 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
     enabled: true,
     orden: 2,
     settings: {
+      mostrar_logo: true,
+      logo_tamano: 'mediano',
       mostrar_nombre: true,
       mostrar_slogan: true,
       tamano_slogan: 'mediano',
