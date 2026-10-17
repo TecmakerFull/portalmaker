@@ -47,7 +47,7 @@ ${categoria ? `- Categoría: ${categoria}` : ''}
 ${descripcion ? `- Descripción: ${descripcion.substring(0, 400)}` : ''}
 ${storeName ? `- Tienda: ${storeName}` : ''}`
 
-    const models = ['gemini-3.8-flash', 'gemini-2.5-flash']
+    const models = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash']
     let parsedResult = null
     let lastError = null
 
@@ -63,6 +63,10 @@ ${storeName ? `- Tienda: ${storeName}` : ''}`
               generationConfig: {
                 temperature: 0.4,
                 responseMimeType: 'application/json',
+                maxOutputTokens: 1000,
+                thinkingConfig: {
+                  thinkingBudget: 0,
+                },
               },
             }),
           }

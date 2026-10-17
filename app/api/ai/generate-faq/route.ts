@@ -52,7 +52,7 @@ ${materiales ? `- Materiales / Atributos: ${materiales}` : ''}
 ${tiempoFabricacion ? `- Tiempo estimado de fabricación: ${tiempoFabricacion}` : ''}
 ${descripcion ? `- Descripción del producto: ${descripcion.substring(0, 400)}` : ''}`
 
-    const models = ['gemini-3.8-flash', 'gemini-2.5-flash']
+    const models = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash']
     let parsedResult = null
     let lastError = null
 
@@ -68,6 +68,10 @@ ${descripcion ? `- Descripción del producto: ${descripcion.substring(0, 400)}` 
               generationConfig: {
                 temperature: 0.5,
                 responseMimeType: 'application/json',
+                maxOutputTokens: 1500,
+                thinkingConfig: {
+                  thinkingBudget: 0,
+                },
               },
             }),
           }

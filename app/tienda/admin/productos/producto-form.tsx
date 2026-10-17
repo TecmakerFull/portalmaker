@@ -135,6 +135,7 @@ export default function ProductoForm({
   const [tagsInput, setTagsInput] = useState(initialDetails?.tags?.join(', ') ?? '')
   const [optimizingSeo, setOptimizingSeo] = useState(false)
   const [seoNotice, setSeoNotice] = useState<string | null>(null)
+  const seoAbortControllerRef = useRef<AbortController | null>(null)
 
   // 9. Preguntas Frecuentes del Producto (FAQ)
   const [faqs, setFaqs] = useState<{ pregunta: string; respuesta: string }[]>(
@@ -142,6 +143,7 @@ export default function ProductoForm({
   )
   const [generatingFaq, setGeneratingFaq] = useState(false)
   const [faqNotice, setFaqNotice] = useState<string | null>(null)
+  const faqAbortControllerRef = useRef<AbortController | null>(null)
 
   // 7. Atributos / Variantes
   const [variants, setVariants] = useState<LocalVariant[]>(() => {
@@ -538,6 +540,24 @@ export default function ProductoForm({
     setVariants((prev) => prev.filter((_, i) => i !== index))
   }
 
+  // Cancelar Optimización SEO con IA
+  const handleCancelSeo = () => {
+    if (seoAbortControllerRef.current) {
+      seoAbortControllerRef.current.abort()
+      seoAbortControllerRef.current = null
+    }
+    setOptimizingSeo(false)
+  }
+
+  // Cancelar Generación de FAQ con IA
+  const handleCancelFaq = () => {
+    if (faqAbortControllerRef.current) {
+      faqAbortControllerRef.current.abort()
+      faqAbortControllerRef.current = null
+    }
+    setGeneratingFaq(false)
+  }
+
   // Optimizar SEO con IA (Google Meta Tags & Keywords)
   const handleOptimizeSeoWithAi = async () => {
     if (!nombre.trim()) {
@@ -545,6 +565,8 @@ export default function ProductoForm({
       return
     }
 
+    const abortController = new AbortController()
+    seoAbortControllerRef.current = abortController
     setOptimizingSeo(true)
     setSeoNotice(null)
 
@@ -556,6 +578,7 @@ export default function ProductoForm({
       const res = await fetch('/api/ai/optimize-seo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: abortController.signal,
         body: JSON.stringify({
           nombre: nombre.trim(),
           descripcion: descripcion.trim(),
@@ -574,9 +597,13 @@ export default function ProductoForm({
       setSeoNotice('Metadatos SEO generados y optimizados con IA.')
       setTimeout(() => setSeoNotice(null), 4000)
     } catch (err: any) {
+      if (err.name === 'AbortError') {
+        return
+      }
       alert(err?.message || 'Error al generar SEO con IA.')
     } finally {
       setOptimizingSeo(false)
+      seoAbortControllerRef.current = null
     }
   }
 
@@ -587,6 +614,8 @@ export default function ProductoForm({
       return
     }
 
+    const abortController = new AbortController()
+    faqAbortControllerRef.current = abortController
     setGeneratingFaq(true)
     setFaqNotice(null)
 
@@ -598,6 +627,7 @@ export default function ProductoForm({
       const res = await fetch('/api/ai/generate-faq', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: abortController.signal,
         body: JSON.stringify({
           nombre: nombre.trim(),
           descripcion: descripcion.trim(),
@@ -615,9 +645,13 @@ export default function ProductoForm({
         setTimeout(() => setFaqNotice(null), 4000)
       }
     } catch (err: any) {
+      if (err.name === 'AbortError') {
+        return
+      }
       alert(err?.message || 'Error al generar preguntas frecuentes con IA.')
     } finally {
       setGeneratingFaq(false)
+      faqAbortControllerRef.current = null
     }
   }
 
@@ -1654,24 +1688,32 @@ export default function ProductoForm({
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={handleOptimizeSeoWithAi}
-              disabled={optimizingSeo}
-              className="min-h-[40px] px-4 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-800 dark:text-amber-300 text-xs font-bold transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer disabled:opacity-50"
-            >
-              {optimizingSeo ? (
-                <>
+            {optimizingSeo ? (
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <div className="min-h-[40px] px-3.5 py-2 rounded-xl bg-amber-400/20 text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center gap-1.5">
                   <Loader2 className="w-4 h-4 animate-spin text-amber-600 dark:text-amber-400" />
-                  <span>Analizando SEO con IA...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                  <span>Optimizar SEO con IA</span>
-                </>
-              )}
-            </button>
+                  <span>Optimizando SEO...</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCancelSeo}
+                  className="min-h-[40px] px-3.5 py-2 rounded-xl border border-red-300 dark:border-red-800/60 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                  title="Cancelar generación de SEO"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Cancelar</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleOptimizeSeoWithAi}
+                className="min-h-[40px] px-4 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-800 dark:text-amber-300 text-xs font-bold transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <span>Optimizar SEO con IA</span>
+              </button>
+            )}
           </div>
 
           {seoNotice && (
@@ -1790,24 +1832,32 @@ export default function ProductoForm({
             </div>
 
             <div className="flex items-center gap-2 self-start sm:self-auto">
-              <button
-                type="button"
-                onClick={handleGenerateFaqWithAi}
-                disabled={generatingFaq}
-                className="min-h-[40px] px-4 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-800 dark:text-amber-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-              >
-                {generatingFaq ? (
-                  <>
+              {generatingFaq ? (
+                <>
+                  <div className="min-h-[40px] px-3.5 py-2 rounded-xl bg-amber-400/20 text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center gap-1.5">
                     <Loader2 className="w-4 h-4 animate-spin text-amber-600 dark:text-amber-400" />
                     <span>Generando FAQ...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                    <span>Generar FAQ con IA</span>
-                  </>
-                )}
-              </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCancelFaq}
+                    className="min-h-[40px] px-3.5 py-2 rounded-xl border border-red-300 dark:border-red-800/60 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                    title="Cancelar generación de preguntas frecuentes"
+                  >
+                    <X className="w-4 h-4" />
+                    <span>Cancelar</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleGenerateFaqWithAi}
+                  className="min-h-[40px] px-4 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-800 dark:text-amber-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <span>Generar FAQ con IA</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleAddFaq}

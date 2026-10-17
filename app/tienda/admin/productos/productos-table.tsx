@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, Fragment } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
@@ -589,14 +589,13 @@ export default function ProductosTable({
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="border-b border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 font-semibold">
-                  <th className="py-3.5 px-4 w-16 text-center">Foto</th>
-                  <th className="py-3.5 px-4 min-w-[220px]">Producto / Variante</th>
-                  <th className="py-3.5 px-4 min-w-[130px]">Categoría</th>
-                  <th className="py-3.5 px-4 w-36">Precio (ARS)</th>
-                  <th className="py-3.5 px-4 w-32">Stock</th>
-                  <th className="py-3.5 px-4 w-28 text-center">En Tienda</th>
-                  <th className="py-3.5 px-4 w-20 text-center">Destacado</th>
-                  <th className="py-3.5 px-4 w-28 text-right">Acciones</th>
+                  <th className="py-3.5 px-3 w-14 text-center">Foto</th>
+                  <th className="py-3.5 px-3 min-w-[200px]">Producto / Variante</th>
+                  <th className="py-3.5 px-3 w-32 min-w-[110px]">Categoría</th>
+                  <th className="py-3.5 px-3 w-28 min-w-[100px]">Precio (ARS)</th>
+                  <th className="py-3.5 px-3 w-28 min-w-[95px]">Stock</th>
+                  <th className="py-3.5 px-3 w-24 text-center">En Tienda</th>
+                  <th className="py-3.5 px-3 w-24 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-borde)]">
@@ -615,35 +614,52 @@ export default function ProductosTable({
                   )
 
                   return (
-                    <div key={product.id} className="contents">
+                    <Fragment key={product.id}>
                       {/* FILA PRINCIPAL: PRODUCTO PADRE */}
                       <tr className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
                         {/* Foto con Click para abrir Modal */}
-                        <td className="py-3 px-4 text-center">
+                        <td className="py-3 px-3 text-center">
                           <button
                             type="button"
                             onClick={() => handleOpenEditModal(product)}
                             title="Hacer clic para editar fotos y detalles completos"
-                            className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-black/5 dark:bg-white/5 group-hover:border-amber-400 transition-all cursor-pointer inline-flex items-center justify-center shrink-0 shadow-2xs"
+                            className="relative w-11 h-11 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-black/5 dark:bg-white/5 group-hover:border-amber-400 transition-all cursor-pointer inline-flex items-center justify-center shrink-0 shadow-2xs"
                           >
                             {firstImage ? (
                               <img
                                 src={firstImage}
                                 alt={product.nombre}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                onError={(e) => {
+                                  ;(e.target as HTMLElement).style.display = 'none'
+                                }}
                               />
                             ) : (
                               <ImageIcon className="w-5 h-5 opacity-40 text-slate-400" />
                             )}
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                              <Edit className="w-4 h-4 text-white" />
+                              <Edit className="w-3.5 h-3.5 text-white" />
                             </div>
                           </button>
                         </td>
 
-                        {/* Nombre, SKU y Toggle de Variantes */}
-                        <td className="py-3 px-4">
+                        {/* Nombre, SKU, Destacado y Toggle de Variantes */}
+                        <td className="py-3 px-3">
                           <div className="flex items-center gap-2">
+                            {/* Destacado integrado en el título (ahorra espacio horizontal) */}
+                            <button
+                              type="button"
+                              onClick={() => handleQuickUpdate(product.id, 'destacado', !product.destacado)}
+                              title={product.destacado ? 'Producto destacado en portada (Clic para quitar)' : 'Marcar como producto destacado en portada'}
+                              className={`p-1 rounded-lg transition-all cursor-pointer shrink-0 ${
+                                product.destacado
+                                  ? 'text-amber-500 hover:text-amber-600 bg-amber-400/15'
+                                  : 'text-slate-300 dark:text-slate-600 hover:text-amber-400 hover:bg-black/5 dark:hover:bg-white/5'
+                              }`}
+                            >
+                              <Star className={`w-4 h-4 ${product.destacado ? 'fill-amber-400' : ''}`} />
+                            </button>
+
                             <button
                               type="button"
                               onClick={() => handleOpenEditModal(product)}
@@ -657,7 +673,7 @@ export default function ProductosTable({
                               <button
                                 type="button"
                                 onClick={() => toggleExpand(product.id)}
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium transition-colors cursor-pointer ${
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium transition-colors cursor-pointer shrink-0 ${
                                   isExpanded
                                     ? 'bg-amber-400 text-[#1F2937] font-bold'
                                     : 'bg-amber-400/15 text-amber-700 dark:text-amber-300 hover:bg-amber-400/30'
@@ -675,7 +691,7 @@ export default function ProductosTable({
                                 type="button"
                                 onClick={() => handleQuickAddVariant(product.id)}
                                 title="Agregar variante a este producto"
-                                className="opacity-0 group-hover:opacity-100 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-slate-500 hover:text-amber-600 hover:bg-amber-400/10 transition-all cursor-pointer"
+                                className="opacity-0 group-hover:opacity-100 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-slate-500 hover:text-amber-600 hover:bg-amber-400/10 transition-all cursor-pointer shrink-0"
                               >
                                 <PlusCircle className="w-3 h-3" />
                                 <span>+ Variante</span>
@@ -683,7 +699,7 @@ export default function ProductosTable({
                             )}
                           </div>
 
-                          <div className="flex items-center gap-2 mt-0.5 text-xs opacity-60">
+                          <div className="flex items-center gap-2 mt-0.5 pl-6 text-xs opacity-60">
                             {product.sku ? (
                               <span className="font-mono">SKU: {product.sku}</span>
                             ) : (
@@ -698,13 +714,13 @@ export default function ProductosTable({
                         </td>
 
                         {/* Categoría Rápida */}
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-3">
                           <select
                             value={product.category_id || ''}
                             onChange={(e) =>
                               handleQuickUpdate(product.id, 'category_id', e.target.value || null)
                             }
-                            className="text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-400 cursor-pointer max-w-[130px] truncate"
+                            className="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-400 cursor-pointer truncate"
                           >
                             <option value="" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
                               Sin categoría
@@ -722,9 +738,9 @@ export default function ProductosTable({
                         </td>
 
                         {/* Precio Base Editable In-Line */}
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-3">
                           <div className="relative flex items-center">
-                            <span className="absolute left-2.5 text-xs opacity-50 font-bold">$</span>
+                            <span className="absolute left-2 text-xs opacity-50 font-bold pointer-events-none">$</span>
                             <input
                               type="number"
                               step="any"
@@ -740,19 +756,19 @@ export default function ProductosTable({
                                   ;(e.target as HTMLInputElement).blur()
                                 }
                               }}
-                              className="w-full pl-6 pr-6 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition-all"
+                              className="w-full min-w-[75px] pl-5 pr-5 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition-all"
                             />
                             {priceSaving && (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500 absolute right-2" />
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500 absolute right-1.5" />
                             )}
                             {priceSaved && (
-                              <Check className="w-3.5 h-3.5 text-emerald-500 absolute right-2" />
+                              <Check className="w-3.5 h-3.5 text-emerald-500 absolute right-1.5" />
                             )}
                           </div>
                         </td>
 
                         {/* Stock Editable In-Line (o Resumen de Variantes) */}
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-3">
                           {hasVariants ? (
                             <button
                               type="button"
@@ -760,11 +776,11 @@ export default function ProductosTable({
                               className="text-left group/stk cursor-pointer"
                               title="El stock se gestiona por variante. Clic para ver desglose."
                             >
-                              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white group-hover/stk:text-amber-600">
+                              <div className="flex items-center gap-1 text-xs font-bold text-slate-900 dark:text-white group-hover/stk:text-amber-600 whitespace-nowrap">
                                 <span>{totalVariantStock} u. total</span>
-                                <ChevronDown className="w-3 h-3 opacity-60" />
+                                <ChevronDown className="w-3 h-3 opacity-60 shrink-0" />
                               </div>
-                              <span className="text-[10px] text-slate-500 block">
+                              <span className="text-[10px] text-slate-500 block whitespace-nowrap">
                                 en {product.variants!.length} variantes
                               </span>
                             </button>
@@ -785,17 +801,17 @@ export default function ProductosTable({
                                     ;(e.target as HTMLInputElement).blur()
                                   }
                                 }}
-                                className={`w-full px-2.5 pr-6 py-1.5 text-xs font-bold rounded-lg border transition-all focus:outline-none focus:border-amber-400 ${
+                                className={`w-full min-w-[65px] px-2.5 pr-5 py-1.5 text-xs font-bold rounded-lg border transition-all focus:outline-none focus:border-amber-400 ${
                                   (product.stock ?? 0) > 0
                                     ? 'border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
                                     : 'border-red-200 dark:border-red-800/50 bg-red-50/50 dark:bg-red-950/30 text-red-700 dark:text-red-300'
                                 }`}
                               />
                               {stockSaving && (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500 absolute right-2" />
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500 absolute right-1.5" />
                               )}
                               {stockSaved && (
-                                <Check className="w-3.5 h-3.5 text-emerald-500 absolute right-2" />
+                                <Check className="w-3.5 h-3.5 text-emerald-500 absolute right-1.5" />
                               )}
                             </div>
                           ) : (
@@ -803,7 +819,7 @@ export default function ProductosTable({
                               type="button"
                               onClick={() => handleQuickUpdate(product.id, 'gestiona_stock', true)}
                               title="Haz clic para activar control de stock"
-                              className="text-[11px] font-medium px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-amber-400/20 hover:text-amber-700 dark:hover:text-amber-300 transition-colors cursor-pointer"
+                              className="text-[11px] font-medium px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-amber-400/20 hover:text-amber-700 dark:hover:text-amber-300 transition-colors cursor-pointer whitespace-nowrap"
                             >
                               Bajo pedido
                             </button>
@@ -811,12 +827,12 @@ export default function ProductosTable({
                         </td>
 
                         {/* Visible Switch */}
-                        <td className="py-3 px-4 text-center">
+                        <td className="py-3 px-3 text-center">
                           <button
                             type="button"
                             onClick={() => handleQuickUpdate(product.id, 'visible', !product.visible)}
                             title={product.visible ? 'Producto visible (Clic para pausar)' : 'Producto pausado (Clic para mostrar)'}
-                            className={`min-h-[32px] px-2.5 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+                            className={`min-h-[30px] px-2.5 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
                               product.visible
                                 ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60'
                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
@@ -836,30 +852,14 @@ export default function ProductosTable({
                           </button>
                         </td>
 
-                        {/* Destacado Star */}
-                        <td className="py-3 px-4 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleQuickUpdate(product.id, 'destacado', !product.destacado)}
-                            title={product.destacado ? 'Quitar de destacados' : 'Marcar como producto destacado en portada'}
-                            className={`p-2 rounded-xl transition-all cursor-pointer ${
-                              product.destacado
-                                ? 'text-amber-500 hover:text-amber-600 bg-amber-400/15'
-                                : 'text-slate-300 dark:text-slate-600 hover:text-amber-400 hover:bg-black/5 dark:hover:bg-white/5'
-                            }`}
-                          >
-                            <Star className={`w-4 h-4 ${product.destacado ? 'fill-amber-400' : ''}`} />
-                          </button>
-                        </td>
-
                         {/* Acciones */}
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                        <td className="py-3 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
                             <button
                               type="button"
                               onClick={() => handleOpenEditModal(product)}
                               title="Editar todos los detalles y fotos"
-                              className="p-2 rounded-xl hover:bg-amber-400/15 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg hover:bg-amber-400/15 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
@@ -868,7 +868,7 @@ export default function ProductosTable({
                               href={`/tienda/productos/${product.slug}${tenantQuery}`}
                               target="_blank"
                               title="Ver en tienda pública"
-                              className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+                              className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
                             >
                               <ExternalLink className="w-4 h-4" />
                             </Link>
@@ -877,7 +877,7 @@ export default function ProductosTable({
                               type="button"
                               onClick={() => setProductToDelete(product)}
                               title="Eliminar producto"
-                              className="p-2 rounded-xl hover:bg-red-500/10 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -905,13 +905,16 @@ export default function ProductosTable({
                                 className="bg-slate-50/60 dark:bg-slate-900/30 hover:bg-amber-500/5 transition-colors border-l-4 border-l-amber-400"
                               >
                                 {/* Foto de la Variante */}
-                                <td className="py-2.5 px-4 text-center pl-6">
+                                <td className="py-2.5 px-3 text-center pl-5">
                                   <div className="relative w-9 h-9 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 inline-flex items-center justify-center shrink-0">
                                     {varImage ? (
                                       <img
                                         src={varImage}
                                         alt={variant.nombre}
                                         className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          ;(e.target as HTMLElement).style.display = 'none'
+                                        }}
                                       />
                                     ) : (
                                       <ImageIcon className="w-4 h-4 opacity-40 text-slate-400" />
@@ -920,7 +923,7 @@ export default function ProductosTable({
                                 </td>
 
                                 {/* Nombre Editable de Variante + Conector de Árbol */}
-                                <td className="py-2.5 px-4">
+                                <td className="py-2.5 px-3">
                                   <div className="flex items-center gap-2">
                                     <CornerDownRight className="w-3.5 h-3.5 text-amber-500 shrink-0 opacity-80" />
                                     <div className="relative flex-1 max-w-xs flex items-center">
@@ -954,14 +957,14 @@ export default function ProductosTable({
                                 </td>
 
                                 {/* Categoría: Heredada */}
-                                <td className="py-2.5 px-4 text-xs text-slate-400 italic">
+                                <td className="py-2.5 px-3 text-xs text-slate-400 italic">
                                   Heredada
                                 </td>
 
                                 {/* Precio Final de Variante Editable */}
-                                <td className="py-2.5 px-4">
+                                <td className="py-2.5 px-3">
                                   <div className="relative flex items-center">
-                                    <span className="absolute left-2.5 text-xs opacity-50 font-bold">$</span>
+                                    <span className="absolute left-2 text-xs opacity-50 font-bold pointer-events-none">$</span>
                                     <input
                                       type="number"
                                       step="any"
@@ -983,24 +986,24 @@ export default function ProductosTable({
                                           ;(e.target as HTMLInputElement).blur()
                                         }
                                       }}
-                                      className="w-full pl-6 pr-6 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition-all"
+                                      className="w-full min-w-[75px] pl-5 pr-5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition-all"
                                     />
                                     {varPriceSaving && (
-                                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500 absolute right-2" />
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500 absolute right-1.5" />
                                     )}
                                     {varPriceSaved && (
-                                      <Check className="w-3.5 h-3.5 text-emerald-500 absolute right-2" />
+                                      <Check className="w-3.5 h-3.5 text-emerald-500 absolute right-1.5" />
                                     )}
                                   </div>
                                   {variant.precio_adicional !== 0 && (
-                                    <span className="text-[10px] text-slate-500 block mt-0.5 pl-1">
+                                    <span className="text-[10px] text-slate-500 block mt-0.5 pl-1 whitespace-nowrap">
                                       {variant.precio_adicional > 0 ? `+ $${variant.precio_adicional}` : `- $${Math.abs(variant.precio_adicional)}`} respecto a base
                                     </span>
                                   )}
                                 </td>
 
                                 {/* Stock de Variante Editable In-Line */}
-                                <td className="py-2.5 px-4">
+                                <td className="py-2.5 px-3">
                                   <div className="relative flex items-center">
                                     <input
                                       type="number"
@@ -1017,23 +1020,23 @@ export default function ProductosTable({
                                           ;(e.target as HTMLInputElement).blur()
                                         }
                                       }}
-                                      className={`w-full px-2.5 pr-6 py-1 text-xs font-bold rounded-lg border transition-all focus:outline-none focus:border-amber-400 ${
+                                      className={`w-full min-w-[65px] px-2.5 pr-5 py-1 text-xs font-bold rounded-lg border transition-all focus:outline-none focus:border-amber-400 ${
                                         (variant.stock ?? 0) > 0
                                           ? 'border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
                                           : 'border-red-200 dark:border-red-800/50 bg-red-50/50 dark:bg-red-950/30 text-red-700 dark:text-red-300'
                                       }`}
                                     />
                                     {varStockSaving && (
-                                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500 absolute right-2" />
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500 absolute right-1.5" />
                                     )}
                                     {varStockSaved && (
-                                      <Check className="w-3.5 h-3.5 text-emerald-500 absolute right-2" />
+                                      <Check className="w-3.5 h-3.5 text-emerald-500 absolute right-1.5" />
                                     )}
                                   </div>
                                 </td>
 
                                 {/* Activo / Oculto de Variante */}
-                                <td className="py-2.5 px-4 text-center">
+                                <td className="py-2.5 px-3 text-center">
                                   <button
                                     type="button"
                                     onClick={() =>
@@ -1045,7 +1048,7 @@ export default function ProductosTable({
                                       )
                                     }
                                     title={variant.activo ? 'Variante activa (Clic para pausar)' : 'Variante pausada (Clic para activar)'}
-                                    className={`px-2 py-0.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1 transition-all cursor-pointer ${
+                                    className={`px-2 py-0.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
                                       variant.activo
                                         ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60'
                                         : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
@@ -1065,13 +1068,8 @@ export default function ProductosTable({
                                   </button>
                                 </td>
 
-                                {/* Destacado: N/A */}
-                                <td className="py-2.5 px-4 text-center text-slate-300 dark:text-slate-700">
-                                  —
-                                </td>
-
                                 {/* Acciones de Variante */}
-                                <td className="py-2.5 px-4 text-right">
+                                <td className="py-2.5 px-3 text-right">
                                   <div className="flex items-center justify-end gap-1">
                                     <button
                                       type="button"
@@ -1097,7 +1095,7 @@ export default function ProductosTable({
 
                           {/* Botón rápido "+ Agregar Variante" al final del árbol */}
                           <tr className="bg-slate-50/40 dark:bg-slate-900/20 border-l-4 border-l-amber-400/40">
-                            <td colSpan={8} className="py-2 px-6">
+                            <td colSpan={7} className="py-2 px-6">
                               <button
                                 type="button"
                                 onClick={() => handleQuickAddVariant(product.id)}
@@ -1110,7 +1108,7 @@ export default function ProductosTable({
                           </tr>
                         </>
                       )}
-                    </div>
+                    </Fragment>
                   )
                 })}
               </tbody>
