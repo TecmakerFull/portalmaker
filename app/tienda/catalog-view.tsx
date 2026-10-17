@@ -12,7 +12,10 @@ import ProductCard from './product-card'
 import { Search, X, ArrowRight } from 'lucide-react'
 
 interface CatalogViewProps {
-  products: (Product & { category?: { nombre: string } | null })[]
+  products: (Product & {
+    category?: { nombre: string } | null
+    variants?: { id: string; nombre: string; stock: number | null; activo: boolean }[] | null
+  })[]
   categories: Category[]
   store: Store
   tenantQuery: string
@@ -91,10 +94,13 @@ export default function CatalogView({
 
       // 3. Filtro por palabras de búsqueda (insensible a mayúsculas y acentos)
       if (terms.length > 0) {
+        const variantsText = Array.isArray(product.variants)
+          ? product.variants.map((v) => v.nombre).join(' ')
+          : ''
         const searchable = normalizeSearchText(
           `${product.nombre} ${product.descripcion || ''} ${product.sku || ''} ${
             product.category?.nombre || ''
-          }`
+          } ${variantsText}`
         )
         const matchesAll = terms.every((t) => searchable.includes(t))
         if (!matchesAll) return false

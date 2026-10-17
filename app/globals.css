@@ -119,7 +119,9 @@ body {
 }
 
 :root[data-theme="dark"] .tienda-root,
-.dark .tienda-root {
+.dark .tienda-root,
+.tienda-root.dark,
+.tienda-root[data-theme="dark"] {
   --color-primario: var(--tenant-primario-dark, var(--tenant-primario, #FACC15));
   --color-primario-texto: var(--tenant-primario-dark-texto, var(--tenant-primario-texto, #111827));
   --color-primario-legible: var(--tenant-primario-dark-legible, var(--tenant-primario-dark, #FACC15));

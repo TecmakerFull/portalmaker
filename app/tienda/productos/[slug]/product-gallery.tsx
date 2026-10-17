@@ -40,11 +40,15 @@ export default function ProductGallery({
   useEffect(() => {
     if (selectedImageOverride) {
       const idx = displayImages.findIndex((img) => img === selectedImageOverride)
-      if (idx !== -1 && idx !== selectedIndex) {
+      if (idx !== -1) {
         setSelectedIndex(idx)
+        return
       }
     }
-  }, [selectedImageOverride, displayImages])
+    if (selectedIndex >= displayImages.length) {
+      setSelectedIndex(0)
+    }
+  }, [selectedImageOverride, displayImages, selectedIndex])
 
   const hasMultiple = displayImages.length > 1
 

@@ -21,6 +21,7 @@ import type { ResolvedStoreSections } from '@/lib/store-sections';
 import StorefrontHeaderFlow from '@/app/tienda/sections/storefront-header-flow';
 import HeroBanners from '@/app/tienda/sections/hero-banners';
 import { PreviewDeviceContext } from '@/app/tienda/preview-context';
+import { getTenantCSSVars } from '@/lib/color-utils';
 
 interface LivePreviewProps {
   store: Store;
@@ -258,6 +259,7 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
               width: `${targetVirtualWidth}px`,
               transform: `scale(${scale})`,
               transformOrigin: 'top left',
+              ...getTenantCSSVars(store),
             }}
             className={`tienda-root rounded-2xl shadow-xl overflow-hidden border border-zinc-300/80 dark:border-zinc-700/80 ${
               previewTheme === 'dark' ? 'dark bg-zinc-950 text-zinc-100' : 'bg-white text-zinc-900'

@@ -172,7 +172,9 @@ function MainHeaderInner({
             </span>
           )}
           {shouldShowSlogan && (
-            <span className={`mt-0.5 block opacity-70 truncate font-normal ${sloganSizeClasses}`}>
+            <span
+              className={`mt-0.5 block text-[var(--color-texto)] opacity-80 truncate font-normal ${sloganSizeClasses}`}
+            >
               {store.slogan}
             </span>
           )}
@@ -227,7 +229,7 @@ function MainHeaderInner({
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
       }}
-      className={`w-full border-b border-black/10 dark:border-white/10 z-40 transition-colors duration-200 ${
+      className={`w-full border-b border-black/10 dark:border-white/10 z-40 transition-colors duration-200 text-[var(--color-texto)] ${
         sticky ? 'sticky top-0 shadow-xs' : 'relative'
       }`}
     >

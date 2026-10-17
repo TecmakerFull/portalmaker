@@ -35,6 +35,7 @@ import {
   AlertCircle,
   HelpCircle,
   ChevronDown,
+  ImageIcon,
 } from 'lucide-react'
 import WhatsAppIcon from '../../sections/whatsapp-icon'
 
@@ -166,11 +167,13 @@ export default function ProductDetailView({
         : (selectedVariant.imagen_url ? [selectedVariant.imagen_url] : []))
     : []
 
-  // Si la variante tiene fotos propias, se muestran sus fotos en la galería;
-  // de lo contrario, se muestran las fotos generales del producto
-  const activeGalleryImages = selectedVariantImages.length > 0
-    ? selectedVariantImages
-    : (rawImages.length > 0 ? rawImages : [])
+  // Fotos prioritarias de la variante seleccionada, seguidas de fotos generales del producto (sin duplicados)
+  const activeGalleryImages = Array.from(
+    new Set([
+      ...selectedVariantImages,
+      ...rawImages,
+    ])
+  ).filter(Boolean) as string[]
 
   const handleGalleryImageChange = (imageUrl: string) => {
     // Si la imagen seleccionada pertenece a otra variante, podemos sincronizar
@@ -321,6 +324,76 @@ export default function ProductDetailView({
             selectedImageOverride={variantImageOverride}
             onImageChange={handleGalleryImageChange}
           />
+
+          {/* Variantes disponibles con su foto (Estilo Mercado Libre) */}
+          {variants.length > 1 && (
+            <div className="mt-5 pt-4 border-t border-black/10 dark:border-white/10 space-y-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium text-[var(--color-texto)] opacity-80">
+                  Variantes disponibles ({variants.length})
+                </span>
+                <span className="text-[11px] text-[var(--color-primario-legible)] font-semibold truncate max-w-[180px]">
+                  {selectedVariant?.nombre}
+                </span>
+              </div>
+
+              {/* Tira horizontal interactiva con miniaturas de cada variante */}
+              <div className="flex items-center gap-2.5 overflow-x-auto pb-2 scrollbar-none">
+                {variants.map((v) => {
+                  const isSelected = selectedVariant?.id === v.id
+                  const vImg = (Array.isArray(v.imagenes) && v.imagenes[0]) || v.imagen_url || rawImages[0]
+                  const isOutOfStock = product.gestiona_stock && v.stock !== null && v.stock <= 0
+
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedVariant(v)
+                        setQuantity(1)
+                        const vImgs = Array.isArray(v.imagenes) && v.imagenes.length > 0
+                          ? v.imagenes
+                          : (v.imagen_url ? [v.imagen_url] : [])
+                        if (vImgs.length > 0) {
+                          setVariantImageOverride(vImgs[0])
+                        } else if (rawImages.length > 0) {
+                          setVariantImageOverride(rawImages[0])
+                        }
+                      }}
+                      title={`${v.nombre}${isOutOfStock ? ' (Sin stock)' : ''}`}
+                      className={`group/var relative shrink-0 flex flex-col items-center gap-1.5 p-1.5 rounded-xl border-2 transition-all cursor-pointer bg-black/[0.02] dark:bg-white/[0.02] ${
+                        isSelected
+                          ? 'border-[var(--color-primario)] ring-2 ring-[var(--color-primario)]/20 shadow-xs'
+                          : 'border-black/10 dark:border-white/10 hover:border-black/30 dark:hover:border-white/30 opacity-70 hover:opacity-100'
+                      } ${isOutOfStock ? 'opacity-40 hover:opacity-60' : ''}`}
+                    >
+                      <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-lg overflow-hidden bg-black/5 dark:bg-white/5 flex items-center justify-center p-1">
+                        {vImg ? (
+                          <img
+                            src={vImg}
+                            alt={v.nombre}
+                            className="w-full h-full object-contain transition-transform group-hover/var:scale-105"
+                          />
+                        ) : (
+                          <ImageIcon className="w-6 h-6 opacity-40 text-[var(--color-texto)]" />
+                        )}
+                      </div>
+                      <span className={`text-[11px] max-w-[70px] sm:max-w-[76px] truncate text-center ${
+                        isSelected ? 'font-semibold text-[var(--color-texto)]' : 'text-[var(--color-texto)] opacity-80'
+                      }`}>
+                        {v.nombre}
+                      </span>
+                      {isOutOfStock && (
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-black/60 text-white font-medium">
+                          Agotado
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Ficha Informativa y Acciones */}
@@ -409,6 +482,8 @@ export default function ProductDetailView({
                   const isSelected = selectedVariant?.id === v.id
                   const diff = v.precio_adicional || 0
                   const isOutOfStock = product.gestiona_stock && v.stock !== null && v.stock <= 0
+                  const vImg = (Array.isArray(v.imagenes) && v.imagenes[0]) || v.imagen_url || rawImages[0]
+
                   return (
                     <button
                       key={v.id}
@@ -426,22 +501,31 @@ export default function ProductDetailView({
                           setVariantImageOverride(rawImages[0])
                         }
                       }}
-                      className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer relative ${
+                      className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer relative flex items-center gap-2 ${
                         isSelected
                           ? 'border-[var(--color-primario)] bg-[var(--color-primario)] text-[var(--color-primario-texto)] shadow-xs font-semibold'
                           : isOutOfStock
-                          ? 'border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] opacity-50 hover:opacity-80'
-                          : 'border-black/15 dark:border-white/15 bg-[var(--color-superficie)] opacity-80 hover:opacity-100 hover:border-black/30'
+                          ? 'border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] opacity-50 hover:opacity-80 text-[var(--color-texto)]'
+                          : 'border-black/15 dark:border-white/15 bg-[var(--color-superficie)] opacity-80 hover:opacity-100 hover:border-black/30 text-[var(--color-texto)]'
                       }`}
                     >
+                      {vImg && (
+                        <span className="w-6 h-6 rounded-md overflow-hidden bg-white/20 shrink-0 border border-black/10 dark:border-white/10 flex items-center justify-center">
+                          <img
+                            src={vImg}
+                            alt=""
+                            className="w-full h-full object-contain"
+                          />
+                        </span>
+                      )}
                       <span>{v.nombre}</span>
                       {diff !== 0 && (
-                        <span className="ml-1 opacity-80">
+                        <span className="opacity-80 font-normal">
                           ({diff > 0 ? `+${formatMoney(diff)}` : `-${formatMoney(Math.abs(diff))}`})
                         </span>
                       )}
                       {isOutOfStock && (
-                        <span className="ml-1.5 text-[10px] opacity-70 font-normal">
+                        <span className="text-[10px] opacity-70 font-normal">
                           (Sin stock)
                         </span>
                       )}
