@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import type { Product, Category, Store } from '@/types/database'
 import ProductCard from './product-card'
@@ -22,6 +22,15 @@ interface CatalogViewProps {
   showAllHeader?: boolean
 }
 
+// Helper para normalizar texto eliminando tildes y diacríticos (ej: "impresión" -> "impresion")
+function normalizeSearchText(str: string): string {
+  return (str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+}
+
 export default function CatalogView({
   products = [],
   categories = [],
@@ -36,10 +45,35 @@ export default function CatalogView({
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory)
   const [onlyOffers, setOnlyOffers] = useState(initialOffer)
 
-  // Filtrado reactivo por categoría, búsqueda y ofertas
+  // Sincronizar estado cuando cambian los props (ej: submit desde el header o navegación)
+  useEffect(() => {
+    setSearchQuery(initialQuery)
+  }, [initialQuery])
+
+  useEffect(() => {
+    setSelectedCategory(initialCategory)
+  }, [initialCategory])
+
+  useEffect(() => {
+    setOnlyOffers(initialOffer)
+  }, [initialOffer])
+
+  // Si se ingresó con un término de búsqueda, scrollear suavemente al catálogo
+  useEffect(() => {
+    if (initialQuery) {
+      const el = document.getElementById('catalogo')
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 150)
+      }
+    }
+  }, [initialQuery])
+
+  // Filtrado reactivo por categoría, búsqueda insensible a tildes y ofertas
   const filteredProducts = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase()
-    const terms = q.split(/\s+/).filter(Boolean)
+    const qNorm = normalizeSearchText(searchQuery)
+    const terms = qNorm.split(/\s+/).filter(Boolean)
 
     return products.filter((product) => {
       // 1. Filtro por categoría seleccionada
@@ -55,11 +89,13 @@ export default function CatalogView({
         if (!product.oferta_activa || !product.precio_oferta) return false
       }
 
-      // 3. Filtro por palabras de búsqueda
+      // 3. Filtro por palabras de búsqueda (insensible a mayúsculas y acentos)
       if (terms.length > 0) {
-        const searchable = `${product.nombre} ${product.descripcion || ''} ${
-          product.category?.nombre || ''
-        }`.toLowerCase()
+        const searchable = normalizeSearchText(
+          `${product.nombre} ${product.descripcion || ''} ${product.sku || ''} ${
+            product.category?.nombre || ''
+          }`
+        )
         const matchesAll = terms.every((t) => searchable.includes(t))
         if (!matchesAll) return false
       }
@@ -68,11 +104,18 @@ export default function CatalogView({
     })
   }, [products, searchQuery, selectedCategory, onlyOffers])
 
-  // Limpiar filtros
+  // Limpiar filtros y actualizar la URL sin recargar
   const handleReset = () => {
     setSearchQuery('')
     setSelectedCategory('Todos')
     setOnlyOffers(false)
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('q')
+      url.searchParams.delete('categoria')
+      url.searchParams.delete('oferta')
+      window.history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash)
+    }
   }
 
   // URL con tenant
@@ -82,23 +125,46 @@ export default function CatalogView({
     return `${path}${sep}${tenantQuery.replace('?', '')}`
   }
 
+  const isSearching = searchQuery.trim().length > 0
+
   return (
     <section className="space-y-6 sm:space-y-8">
-      {/* Encabezado de Sección */}
+      {/* Encabezado de Sección con retroalimentación clara de búsqueda */}
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
         <div>
           <p className="eyebrow text-muted-foreground opacity-60">
-            {showAllHeader ? 'CATÁLOGO COMPLETO' : 'CURADOS PARA TI'}
+            {isSearching
+              ? 'BÚSQUEDA EN CATÁLOGO'
+              : showAllHeader
+              ? 'CATÁLOGO COMPLETO'
+              : 'CURADOS PARA TI'}
           </p>
           <h2 className="text-2xl sm:text-3xl font-medium font-[var(--font-heading)] mt-1.5 text-[var(--color-texto)]">
-            {showAllHeader ? 'Nuestra colección' : 'Tus próximos favoritos'}
+            {isSearching
+              ? `Resultados para "${searchQuery.trim()}"`
+              : showAllHeader
+              ? 'Nuestra colección'
+              : 'Tus próximos favoritos'}
           </h2>
           <p className="mt-2 text-xs sm:text-sm opacity-70 text-[var(--color-texto)]">
-            Diseño, calidad y esos detalles que marcan la diferencia.
+            {isSearching
+              ? `Mostrando ${filteredProducts.length} ${
+                  filteredProducts.length === 1 ? 'producto encontrado' : 'productos encontrados'
+                }.`
+              : 'Diseño, calidad y esos detalles que marcan la diferencia.'}
           </p>
         </div>
 
-        {!showAllHeader && (
+        {isSearching ? (
+          <button
+            type="button"
+            onClick={handleReset}
+            className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-[var(--color-primario-legible)] hover:opacity-80 transition-opacity cursor-pointer"
+          >
+            <span>Ver toda la colección</span>
+            <X className="w-4 h-4" />
+          </button>
+        ) : !showAllHeader ? (
           <Link
             href={withTenant('/tienda')}
             className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-[var(--color-texto)] hover:text-[var(--color-primario)] transition-colors cursor-pointer"
@@ -106,10 +172,10 @@ export default function CatalogView({
             <span className="hidden sm:inline">Ver todos los productos</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
-        )}
+        ) : null}
       </div>
 
-      {/* Pills de Categorías y Buscador */}
+      {/* Pills de Categorías y Buscador Rápido */}
       <div className="space-y-3 pt-1">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Pills desplazables horizontalmente */}
@@ -160,7 +226,7 @@ export default function CatalogView({
                 type="button"
                 onClick={() => setSearchQuery('')}
                 aria-label="Limpiar búsqueda"
-                className="absolute inset-y-0 right-2.5 my-auto h-5 w-5 flex items-center justify-center opacity-60 hover:opacity-100 cursor-pointer"
+                className="absolute inset-y-0 right-2.5 my-auto h-5 w-5 flex items-center justify-center opacity-60 hover:opacity-100 cursor-pointer text-[var(--color-texto)]"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -185,10 +251,12 @@ export default function CatalogView({
         <div className="py-20 text-center border border-dashed border-black/15 dark:border-white/15 rounded-2xl bg-black/[0.01] dark:bg-white/[0.02]">
           <Search className="mx-auto mb-3 w-8 h-8 opacity-40 text-[var(--color-primario)]" />
           <h3 className="text-base sm:text-lg font-medium text-[var(--color-texto)]">
-            No encontramos esos productos
+            {isSearching
+              ? `No encontramos productos para "${searchQuery.trim()}"`
+              : 'No encontramos productos en esta categoría'}
           </h3>
           <p className="mt-1 text-xs opacity-60 max-w-sm mx-auto">
-            Prueba con otra búsqueda o selecciona otra categoría.
+            Prueba con otra palabra clave o selecciona otra categoría.
           </p>
           <button
             type="button"

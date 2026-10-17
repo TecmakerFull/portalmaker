@@ -18,7 +18,15 @@ import StoreFooter from './sections/store-footer'
 import { getStoreSections } from '@/lib/store-sections'
 import { MessageSquare, Package } from 'lucide-react'
 
-export default async function TiendaPage() {
+interface TiendaPageProps {
+  searchParams?: Promise<{
+    q?: string
+    categoria?: string
+    oferta?: string
+  }>
+}
+
+export default async function TiendaPage({ searchParams }: TiendaPageProps) {
   const tenant = await getTenantStore()
 
   if (!tenant) {
@@ -27,6 +35,11 @@ export default async function TiendaPage() {
 
   const { store, context } = tenant
   const tenantQuery = context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''
+
+  const resolvedParams = searchParams ? await searchParams : {}
+  const initialQuery = resolvedParams.q || ''
+  const initialCategory = resolvedParams.categoria || 'Todos'
+  const initialOffer = resolvedParams.oferta === 'true'
 
   const supabase = await createSupabaseServerClient()
 
@@ -144,12 +157,15 @@ export default async function TiendaPage() {
         <TrustFeatures />
 
         {/* 4. Colección Curada de Productos con Filtros y Buscador */}
-        <main className="wrap pt-12 sm:pt-16">
+        <main id="catalogo" className="wrap pt-12 sm:pt-16 scroll-mt-24">
           <CatalogView
             products={productList}
             categories={categoryList}
             store={store}
             tenantQuery={tenantQuery}
+            initialQuery={initialQuery}
+            initialCategory={initialCategory}
+            initialOffer={initialOffer}
           />
         </main>
 

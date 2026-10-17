@@ -5,9 +5,9 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import type { Store, HeaderSettings } from '@/types/database'
 import ThemeToggle from '../theme-toggle'
 import { useCart } from '@/lib/cart-context'
@@ -30,7 +30,15 @@ interface MainHeaderProps {
   tenantQuery: string
 }
 
-export default function MainHeader({
+export default function MainHeader(props: MainHeaderProps) {
+  return (
+    <Suspense fallback={null}>
+      <MainHeaderInner {...props} />
+    </Suspense>
+  )
+}
+
+function MainHeaderInner({
   store,
   settings,
   tenantQuery,
@@ -85,17 +93,31 @@ export default function MainHeader({
   const previewDevice = usePreviewDevice()
   const isMobile = previewDevice === 'mobile'
 
+  const searchParams = useSearchParams()
+  const currentQ = searchParams?.get('q') || ''
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(currentQ)
+
+  // Sincronizar estado si cambia el query param en la URL
+  useEffect(() => {
+    setSearchQuery(currentQ)
+  }, [currentQ])
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const q = searchQuery.trim()
     const base = `/tienda`
     const sep = tenantQuery ? (tenantQuery.startsWith('?') ? `${tenantQuery}&` : `?${tenantQuery}&`) : '?'
-    const dest = q ? `${base}${sep}q=${encodeURIComponent(q)}` : `${base}${tenantQuery}`
+    const dest = q ? `${base}${sep}q=${encodeURIComponent(q)}#catalogo` : `${base}${tenantQuery}`
     router.push(dest)
     setMobileMenuOpen(false)
+
+    if (typeof window !== 'undefined') {
+      const el = document.getElementById('catalogo')
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }
   }
 
   // Helper para URL con tenantQuery
@@ -152,6 +174,20 @@ export default function MainHeader({
         onChange={(e) => setSearchQuery(e.target.value)}
         className="h-10 min-w-0 flex-1 bg-transparent px-3 text-xs outline-none placeholder:opacity-50 text-[var(--color-texto)]"
       />
+      {searchQuery && (
+        <button
+          type="button"
+          onClick={() => {
+            setSearchQuery('')
+            const base = `/tienda`
+            router.push(`${base}${tenantQuery}`)
+          }}
+          aria-label="Limpiar búsqueda"
+          className="mr-1 h-5 w-5 flex items-center justify-center opacity-50 hover:opacity-100 cursor-pointer text-[var(--color-texto)]"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      )}
       <button
         type="submit"
         className="text-[11px] font-semibold opacity-60 hover:opacity-100 text-[var(--color-primario-legible)] cursor-pointer py-1 px-2 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-all"
@@ -367,14 +403,30 @@ export default function MainHeader({
         >
           {mostrar_buscador && (
             <form onSubmit={handleSearchSubmit} className="mb-5 flex gap-2">
-              <input
-                type="text"
-                aria-label="Buscar productos en móvil"
-                placeholder="Buscar productos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-11 rounded-xl border border-black/15 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.04] px-3.5 text-xs outline-none focus:border-[var(--color-primario)] text-[var(--color-texto)]"
-              />
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  aria-label="Buscar productos en móvil"
+                  placeholder="Buscar productos..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-11 rounded-xl border border-black/15 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.04] pl-3.5 pr-8 text-xs outline-none focus:border-[var(--color-primario)] text-[var(--color-texto)]"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('')
+                      const base = `/tienda`
+                      router.push(`${base}${tenantQuery}`)
+                    }}
+                    aria-label="Limpiar búsqueda"
+                    className="absolute inset-y-0 right-2 my-auto h-6 w-6 flex items-center justify-center opacity-50 hover:opacity-100 cursor-pointer text-[var(--color-texto)]"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
               <button
                 type="submit"
                 aria-label="Ejecutar búsqueda"
