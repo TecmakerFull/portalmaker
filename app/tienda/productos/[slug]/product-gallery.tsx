@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
@@ -28,24 +28,30 @@ export default function ProductGallery({
   onImageChange,
 }: ProductGalleryProps) {
   // Asegurar que si la imagen de la variante no está en el listado base, se incluya al inicio
-  const displayImages =
-    selectedImageOverride && !images.includes(selectedImageOverride)
-      ? [selectedImageOverride, ...images]
-      : images.length > 0 ? images : []
+  const displayImages = useMemo(() => {
+    if (selectedImageOverride && !images.includes(selectedImageOverride)) {
+      return [selectedImageOverride, ...images]
+    }
+    return images.length > 0 ? images : []
+  }, [images, selectedImageOverride])
 
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [isZoomOpen, setIsZoomOpen] = useState(false)
+  const prevOverrideRef = useRef<string | null | undefined>(selectedImageOverride)
 
-  // Sincronizar selección de variante externa con la imagen activa de la galería
+  // Sincronizar selección de variante externa con la imagen activa de la galería sin pisar clics manuales
   useEffect(() => {
-    if (selectedImageOverride) {
-      const idx = displayImages.findIndex((img) => img === selectedImageOverride)
-      if (idx !== -1) {
-        setSelectedIndex(idx)
-        return
+    if (prevOverrideRef.current !== selectedImageOverride) {
+      prevOverrideRef.current = selectedImageOverride
+      if (selectedImageOverride) {
+        const idx = displayImages.findIndex((img) => img === selectedImageOverride)
+        if (idx !== -1) {
+          setSelectedIndex(idx)
+          return
+        }
       }
-    }
-    if (selectedIndex >= displayImages.length) {
+      setSelectedIndex(0)
+    } else if (selectedIndex >= displayImages.length) {
       setSelectedIndex(0)
     }
   }, [selectedImageOverride, displayImages, selectedIndex])
@@ -120,7 +126,6 @@ export default function ProductGallery({
                 <button
                   key={i}
                   type="button"
-                  onMouseEnter={() => handleSelectImage(i)}
                   onClick={() => handleSelectImage(i)}
                   aria-label={`Ver vista ${i + 1}`}
                   className={`relative shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer bg-black/[0.02] dark:bg-white/[0.03] ${

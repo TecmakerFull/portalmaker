@@ -167,26 +167,12 @@ export default function ProductDetailView({
         : (selectedVariant.imagen_url ? [selectedVariant.imagen_url] : []))
     : []
 
-  // Fotos prioritarias de la variante seleccionada, seguidas de fotos generales del producto (sin duplicados)
-  const activeGalleryImages = Array.from(
-    new Set([
-      ...selectedVariantImages,
-      ...rawImages,
-    ])
-  ).filter(Boolean) as string[]
-
-  const handleGalleryImageChange = (imageUrl: string) => {
-    // Si la imagen seleccionada pertenece a otra variante, podemos sincronizar
-    const matchingVariant = variants.find((v) => {
-      const vImgs = Array.isArray(v.imagenes) && v.imagenes.length > 0
-        ? v.imagenes
-        : (v.imagen_url ? [v.imagen_url] : [])
-      return vImgs.includes(imageUrl)
-    })
-    if (matchingVariant && matchingVariant.id !== selectedVariant?.id) {
-      setSelectedVariant(matchingVariant)
-    }
-  }
+  // Galería de fotos principal (a la izquierda):
+  // Si la variante tiene fotos específicas, mostramos únicamente sus fotos para evitar que fotos de otras variantes se mezclen.
+  // Si la variante no tiene fotos propias, se muestran las fotos generales del producto.
+  const activeGalleryImages = selectedVariantImages.length > 0
+    ? selectedVariantImages
+    : (rawImages.length > 0 ? rawImages : [])
 
   // Precios
   const additionalPrice = selectedVariant?.precio_adicional ?? 0
@@ -322,7 +308,6 @@ export default function ProductDetailView({
             images={activeGalleryImages}
             productName={selectedVariant ? `${product.nombre} (${selectedVariant.nombre})` : product.nombre}
             selectedImageOverride={variantImageOverride}
-            onImageChange={handleGalleryImageChange}
           />
 
           {/* Variantes disponibles con su foto (Estilo Mercado Libre) */}
