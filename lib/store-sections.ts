@@ -78,6 +78,8 @@ export function getDefaultStoreSections(
     orden: 2,
     settings: {
       mostrar_nombre: true,
+      mostrar_slogan: true,
+      tamano_slogan: 'mediano',
       mostrar_buscador: true,
       mostrar_carrito: true,
       mostrar_whatsapp_flotante: true,

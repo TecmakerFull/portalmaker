@@ -182,17 +182,17 @@ export function DisenoManager({
   return (
     <div className="space-y-6 pb-24">
       {/* Encabezado Principal de la Página */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs text-[var(--color-texto)]">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
+          <div className="flex items-center gap-3">
+            <span className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
               <Layers className="w-5 h-5" />
             </span>
             <div>
-              <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+              <h1 className="text-xl font-bold">
                 Diseño & Estructura de Tienda
               </h1>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+              <p className="text-xs opacity-70 mt-0.5">
                 Personaliza la cabecera, barras y banners de tu tienda en vivo
               </p>
             </div>
@@ -204,7 +204,7 @@ export function DisenoManager({
           <button
             type="button"
             onClick={() => setShowMobilePreview(!showMobilePreview)}
-            className="lg:hidden inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+            className="lg:hidden inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[var(--color-borde)] text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
           >
             <Eye className="w-4 h-4" />
             {showMobilePreview ? 'Ocultar Previsualización' : 'Ver Previsualización'}
@@ -214,14 +214,14 @@ export function DisenoManager({
 
       {/* Alertas de Guardado */}
       {saveSuccess && (
-        <div className="flex items-center gap-2.5 p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 animate-in fade-in">
+        <div className="flex items-center gap-2.5 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-xs text-emerald-800 dark:text-emerald-300 animate-in fade-in">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span>¡Diseño guardado exitosamente! Los cambios ya están activos en tu tienda.</span>
         </div>
       )}
 
       {saveError && (
-        <div className="flex items-center gap-2.5 p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl text-xs text-red-800 dark:text-red-300 animate-in fade-in">
+        <div className="flex items-center gap-2.5 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-xs text-red-800 dark:text-red-300 animate-in fade-in">
           <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
           <span>{saveError}</span>
         </div>
@@ -234,16 +234,16 @@ export function DisenoManager({
           {activeEditorTab ? (
             /* Vista del Editor Específico */
             <div className="space-y-4">
-              <div className="flex items-center justify-between bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+              <div className="flex items-center justify-between bg-[var(--color-superficie)] p-4 rounded-2xl border border-[var(--color-borde)] text-[var(--color-texto)] shadow-xs">
                 <button
                   type="button"
                   onClick={() => setActiveEditorTab(null)}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold opacity-75 hover:opacity-100 hover:text-[#CA8A04] dark:hover:text-[#FACC15] transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Volver a la lista de secciones
                 </button>
-                <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                <span className="text-xs font-semibold">
                   {sectionMeta[activeEditorTab]?.label}
                 </span>
               </div>
@@ -284,7 +284,7 @@ export function DisenoManager({
               )}
 
               {/* Botón de Guardar y Feedback al pie del editor */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4 border-t border-[var(--color-borde)]">
                 {saveSuccess && (
                   <div className="p-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
                     <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
@@ -302,16 +302,16 @@ export function DisenoManager({
                   type="button"
                   onClick={handleSaveChanges}
                   disabled={saving}
-                  className="min-h-[44px] px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                  className="min-h-[44px] px-6 py-2.5 bg-[#FACC15] hover:bg-[#EAB308] disabled:opacity-50 text-[#1F2937] text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
                 >
                   {saving ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
                       <span>Guardando...</span>
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 text-white" />
+                      <Save className="w-4 h-4 text-[#1F2937]" />
                       <span>Guardar Cambios de Diseño</span>
                     </>
                   )}
@@ -320,12 +320,12 @@ export function DisenoManager({
             </div>
           ) : (
             /* Lista y Ordenador de Secciones */
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 space-y-4">
+            <div className="bg-[var(--color-superficie)] border border-[var(--color-borde)] rounded-3xl p-5 sm:p-7 shadow-xs space-y-4 text-[var(--color-texto)]">
               <div>
-                <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                <h2 className="text-base font-semibold">
                   Estructura del Encabezado
                 </h2>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                <p className="text-xs opacity-70 mt-0.5">
                   Organiza y activa las secciones visuales superiores de tu tienda
                 </p>
               </div>
@@ -335,27 +335,27 @@ export function DisenoManager({
                   const meta = sectionMeta[section.section_type] || {
                     label: section.section_type,
                     desc: '',
-                    icon: <Layers className="w-5 h-5 text-zinc-400" />,
+                    icon: <Layers className="w-5 h-5 opacity-50" />,
                   };
 
                   return (
                     <div
                       key={section.section_type}
-                      className={`p-4 rounded-xl border transition-all ${
+                      className={`p-4 rounded-2xl border transition-all ${
                         section.enabled
-                          ? 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/80 shadow-sm'
-                          : 'border-zinc-200/70 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-900/30 opacity-75'
+                          ? 'border-[var(--color-borde)] bg-black/[0.02] dark:bg-white/[0.02] shadow-xs'
+                          : 'border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] opacity-70'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0">
                           {/* Reordenar */}
-                          <div className="flex items-center gap-0.5 text-zinc-400">
+                          <div className="flex items-center gap-0.5 opacity-60">
                             <button
                               type="button"
                               disabled={index === 0}
                               onClick={() => handleMoveSection(index, 'up')}
-                              className="p-1 hover:text-zinc-700 dark:hover:text-zinc-200 disabled:opacity-25"
+                              className="p-1 hover:opacity-100 disabled:opacity-25 cursor-pointer"
                             >
                               <MoveUp className="w-3.5 h-3.5" />
                             </button>
@@ -363,34 +363,34 @@ export function DisenoManager({
                               type="button"
                               disabled={index === sections.length - 1}
                               onClick={() => handleMoveSection(index, 'down')}
-                              className="p-1 hover:text-zinc-700 dark:hover:text-zinc-200 disabled:opacity-25"
+                              className="p-1 hover:opacity-100 disabled:opacity-25 cursor-pointer"
                             >
                               <MoveDown className="w-3.5 h-3.5" />
                             </button>
                           </div>
 
                           {/* Ícono de sección */}
-                          <div className="p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 shrink-0">
+                          <div className="p-2.5 rounded-xl bg-black/5 dark:bg-white/10 shrink-0">
                             {meta.icon}
                           </div>
 
                           {/* Textos */}
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                              <span className="text-sm font-semibold truncate">
                                 {meta.label}
                               </span>
                               <span
-                                className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                                className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
                                   section.enabled
-                                    ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400'
-                                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'
+                                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                                    : 'bg-black/5 dark:bg-white/10 opacity-60'
                                 }`}
                               >
                                 {section.enabled ? 'Activo' : 'Oculto'}
                               </span>
                             </div>
-                            <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
+                            <p className="text-xs opacity-70 truncate mt-0.5">
                               {meta.desc}
                             </p>
                           </div>
@@ -407,16 +407,16 @@ export function DisenoManager({
                               }
                               className="sr-only peer"
                             />
-                            <div className="w-9 h-5 bg-zinc-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-blue-600" />
+                            <div className="w-11 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FACC15]" />
                           </label>
 
                           <button
                             type="button"
                             onClick={() => setActiveEditorTab(section.section_type)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-blue-600 dark:hover:text-blue-400 bg-zinc-100 dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg transition-colors"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold border border-[var(--color-borde)] rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
                           >
                             <span>Configurar</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
+                            <ChevronRight className="w-3.5 h-3.5 opacity-60" />
                           </button>
                         </div>
                       </div>
@@ -426,7 +426,7 @@ export function DisenoManager({
               </div>
 
               {/* Botón de Guardar y Feedback al pie de la lista de secciones */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4 border-t border-[var(--color-borde)]">
                 {saveSuccess && (
                   <div className="p-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
                     <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
@@ -444,16 +444,16 @@ export function DisenoManager({
                   type="button"
                   onClick={handleSaveChanges}
                   disabled={saving}
-                  className="min-h-[44px] px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                  className="min-h-[44px] px-6 py-2.5 bg-[#FACC15] hover:bg-[#EAB308] disabled:opacity-50 text-[#1F2937] text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
                 >
                   {saving ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
                       <span>Guardando...</span>
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 text-white" />
+                      <Save className="w-4 h-4 text-[#1F2937]" />
                       <span>Guardar Estructura</span>
                     </>
                   )}

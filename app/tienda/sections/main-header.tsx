@@ -82,12 +82,23 @@ function MainHeaderInner({
 
   const {
     mostrar_nombre = true,
+    mostrar_slogan = true,
+    tamano_slogan = 'mediano',
     mostrar_buscador = true,
     mostrar_carrito = true,
     mostrar_tema_toggle = true,
     logo_posicion = 'centro',
     sticky = true,
   } = settings || {}
+
+  const sloganSizeClasses = {
+    chico: 'text-[10px]',
+    mediano: 'text-[11px] sm:text-xs',
+    grande: 'text-xs sm:text-sm font-medium',
+  }[tamano_slogan || 'mediano'] || 'text-[11px] sm:text-xs'
+
+  const shouldShowName = !store.logo_url || (store.mostrar_nombre_header !== false && mostrar_nombre !== false)
+  const shouldShowSlogan = Boolean(store.slogan && mostrar_slogan !== false)
 
   const isCenter = logo_posicion === 'centro'
   const previewDevice = usePreviewDevice()
@@ -143,13 +154,15 @@ function MainHeaderInner({
         />
       ) : null}
 
-      {(!store.logo_url || mostrar_nombre) && (
+      {(shouldShowName || shouldShowSlogan) && (
         <div className={`min-w-0 ${centered ? 'text-center' : 'text-left'}`}>
-          <span className="brand text-[var(--color-primario)] block truncate text-base sm:text-xl lg:text-2xl">
-            {store.nombre}
-          </span>
-          {store.slogan && (
-            <span className="mt-0.5 block text-[10px] sm:text-[11px] opacity-70 truncate font-normal">
+          {shouldShowName && (
+            <span className="brand text-[var(--color-primario)] block truncate text-base sm:text-xl lg:text-2xl">
+              {store.nombre}
+            </span>
+          )}
+          {shouldShowSlogan && (
+            <span className={`mt-0.5 block opacity-70 truncate font-normal ${sloganSizeClasses}`}>
               {store.slogan}
             </span>
           )}

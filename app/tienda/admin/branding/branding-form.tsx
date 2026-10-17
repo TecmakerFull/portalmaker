@@ -459,7 +459,7 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
                   Mostrar nombre escrito junto al logotipo
                 </p>
                 <p className="text-[11px] opacity-70 mt-0.5 max-w-lg">
-                  Si tu logo ya incluye tipográficamente el nombre de tu marca, puedes desactivar esta opción para mostrar únicamente el logotipo y que luzca más limpio o en mayor tamaño.
+                  Si tu logo ya incluye tipográficamente el nombre de tu marca, puedes desactivar esta opción para mostrar únicamente el logotipo y que luzca más limpio o en mayor tamaño. (Es la misma opción sincronizada con Diseño de Tienda &rarr; Header Principal).
                 </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1 sm:mt-0">

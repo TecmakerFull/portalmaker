@@ -460,6 +460,8 @@ export interface TopBarSettings {
 // 2. HEADER
 export interface HeaderSettings {
   mostrar_nombre?: boolean;
+  mostrar_slogan?: boolean;
+  tamano_slogan?: 'chico' | 'mediano' | 'grande';
   mostrar_buscador: boolean;
   mostrar_carrito: boolean;
   mostrar_whatsapp?: boolean;

@@ -167,18 +167,18 @@ export function HeroEditor({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3 p-3.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 rounded-xl text-xs text-blue-800 dark:text-blue-300">
-        <Info className="w-4 h-4 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 rounded-2xl text-xs">
+        <Info className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
         <p>
           Muestra tus principales promociones, lanzamientos y novedades en el banner central. Admite imágenes optimizadas separadas para celular y computadora.
         </p>
       </div>
 
       {/* 1. Configuración de Reproducción y Estilo */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 space-y-4">
+      <div className="bg-[var(--color-superficie)] border border-[var(--color-borde)] rounded-3xl p-5 sm:p-7 shadow-xs space-y-5 text-[var(--color-texto)]">
         <div className="flex items-center gap-2">
-          <Sliders className="w-4 h-4 text-zinc-500" />
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          <Sliders className="w-4 h-4 text-amber-500" />
+          <h3 className="text-sm font-semibold">
             Comportamiento del Banner
           </h3>
         </div>
@@ -186,17 +186,17 @@ export function HeroEditor({
         <div className="space-y-4">
           {/* Modo de Visualización */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+            <label className="block text-xs font-semibold opacity-75 mb-2">
               Modo de Visualización
             </label>
-            <div className="inline-flex flex-wrap p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-2xl border border-zinc-200 dark:border-zinc-700/60 gap-1.5 w-full sm:w-auto">
+            <div className="inline-flex flex-wrap p-1 bg-black/[0.03] dark:bg-white/[0.04] rounded-2xl border border-[var(--color-borde)] gap-1.5 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => updateSettings('modo', 'carrusel')}
                 className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   settings.modo === 'carrusel'
-                    ? 'bg-white dark:bg-zinc-900 text-blue-700 dark:text-blue-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                    ? 'bg-[var(--color-superficie)] text-[#CA8A04] dark:text-[#FACC15] shadow-xs border border-[var(--color-borde)]'
+                    : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
               >
                 <Sliders className="w-3.5 h-3.5 opacity-70" />
@@ -207,8 +207,8 @@ export function HeroEditor({
                 onClick={() => updateSettings('modo', 'banner_unico')}
                 className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   settings.modo === 'banner_unico'
-                    ? 'bg-white dark:bg-zinc-900 text-blue-700 dark:text-blue-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                    ? 'bg-[var(--color-superficie)] text-[#CA8A04] dark:text-[#FACC15] shadow-xs border border-[var(--color-borde)]'
+                    : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
               >
                 <ImageIcon className="w-3.5 h-3.5 opacity-70" />
@@ -219,10 +219,10 @@ export function HeroEditor({
 
           {/* Altura en Pantalla */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+            <label className="block text-xs font-semibold opacity-75 mb-2">
               Altura en Pantalla
             </label>
-            <div className="inline-flex flex-wrap p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-2xl border border-zinc-200 dark:border-zinc-700/60 gap-1.5 w-full sm:w-auto">
+            <div className="inline-flex flex-wrap p-1 bg-black/[0.03] dark:bg-white/[0.04] rounded-2xl border border-[var(--color-borde)] gap-1.5 w-full sm:w-auto">
               {[
                 { key: 'adaptable', label: 'Proporcional (Original)' },
                 { key: 'compacta', label: 'Compacta (400px)' },
@@ -234,8 +234,8 @@ export function HeroEditor({
                   onClick={() => updateSettings('altura', opt.key as any)}
                   className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-semibold whitespace-nowrap transition-all text-center cursor-pointer ${
                     settings.altura === opt.key
-                      ? 'bg-white dark:bg-zinc-900 text-blue-700 dark:text-blue-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                      ? 'bg-[var(--color-superficie)] text-[#CA8A04] dark:text-[#FACC15] shadow-xs border border-[var(--color-borde)]'
+                      : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                   }`}
                 >
                   {opt.label}
@@ -247,33 +247,33 @@ export function HeroEditor({
 
         {/* Opciones de Carrusel */}
         {settings.modo === 'carrusel' && (
-          <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <label className="flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer">
+          <div className="pt-3 border-t border-[var(--color-borde)] grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <label className="flex items-center gap-2 text-xs opacity-80 hover:opacity-100 cursor-pointer">
               <input
                 type="checkbox"
                 checked={settings.autoplay}
                 onChange={(e) => updateSettings('autoplay', e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded border-zinc-300 dark:border-zinc-700 focus:ring-blue-500"
+                className="w-4 h-4 text-amber-500 rounded border-[var(--color-borde)] focus:ring-amber-400"
               />
               <span>Paso automático</span>
             </label>
 
-            <label className="flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer">
+            <label className="flex items-center gap-2 text-xs opacity-80 hover:opacity-100 cursor-pointer">
               <input
                 type="checkbox"
                 checked={settings.mostrar_flechas}
                 onChange={(e) => updateSettings('mostrar_flechas', e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded border-zinc-300 dark:border-zinc-700 focus:ring-blue-500"
+                className="w-4 h-4 text-amber-500 rounded border-[var(--color-borde)] focus:ring-amber-400"
               />
               <span>Flechas laterales</span>
             </label>
 
-            <label className="flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer">
+            <label className="flex items-center gap-2 text-xs opacity-80 hover:opacity-100 cursor-pointer">
               <input
                 type="checkbox"
                 checked={settings.mostrar_indicadores}
                 onChange={(e) => updateSettings('mostrar_indicadores', e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded border-zinc-300 dark:border-zinc-700 focus:ring-blue-500"
+                className="w-4 h-4 text-amber-500 rounded border-[var(--color-borde)] focus:ring-amber-400"
               />
               <span>Puntos inferiores (dots)</span>
             </label>
@@ -282,20 +282,20 @@ export function HeroEditor({
       </div>
 
       {/* 2. Diapositivas / Slides */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 space-y-4">
+      <div className="bg-[var(--color-superficie)] border border-[var(--color-borde)] rounded-3xl p-5 sm:p-7 shadow-xs space-y-4 text-[var(--color-texto)]">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            <h3 className="text-sm font-semibold">
               Diapositivas ({slides.length})
             </h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+            <p className="text-xs opacity-70 mt-0.5">
               Administra las imágenes y mensajes de tus banners
             </p>
           </div>
           <button
             type="button"
             onClick={handleAddSlide}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-xl transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#FACC15] hover:bg-[#EAB308] text-[#1F2937] font-semibold text-xs rounded-xl transition-colors shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             Agregar banner
@@ -303,9 +303,9 @@ export function HeroEditor({
         </div>
 
         {slides.length === 0 ? (
-          <div className="p-8 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
-            <ImageIcon className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          <div className="p-8 text-center border-2 border-dashed border-[var(--color-borde)] rounded-2xl bg-black/[0.01] dark:bg-white/[0.01]">
+            <ImageIcon className="w-8 h-8 opacity-40 mx-auto mb-2 text-amber-500" />
+            <p className="text-xs opacity-70">
               No tienes ningún banner creado. Haz clic en "Agregar banner" para cargar uno.
             </p>
           </div>
@@ -316,21 +316,21 @@ export function HeroEditor({
               return (
                 <div
                   key={slide.id}
-                  className={`border rounded-xl transition-all ${
+                  className={`border rounded-2xl transition-all ${
                     isExpanded
-                      ? 'border-blue-500/50 bg-zinc-50/50 dark:bg-zinc-800/30 ring-1 ring-blue-500/20'
-                      : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900'
+                      ? 'border-[#FACC15] bg-[#FACC15]/5 shadow-xs'
+                      : 'border-[var(--color-borde)] bg-black/[0.02] dark:bg-white/[0.02]'
                   }`}
                 >
                   {/* Fila colapsada */}
-                  <div className="flex items-center justify-between p-3 gap-2">
+                  <div className="flex items-center justify-between p-3.5 gap-2">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex items-center gap-0.5 text-zinc-400">
+                      <div className="flex items-center gap-0.5 opacity-60">
                         <button
                           type="button"
                           disabled={index === 0}
                           onClick={() => handleMoveSlide(index, 'up')}
-                          className="p-1 hover:text-zinc-600 dark:hover:text-zinc-200 disabled:opacity-30"
+                          className="p-1 hover:opacity-100 disabled:opacity-30 cursor-pointer"
                         >
                           <MoveUp className="w-3.5 h-3.5" />
                         </button>
@@ -338,7 +338,7 @@ export function HeroEditor({
                           type="button"
                           disabled={index === slides.length - 1}
                           onClick={() => handleMoveSlide(index, 'down')}
-                          className="p-1 hover:text-zinc-600 dark:hover:text-zinc-200 disabled:opacity-30"
+                          className="p-1 hover:opacity-100 disabled:opacity-30 cursor-pointer"
                         >
                           <MoveDown className="w-3.5 h-3.5" />
                         </button>
@@ -349,10 +349,10 @@ export function HeroEditor({
                         <img
                           src={slide.imagen_desktop}
                           alt=""
-                          className="w-12 h-8 rounded-lg object-cover bg-zinc-100 dark:bg-zinc-800 shrink-0 border border-zinc-200 dark:border-zinc-700"
+                          className="w-12 h-8 rounded-lg object-cover bg-black/5 dark:bg-white/10 shrink-0 border border-[var(--color-borde)]"
                         />
                       ) : (
-                        <div className="w-12 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 shrink-0">
+                        <div className="w-12 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center opacity-50 shrink-0 border border-[var(--color-borde)]">
                           <ImageIcon className="w-4 h-4" />
                         </div>
                       )}
@@ -360,24 +360,24 @@ export function HeroEditor({
                       <button
                         type="button"
                         onClick={() => setEditingSlideId(isExpanded ? null : slide.id)}
-                        className="text-left min-w-0"
+                        className="text-left min-w-0 cursor-pointer"
                       >
-                        <span className="font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate block">
+                        <span className="font-semibold text-sm truncate block">
                           {slide.titulo || '(Banner sin título)'}
                         </span>
-                        <span className="text-xs text-zinc-500 truncate block">
+                        <span className="text-xs opacity-60 truncate block">
                           {slide.cta_texto ? `Botón: "${slide.cta_texto}"` : 'Sin botón CTA'}
                         </span>
                       </button>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
-                      <label className="flex items-center gap-1.5 text-xs text-zinc-500 cursor-pointer">
+                      <label className="flex items-center gap-1.5 text-xs opacity-75 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={slide.activo}
                           onChange={(e) => handleUpdateSlide(slide.id, { activo: e.target.checked })}
-                          className="w-3.5 h-3.5 text-blue-600 rounded border-zinc-300 dark:border-zinc-700 focus:ring-blue-500"
+                          className="w-3.5 h-3.5 text-amber-500 rounded border-[var(--color-borde)] focus:ring-amber-400"
                         />
                         <span className="hidden sm:inline">Activo</span>
                       </label>
@@ -385,7 +385,7 @@ export function HeroEditor({
                       <button
                         type="button"
                         onClick={() => setEditingSlideId(isExpanded ? null : slide.id)}
-                        className="p-1.5 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
                       >
                         {isExpanded ? 'Cerrar' : 'Editar'}
                       </button>
@@ -393,7 +393,7 @@ export function HeroEditor({
                       <button
                         type="button"
                         onClick={() => handleRemoveSlide(slide.id)}
-                        className="p-1.5 text-zinc-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                        className="p-1.5 opacity-60 hover:opacity-100 hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -402,12 +402,12 @@ export function HeroEditor({
 
                   {/* Formulario de edición expandido */}
                   {isExpanded && (
-                    <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 space-y-4">
+                    <div className="p-4 border-t border-[var(--color-borde)] space-y-4 bg-black/[0.01] dark:bg-white/[0.01]">
                       {/* Imágenes Desktop & Mobile */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
-                            <Monitor className="w-3.5 h-3.5 text-zinc-500" />
+                          <label className="block text-xs font-semibold opacity-75 mb-1.5 flex items-center gap-1.5">
+                            <Monitor className="w-3.5 h-3.5 opacity-60" />
                             URL Imagen Desktop (1920×600 o similar)
                           </label>
                           <input
@@ -415,13 +415,13 @@ export function HeroEditor({
                             value={slide.imagen_desktop}
                             onChange={(e) => handleUpdateSlide(slide.id, { imagen_desktop: e.target.value })}
                             placeholder="https://... imagen para PC"
-                            className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
-                            <Smartphone className="w-3.5 h-3.5 text-zinc-500" />
+                          <label className="block text-xs font-semibold opacity-75 mb-1.5 flex items-center gap-1.5">
+                            <Smartphone className="w-3.5 h-3.5 opacity-60" />
                             URL Imagen Mobile (opcional, vertical)
                           </label>
                           <input
@@ -429,7 +429,7 @@ export function HeroEditor({
                             value={slide.imagen_mobile || ''}
                             onChange={(e) => handleUpdateSlide(slide.id, { imagen_mobile: e.target.value })}
                             placeholder="https://... optimizada para celulares"
-                            className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                           />
                         </div>
                       </div>
@@ -437,7 +437,7 @@ export function HeroEditor({
                       {/* Textos del Banner */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                          <label className="block text-xs font-semibold opacity-75 mb-1.5">
                             Título principal
                           </label>
                           <input
@@ -445,12 +445,12 @@ export function HeroEditor({
                             value={slide.titulo || ''}
                             onChange={(e) => handleUpdateSlide(slide.id, { titulo: e.target.value })}
                             placeholder="Ej: Ofertas de Temporada"
-                            className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                          <label className="block text-xs font-semibold opacity-75 mb-1.5">
                             Subtítulo / Bajada
                           </label>
                           <input
@@ -458,20 +458,20 @@ export function HeroEditor({
                             value={slide.subtitulo || ''}
                             onChange={(e) => handleUpdateSlide(slide.id, { subtitulo: e.target.value })}
                             placeholder="Ej: Hasta 3 cuotas sin interés en filamentos"
-                            className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                           />
                         </div>
                       </div>
 
                       {/* Botón de Llamada a la Acción (CTA) */}
-                      <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
-                        <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                      <div className="pt-2 border-t border-[var(--color-borde)] space-y-3">
+                        <h4 className="text-xs font-semibold opacity-90">
                           Botón de Acción (CTA)
                         </h4>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div>
-                            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                            <label className="block text-xs font-semibold opacity-75 mb-1.5">
                               Texto del botón
                             </label>
                             <input
@@ -479,32 +479,32 @@ export function HeroEditor({
                               value={slide.cta_texto || ''}
                               onChange={(e) => handleUpdateSlide(slide.id, { cta_texto: e.target.value })}
                               placeholder="Ej: Ver catálogo, Comprar"
-                              className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                              className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                             />
                           </div>
 
                           <div>
-                            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                            <label className="block text-xs font-semibold opacity-75 mb-1.5">
                               Destino del clic
                             </label>
                             <div className="relative">
                               <select
                                 value={slide.cta_destino_tipo || 'catalogo'}
                                 onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_tipo: e.target.value as any })}
-                                className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                                className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
                               >
-                                <option value="catalogo" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Catálogo general</option>
-                                <option value="categoria" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Categoría</option>
-                                <option value="producto" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Producto</option>
-                                <option value="pagina" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Página</option>
-                                <option value="custom" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">URL personalizada</option>
+                                <option value="catalogo">Catálogo general</option>
+                                <option value="categoria">Categoría</option>
+                                <option value="producto">Producto</option>
+                                <option value="pagina">Página</option>
+                                <option value="custom">URL personalizada</option>
                               </select>
-                              <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                              <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                             </div>
                           </div>
 
                           <div>
-                            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                            <label className="block text-xs font-semibold opacity-75 mb-1.5">
                               Elemento destino
                             </label>
                             {slide.cta_destino_tipo === 'categoria' ? (
@@ -512,42 +512,42 @@ export function HeroEditor({
                                 <select
                                   value={slide.cta_destino_valor || ''}
                                   onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_valor: e.target.value })}
-                                  className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                                  className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
                                 >
-                                  <option value="" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">-- Elige categoría --</option>
+                                  <option value="">-- Elige categoría --</option>
                                   {categories.map((c) => (
-                                    <option key={c.id} value={c.id} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">{c.nombre}</option>
+                                    <option key={c.id} value={c.id}>{c.nombre}</option>
                                   ))}
                                 </select>
-                                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                               </div>
                             ) : slide.cta_destino_tipo === 'producto' ? (
                               <div className="relative">
                                 <select
                                   value={slide.cta_destino_valor || ''}
                                   onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_valor: e.target.value })}
-                                  className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                                  className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
                                 >
-                                  <option value="" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">-- Elige producto --</option>
+                                  <option value="">-- Elige producto --</option>
                                   {products.map((p) => (
-                                    <option key={p.id} value={p.slug} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">{p.nombre}</option>
+                                    <option key={p.id} value={p.slug}>{p.nombre}</option>
                                   ))}
                                 </select>
-                                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                               </div>
                             ) : slide.cta_destino_tipo === 'pagina' ? (
                               <div className="relative">
                                 <select
                                   value={slide.cta_destino_valor || ''}
                                   onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_valor: e.target.value })}
-                                  className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                                  className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
                                 >
-                                  <option value="" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">-- Elige página --</option>
+                                  <option value="">-- Elige página --</option>
                                   {pages.map((pg) => (
-                                    <option key={pg.id} value={pg.slug} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">{pg.titulo}</option>
+                                    <option key={pg.id} value={pg.slug}>{pg.titulo}</option>
                                   ))}
                                 </select>
-                                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                               </div>
                             ) : (
                               <input
@@ -555,7 +555,7 @@ export function HeroEditor({
                                 value={slide.cta_url || ''}
                                 onChange={(e) => handleUpdateSlide(slide.id, { cta_url: e.target.value })}
                                 placeholder="URL de destino"
-                                className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none"
+                                className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                               />
                             )}
                           </div>
@@ -563,28 +563,28 @@ export function HeroEditor({
                       </div>
 
                       {/* Programación de Vigencia (Fechas) */}
-                      <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                        <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-zinc-500" />
+                      <div className="pt-2 border-t border-[var(--color-borde)]">
+                        <label className="block text-xs font-semibold opacity-75 mb-1.5 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 opacity-60" />
                           Programación de Vigencia (Opcional)
                         </label>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
-                            <span className="text-[11px] text-zinc-500 block mb-0.5">Mostrar a partir de:</span>
+                            <span className="text-[11px] opacity-60 block mb-0.5">Mostrar a partir de:</span>
                             <input
                               type="datetime-local"
                               value={slide.fecha_desde ? slide.fecha_desde.slice(0, 16) : ''}
                               onChange={(e) => handleUpdateSlide(slide.id, { fecha_desde: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                              className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none"
+                              className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                             />
                           </div>
                           <div>
-                            <span className="text-[11px] text-zinc-500 block mb-0.5">Ocultar a partir de:</span>
+                            <span className="text-[11px] opacity-60 block mb-0.5">Ocultar a partir de:</span>
                             <input
                               type="datetime-local"
                               value={slide.fecha_hasta ? slide.fecha_hasta.slice(0, 16) : ''}
                               onChange={(e) => handleUpdateSlide(slide.id, { fecha_hasta: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                              className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none"
+                              className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                             />
                           </div>
                         </div>

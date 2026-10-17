@@ -105,8 +105,8 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
   return (
     <div className="space-y-6">
       {/* Configuración Visual de la Barra */}
-      <div className="p-4 sm:p-6 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/10 dark:border-white/10 space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider opacity-80 flex items-center gap-1.5">
+      <div className="bg-[var(--color-superficie)] border border-[var(--color-borde)] rounded-3xl p-5 sm:p-7 shadow-xs space-y-4 text-[var(--color-texto)]">
+        <h3 className="text-sm font-semibold flex items-center gap-2">
           <Layers className="w-4 h-4 text-amber-500" />
           <span>Comportamiento y Estilos de la Top Bar</span>
         </h3>
@@ -114,42 +114,42 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
           {/* Modo */}
           <div className="space-y-1.5">
-            <label className="font-bold opacity-70 block">Modo de visualización</label>
+            <label className="font-semibold opacity-75 block">Modo de visualización</label>
             <div className="relative">
               <select
                 value={settings.modo}
                 onChange={(e) => handleSettingChange('modo', e.target.value)}
-                className="w-full appearance-none pl-3 pr-9 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer"
+                className="w-full appearance-none pl-3 pr-9 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer"
               >
-                <option value="rotativo" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Rotativo (Pasa de mensaje en mensaje)</option>
-                <option value="ticker" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Ticker / Marquee (Desplazamiento continuo)</option>
-                <option value="estatico" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Estático (Mensajes fijos)</option>
+                <option value="rotativo">Rotativo (Pasa de mensaje en mensaje)</option>
+                <option value="ticker">Ticker / Marquee (Desplazamiento continuo)</option>
+                <option value="estatico">Estático (Mensajes fijos)</option>
               </select>
-              <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
 
           {/* Color de Fondo */}
           <div className="space-y-1.5">
-            <label className="font-bold opacity-70 block">Color de fondo</label>
+            <label className="font-semibold opacity-75 block">Color de fondo</label>
             <div className="relative">
               <select
                 value={settings.fondo_color}
                 onChange={(e) => handleSettingChange('fondo_color', e.target.value)}
-                className="w-full appearance-none pl-3 pr-9 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer"
+                className="w-full appearance-none pl-3 pr-9 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer"
               >
-                <option value="primario" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Color Primario de la Tienda</option>
-                <option value="superficie" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Superficie Sutil (Gris claro / Oscuro)</option>
-                <option value="contraste" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Alto Contraste (Negro / Blanco)</option>
+                <option value="primario">Color Primario de la Tienda</option>
+                <option value="superficie">Superficie Sutil (Gris claro / Oscuro)</option>
+                <option value="contraste">Alto Contraste (Negro / Blanco)</option>
               </select>
-              <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
 
           {/* Intervalo / Velocidad */}
           {settings.modo === 'rotativo' ? (
             <div className="space-y-1.5">
-              <label className="font-bold opacity-70 block">Intervalo entre mensajes</label>
+              <label className="font-semibold opacity-75 block">Intervalo entre mensajes</label>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -157,14 +157,14 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
                   max={15}
                   value={settings.intervalo_segundos}
                   onChange={(e) => handleSettingChange('intervalo_segundos', Number(e.target.value))}
-                  className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                  className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                 />
                 <span className="opacity-60 text-xs shrink-0">segundos</span>
               </div>
             </div>
           ) : settings.modo === 'ticker' ? (
             <div className="space-y-1.5">
-              <label className="font-bold opacity-70 block">Duración del ciclo ticker</label>
+              <label className="font-semibold opacity-75 block">Duración del ciclo ticker</label>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -172,7 +172,7 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
                   max={60}
                   value={settings.velocidad_ticker}
                   onChange={(e) => handleSettingChange('velocidad_ticker', Number(e.target.value))}
-                  className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                  className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                 />
                 <span className="opacity-60 text-xs shrink-0">segundos</span>
               </div>
@@ -180,23 +180,23 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
           ) : null}
         </div>
 
-        <div className="flex flex-wrap items-center gap-6 pt-2 border-t border-black/5 dark:border-white/5 text-xs">
-          <label className="flex items-center gap-2 cursor-pointer font-medium">
+        <div className="flex flex-wrap items-center gap-6 pt-3 border-t border-[var(--color-borde)] text-xs">
+          <label className="flex items-center gap-2 cursor-pointer font-medium opacity-80 hover:opacity-100">
             <input
               type="checkbox"
               checked={settings.pausar_hover}
               onChange={(e) => handleSettingChange('pausar_hover', e.target.checked)}
-              className="w-4 h-4 rounded text-[var(--color-primario)] focus:ring-[var(--color-primario)]"
+              className="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 border-[var(--color-borde)]"
             />
             <span>Pausar movimiento al pasar el cursor (hover) o tocar</span>
           </label>
 
-          <label className="flex items-center gap-2 cursor-pointer font-medium">
+          <label className="flex items-center gap-2 cursor-pointer font-medium opacity-80 hover:opacity-100">
             <input
               type="checkbox"
               checked={settings.mostrar_en_mobile}
               onChange={(e) => handleSettingChange('mostrar_en_mobile', e.target.checked)}
-              className="w-4 h-4 rounded text-[var(--color-primario)] focus:ring-[var(--color-primario)]"
+              className="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 border-[var(--color-borde)]"
             />
             <span>Mostrar también en teléfonos móviles</span>
           </label>
@@ -204,23 +204,28 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
       </div>
 
       {/* Lista de Mensajes */}
-      <div className="space-y-3">
+      <div className="bg-[var(--color-superficie)] border border-[var(--color-borde)] rounded-3xl p-5 sm:p-7 shadow-xs space-y-4 text-[var(--color-texto)]">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider opacity-80">
-            Mensajes y Avisos ({items.length})
-          </h3>
+          <div>
+            <h3 className="text-sm font-semibold">
+              Mensajes y Avisos ({items.length})
+            </h3>
+            <p className="text-xs opacity-70 mt-0.5">
+              Avisos rotativos o marquesina superior
+            </p>
+          </div>
           <button
             type="button"
             onClick={handleAddMessage}
-            className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#FACC15] hover:bg-[#EAB308] text-[#1F2937] font-semibold text-xs rounded-xl transition-colors shadow-xs cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             <span>Agregar Mensaje</span>
           </button>
         </div>
 
         {items.length === 0 ? (
-          <div className="p-6 text-center rounded-2xl border border-dashed border-black/15 dark:border-white/15 text-xs opacity-60">
+          <div className="p-8 text-center rounded-2xl border-2 border-dashed border-[var(--color-borde)] text-xs opacity-70 bg-black/[0.01] dark:bg-white/[0.01]">
             No hay mensajes cargados en la Top Bar. Hacé clic en "Agregar Mensaje".
           </div>
         ) : (
@@ -230,16 +235,16 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
                 key={item.id || idx}
                 className={`p-4 rounded-2xl border transition-all ${
                   item.activo
-                    ? 'bg-[var(--color-superficie)] border-black/10 dark:border-white/10 shadow-xs'
-                    : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/5 dark:border-white/5 opacity-60'
+                    ? 'bg-black/[0.02] dark:bg-white/[0.02] border-[var(--color-borde)] shadow-xs'
+                    : 'bg-black/[0.01] dark:bg-white/[0.01] border-[var(--color-borde)] opacity-60'
                 }`}
               >
-                <div className="flex items-center justify-between gap-3 pb-3 border-b border-black/5 dark:border-white/5">
+                <div className="flex items-center justify-between gap-3 pb-3 border-b border-[var(--color-borde)]">
                   <div className="flex items-center gap-2">
                     <span className="w-5 h-5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px] font-bold flex items-center justify-center">
                       {idx + 1}
                     </span>
-                    <span className="text-xs font-bold">Mensaje #{idx + 1}</span>
+                    <span className="text-xs font-semibold">Mensaje #{idx + 1}</span>
                   </div>
 
                   <div className="flex items-center gap-1">
@@ -247,7 +252,7 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
                       type="button"
                       disabled={idx === 0}
                       onClick={() => handleMoveMessage(idx, 'up')}
-                      className="p-1 rounded-lg border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-30 cursor-pointer"
+                      className="p-1 rounded-lg border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-30 cursor-pointer"
                     >
                       <ChevronUp className="w-3.5 h-3.5" />
                     </button>
@@ -255,7 +260,7 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
                       type="button"
                       disabled={idx === items.length - 1}
                       onClick={() => handleMoveMessage(idx, 'down')}
-                      className="p-1 rounded-lg border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-30 cursor-pointer"
+                      className="p-1 rounded-lg border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-30 cursor-pointer"
                     >
                       <ChevronDown className="w-3.5 h-3.5" />
                     </button>
@@ -263,10 +268,10 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
                     <button
                       type="button"
                       onClick={() => handleUpdateMessage(idx, 'activo', !item.activo)}
-                      className={`p-1 px-2 rounded-lg border text-[11px] font-semibold flex items-center gap-1 cursor-pointer ${
+                      className={`p-1 px-2.5 rounded-lg border text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
                         item.activo
                           ? 'border-emerald-500/30 text-emerald-700 dark:text-emerald-400 bg-emerald-500/10'
-                          : 'border-black/10 dark:border-white/10 opacity-60'
+                          : 'border-[var(--color-borde)] opacity-60'
                       }`}
                     >
                       {item.activo ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
@@ -276,7 +281,7 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
                     <button
                       type="button"
                       onClick={() => handleDeleteMessage(idx)}
-                      className="p-1 text-rose-600 hover:bg-rose-500/10 rounded-lg cursor-pointer"
+                      className="p-1.5 opacity-60 hover:opacity-100 hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -286,34 +291,34 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-3">
                   {/* Icono */}
                   <div className="sm:col-span-3 space-y-1">
-                    <label className="text-[10px] font-bold uppercase opacity-60 block">
+                    <label className="text-[10px] font-semibold opacity-70 block">
                       Icono SVG
                     </label>
                     <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center justify-center shrink-0">
-                        <SectionIcon name={item.icono} className="w-4 h-4 text-[var(--color-primario)]" />
+                      <div className="w-9 h-9 rounded-xl bg-black/5 dark:bg-white/5 border border-[var(--color-borde)] flex items-center justify-center shrink-0">
+                        <SectionIcon name={item.icono} className="w-4 h-4 text-amber-500" />
                       </div>
                       <div className="relative flex-1">
                         <select
                           value={item.icono || ''}
                           onChange={(e) => handleUpdateMessage(idx, 'icono', e.target.value)}
-                          className="w-full appearance-none pl-2.5 pr-8 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer"
+                          className="w-full appearance-none pl-2.5 pr-8 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer"
                         >
-                          <option value="" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Sin icono</option>
+                          <option value="">Sin icono</option>
                           {iconOptions.map((icon) => (
-                            <option key={icon} value={icon} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">
+                            <option key={icon} value={icon}>
                               {icon}
                             </option>
                           ))}
                         </select>
-                        <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     </div>
                   </div>
 
                   {/* Texto */}
                   <div className="sm:col-span-5 space-y-1">
-                    <label className="text-[10px] font-bold uppercase opacity-60 block">
+                    <label className="text-[10px] font-semibold opacity-70 block">
                       Texto del Mensaje *
                     </label>
                     <input
@@ -321,13 +326,13 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
                       value={item.texto}
                       onChange={(e) => handleUpdateMessage(idx, 'texto', e.target.value)}
                       placeholder="Ej: Envíos a todo el país / 3 Cuotas sin interés"
-                      className="w-full min-h-[38px] px-3 py-2 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                      className="w-full min-h-[38px] px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                     />
                   </div>
 
                   {/* Link opcional */}
                   <div className="sm:col-span-4 space-y-1">
-                    <label className="text-[10px] font-bold uppercase opacity-60 block">
+                    <label className="text-[10px] font-semibold opacity-70 block">
                       Enlace / URL (Opcional)
                     </label>
                     <div className="relative">
@@ -336,7 +341,7 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
                         value={item.link_url || ''}
                         onChange={(e) => handleUpdateMessage(idx, 'link_url', e.target.value)}
                         placeholder="Ej: /tienda/contacto o https://..."
-                        className="w-full min-h-[38px] pl-7 pr-3 py-2 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                        className="w-full min-h-[38px] pl-7 pr-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                       />
                       <LinkIcon className="w-3 h-3 opacity-40 absolute left-2.5 top-1/2 -translate-y-1/2" />
                     </div>

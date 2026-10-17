@@ -61,6 +61,9 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
     enabled: true,
     orden: 2,
     settings: {
+      mostrar_nombre: true,
+      mostrar_slogan: true,
+      tamano_slogan: 'mediano',
       mostrar_buscador: true,
       mostrar_carrito: true,
       mostrar_whatsapp: true,
@@ -164,12 +167,12 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col h-full bg-zinc-100/70 dark:bg-zinc-950/70 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-inner"
+      className="flex flex-col h-full bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] overflow-hidden shadow-xs text-[var(--color-texto)]"
     >
       {/* Barra de control del simulador */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 bg-black/[0.02] dark:bg-white/[0.02] border-b border-[var(--color-borde)] shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+          <span className="text-xs font-semibold flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Vista Previa</span>
           </span>
@@ -179,15 +182,15 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
         </div>
 
         {/* Selector de Dispositivos */}
-        <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-xl">
+        <div className="flex items-center bg-black/[0.04] dark:bg-white/[0.06] p-0.5 rounded-xl border border-[var(--color-borde)]">
           <button
             type="button"
             onClick={() => setDevice('desktop')}
             title="Vista de Computadora (1024px)"
-            className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`p-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
               device === 'desktop'
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300'
+                ? 'bg-[var(--color-superficie)] text-[#CA8A04] dark:text-[#FACC15] shadow-xs'
+                : 'opacity-60 hover:opacity-100'
             }`}
           >
             <Monitor className="w-4 h-4" />
@@ -196,10 +199,10 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
             type="button"
             onClick={() => setDevice('tablet')}
             title="Vista Tablet (768px)"
-            className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`p-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
               device === 'tablet'
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300'
+                ? 'bg-[var(--color-superficie)] text-[#CA8A04] dark:text-[#FACC15] shadow-xs'
+                : 'opacity-60 hover:opacity-100'
             }`}
           >
             <Tablet className="w-4 h-4" />
@@ -208,10 +211,10 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
             type="button"
             onClick={() => setDevice('mobile')}
             title="Vista Móvil (375px)"
-            className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`p-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
               device === 'mobile'
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300'
+                ? 'bg-[var(--color-superficie)] text-[#CA8A04] dark:text-[#FACC15] shadow-xs'
+                : 'opacity-60 hover:opacity-100'
             }`}
           >
             <Smartphone className="w-4 h-4" />
@@ -223,7 +226,7 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
           <button
             type="button"
             onClick={() => setPreviewTheme(previewTheme === 'light' ? 'dark' : 'light')}
-            className="p-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
             title="Cambiar tema de la vista previa"
           >
             {previewTheme === 'light' ? (

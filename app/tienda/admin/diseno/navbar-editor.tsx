@@ -158,18 +158,18 @@ export function NavbarEditor({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3 p-3.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 rounded-xl text-xs text-blue-800 dark:text-blue-300">
-        <Info className="w-4 h-4 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 rounded-2xl text-xs">
+        <Info className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
         <p>
           Organiza la barra de navegación para que tus clientes descubran rápidamente categorías clave, productos destacados, páginas informativas o links a medida.
         </p>
       </div>
 
       {/* 1. Apariencia y Alineación */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 space-y-4">
+      <div className="bg-[var(--color-superficie)] border border-[var(--color-borde)] rounded-3xl p-5 sm:p-7 shadow-xs space-y-4 text-[var(--color-texto)]">
         <div className="flex items-center gap-2">
-          <Sliders className="w-4 h-4 text-zinc-500" />
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          <Sliders className="w-4 h-4 text-amber-500" />
+          <h3 className="text-sm font-semibold">
             Estilo y Alineación de la Barra
           </h3>
         </div>
@@ -177,10 +177,10 @@ export function NavbarEditor({
         <div className="space-y-4">
           {/* Alineación */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+            <label className="block text-xs font-semibold opacity-75 mb-2">
               Alineación de los Enlaces
             </label>
-            <div className="inline-flex flex-wrap p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-2xl border border-zinc-200 dark:border-zinc-700/60 gap-1.5 w-full sm:w-auto">
+            <div className="inline-flex flex-wrap p-1 bg-black/[0.03] dark:bg-white/[0.04] rounded-2xl border border-[var(--color-borde)] gap-1.5 w-full sm:w-auto">
               {[
                 { key: 'centro', label: 'Centro' },
                 { key: 'izquierda', label: 'Izquierda' },
@@ -192,8 +192,8 @@ export function NavbarEditor({
                   onClick={() => updateSettings('alineacion', opt.key as any)}
                   className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-semibold whitespace-nowrap transition-all text-center cursor-pointer ${
                     settings.alineacion === opt.key
-                      ? 'bg-white dark:bg-zinc-900 text-blue-700 dark:text-blue-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                      ? 'bg-[var(--color-superficie)] text-[#CA8A04] dark:text-[#FACC15] shadow-xs border border-[var(--color-borde)]'
+                      : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                   }`}
                 >
                   {opt.label}
@@ -204,17 +204,17 @@ export function NavbarEditor({
 
           {/* Estilo visual */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+            <label className="block text-xs font-semibold opacity-75 mb-2">
               Estilo Visual de Pestañas
             </label>
-            <div className="inline-flex flex-wrap p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-2xl border border-zinc-200 dark:border-zinc-700/60 gap-1.5 w-full sm:w-auto">
+            <div className="inline-flex flex-wrap p-1 bg-black/[0.03] dark:bg-white/[0.04] rounded-2xl border border-[var(--color-borde)] gap-1.5 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => updateSettings('estilo', 'linea')}
                 className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-semibold whitespace-nowrap transition-all text-center cursor-pointer ${
                   settings.estilo === 'linea'
-                    ? 'bg-white dark:bg-zinc-900 text-blue-700 dark:text-blue-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                    ? 'bg-[var(--color-superficie)] text-[#CA8A04] dark:text-[#FACC15] shadow-xs border border-[var(--color-borde)]'
+                    : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
               >
                 Subrayado sutil
@@ -224,8 +224,8 @@ export function NavbarEditor({
                 onClick={() => updateSettings('estilo', 'pills')}
                 className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-semibold whitespace-nowrap transition-all text-center cursor-pointer ${
                   settings.estilo === 'pills'
-                    ? 'bg-white dark:bg-zinc-900 text-blue-700 dark:text-blue-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                    ? 'bg-[var(--color-superficie)] text-[#CA8A04] dark:text-[#FACC15] shadow-xs border border-[var(--color-borde)]'
+                    : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
               >
                 Pastillas (Pills)
@@ -236,20 +236,20 @@ export function NavbarEditor({
       </div>
 
       {/* 2. Lista de Enlaces */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 space-y-4">
+      <div className="bg-[var(--color-superficie)] border border-[var(--color-borde)] rounded-3xl p-5 sm:p-7 shadow-xs space-y-4 text-[var(--color-texto)]">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            <h3 className="text-sm font-semibold">
               Enlaces de Navegación ({items.length})
             </h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+            <p className="text-xs opacity-70 mt-0.5">
               Crea links directos a secciones clave de tu tienda
             </p>
           </div>
           <button
             type="button"
             onClick={handleAddItem}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-xl transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#FACC15] hover:bg-[#EAB308] text-[#1F2937] font-semibold text-xs rounded-xl transition-colors shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             Agregar enlace
@@ -257,9 +257,9 @@ export function NavbarEditor({
         </div>
 
         {items.length === 0 ? (
-          <div className="p-8 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
-            <Layers className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          <div className="p-8 text-center border-2 border-dashed border-[var(--color-borde)] rounded-2xl bg-black/[0.01] dark:bg-white/[0.01]">
+            <Layers className="w-8 h-8 opacity-40 mx-auto mb-2 text-amber-500" />
+            <p className="text-xs opacity-70">
               No hay enlaces agregados en el menú. Haz clic en "Agregar enlace" para comenzar.
             </p>
           </div>
@@ -270,21 +270,21 @@ export function NavbarEditor({
               return (
                 <div
                   key={item.id}
-                  className={`border rounded-xl transition-all ${
+                  className={`border rounded-2xl transition-all ${
                     isExpanded
-                      ? 'border-blue-500/50 bg-zinc-50/50 dark:bg-zinc-800/30 ring-1 ring-blue-500/20'
-                      : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900'
+                      ? 'border-[#FACC15] bg-[#FACC15]/5 shadow-xs'
+                      : 'border-[var(--color-borde)] bg-black/[0.02] dark:bg-white/[0.02]'
                   }`}
                 >
                   {/* Fila colapsada / Encabezado del ítem */}
-                  <div className="flex items-center justify-between p-3 gap-2">
+                  <div className="flex items-center justify-between p-3.5 gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="flex items-center gap-0.5 text-zinc-400">
+                      <div className="flex items-center gap-0.5 opacity-60">
                         <button
                           type="button"
                           disabled={index === 0}
                           onClick={() => handleMoveItem(index, 'up')}
-                          className="p-1 hover:text-zinc-600 dark:hover:text-zinc-200 disabled:opacity-30"
+                          className="p-1 hover:opacity-100 disabled:opacity-30 cursor-pointer"
                         >
                           <MoveUp className="w-3.5 h-3.5" />
                         </button>
@@ -292,7 +292,7 @@ export function NavbarEditor({
                           type="button"
                           disabled={index === items.length - 1}
                           onClick={() => handleMoveItem(index, 'down')}
-                          className="p-1 hover:text-zinc-600 dark:hover:text-zinc-200 disabled:opacity-30"
+                          className="p-1 hover:opacity-100 disabled:opacity-30 cursor-pointer"
                         >
                           <MoveDown className="w-3.5 h-3.5" />
                         </button>
@@ -301,16 +301,16 @@ export function NavbarEditor({
                       <button
                         type="button"
                         onClick={() => setEditingItemId(isExpanded ? null : item.id)}
-                        className="text-left font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate hover:text-blue-600 transition-colors flex items-center gap-2"
+                        className="text-left font-semibold text-sm truncate hover:text-[#CA8A04] dark:hover:text-[#FACC15] transition-colors flex items-center gap-2 cursor-pointer"
                       >
                         <span>{item.texto || '(Sin texto)'}</span>
                         {item.destacado && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 font-medium">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-semibold border border-amber-500/20">
                             Destacado
                           </span>
                         )}
                         {item.badge_texto && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 font-medium">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-400 font-semibold border border-blue-500/20">
                             Badge: {item.badge_texto}
                           </span>
                         )}
@@ -318,12 +318,12 @@ export function NavbarEditor({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <label className="flex items-center gap-1.5 text-xs text-zinc-500 cursor-pointer">
+                      <label className="flex items-center gap-1.5 text-xs opacity-75 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={item.activo}
                           onChange={(e) => handleUpdateItem(item.id, { activo: e.target.checked })}
-                          className="w-3.5 h-3.5 text-blue-600 rounded border-zinc-300 dark:border-zinc-700 focus:ring-blue-500"
+                          className="w-3.5 h-3.5 text-amber-500 rounded border-[var(--color-borde)] focus:ring-amber-400"
                         />
                         <span className="hidden sm:inline">Activo</span>
                       </label>
@@ -331,7 +331,7 @@ export function NavbarEditor({
                       <button
                         type="button"
                         onClick={() => setEditingItemId(isExpanded ? null : item.id)}
-                        className="p-1.5 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
                       >
                         {isExpanded ? 'Cerrar' : 'Editar'}
                       </button>
@@ -339,7 +339,7 @@ export function NavbarEditor({
                       <button
                         type="button"
                         onClick={() => handleRemoveItem(item.id)}
-                        className="p-1.5 text-zinc-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                        className="p-1.5 opacity-60 hover:opacity-100 hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -348,11 +348,11 @@ export function NavbarEditor({
 
                   {/* Formulario de edición expandido */}
                   {isExpanded && (
-                    <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 space-y-4">
+                    <div className="p-4 border-t border-[var(--color-borde)] space-y-4 bg-black/[0.01] dark:bg-white/[0.01]">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* Texto del enlace */}
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                          <label className="block text-xs font-semibold opacity-75 mb-1.5">
                             Texto visible
                           </label>
                           <input
@@ -360,28 +360,28 @@ export function NavbarEditor({
                             value={item.texto}
                             onChange={(e) => handleUpdateItem(item.id, { texto: e.target.value })}
                             placeholder="Ej: Ofertas, Impresoras 3D, Contacto"
-                            className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                           />
                         </div>
 
                         {/* Tipo de destino */}
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                          <label className="block text-xs font-semibold opacity-75 mb-1.5">
                             Tipo de destino
                           </label>
                           <div className="relative">
                             <select
                               value={item.tipo_destino}
                               onChange={(e) => handleUpdateItem(item.id, { tipo_destino: e.target.value as any })}
-                              className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                              className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
                             >
-                              <option value="catalogo" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Catálogo completo</option>
-                              <option value="categoria" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Categoría de productos</option>
-                              <option value="producto" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Producto específico</option>
-                              <option value="pagina" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">Página informativa</option>
-                              <option value="custom" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">URL personalizada / Externa</option>
+                              <option value="catalogo">Catálogo completo</option>
+                              <option value="categoria">Categoría de productos</option>
+                              <option value="producto">Producto específico</option>
+                              <option value="pagina">Página informativa</option>
+                              <option value="custom">URL personalizada / Externa</option>
                             </select>
-                            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           </div>
                         </div>
                       </div>
@@ -389,76 +389,76 @@ export function NavbarEditor({
                       {/* Selector específico según el tipo de destino */}
                       {item.tipo_destino === 'categoria' && (
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                          <label className="block text-xs font-semibold opacity-75 mb-1.5">
                             Seleccionar Categoría
                           </label>
                           <div className="relative">
                             <select
                               value={item.destino_valor || ''}
                               onChange={(e) => handleUpdateItem(item.id, { destino_valor: e.target.value })}
-                              className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                              className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
                             >
-                              <option value="" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">-- Elige una categoría --</option>
+                              <option value="">-- Elige una categoría --</option>
                               {categories.map((cat) => (
-                                <option key={cat.id} value={cat.id} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">
+                                <option key={cat.id} value={cat.id}>
                                   {cat.nombre}
                                 </option>
                               ))}
                             </select>
-                            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           </div>
                         </div>
                       )}
 
                       {item.tipo_destino === 'producto' && (
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                          <label className="block text-xs font-semibold opacity-75 mb-1.5">
                             Seleccionar Producto
                           </label>
                           <div className="relative">
                             <select
                               value={item.destino_valor || ''}
                               onChange={(e) => handleUpdateItem(item.id, { destino_valor: e.target.value })}
-                              className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                              className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
                             >
-                              <option value="" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">-- Elige un producto --</option>
+                              <option value="">-- Elige un producto --</option>
                               {products.map((prod) => (
-                                <option key={prod.id} value={prod.slug} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">
+                                <option key={prod.id} value={prod.slug}>
                                   {prod.nombre}
                                 </option>
                               ))}
                             </select>
-                            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           </div>
                         </div>
                       )}
 
                       {item.tipo_destino === 'pagina' && (
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                          <label className="block text-xs font-semibold opacity-75 mb-1.5">
                             Seleccionar Página
                           </label>
                           <div className="relative">
                             <select
                               value={item.destino_valor || ''}
                               onChange={(e) => handleUpdateItem(item.id, { destino_valor: e.target.value })}
-                              className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer font-medium"
+                              className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
                             >
-                              <option value="" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">-- Elige una página --</option>
+                              <option value="">-- Elige una página --</option>
                               {pages.map((pg) => (
-                                <option key={pg.id} value={pg.slug} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 py-1">
+                                <option key={pg.id} value={pg.slug}>
                                   {pg.titulo}
                                 </option>
                               ))}
                             </select>
-                            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           </div>
                         </div>
                       )}
 
                       {item.tipo_destino === 'custom' && (
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                          <label className="block text-xs font-semibold opacity-75 mb-1.5">
                             URL personalizada
                           </label>
                           <input
@@ -466,32 +466,32 @@ export function NavbarEditor({
                             value={item.destino_url}
                             onChange={(e) => handleUpdateItem(item.id, { destino_url: e.target.value })}
                             placeholder="https://... o /ruta"
-                            className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                           />
                         </div>
                       )}
 
                       {/* Destacados y Badge */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-[var(--color-borde)]">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={!!item.destacado}
                             onChange={(e) => handleUpdateItem(item.id, { destacado: e.target.checked })}
-                            className="w-4 h-4 text-blue-600 rounded border-zinc-300 dark:border-zinc-700 focus:ring-blue-500"
+                            className="w-4 h-4 text-amber-500 rounded border-[var(--color-borde)] focus:ring-amber-400"
                           />
                           <div>
-                            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100 block">
+                            <span className="text-xs font-semibold block">
                               Resaltar enlace
                             </span>
-                            <span className="text-[11px] text-zinc-500">
+                            <span className="text-[11px] opacity-70">
                               Aplica color de acento y tipografía destacada
                             </span>
                           </div>
                         </label>
 
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                          <label className="block text-xs font-semibold opacity-75 mb-1.5">
                             Badge o etiqueta (opcional)
                           </label>
                           <input
@@ -499,7 +499,7 @@ export function NavbarEditor({
                             value={item.badge_texto || ''}
                             onChange={(e) => handleUpdateItem(item.id, { badge_texto: e.target.value })}
                             placeholder="Ej: HOT, Nuevo, -20%"
-                            className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                           />
                         </div>
                       </div>
