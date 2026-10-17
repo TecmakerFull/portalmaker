@@ -285,6 +285,16 @@ export default function AdminSidebar({
           {openTienda && (
             <div className="ml-4 pl-3 border-l border-[var(--color-borde)] space-y-1 mt-1">
               <Link
+                href={`/tienda/admin/branding${tenantQuery}`}
+                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  isBranding
+                    ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
+                    : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+                }`}
+              >
+                Colores & Logo
+              </Link>
+              <Link
                 href={`/tienda/admin/diseno${tenantQuery}`}
                 className={`min-h-[40px] flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   isDiseno
@@ -296,16 +306,6 @@ export default function AdminSidebar({
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-blue-500/20 text-blue-700 dark:text-blue-400">
                   Nuevo
                 </span>
-              </Link>
-              <Link
-                href={`/tienda/admin/branding${tenantQuery}`}
-                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  isBranding
-                    ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
-                    : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-                }`}
-              >
-                Colores & Logo
               </Link>
               <Link
                 href={`/tienda/admin/banners${tenantQuery}`}
