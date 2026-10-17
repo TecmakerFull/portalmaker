@@ -62,8 +62,8 @@ ${promptDetalles ? `- Puntos clave / Prompt del maker: ${promptDetalles}` : ''}
 
 Recuerda: Cero emojis, redacción profesional, estructura concisa con viñetas y formato Markdown.`
 
-    // Intentar invocar gemini-3.8-flash (o fallback a gemini-2.5-flash)
-    const models = ['gemini-3.8-flash', 'gemini-2.5-flash']
+    // Intentar invocar gemini-3.8-flash (o fallback a gemini-3.5-flash y gemini-flash-latest)
+    const models = ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-flash-latest']
     let generatedText = ''
     let lastError = null
 
@@ -85,7 +85,10 @@ Recuerda: Cero emojis, redacción profesional, estructura concisa con viñetas y
               ],
               generationConfig: {
                 temperature: 0.7,
-                maxOutputTokens: 600,
+                maxOutputTokens: 2500,
+                thinkingConfig: {
+                  thinkingBudget: 0,
+                },
               },
             }),
           }
