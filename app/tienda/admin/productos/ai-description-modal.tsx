@@ -39,8 +39,8 @@ export default function AiDescriptionModal({
   const [generatedText, setGeneratedText] = useState('')
   const [copied, setCopied] = useState(false)
 
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleGenerate = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     if (!productName.trim() && !promptDetails.trim()) {
       setErrorMsg('Ingresa al menos el nombre del producto o algunas características.')
       return
@@ -120,7 +120,7 @@ export default function AiDescriptionModal({
         )}
 
         {/* Formulario de Prompt */}
-        <form onSubmit={handleGenerate} className="space-y-4">
+        <div className="space-y-4">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
               Título o Nombre del Producto
@@ -129,6 +129,12 @@ export default function AiDescriptionModal({
               type="text"
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleGenerate()
+                }
+              }}
               placeholder="Ej: Soporte de Auriculares Gamer RGB"
               className="w-full min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-xs focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
@@ -142,6 +148,12 @@ export default function AiDescriptionModal({
               rows={3}
               value={promptDetails}
               onChange={(e) => setPromptDetails(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault()
+                  handleGenerate()
+                }
+              }}
               placeholder="Ej: Fabricado en PLA de alta resistencia, base con goma antideslizante, encastre a presión, disponible en varios colores, ideal para escritorios de oficina o gaming..."
               className="w-full p-3 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
@@ -180,7 +192,8 @@ export default function AiDescriptionModal({
           </div>
 
           <button
-            type="submit"
+            type="button"
+            onClick={() => handleGenerate()}
             disabled={loading}
             className="w-full min-h-[44px] px-4 py-2.5 rounded-xl bg-amber-400 text-slate-900 hover:bg-amber-500 font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
           >
@@ -196,7 +209,7 @@ export default function AiDescriptionModal({
               </>
             )}
           </button>
-        </form>
+        </div>
 
         {/* Resultado Generado */}
         {generatedText && (

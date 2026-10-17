@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import type { StoreSection, NavbarSettings, NavbarItem } from '@/types/database'
 import { ChevronDown } from 'lucide-react'
+import { usePreviewDevice } from '../preview-context'
 
 interface StoreNavbarProps {
   section: StoreSection<NavbarSettings, NavbarItem[]>
@@ -38,6 +39,9 @@ function StoreNavbarInner({ section, tenantQuery }: StoreNavbarProps) {
     estilo = 'linea',
     sticky = false,
   } = section.settings || {}
+
+  const previewDevice = usePreviewDevice()
+  const isMobile = previewDevice === 'mobile'
 
   const isPills = estilo === 'pills'
 
@@ -204,7 +208,12 @@ function StoreNavbarInner({ section, tenantQuery }: StoreNavbarProps) {
 
   return (
     <div
-      className={`border-b border-black/10 dark:border-white/10 bg-[var(--color-fondo)]/90 backdrop-blur-xs transition-colors duration-200 z-20 ${
+      style={{
+        backgroundColor: 'color-mix(in srgb, var(--color-fondo) 84%, transparent)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+      }}
+      className={`border-b border-black/10 dark:border-white/10 transition-colors duration-200 z-20 ${
         sticky ? 'sticky top-16 sm:top-20' : 'relative'
       }`}
     >
@@ -219,12 +228,14 @@ function StoreNavbarInner({ section, tenantQuery }: StoreNavbarProps) {
               {mainItems.map((item) => renderLink(item))}
             </div>
 
-            <div className={`hidden md:flex items-center ${isPills ? 'gap-2 sm:gap-2.5' : 'gap-6 sm:gap-8'} shrink-0 pl-4`}>
-              {secondaryItems.map((item) => renderLink(item))}
-              <span className="hidden lg:flex items-center text-[11px] opacity-60 font-medium cursor-default">
-                Español · ARS <ChevronDown className="ml-1.5 w-3 h-3 opacity-60" />
-              </span>
-            </div>
+            {!isMobile && (
+              <div className={`hidden md:flex items-center ${isPills ? 'gap-2 sm:gap-2.5' : 'gap-6 sm:gap-8'} shrink-0 pl-4`}>
+                {secondaryItems.map((item) => renderLink(item))}
+                <span className="hidden lg:flex items-center text-[11px] opacity-60 font-medium cursor-default">
+                  Español · ARS <ChevronDown className="ml-1.5 w-3 h-3 opacity-60" />
+                </span>
+              </div>
+            )}
           </div>
         ) : (
           /* Disposición Centrada o a la Izquierda: Todos los enlaces en un solo bloque fluido */
@@ -235,9 +246,11 @@ function StoreNavbarInner({ section, tenantQuery }: StoreNavbarProps) {
           >
             {navItemsToRender.map((item) => renderLink(item))}
 
-            <span className="hidden lg:flex items-center text-[11px] opacity-60 font-medium cursor-default ml-4 pl-4 border-l border-black/10 dark:border-white/10">
-              Español · ARS <ChevronDown className="ml-1.5 w-3 h-3 opacity-60" />
-            </span>
+            {!isMobile && (
+              <span className="hidden lg:flex items-center text-[11px] opacity-60 font-medium cursor-default ml-4 pl-4 border-l border-black/10 dark:border-white/10">
+                Español · ARS <ChevronDown className="ml-1.5 w-3 h-3 opacity-60" />
+              </span>
+            )}
           </div>
         )}
       </nav>

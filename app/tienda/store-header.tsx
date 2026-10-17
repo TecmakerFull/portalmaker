@@ -40,7 +40,14 @@ export default function StoreHeader({
   }
 
   return (
-    <header className="border-b border-black/10 dark:border-white/10 sticky top-0 bg-[var(--color-fondo)]/95 backdrop-blur-md z-30 transition-colors duration-200">
+    <header
+      style={{
+        backgroundColor: 'color-mix(in srgb, var(--color-fondo) 80%, transparent)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+      }}
+      className="border-b border-black/10 dark:border-white/10 sticky top-0 z-40 transition-colors duration-200"
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Fila Principal: Buscador (Izq) — Marca Centrada (Centro) — Carrito & Tema (Der) */}
         <div className="h-20 sm:h-24 grid grid-cols-3 items-center">

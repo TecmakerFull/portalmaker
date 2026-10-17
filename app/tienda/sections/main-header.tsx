@@ -22,6 +22,7 @@ import {
   X,
   ArrowRight,
 } from 'lucide-react'
+import { usePreviewDevice } from '../preview-context'
 
 interface MainHeaderProps {
   store: Store
@@ -81,6 +82,8 @@ export default function MainHeader({
   } = settings || {}
 
   const isCenter = logo_posicion === 'centro'
+  const previewDevice = usePreviewDevice()
+  const isMobile = previewDevice === 'mobile'
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -160,25 +163,36 @@ export default function MainHeader({
 
   return (
     <header
-      className={`border-b border-black/10 dark:border-white/10 bg-[var(--color-fondo)]/95 backdrop-blur-md z-30 transition-colors duration-200 ${
-        sticky ? 'sticky top-0' : 'relative'
+      style={{
+        backgroundColor: 'color-mix(in srgb, var(--color-fondo) 80%, transparent)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+      }}
+      className={`w-full border-b border-black/10 dark:border-white/10 z-40 transition-colors duration-200 ${
+        sticky ? 'sticky top-0 shadow-xs' : 'relative'
       }`}
     >
       {isCenter ? (
         /* DISPOSICIÓN 1: LOGO CENTRADO (Estilo Tiendanube Moderno) */
-        <div className="wrap grid grid-cols-[auto_1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-4 py-3.5 sm:py-5">
+        <div className={`wrap items-center gap-2 sm:gap-4 py-3.5 sm:py-5 ${
+          isMobile
+            ? 'flex justify-between'
+            : 'grid grid-cols-[auto_1fr_auto] md:grid-cols-[1fr_auto_1fr]'
+        }`}>
           {/* Izquierda: Menú Mobile + Buscador Desktop */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               type="button"
-              className="md:hidden min-w-[40px] min-h-[40px] -ml-1 rounded-xl flex items-center justify-center text-[var(--color-texto)] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+              className={`min-w-[40px] min-h-[40px] -ml-1 rounded-xl items-center justify-center text-[var(--color-texto)] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer ${
+                isMobile ? 'flex' : 'flex md:hidden'
+              }`}
               aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú de navegación'}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
-            {mostrar_buscador && renderSearchBar('w-full max-w-[240px] lg:max-w-[320px]')}
+            {!isMobile && mostrar_buscador && renderSearchBar('w-full max-w-[240px] lg:max-w-[320px]')}
           </div>
 
           {/* Centro: Logo / Marca perfectamente centrado */}
@@ -190,45 +204,49 @@ export default function MainHeader({
           <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-3">
             {mostrar_tema_toggle && <ThemeToggle />}
 
-            {/* Botón Mi Cuenta (Diferenciado si está logueado) */}
-            <Link
-              href={withTenant('/tienda/cuenta')}
-              title={
-                activeCustomer
-                  ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email}) - Conectado`
-                  : 'Ingresar a mi cuenta'
-              }
-              aria-label={
-                activeCustomer
-                  ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email})`
-                  : 'Ingresar a mi cuenta'
-              }
-              className={`min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
-                activeCustomer
-                  ? 'border-[var(--color-primario)]/50 bg-[var(--color-primario)]/15 text-[var(--color-primario)] ring-1 ring-[var(--color-primario)]/30'
-                  : 'border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)]'
-              }`}
-            >
-              {activeCustomer ? (
-                <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primario)]" />
-              ) : (
-                <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-90" />
-              )}
-            </Link>
+            {/* En Desktop: Accesos directos a Mi Cuenta y Favoritos */}
+            {!isMobile && (
+              <>
+                <Link
+                  href={withTenant('/tienda/cuenta')}
+                  title={
+                    activeCustomer
+                      ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email}) - Conectado`
+                      : 'Ingresar a mi cuenta'
+                  }
+                  aria-label={
+                    activeCustomer
+                      ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email})`
+                      : 'Ingresar a mi cuenta'
+                  }
+                  className={`hidden md:flex min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border items-center justify-center transition-all active:scale-95 cursor-pointer ${
+                    activeCustomer
+                      ? 'border-[var(--color-primario)]/50 bg-[var(--color-primario)]/15 text-[var(--color-primario)] ring-1 ring-[var(--color-primario)]/30'
+                      : 'border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)]'
+                  }`}
+                >
+                  {activeCustomer ? (
+                    <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primario)]" />
+                  ) : (
+                    <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-90" />
+                  )}
+                </Link>
 
-            <Link
-              href={withTenant('/tienda/favoritos')}
-              title="Favoritos"
-              aria-label={`Favoritos, ${favorites.length} guardados`}
-              className="relative min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] flex items-center justify-center transition-all active:scale-95 cursor-pointer"
-            >
-              <Heart className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" />
-              {favorites.length > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[9px] font-bold flex items-center justify-center shadow-xs">
-                  {favorites.length}
-                </span>
-              )}
-            </Link>
+                <Link
+                  href={withTenant('/tienda/favoritos')}
+                  title="Favoritos"
+                  aria-label={`Favoritos, ${favorites.length} guardados`}
+                  className="hidden md:flex relative min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] items-center justify-center transition-all active:scale-95 cursor-pointer"
+                >
+                  <Heart className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" />
+                  {favorites.length > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[9px] font-bold flex items-center justify-center shadow-xs">
+                      {favorites.length}
+                    </span>
+                  )}
+                </Link>
+              </>
+            )}
 
             {mostrar_carrito && (
               <button
@@ -238,7 +256,7 @@ export default function MainHeader({
                 className="min-h-[40px] h-10 px-2.5 sm:px-3 rounded-xl border border-black/15 dark:border-white/15 bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
               >
                 <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primario-legible)]" />
-                <span className="hidden sm:inline text-xs font-semibold">Mi carrito</span>
+                {!isMobile && <span className="hidden sm:inline text-xs font-semibold">Mi carrito</span>}
                 <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[10px] font-bold flex items-center justify-center shadow-xs">
                   {totalItems}
                 </span>
@@ -248,12 +266,18 @@ export default function MainHeader({
         </div>
       ) : (
         /* DISPOSICIÓN 2: LOGO A LA IZQUIERDA (Estilo E-commerce Clásico) */
-        <div className="wrap grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:gap-4 py-4 sm:py-5 md:grid-cols-[1fr_1.3fr_1fr]">
+        <div className={`wrap items-center gap-2 sm:gap-4 py-4 sm:py-5 ${
+          isMobile
+            ? 'flex justify-between'
+            : 'grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[1fr_1.3fr_1fr]'
+        }`}>
           {/* Izquierda: Botón Menú Mobile + Logo / Marca */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-4">
             <button
               type="button"
-              className="md:hidden min-w-[44px] min-h-[44px] -ml-2 rounded-xl flex items-center justify-center text-[var(--color-texto)] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+              className={`min-w-[40px] min-h-[40px] -ml-2 rounded-xl items-center justify-center text-[var(--color-texto)] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer ${
+                isMobile ? 'flex' : 'flex md:hidden'
+              }`}
               aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú de navegación'}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
@@ -264,50 +288,54 @@ export default function MainHeader({
           </div>
 
           {/* Centro: Buscador de productos (Desktop) */}
-          {mostrar_buscador ? renderSearchBar('w-full') : <div />}
+          {!isMobile && (mostrar_buscador ? renderSearchBar('w-full') : <div />)}
 
           {/* Derecha: Acciones */}
           <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-3">
             {mostrar_tema_toggle && <ThemeToggle />}
 
-            <Link
-              href={withTenant('/tienda/cuenta')}
-              title={
-                activeCustomer
-                  ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email}) - Conectado`
-                  : 'Ingresar a mi cuenta'
-              }
-              aria-label={
-                activeCustomer
-                  ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email})`
-                  : 'Ingresar a mi cuenta'
-              }
-              className={`min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
-                activeCustomer
-                  ? 'border-[var(--color-primario)]/50 bg-[var(--color-primario)]/15 text-[var(--color-primario)] ring-1 ring-[var(--color-primario)]/30'
-                  : 'border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)]'
-              }`}
-            >
-              {activeCustomer ? (
-                <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primario)]" />
-              ) : (
-                <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-90" />
-              )}
-            </Link>
+            {!isMobile && (
+              <>
+                <Link
+                  href={withTenant('/tienda/cuenta')}
+                  title={
+                    activeCustomer
+                      ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email}) - Conectado`
+                      : 'Ingresar a mi cuenta'
+                  }
+                  aria-label={
+                    activeCustomer
+                      ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email})`
+                      : 'Ingresar a mi cuenta'
+                  }
+                  className={`hidden md:flex min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border items-center justify-center transition-all active:scale-95 cursor-pointer ${
+                    activeCustomer
+                      ? 'border-[var(--color-primario)]/50 bg-[var(--color-primario)]/15 text-[var(--color-primario)] ring-1 ring-[var(--color-primario)]/30'
+                      : 'border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)]'
+                  }`}
+                >
+                  {activeCustomer ? (
+                    <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primario)]" />
+                  ) : (
+                    <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-90" />
+                  )}
+                </Link>
 
-            <Link
-              href={withTenant('/tienda/favoritos')}
-              title="Favoritos"
-              aria-label={`Favoritos, ${favorites.length} guardados`}
-              className="relative min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] flex items-center justify-center transition-all active:scale-95 cursor-pointer"
-            >
-              <Heart className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" />
-              {favorites.length > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[9px] font-bold flex items-center justify-center shadow-xs">
-                  {favorites.length}
-                </span>
-              )}
-            </Link>
+                <Link
+                  href={withTenant('/tienda/favoritos')}
+                  title="Favoritos"
+                  aria-label={`Favoritos, ${favorites.length} guardados`}
+                  className="hidden md:flex relative min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] items-center justify-center transition-all active:scale-95 cursor-pointer"
+                >
+                  <Heart className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" />
+                  {favorites.length > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[9px] font-bold flex items-center justify-center shadow-xs">
+                      {favorites.length}
+                    </span>
+                  )}
+                </Link>
+              </>
+            )}
 
             {mostrar_carrito && (
               <button
@@ -317,7 +345,7 @@ export default function MainHeader({
                 className="min-h-[40px] h-10 px-2.5 sm:px-3 rounded-xl border border-black/15 dark:border-white/15 bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
               >
                 <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primario-legible)]" />
-                <span className="hidden sm:inline text-xs font-semibold">Mi carrito</span>
+                {!isMobile && <span className="hidden sm:inline text-xs font-semibold">Mi carrito</span>}
                 <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[10px] font-bold flex items-center justify-center shadow-xs">
                   {totalItems}
                 </span>
@@ -329,7 +357,14 @@ export default function MainHeader({
 
       {/* Menú Desplegable Mobile */}
       {mobileMenuOpen && (
-        <div className="border-t border-black/10 dark:border-white/10 px-4 py-5 md:hidden bg-[var(--color-fondo)] animate-in slide-in-from-top-2 duration-200">
+        <div
+          style={{
+            backgroundColor: 'color-mix(in srgb, var(--color-fondo) 92%, transparent)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+          }}
+          className="border-t border-black/10 dark:border-white/10 px-4 py-5 md:hidden animate-in slide-in-from-top-2 duration-200"
+        >
           {mostrar_buscador && (
             <form onSubmit={handleSearchSubmit} className="mb-5 flex gap-2">
               <input

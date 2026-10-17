@@ -10,6 +10,7 @@ import Link from 'next/link'
 import type { StoreSection, TopBarSettings, TopBarMessageItem } from '@/types/database'
 import SectionIcon from './section-icon'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { usePreviewDevice } from '../preview-context'
 
 interface TopBarProps {
   section: StoreSection<TopBarSettings, TopBarMessageItem[]>
@@ -17,10 +18,10 @@ interface TopBarProps {
 }
 
 export default function TopBar({ section, tenantQuery }: TopBarProps) {
-  if (!section || !section.enabled) return null
+  const previewDevice = usePreviewDevice()
+  const isMobile = previewDevice === 'mobile'
 
-  const items = (section.content || []).filter((item) => item.activo)
-  if (items.length === 0) return null
+  if (!section || !section.enabled) return null
 
   const {
     modo = 'rotativo',
@@ -30,6 +31,11 @@ export default function TopBar({ section, tenantQuery }: TopBarProps) {
     fondo_color = 'primario',
     mostrar_en_mobile = true,
   } = section.settings || {}
+
+  if (isMobile && !mostrar_en_mobile) return null
+
+  const items = (section.content || []).filter((item) => item.activo)
+  if (items.length === 0) return null
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)

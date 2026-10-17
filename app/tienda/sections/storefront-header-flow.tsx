@@ -31,7 +31,7 @@ export default function StorefrontHeaderFlow({
     .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0))
 
   return (
-    <div className="w-full flex flex-col">
+    <div className="contents">
       {sortedUpperSections.map((sec) => {
         if (!sec.enabled) return null
 

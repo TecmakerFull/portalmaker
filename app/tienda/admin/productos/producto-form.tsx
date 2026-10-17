@@ -44,6 +44,7 @@ import {
 
 import { compressImageFile } from '@/lib/image-compression'
 import AiDescriptionModal from './ai-description-modal'
+import { StickySaveBar } from '../components/sticky-save-bar'
 
 interface LocalVariant {
   id?: string
@@ -846,7 +847,7 @@ export default function ProductoForm({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6 pb-24">
         {/* 1. Nombre y Categorías */}
         <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
           <div className="space-y-4">
@@ -1073,23 +1074,6 @@ export default function ProductoForm({
             placeholder="Describe las características de tu producto: filamentos utilizados (PLA, PETG, Resina), dimensiones, tolerancias, cuidados, o agrega enlaces..."
             className="w-full p-4 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 leading-relaxed transition-all shadow-xs"
           />
-
-          {showAiModal && (
-            <AiDescriptionModal
-              initialProductName={nombre}
-              categoryName={
-                categoryList.find((c) => c.id === selectedSubCatId || c.id === selectedParentCatId)?.nombre
-              }
-              onApply={(generated, mode) => {
-                if (mode === 'replace') {
-                  setDescripcion(generated)
-                } else {
-                  setDescripcion((prev) => (prev ? `${prev}\n\n${generated}` : generated))
-                }
-              }}
-              onClose={() => setShowAiModal(false)}
-            />
-          )}
         </div>
 
         {/* 3. Imágenes de tu producto (Hasta 10 fotos) */}
@@ -1935,6 +1919,16 @@ export default function ProductoForm({
             )}
           </button>
         </div>
+
+        {/* Barra de Guardado Flotante Estandarizada */}
+        <StickySaveBar
+          loading={loading}
+          saveText={isEditing ? 'Guardar Cambios' : 'Agregar Producto'}
+          savingText="Guardando producto..."
+          errorMsg={errorMsg}
+          message={isEditing ? `Editando: ${nombre || 'Producto'}` : 'Nuevo producto'}
+          hasChanges={true}
+        />
       </form>
 
       {/* Modal Seleccionar / Subir Foto para Variante */}
@@ -2231,6 +2225,24 @@ export default function ProductoForm({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal Asistente de IA para Descripciones */}
+      {showAiModal && (
+        <AiDescriptionModal
+          initialProductName={nombre}
+          categoryName={
+            categoryList.find((c) => c.id === selectedSubCatId || c.id === selectedParentCatId)?.nombre
+          }
+          onApply={(generated, mode) => {
+            if (mode === 'replace') {
+              setDescripcion(generated)
+            } else {
+              setDescripcion((prev) => (prev ? `${prev}\n\n${generated}` : generated))
+            }
+          }}
+          onClose={() => setShowAiModal(false)}
+        />
       )}
     </div>
   )

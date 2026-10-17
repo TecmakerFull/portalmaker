@@ -46,6 +46,7 @@ import { HeaderEditor } from './header-editor';
 import { NavbarEditor } from './navbar-editor';
 import { HeroEditor } from './hero-editor';
 import { LivePreview } from './live-preview';
+import { StickySaveBar } from '../components/sticky-save-bar';
 
 interface DisenoManagerProps {
   store: Store;
@@ -179,7 +180,7 @@ export function DisenoManager({
   const currentSection = sections.find((s) => s.section_type === activeEditorTab);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24">
       {/* Encabezado Principal de la Página */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
         <div>
@@ -474,15 +475,21 @@ export function DisenoManager({
         </div>
       </div>
 
-      {/* Toast Flotante de Confirmación */}
-      {saveSuccess && (
-        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-[#1F2937] text-white text-sm font-medium shadow-2xl border border-white/10 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
-            <CheckCircle2 className="w-4 h-4" />
-          </div>
-          <span>¡Diseño guardado exitosamente! Los cambios ya están activos.</span>
-        </div>
-      )}
+      {/* Barra de Guardado Flotante Estandarizada */}
+      <StickySaveBar
+        loading={saving}
+        hasChanges={true}
+        message={
+          activeEditorTab
+            ? `Editando: ${sectionMeta[activeEditorTab]?.label || activeEditorTab}`
+            : 'Estructura y secciones de tienda'
+        }
+        saveText="Guardar Cambios de Diseño"
+        savingText="Guardando diseño..."
+        successMsg={saveSuccess ? '¡Diseño guardado exitosamente!' : null}
+        errorMsg={saveError}
+        onSave={handleSaveChanges}
+      />
     </div>
   );
 }

@@ -22,6 +22,7 @@ import {
   FileText,
 } from 'lucide-react'
 import { compressImageFile } from '@/lib/image-compression'
+import { StickySaveBar } from '../components/sticky-save-bar'
 
 interface SobreNosotrosFormProps {
   store: Store
@@ -179,7 +180,7 @@ export default function SobreNosotrosForm({
         )}
       </div>
 
-      <form onSubmit={handleSave} className="space-y-6">
+      <form onSubmit={handleSave} className="space-y-6 pb-24">
         {successMsg && (
           <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
             <Check className="w-4 h-4 shrink-0" />
@@ -339,15 +340,16 @@ export default function SobreNosotrosForm({
           </button>
         </div>
 
-        {/* Notificación Toast Flotante */}
-        {successMsg && (
-          <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-[#1F2937] text-white text-sm font-medium shadow-2xl border border-white/10 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
-            <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
-              <Check className="w-3.5 h-3.5" />
-            </div>
-            <span>{successMsg}</span>
-          </div>
-        )}
+        {/* Barra de Guardado Flotante Estandarizada */}
+        <StickySaveBar
+          loading={loading || uploadingImage}
+          saveText="Guardar Cambios"
+          savingText="Guardando..."
+          successMsg={successMsg}
+          errorMsg={errorMsg}
+          message="Página Sobre Nosotros"
+          hasChanges={true}
+        />
       </form>
     </div>
   )

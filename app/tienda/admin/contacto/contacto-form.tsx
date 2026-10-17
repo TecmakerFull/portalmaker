@@ -25,6 +25,7 @@ import {
   MessageSquare,
   Navigation,
 } from 'lucide-react'
+import { StickySaveBar } from '../components/sticky-save-bar'
 
 interface ContactoFormProps {
   store: Store
@@ -90,7 +91,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
   }
 
   return (
-    <form onSubmit={handleSave} className="space-y-6 w-full">
+    <form onSubmit={handleSave} className="space-y-6 w-full pb-24">
       {/* Encabezado */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -320,15 +321,16 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
         </button>
       </div>
 
-      {/* Notificación Toast Flotante */}
-      {successMsg && (
-        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-[#1F2937] text-white text-sm font-medium shadow-2xl border border-white/10 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
-            <Check className="w-3.5 h-3.5" />
-          </div>
-          <span>{successMsg}</span>
-        </div>
-      )}
+      {/* Barra de Guardado Flotante Estandarizada */}
+      <StickySaveBar
+        loading={loading}
+        saveText="Guardar Configuración de Contacto"
+        savingText="Guardando..."
+        successMsg={successMsg}
+        errorMsg={errorMsg}
+        message="Canales de contacto y redes"
+        hasChanges={true}
+      />
     </form>
   )
 }

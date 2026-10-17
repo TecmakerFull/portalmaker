@@ -20,6 +20,7 @@ import type { Store, StoreSection } from '@/types/database';
 import type { ResolvedStoreSections } from '@/lib/store-sections';
 import StorefrontHeaderFlow from '@/app/tienda/sections/storefront-header-flow';
 import HeroBanners from '@/app/tienda/sections/hero-banners';
+import { PreviewDeviceContext } from '@/app/tienda/preview-context';
 
 interface LivePreviewProps {
   store: Store;
@@ -270,45 +271,47 @@ export function LivePreview({ store, sections }: LivePreviewProps) {
             </div>
 
             {/* Renderizado de Secciones de la Tienda */}
-            <div className="relative min-h-[420px]">
-              {/* 1. Header Flow (Top Bar + Header + Navbar) */}
-              <StorefrontHeaderFlow
-                store={store}
-                resolvedSections={resolvedSections}
-                tenantQuery=""
-              />
-
-              {/* 2. Hero Banners */}
-              {heroSec && heroSec.enabled && (
-                <HeroBanners
-                  section={heroSec}
+            <PreviewDeviceContext.Provider value={device}>
+              <div className="relative min-h-[420px]">
+                {/* 1. Header Flow (Top Bar + Header + Navbar) */}
+                <StorefrontHeaderFlow
+                  store={store}
+                  resolvedSections={resolvedSections}
                   tenantQuery=""
                 />
-              )}
 
-              {/* 3. Simulación de contenido de catálogo */}
-              <div className="p-6">
-                <div className="h-4 w-36 bg-zinc-200 dark:bg-zinc-800 rounded mb-4" />
-                <div className={`grid gap-4 ${
-                  device === 'desktop'
-                    ? 'grid-cols-4'
-                    : device === 'tablet'
-                    ? 'grid-cols-3'
-                    : 'grid-cols-2'
-                }`}>
-                  {[1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      className="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 bg-zinc-50 dark:bg-zinc-900/50 space-y-2"
-                    >
-                      <div className="aspect-square bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
-                      <div className="h-3 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded" />
-                      <div className="h-3 w-1/2 bg-zinc-200 dark:bg-zinc-800 rounded" />
-                    </div>
-                  ))}
+                {/* 2. Hero Banners */}
+                {heroSec && heroSec.enabled && (
+                  <HeroBanners
+                    section={heroSec}
+                    tenantQuery=""
+                  />
+                )}
+
+                {/* 3. Simulación de contenido de catálogo */}
+                <div className="p-6">
+                  <div className="h-4 w-36 bg-zinc-200 dark:bg-zinc-800 rounded mb-4" />
+                  <div className={`grid gap-4 ${
+                    device === 'desktop'
+                      ? 'grid-cols-4'
+                      : device === 'tablet'
+                      ? 'grid-cols-3'
+                      : 'grid-cols-2'
+                  }`}>
+                    {[1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 bg-zinc-50 dark:bg-zinc-900/50 space-y-2"
+                      >
+                        <div className="aspect-square bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
+                        <div className="h-3 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                        <div className="h-3 w-1/2 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            </PreviewDeviceContext.Provider>
           </div>
         </div>
       </div>

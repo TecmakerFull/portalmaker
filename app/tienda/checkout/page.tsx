@@ -25,7 +25,14 @@ export default async function TiendaCheckoutPage() {
     <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] transition-colors duration-200 flex flex-col justify-between">
       <div>
         {/* Header Minimalista de Checkout */}
-        <header className="border-b border-black/10 dark:border-white/10 sticky top-0 bg-[var(--color-fondo)]/95 backdrop-blur-md z-30 transition-colors duration-200">
+        <header
+          style={{
+            backgroundColor: 'color-mix(in srgb, var(--color-fondo) 80%, transparent)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+          }}
+          className="border-b border-black/10 dark:border-white/10 sticky top-0 z-40 transition-colors duration-200"
+        >
           <div className="wrap h-18 sm:h-20 flex items-center justify-between gap-4">
             <Link href={`/tienda${tenantQuery}`} className="flex items-center gap-3">
               {store.logo_url && (

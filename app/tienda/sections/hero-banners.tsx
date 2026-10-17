@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import type { StoreSection, HeroBannerSettings, HeroBannerSlide } from '@/types/database'
 import { ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, Star } from 'lucide-react'
+import { usePreviewDevice } from '../preview-context'
 
 interface HeroBannersProps {
   section?: StoreSection<HeroBannerSettings, HeroBannerSlide[]> | null
@@ -112,8 +113,13 @@ export default function HeroBanners({
     return url
   }
 
+  const previewDevice = usePreviewDevice()
+  const isMobile = previewDevice === 'mobile'
+
   const currentSlide = slides[currentIndex] || defaultSlide
-  const heroImage = currentSlide.imagen_desktop || currentSlide.imagen_mobile || '/banner.png'
+  const heroImage = (isMobile && currentSlide.imagen_mobile)
+    ? currentSlide.imagen_mobile
+    : (currentSlide.imagen_desktop || currentSlide.imagen_mobile || '/banner.png')
 
   return (
     <section
