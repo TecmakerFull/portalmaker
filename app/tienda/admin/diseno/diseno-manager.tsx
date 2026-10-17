@@ -230,7 +230,7 @@ export function DisenoManager({
       {/* Layout Principal: Editores a la Izquierda + Live Preview a la Derecha */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Columna Izquierda (Editores y Organizador de Secciones) */}
-        <div className={`space-y-6 ${showMobilePreview ? 'hidden lg:block' : 'block'} lg:col-span-6 xl:col-span-6`}>
+        <div className={`space-y-6 ${showMobilePreview ? 'hidden lg:block' : 'block'} lg:col-span-7 xl:col-span-7`}>
           {activeEditorTab ? (
             /* Vista del Editor Específico */
             <div className="space-y-4">
@@ -467,7 +467,7 @@ export function DisenoManager({
         <div
           className={`${
             showMobilePreview ? 'block' : 'hidden lg:block'
-          } lg:col-span-6 xl:col-span-6 sticky top-6`}
+          } lg:col-span-5 xl:col-span-5 sticky top-6`}
         >
           <div className="h-[calc(100vh-140px)] min-h-[600px]">
             <LivePreview store={store} sections={sections} />

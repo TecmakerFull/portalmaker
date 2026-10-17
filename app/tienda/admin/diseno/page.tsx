@@ -52,7 +52,7 @@ export default async function AdminDisenoPage() {
     .order('orden', { ascending: true });
 
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-200">
+    <div className="w-full space-y-6 animate-in fade-in duration-200">
       <DisenoManager
         store={store}
         initialSections={resolvedSections.sectionsList}

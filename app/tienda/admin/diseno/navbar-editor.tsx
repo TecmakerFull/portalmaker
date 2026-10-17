@@ -174,26 +174,26 @@ export function NavbarEditor({
           </h3>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-4">
           {/* Alineación */}
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
               Alineación de los Enlaces
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="inline-flex flex-wrap p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-2xl border border-zinc-200 dark:border-zinc-700/60 gap-1.5 w-full sm:w-auto">
               {[
                 { key: 'centro', label: 'Centro' },
                 { key: 'izquierda', label: 'Izquierda' },
-                { key: 'espaciado', label: 'Distribuido' },
+                { key: 'espaciado', label: 'Distribuido (Justificado)' },
               ].map((opt) => (
                 <button
                   key={opt.key}
                   type="button"
                   onClick={() => updateSettings('alineacion', opt.key as any)}
-                  className={`py-2 px-2.5 rounded-xl border text-xs font-medium transition-all ${
+                  className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-semibold whitespace-nowrap transition-all text-center cursor-pointer ${
                     settings.alineacion === opt.key
-                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/20'
-                      : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 text-zinc-700 dark:text-zinc-300'
+                      ? 'bg-white dark:bg-zinc-900 text-blue-700 dark:text-blue-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                   }`}
                 >
                   {opt.label}
@@ -204,17 +204,17 @@ export function NavbarEditor({
 
           {/* Estilo visual */}
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
               Estilo Visual de Pestañas
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="inline-flex flex-wrap p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-2xl border border-zinc-200 dark:border-zinc-700/60 gap-1.5 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => updateSettings('estilo', 'linea')}
-                className={`py-2 px-3 rounded-xl border text-xs font-medium transition-all ${
+                className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-semibold whitespace-nowrap transition-all text-center cursor-pointer ${
                   settings.estilo === 'linea'
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/20'
-                    : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 text-zinc-700 dark:text-zinc-300'
+                    ? 'bg-white dark:bg-zinc-900 text-blue-700 dark:text-blue-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                 }`}
               >
                 Subrayado sutil
@@ -222,10 +222,10 @@ export function NavbarEditor({
               <button
                 type="button"
                 onClick={() => updateSettings('estilo', 'pills')}
-                className={`py-2 px-3 rounded-xl border text-xs font-medium transition-all ${
+                className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-semibold whitespace-nowrap transition-all text-center cursor-pointer ${
                   settings.estilo === 'pills'
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/20'
-                    : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 text-zinc-700 dark:text-zinc-300'
+                    ? 'bg-white dark:bg-zinc-900 text-blue-700 dark:text-blue-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                 }`}
               >
                 Pastillas (Pills)

@@ -183,57 +183,59 @@ export function HeroEditor({
           </h3>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Modo */}
+        <div className="space-y-4">
+          {/* Modo de Visualización */}
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
               Modo de Visualización
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="inline-flex flex-wrap p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-2xl border border-zinc-200 dark:border-zinc-700/60 gap-1.5 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => updateSettings('modo', 'carrusel')}
-                className={`py-2 px-3 rounded-xl border text-xs font-medium transition-all ${
+                className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   settings.modo === 'carrusel'
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/20'
-                    : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 text-zinc-700 dark:text-zinc-300'
+                    ? 'bg-white dark:bg-zinc-900 text-blue-700 dark:text-blue-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                 }`}
               >
-                Carrusel de diapositivas
+                <Sliders className="w-3.5 h-3.5 opacity-70" />
+                <span>Carrusel de diapositivas</span>
               </button>
               <button
                 type="button"
                 onClick={() => updateSettings('modo', 'banner_unico')}
-                className={`py-2 px-3 rounded-xl border text-xs font-medium transition-all ${
+                className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   settings.modo === 'banner_unico'
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/20'
-                    : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 text-zinc-700 dark:text-zinc-300'
+                    ? 'bg-white dark:bg-zinc-900 text-blue-700 dark:text-blue-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                 }`}
               >
-                Banner único estático
+                <ImageIcon className="w-3.5 h-3.5 opacity-70" />
+                <span>Banner único estático</span>
               </button>
             </div>
           </div>
 
-          {/* Altura */}
+          {/* Altura en Pantalla */}
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
               Altura en Pantalla
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="inline-flex flex-wrap p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-2xl border border-zinc-200 dark:border-zinc-700/60 gap-1.5 w-full sm:w-auto">
               {[
-                { key: 'adaptable', label: 'Proporcional' },
-                { key: 'compacta', label: 'Compacta' },
-                { key: 'pantalla_completa', label: 'Grande' },
+                { key: 'adaptable', label: 'Proporcional (Original)' },
+                { key: 'compacta', label: 'Compacta (400px)' },
+                { key: 'pantalla_completa', label: 'Grande (550px)' },
               ].map((opt) => (
                 <button
                   key={opt.key}
                   type="button"
                   onClick={() => updateSettings('altura', opt.key as any)}
-                  className={`py-2 px-2 rounded-xl border text-xs font-medium transition-all ${
+                  className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-semibold whitespace-nowrap transition-all text-center cursor-pointer ${
                     settings.altura === opt.key
-                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/20'
-                      : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 text-zinc-700 dark:text-zinc-300'
+                      ? 'bg-white dark:bg-zinc-900 text-blue-700 dark:text-blue-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                   }`}
                 >
                   {opt.label}
