@@ -214,7 +214,8 @@ export interface ProductVariant {
   precio_adicional: number; // se suma al precio_base
   stock: number | null;
   stock_minimo: number;
-  imagen_url: string | null;
+  imagen_url: string | null;  // foto principal de la variante (portada)
+  imagenes?: string[];        // galería completa de la variante (estilo Mercado Libre)
   activo: boolean;
   orden: number;
   created_at: Timestamp;

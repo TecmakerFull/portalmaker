@@ -39,6 +39,7 @@ import {
   Search,
   Tag,
   MessageCircleQuestion,
+  Info,
 } from 'lucide-react'
 
 import { compressImageFile } from '@/lib/image-compression'
@@ -50,6 +51,7 @@ interface LocalVariant {
   precio_final: string
   stock: string
   imagen_url: string
+  imagenes?: string[]
 }
 
 interface ProductoFormProps {
@@ -149,23 +151,73 @@ export default function ProductoForm({
           v.precio_adicional !== 0 && v.precio_adicional !== null && v.precio_adicional !== undefined
             ? (base + v.precio_adicional).toString()
             : ''
+        const variantImgs = Array.isArray(v.imagenes) && v.imagenes.length > 0
+          ? v.imagenes
+          : (v.imagen_url ? [v.imagen_url] : [])
         return {
           id: v.id,
           nombre: v.nombre,
           precio_final: finalPrice,
           stock: v.stock !== null && v.stock !== undefined ? v.stock.toString() : '',
-          imagen_url: v.imagen_url ?? '',
+          imagen_url: variantImgs[0] ?? (v.imagen_url ?? ''),
+          imagenes: variantImgs,
         }
       })
     }
     return []
   })
 
-  // Modal para seleccionar foto de variante
+  // Modal para seleccionar/gestionar fotos de variante (estilo Mercado Libre)
   const [variantPhotoPickerIndex, setVariantPhotoPickerIndex] = useState<number | null>(null)
   const [customVariantUrl, setCustomVariantUrl] = useState('')
   const [uploadingVariantImage, setUploadingVariantImage] = useState(false)
   const variantFileInputRef = useRef<HTMLInputElement>(null)
+
+  // Helpers para agregar/quitar imágenes a una variante
+  const handleAddImageToVariant = (index: number, url: string) => {
+    setVariants((prev) => {
+      const copy = [...prev]
+      const currentImgs = copy[index].imagenes || (copy[index].imagen_url ? [copy[index].imagen_url] : [])
+      if (!currentImgs.includes(url)) {
+        const nextImgs = [...currentImgs, url]
+        copy[index] = {
+          ...copy[index],
+          imagenes: nextImgs,
+          imagen_url: nextImgs[0] || '',
+        }
+      }
+      return copy
+    })
+  }
+
+  const handleRemoveImageFromVariant = (index: number, urlToRemove: string) => {
+    setVariants((prev) => {
+      const copy = [...prev]
+      const currentImgs = copy[index].imagenes || (copy[index].imagen_url ? [copy[index].imagen_url] : [])
+      const nextImgs = currentImgs.filter((img) => img !== urlToRemove)
+      copy[index] = {
+        ...copy[index],
+        imagenes: nextImgs,
+        imagen_url: nextImgs[0] || '',
+      }
+      return copy
+    })
+  }
+
+  const handleToggleImageInVariant = (index: number, url: string) => {
+    setVariants((prev) => {
+      const copy = [...prev]
+      const currentImgs = copy[index].imagenes || (copy[index].imagen_url ? [copy[index].imagen_url] : [])
+      const exists = currentImgs.includes(url)
+      const nextImgs = exists ? currentImgs.filter((u) => u !== url) : [...currentImgs, url]
+      copy[index] = {
+        ...copy[index],
+        imagenes: nextImgs,
+        imagen_url: nextImgs[0] || '',
+      }
+      return copy
+    })
+  }
 
   // Subir archivo directo para variante
   const handleUploadVariantFile = async (file: File) => {
@@ -173,9 +225,10 @@ export default function ProductoForm({
     setUploadingVariantImage(true)
     try {
       const publicUrl = await processImageFile(file)
-      handleUpdateVariant(variantPhotoPickerIndex, 'imagen_url', publicUrl)
+      // Agregar a las imágenes generales del producto si no estaba
       setImagenes((prev) => (prev.includes(publicUrl) ? prev : [...prev, publicUrl]))
-      setVariantPhotoPickerIndex(null)
+      // Agregar a la lista de imágenes de esta variante
+      handleAddImageToVariant(variantPhotoPickerIndex, publicUrl)
     } catch (err: any) {
       alert('Error al subir la imagen de la variante: ' + (err?.message || 'Error desconocido'))
     } finally {
@@ -467,12 +520,13 @@ export default function ProductoForm({
         precio_final: '',
         stock: '',
         imagen_url: imagenes[0] || '',
+        imagenes: imagenes[0] ? [imagenes[0]] : [],
       },
     ])
   }
 
   // Modificar Variante
-  const handleUpdateVariant = (index: number, field: keyof LocalVariant, value: string) => {
+  const handleUpdateVariant = (index: number, field: keyof LocalVariant, value: string | string[]) => {
     setVariants((prev) =>
       prev.map((v, i) => (i === index ? { ...v, [field]: value } : v))
     )
@@ -609,7 +663,11 @@ export default function ProductoForm({
         precio_oferta: numOferta,
         oferta_activa: ofertaActiva && Boolean(numOferta),
         gestiona_stock: gestionaStock,
-        stock: gestionaStock && stock ? parseInt(stock) || 0 : null,
+        stock: gestionaStock
+          ? (variants.length > 0
+              ? variants.reduce((acc, v) => acc + (parseInt(v.stock) || 0), 0)
+              : (stock ? parseInt(stock) || 0 : null))
+          : null,
         sku: sku.trim() || null,
         tiempo_fabricacion_estimado: tiempoFabricacion.trim() || null,
         destacado: destacado,
@@ -695,12 +753,17 @@ export default function ProductoForm({
               }
             }
 
+            const variantImgs = Array.isArray(v.imagenes) && v.imagenes.length > 0
+              ? v.imagenes
+              : (v.imagen_url && v.imagen_url.trim() !== '' ? [v.imagen_url.trim()] : [])
+
             return {
               product_id: targetProductId,
               nombre: v.nombre.trim(),
               precio_adicional: precioAdicional,
               stock: v.stock && v.stock.trim() !== '' ? parseInt(v.stock) || 0 : null,
-              imagen_url: v.imagen_url && v.imagen_url.trim() !== '' ? v.imagen_url.trim() : null,
+              imagen_url: variantImgs.length > 0 ? variantImgs[0] : null,
+              imagenes: variantImgs,
               orden: idx,
               activo: true,
             }
@@ -801,9 +864,25 @@ export default function ProductoForm({
                 maxLength={80}
                 value={nombre}
                 onChange={(e) => handleNombreChange(e.target.value)}
-                placeholder="Ej: Lámpara Luna 3D 15cm con Base de Madera"
+                placeholder={
+                  variants.length > 0
+                    ? 'Ej: Remera Lisa de Algodón, Maceta Geométrica, Lámpara Nórdica...'
+                    : 'Ej: Lámpara de Mesa con Base de Madera, Mochila Urbana...'
+                }
                 className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-semibold focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
               />
+              {variants.length > 0 ? (
+                <p className="text-[11px] text-amber-800 dark:text-amber-300/95 mt-1.5 flex items-start gap-1.5 font-medium leading-relaxed bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20">
+                  <Info className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                  <span>
+                    <strong>Recomendación para variantes:</strong> Escribe un nombre de modelo general (ej: <em>Remera de Algodón</em>, <em>Taza Cerámica</em> o <em>Maceta Nórdica</em>). Evita especificar color, talle o medida aquí, ya que cada variante representará una opción física concreta.
+                  </span>
+                </p>
+              ) : (
+                <p className="text-[11px] opacity-60 mt-1">
+                  Nombre descriptivo del producto para tu catálogo y buscadores.
+                </p>
+              )}
             </div>
 
             {/* Categoría y Subcategoría */}
@@ -1204,22 +1283,40 @@ export default function ProductoForm({
             {/* Stock */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
-                Stock (Opcional)
+                Stock {variants.length > 0 ? 'Total (Calculado de variantes)' : '(Opcional)'}
               </label>
-              <input
-                type="number"
-                min="0"
-                value={stock}
-                onChange={(e) => {
-                  setStock(e.target.value)
-                  if (e.target.value) setGestionaStock(true)
-                }}
-                placeholder="Ilimitado (a pedido)"
-                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
-              />
-              <p className="text-[11px] opacity-60 mt-1">
-                Si lo dejas vacío, el stock se considera ilimitado o bajo encargo.
-              </p>
+              {variants.length > 0 ? (
+                <div>
+                  <div className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-dashed border-amber-500/30 bg-amber-500/5 text-sm flex items-center justify-between">
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      {variants.reduce((acc, v) => acc + (parseInt(v.stock) || 0), 0)} unidades en stock
+                    </span>
+                    <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                      Suma de {variants.length} {variants.length === 1 ? 'variante' : 'variantes'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] opacity-60 mt-1">
+                    El stock se gestiona de forma individual en cada variante en la sección inferior.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <input
+                    type="number"
+                    min="0"
+                    value={stock}
+                    onChange={(e) => {
+                      setStock(e.target.value)
+                      if (e.target.value) setGestionaStock(true)
+                    }}
+                    placeholder="Ilimitado (a pedido)"
+                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
+                  />
+                  <p className="text-[11px] opacity-60 mt-1">
+                    Si lo dejas vacío, el stock se considera ilimitado o bajo encargo.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* SKU */}
@@ -1342,7 +1439,7 @@ export default function ProductoForm({
                 <span>Atributos y Variantes</span>
               </h2>
               <p className="text-xs opacity-70 mt-0.5">
-                Agrega variantes como color, material o tamaño. Puedes asignar una foto a cada variante y definir un precio individual (más caro, más barato o dejar vacío para mantener el precio base).
+                Crea opciones como color, tamaño, material o talle. Cada opción física tendrá su propio stock y precio.
               </p>
             </div>
 
@@ -1354,6 +1451,42 @@ export default function ProductoForm({
               <Plus className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
               <span>Agregar variante</span>
             </button>
+          </div>
+
+          {/* Guía didáctica multirrubro sobre variantes */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/20 space-y-3">
+            <div className="flex items-center gap-2">
+              <HelpCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+              <h3 className="text-xs sm:text-sm font-semibold text-blue-900 dark:text-blue-200">
+                ¿Cómo funcionan las variantes en tu catálogo?
+              </h3>
+            </div>
+            <ul className="text-xs text-blue-950/80 dark:text-blue-200/80 space-y-1.5 leading-relaxed pl-1 sm:pl-2">
+              <li className="flex items-start gap-2">
+                <span className="font-bold text-blue-600 dark:text-blue-400">•</span>
+                <span>
+                  <strong>Producto Principal (Genérico):</strong> Define el modelo base (ej: <em>&quot;Remera Lisa de Algodón&quot;</em>, <em>&quot;Taza Artesanal&quot;</em> o <em>&quot;Maceta Nórdica&quot;</em>). No incluyas color ni talle en el nombre principal.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="font-bold text-blue-600 dark:text-blue-400">•</span>
+                <span>
+                  <strong>Variantes Físicas (Hijos):</strong> Crea una variante para cada opción que vendas (ej: <em>&quot;Blanco&quot;</em>, <em>&quot;Negro&quot;</em>, <em>&quot;Talle M&quot;</em>, <em>&quot;Talle L&quot;</em>), incluyendo el color o medida básica para que tenga su stock y foto correspondiente.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="font-bold text-blue-600 dark:text-blue-400">•</span>
+                <span>
+                  <strong>Compra en la tienda:</strong> Si el producto tiene variantes, los clientes seleccionan obligatoriamente una opción para comprar. El stock y la orden se registran con esa variante exacta.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="font-bold text-blue-600 dark:text-blue-400">•</span>
+                <span>
+                  <strong>Fotos y Precios:</strong> Si una variante no tiene foto asignada, la tienda utiliza automáticamente la foto principal del producto. Puedes dejar el precio base o definir un importe personalizado.
+                </span>
+              </li>
+            </ul>
           </div>
 
           {/* Listado dinámico de variantes */}
@@ -1378,18 +1511,30 @@ export default function ProductoForm({
                     key={index}
                     className="grid grid-cols-1 sm:grid-cols-12 gap-3 p-3.5 rounded-2xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)] items-center"
                   >
-                    {/* Foto de la variante */}
-                    <div className="sm:col-span-2 flex items-center gap-2.5">
+                    {/* Foto y contador de fotos de la variante */}
+                    <div className="sm:col-span-2 flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => {
-                          setCustomVariantUrl(variant.imagen_url || '')
+                          setCustomVariantUrl('')
                           setVariantPhotoPickerIndex(index)
                         }}
                         className="relative w-11 h-11 rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-amber-400 flex items-center justify-center shrink-0 transition-all group cursor-pointer shadow-2xs"
-                        title="Asignar foto a esta variante"
+                        title="Gestionar fotos de esta variante"
                       >
-                        {variant.imagen_url ? (
+                        {variant.imagenes && variant.imagenes.length > 0 ? (
+                          <>
+                            <img src={variant.imagenes[0]} alt="" className="w-full h-full object-cover" />
+                            {variant.imagenes.length > 1 && (
+                              <span className="absolute bottom-0 right-0 bg-black/80 text-white text-[9px] font-bold px-1 rounded-tl">
+                                +{variant.imagenes.length}
+                              </span>
+                            )}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                              <ImageIcon className="w-3.5 h-3.5" />
+                            </div>
+                          </>
+                        ) : variant.imagen_url ? (
                           <>
                             <img src={variant.imagen_url} alt="" className="w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
@@ -1399,12 +1544,28 @@ export default function ProductoForm({
                         ) : (
                           <div className="flex flex-col items-center justify-center text-slate-400 group-hover:text-amber-500">
                             <ImageIcon className="w-4 h-4" />
-                            <span className="text-[8px] font-bold mt-0.5">+ Foto</span>
+                            <span className="text-[8px] font-bold mt-0.5">+ Fotos</span>
                           </div>
                         )}
                       </button>
-                      <div className="text-[11px] sm:hidden font-bold opacity-60">
-                        {variant.imagen_url ? 'Foto asignada (toca para cambiar)' : 'Toca para asociar foto'}
+                      <div className="text-[10px] font-medium opacity-70 flex flex-col">
+                        <span>
+                          {variant.imagenes && variant.imagenes.length > 0
+                            ? `${variant.imagenes.length} ${variant.imagenes.length === 1 ? 'foto' : 'fotos'}`
+                            : variant.imagen_url
+                            ? '1 foto'
+                            : 'Foto general'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCustomVariantUrl('')
+                            setVariantPhotoPickerIndex(index)
+                          }}
+                          className="text-amber-600 dark:text-amber-400 hover:underline text-left cursor-pointer"
+                        >
+                          Gestionar
+                        </button>
                       </div>
                     </div>
 
@@ -1785,13 +1946,18 @@ export default function ProductoForm({
           <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
-                <h3 className="text-base font-bold font-[var(--font-heading)] text-slate-900 dark:text-white">
-                  Foto para la variante
+                <h3 className="text-base font-bold font-[var(--font-heading)] text-slate-900 dark:text-white flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-amber-500" />
+                  <span>Fotos para la variante</span>
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   {variants[variantPhotoPickerIndex]?.nombre
                     ? `"${variants[variantPhotoPickerIndex].nombre}"`
                     : `Variante #${variantPhotoPickerIndex + 1}`}
+                  {' · '}
+                  <span className="font-semibold text-amber-600 dark:text-amber-400">
+                    {(variants[variantPhotoPickerIndex]?.imagenes?.length ?? (variants[variantPhotoPickerIndex]?.imagen_url ? 1 : 0))} fotos asignadas
+                  </span>
                 </p>
               </div>
               <button
@@ -1801,6 +1967,50 @@ export default function ProductoForm({
               >
                 <X className="w-5 h-5" />
               </button>
+            </div>
+
+            {/* Tira de fotos asignadas a esta variante */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider opacity-75">
+                Fotos de esta opción (la 1ra es la portada):
+              </label>
+              {(() => {
+                const curVar = variants[variantPhotoPickerIndex]
+                const curImgs = curVar?.imagenes && curVar.imagenes.length > 0
+                  ? curVar.imagenes
+                  : (curVar?.imagen_url ? [curVar.imagen_url] : [])
+
+                if (curImgs.length === 0) {
+                  return (
+                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-800 text-xs opacity-65 text-center">
+                      Esta variante aún no tiene fotos individuales: la tienda usará automáticamente la foto principal del producto.
+                    </div>
+                  )
+                }
+
+                return (
+                  <div className="flex flex-wrap gap-2.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
+                    {curImgs.map((url, i) => (
+                      <div key={i} className="relative group w-16 h-16 rounded-xl overflow-hidden border-2 border-amber-400 shrink-0 shadow-2xs">
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        {i === 0 && (
+                          <span className="absolute top-1 left-1 bg-amber-500 text-slate-950 text-[8px] font-bold px-1 rounded shadow-xs">
+                            Portada
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImageFromVariant(variantPhotoPickerIndex, url)}
+                          title="Quitar foto de esta variante"
+                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-400" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
             </div>
 
             {/* Input de archivo oculto */}
@@ -1816,10 +2026,10 @@ export default function ProductoForm({
               }}
             />
 
-            {/* 1. Botón de Subida Directa y Soporte para Pegar (Ctrl + V) */}
+            {/* 1. Botón de Subida Directa */}
             <div
               onClick={() => variantFileInputRef.current?.click()}
-              className="p-4 rounded-2xl border-2 border-dashed border-amber-400/50 hover:border-amber-500 bg-amber-400/5 hover:bg-amber-400/10 transition-all flex flex-col items-center justify-center gap-2 text-center cursor-pointer group"
+              className="p-3.5 rounded-2xl border-2 border-dashed border-amber-400/50 hover:border-amber-500 bg-amber-400/5 hover:bg-amber-400/10 transition-all flex items-center justify-center gap-3 cursor-pointer group"
             >
               {uploadingVariantImage ? (
                 <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-semibold text-xs">
@@ -1828,46 +2038,46 @@ export default function ProductoForm({
                 </div>
               ) : (
                 <>
-                  <div className="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-                    <Upload className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
-                      Subir foto desde tu dispositivo o pegar con Ctrl + V
-                    </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Se comprime automáticamente a formato WebP ligero
-                    </span>
-                  </div>
+                  <Upload className="w-4 h-4 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    Subir foto exclusiva para esta variante (o pegar con Ctrl+V)
+                  </span>
                 </>
               )}
             </div>
 
-            {/* 2. Galería de fotos del producto para elegir */}
+            {/* 2. Seleccionar de las fotos ya cargadas en el producto */}
             <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <label className="block text-xs font-semibold uppercase tracking-wider opacity-75">
-                O elige una foto ya cargada en este producto:
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold uppercase tracking-wider opacity-75">
+                  O toca fotos del producto para asociar a esta opción:
+                </label>
+                <span className="text-[10px] opacity-60">
+                  Toca para agregar / quitar
+                </span>
+              </div>
               {imagenes.length > 0 ? (
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5 max-h-40 overflow-y-auto p-1">
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-40 overflow-y-auto p-1">
                   {imagenes.map((url, i) => {
-                    const isSelected = variants[variantPhotoPickerIndex]?.imagen_url === url
+                    const curVar = variants[variantPhotoPickerIndex]
+                    const curImgs = curVar?.imagenes && curVar.imagenes.length > 0
+                      ? curVar.imagenes
+                      : (curVar?.imagen_url ? [curVar.imagen_url] : [])
+                    const isIncluded = curImgs.includes(url)
+
                     return (
                       <button
                         key={i}
                         type="button"
-                        onClick={() => {
-                          handleUpdateVariant(variantPhotoPickerIndex, 'imagen_url', url)
-                          setVariantPhotoPickerIndex(null)
-                        }}
+                        onClick={() => handleToggleImageInVariant(variantPhotoPickerIndex, url)}
                         className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
-                          isSelected
+                          isIncluded
                             ? 'border-amber-400 ring-2 ring-amber-400/30 scale-95'
-                            : 'border-slate-200 dark:border-slate-700 hover:border-amber-400 opacity-80 hover:opacity-100'
+                            : 'border-slate-200 dark:border-slate-700 hover:border-amber-400 opacity-60 hover:opacity-100'
                         }`}
                       >
                         <img src={url} alt="" className="w-full h-full object-cover" />
-                        {isSelected && (
+                        {isIncluded && (
                           <div className="absolute inset-0 bg-amber-400/30 flex items-center justify-center text-white">
                             <Check className="w-5 h-5 stroke-[3] text-amber-500 bg-white rounded-full p-0.5 shadow-sm" />
                           </div>
@@ -1886,7 +2096,7 @@ export default function ProductoForm({
             {/* 3. O ingresar URL directa */}
             <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <label className="block text-xs font-semibold uppercase tracking-wider opacity-75">
-                O escribe una URL de imagen:
+                O agregar foto por URL:
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -1900,14 +2110,14 @@ export default function ProductoForm({
                   type="button"
                   onClick={() => {
                     if (customVariantUrl.trim()) {
-                      handleUpdateVariant(variantPhotoPickerIndex, 'imagen_url', customVariantUrl.trim())
-                      setVariantPhotoPickerIndex(null)
+                      handleAddImageToVariant(variantPhotoPickerIndex, customVariantUrl.trim())
+                      setCustomVariantUrl('')
                     }
                   }}
                   disabled={!customVariantUrl.trim()}
                   className="min-h-[40px] px-4 py-2 rounded-xl bg-[#FACC15] text-[#1F2937] text-xs font-bold hover:bg-[#eab308] transition-all disabled:opacity-40 cursor-pointer"
                 >
-                  Usar URL
+                  + Agregar
                 </button>
               </div>
             </div>
@@ -1917,19 +2127,19 @@ export default function ProductoForm({
               <button
                 type="button"
                 onClick={() => {
+                  handleUpdateVariant(variantPhotoPickerIndex, 'imagenes', [])
                   handleUpdateVariant(variantPhotoPickerIndex, 'imagen_url', '')
-                  setVariantPhotoPickerIndex(null)
                 }}
                 className="text-xs font-semibold text-red-600 dark:text-red-400 hover:underline cursor-pointer"
               >
-                Quitar foto de esta variante
+                Limpiar fotos de esta variante
               </button>
               <button
                 type="button"
                 onClick={() => setVariantPhotoPickerIndex(null)}
-                className="min-h-[40px] px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-all cursor-pointer"
+                className="min-h-[40px] px-5 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold hover:opacity-90 transition-all cursor-pointer"
               >
-                Cerrar
+                Listo
               </button>
             </div>
           </div>

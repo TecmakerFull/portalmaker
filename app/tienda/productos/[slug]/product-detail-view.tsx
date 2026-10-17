@@ -63,10 +63,21 @@ export default function ProductDetailView({
 
   const isFav = isFavorite(product.id)
 
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
-    variants.length > 0 ? variants[0] : null
-  )
-  const [variantImageOverride, setVariantImageOverride] = useState<string | null>(null)
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(() => {
+    if (variants.length === 0) return null
+    if (product.gestiona_stock) {
+      const withStock = variants.find((v) => v.stock !== null && v.stock > 0)
+      if (withStock) return withStock
+    }
+    return variants[0]
+  })
+  const [variantImageOverride, setVariantImageOverride] = useState<string | null>(() => {
+    if (variants.length === 0) return null
+    const initial = product.gestiona_stock
+      ? (variants.find((v) => v.stock !== null && v.stock > 0) || variants[0])
+      : variants[0]
+    return initial?.imagen_url || null
+  })
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState<'descripcion' | 'tecnicos' | 'valoraciones' | 'faqs'>('descripcion')
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
@@ -145,15 +156,30 @@ export default function ProductDetailView({
     }
   }
 
-  // Imágenes combinadas
+  // Imágenes del producto y de la variante seleccionada (estilo Mercado Libre)
   const rawImages = product.imagenes && product.imagenes.length > 0 ? product.imagenes : []
-  const variantImages = variants
-    .map((v) => v.imagen_url)
-    .filter((url): url is string => Boolean(url))
-  const allImages = Array.from(new Set([...rawImages, ...variantImages]))
+
+  // Fotos específicas de la variante activa (soporta galería multifoto de variante o imagen_url)
+  const selectedVariantImages = selectedVariant
+    ? (Array.isArray(selectedVariant.imagenes) && selectedVariant.imagenes.length > 0
+        ? selectedVariant.imagenes
+        : (selectedVariant.imagen_url ? [selectedVariant.imagen_url] : []))
+    : []
+
+  // Si la variante tiene fotos propias, se muestran sus fotos en la galería;
+  // de lo contrario, se muestran las fotos generales del producto
+  const activeGalleryImages = selectedVariantImages.length > 0
+    ? selectedVariantImages
+    : (rawImages.length > 0 ? rawImages : [])
 
   const handleGalleryImageChange = (imageUrl: string) => {
-    const matchingVariant = variants.find((v) => v.imagen_url === imageUrl)
+    // Si la imagen seleccionada pertenece a otra variante, podemos sincronizar
+    const matchingVariant = variants.find((v) => {
+      const vImgs = Array.isArray(v.imagenes) && v.imagenes.length > 0
+        ? v.imagenes
+        : (v.imagen_url ? [v.imagen_url] : [])
+      return vImgs.includes(imageUrl)
+    })
     if (matchingVariant && matchingVariant.id !== selectedVariant?.id) {
       setSelectedVariant(matchingVariant)
     }
@@ -197,10 +223,20 @@ export default function ProductDetailView({
   }
 
   const handleAddToCart = (andOpenCart: boolean = false) => {
+    // Si el producto tiene variantes, es obligatorio tener una seleccionada
+    if (variants.length > 0 && !selectedVariant) {
+      setCartFeedback('Por favor selecciona una de las opciones para continuar')
+      return
+    }
+
+    const compositeName = selectedVariant
+      ? `${product.nombre} — ${selectedVariant.nombre}`
+      : product.nombre
+
     const itemToAdd = {
       productId: product.id,
       productSlug: product.slug,
-      productName: product.nombre,
+      productName: compositeName,
       imagenUrl: selectedVariant?.imagen_url || (rawImages.length > 0 ? rawImages[0] : null),
       variantId: selectedVariant?.id || null,
       variantName: selectedVariant?.nombre || null,
@@ -215,7 +251,7 @@ export default function ProductDetailView({
 
     if (res.success) {
       setAddedSuccess(true)
-      setCartFeedback('Producto agregado al carrito')
+      setCartFeedback('Opción agregada al carrito')
       setTimeout(() => {
         setAddedSuccess(false)
         setCartFeedback(null)
@@ -277,11 +313,11 @@ export default function ProductDetailView({
 
       {/* 2. Sección Principal: Galería a la izquierda y Datos a la derecha */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-start">
-        {/* Galería de Fotos */}
+        {/* Galería de Fotos (Estilo Mercado Libre con miniaturas a la izquierda) */}
         <div>
           <ProductGallery
-            images={allImages}
-            productName={product.nombre}
+            images={activeGalleryImages}
+            productName={selectedVariant ? `${product.nombre} (${selectedVariant.nombre})` : product.nombre}
             selectedImageOverride={variantImageOverride}
             onImageChange={handleGalleryImageChange}
           />
@@ -372,6 +408,7 @@ export default function ProductDetailView({
                 {variants.map((v) => {
                   const isSelected = selectedVariant?.id === v.id
                   const diff = v.precio_adicional || 0
+                  const isOutOfStock = product.gestiona_stock && v.stock !== null && v.stock <= 0
                   return (
                     <button
                       key={v.id}
@@ -379,11 +416,21 @@ export default function ProductDetailView({
                       onClick={() => {
                         setSelectedVariant(v)
                         setQuantity(1)
-                        if (v.imagen_url) setVariantImageOverride(v.imagen_url)
+                        const vImgs = Array.isArray(v.imagenes) && v.imagenes.length > 0
+                          ? v.imagenes
+                          : (v.imagen_url ? [v.imagen_url] : [])
+                        if (vImgs.length > 0) {
+                          setVariantImageOverride(vImgs[0])
+                        } else if (rawImages.length > 0) {
+                          // Si no tiene foto propia, vuelve a la foto principal del producto
+                          setVariantImageOverride(rawImages[0])
+                        }
                       }}
-                      className={`min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
+                      className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer relative ${
                         isSelected
-                          ? 'border-[var(--color-primario)] bg-[var(--color-primario)] text-[var(--color-primario-texto)] shadow-xs'
+                          ? 'border-[var(--color-primario)] bg-[var(--color-primario)] text-[var(--color-primario-texto)] shadow-xs font-semibold'
+                          : isOutOfStock
+                          ? 'border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] opacity-50 hover:opacity-80'
                           : 'border-black/15 dark:border-white/15 bg-[var(--color-superficie)] opacity-80 hover:opacity-100 hover:border-black/30'
                       }`}
                     >
@@ -391,6 +438,11 @@ export default function ProductDetailView({
                       {diff !== 0 && (
                         <span className="ml-1 opacity-80">
                           ({diff > 0 ? `+${formatMoney(diff)}` : `-${formatMoney(Math.abs(diff))}`})
+                        </span>
+                      )}
+                      {isOutOfStock && (
+                        <span className="ml-1.5 text-[10px] opacity-70 font-normal">
+                          (Sin stock)
                         </span>
                       )}
                     </button>
@@ -406,8 +458,8 @@ export default function ProductDetailView({
             <span>
               {product.gestiona_stock
                 ? (currentStock ?? 0) > 0
-                  ? `${currentStock} unidades disponibles en taller`
-                  : 'Disponible bajo pedido / fabricación'
+                  ? `${currentStock} unidades disponibles de esta opción`
+                  : 'Sin stock de esta opción (disponible bajo pedido)'
                 : 'Disponible en esta colección'}
             </span>
           </p>
@@ -482,10 +534,18 @@ export default function ProductDetailView({
               onClick={handleBuyNow}
               className="w-full min-h-[44px] h-11 rounded-xl border border-black/15 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98"
             >
-              <span>{isReserva ? 'Reservar ahora' : 'Comprar ahora'}</span>
+              <span>{isReserva ? 'Reservar esta opción' : 'Comprar ahora'}</span>
               <ArrowRight className="w-4 h-4 opacity-70" />
             </button>
           </div>
+
+          {/* Feedback interactivo del carrito / validación */}
+          {cartFeedback && (
+            <div className="p-3 rounded-xl bg-[var(--color-primario)]/10 border border-[var(--color-primario)]/20 text-xs font-semibold text-[var(--color-primario-legible)] flex items-center gap-2 animate-in fade-in duration-200">
+              <Check className="w-4 h-4 shrink-0" />
+              <span>{cartFeedback}</span>
+            </div>
+          )}
 
           {/* Consulta por WhatsApp */}
           {whatsappUrl && (
@@ -493,10 +553,14 @@ export default function ProductDetailView({
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full min-h-[40px] px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center justify-center gap-2 border border-emerald-500/20 hover:bg-emerald-500/15 transition-all"
+              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center justify-center gap-2 border border-emerald-500/20 hover:bg-emerald-500/15 transition-all"
             >
               <WhatsAppIcon className="w-4 h-4" />
-              <span>Consultar disponibilidad por WhatsApp</span>
+              <span>
+                {selectedVariant
+                  ? `Consultar disponibilidad de "${selectedVariant.nombre}" por WhatsApp`
+                  : 'Consultar disponibilidad por WhatsApp'}
+              </span>
             </a>
           )}
 

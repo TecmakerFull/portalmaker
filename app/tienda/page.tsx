@@ -37,10 +37,10 @@ export default async function TiendaPage() {
     .eq('store_id', store.id)
     .order('orden', { ascending: true })
 
-  // 2. Obtener productos activos (visibles)
+  // 2. Obtener productos activos (visibles) con sus variantes
   const { data: products } = await supabase
     .from('products')
-    .select('*, category:categories(nombre)')
+    .select('*, category:categories(nombre), variants:product_variants(id, nombre, stock, activo)')
     .eq('store_id', store.id)
     .eq('visible', true)
     .order('destacado', { ascending: false })

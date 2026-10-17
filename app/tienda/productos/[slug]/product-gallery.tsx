@@ -106,14 +106,43 @@ export default function ProductGallery({
 
   return (
     <>
-      <div className="space-y-3.5">
-        {/* Contenedor de la Imagen Principal (Lleno al 100% sin márgenes grises) */}
-        <div className="relative group w-full aspect-square rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 flex items-center justify-center">
+      <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 items-start w-full">
+        {/* Tira de Miniaturas a la Izquierda en Desktop, Inferior en Mobile */}
+        {hasMultiple && (
+          <div className="flex sm:flex-col items-center gap-2 sm:gap-2.5 overflow-x-auto sm:overflow-y-auto max-h-[480px] w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none shrink-0">
+            {displayImages.map((url: string, i: number) => {
+              const isActive = i === selectedIndex
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onMouseEnter={() => handleSelectImage(i)}
+                  onClick={() => handleSelectImage(i)}
+                  aria-label={`Ver vista ${i + 1}`}
+                  className={`relative shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer bg-black/[0.02] dark:bg-white/[0.03] ${
+                    isActive
+                      ? 'border-[var(--color-primario)] ring-2 ring-[var(--color-primario)]/25 shadow-xs'
+                      : 'border-black/10 dark:border-white/10 opacity-70 hover:opacity-100 hover:border-black/30'
+                  }`}
+                >
+                  <img
+                    src={url}
+                    alt={`Miniatura ${i + 1}`}
+                    className="w-full h-full object-contain p-1"
+                  />
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Contenedor de la Imagen Principal (Tamaño armónico estilo Mercado Libre) */}
+        <div className="relative group flex-1 w-full max-w-full sm:max-w-[460px] aspect-square rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 bg-black/[0.01] dark:bg-white/[0.02] flex items-center justify-center mx-auto">
           <img
             src={currentImage}
             alt={`${productName} - Vista ${selectedIndex + 1}`}
             onClick={() => setIsZoomOpen(true)}
-            className="w-full h-full object-cover cursor-zoom-in transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-full object-contain p-3 sm:p-5 cursor-zoom-in transition-transform duration-300 group-hover:scale-105 select-none"
           />
 
           {/* Flechas Laterales de Navegación dentro de la imagen */}
@@ -126,7 +155,7 @@ export default function ProductGallery({
                   handlePrev()
                 }}
                 aria-label="Imagen anterior"
-                className="absolute left-3 top-1/2 -translate-y-1/2 min-w-[42px] min-h-[42px] rounded-full bg-black/50 hover:bg-black/75 text-white flex items-center justify-center shadow-md backdrop-blur-xs transition-all active:scale-95 cursor-pointer z-10"
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 min-w-[38px] min-h-[38px] rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center shadow-md backdrop-blur-xs transition-all active:scale-95 cursor-pointer z-10 opacity-0 group-hover:opacity-100 sm:opacity-70"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
@@ -138,59 +167,31 @@ export default function ProductGallery({
                   handleNext()
                 }}
                 aria-label="Imagen siguiente"
-                className="absolute right-3 top-1/2 -translate-y-1/2 min-w-[42px] min-h-[42px] rounded-full bg-black/50 hover:bg-black/75 text-white flex items-center justify-center shadow-md backdrop-blur-xs transition-all active:scale-95 cursor-pointer z-10"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 min-w-[38px] min-h-[38px] rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center shadow-md backdrop-blur-xs transition-all active:scale-95 cursor-pointer z-10 opacity-0 group-hover:opacity-100 sm:opacity-70"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
             </>
           )}
 
-          {/* Botón Tocar para Ampliar (Solo icono sutil en la esquina superior) */}
+          {/* Botón Tocar para Ampliar (Esquina superior) */}
           <button
             type="button"
             onClick={() => setIsZoomOpen(true)}
             aria-label="Ampliar imagen"
             title="Tocar para ampliar"
-            className="absolute top-3 right-3 min-w-[40px] min-h-[40px] rounded-xl bg-black/50 hover:bg-black/75 text-white flex items-center justify-center backdrop-blur-xs shadow-sm transition-all active:scale-95 cursor-pointer z-10"
+            className="absolute top-2.5 right-2.5 min-w-[38px] min-h-[38px] rounded-xl bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-xs shadow-sm transition-all active:scale-95 cursor-pointer z-10"
           >
             <Maximize2 className="w-4 h-4" />
           </button>
 
-          {/* Indicador de posición (ej: 2/3) */}
+          {/* Indicador de posición (ej: 2/5) */}
           {hasMultiple && (
-            <span className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-black/50 text-white text-[11px] font-medium backdrop-blur-xs">
+            <span className="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-black/50 text-white text-[11px] font-medium backdrop-blur-xs">
               {selectedIndex + 1} / {displayImages.length}
             </span>
           )}
         </div>
-
-        {/* Tira de Miniaturas Inferiores */}
-        {hasMultiple && (
-          <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
-            {displayImages.map((url: string, i: number) => {
-              const isActive = i === selectedIndex
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => handleSelectImage(i)}
-                  aria-label={`Ver vista ${i + 1}`}
-                  className={`relative shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border transition-all cursor-pointer bg-black/5 ${
-                    isActive
-                      ? 'border-[var(--color-primario)] ring-2 ring-[var(--color-primario)]/30 scale-95 shadow-xs'
-                      : 'border-black/10 dark:border-white/10 opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <img
-                    src={url}
-                    alt={`Miniatura ${i + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              )
-            })}
-          </div>
-        )}
       </div>
 
       {/* Modal Lightbox Fullscreen al tocar para ampliar */}

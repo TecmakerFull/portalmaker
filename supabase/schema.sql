@@ -325,7 +325,8 @@ create table product_variants (
   precio_adicional numeric(10,2) default 0,  -- se suma al precio_base del producto
   stock           int,                         -- unidades disponibles (si gestiona_stock = true)
   stock_minimo    int default 0,              -- umbral de alerta de bajo stock
-  imagen_url      text,                        -- imagen específica de esta variante (opcional)
+  imagen_url      text,                        -- imagen principal de esta variante (opcional)
+  imagenes        text[] default '{}'::text[], -- múltiples imágenes de esta variante (estilo Mercado Libre)
 
   activo boolean default true,
   orden  int     default 0,

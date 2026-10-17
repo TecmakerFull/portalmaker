@@ -112,7 +112,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
   // 4. Buscar otros productos recomendados de la tienda ("También te puede gustar")
   const { data: relatedProducts } = await supabase
     .from('products')
-    .select('*, category:categories(nombre)')
+    .select('*, category:categories(nombre), variants:product_variants(id, nombre, stock, activo)')
     .eq('store_id', store.id)
     .eq('visible', true)
     .neq('id', product.id)

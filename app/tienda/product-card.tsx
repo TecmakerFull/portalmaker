@@ -9,10 +9,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { Product, Store } from '@/types/database'
 import { useCart } from '@/lib/cart-context'
-import { Heart, Plus, Check, Star, ArrowUpRight, MessageSquare, ImageIcon } from 'lucide-react'
+import { Heart, Plus, Check, Star, ArrowUpRight, MessageSquare, ImageIcon, Layers, ChevronRight } from 'lucide-react'
 
 interface ProductCardProps {
-  product: Product & { category?: { nombre: string } | null }
+  product: Product & {
+    category?: { nombre: string } | null
+    variants?: { id: string; nombre: string; stock: number | null; activo: boolean }[] | null
+  }
   store: Store
   tenantQuery: string
 }
@@ -27,6 +30,13 @@ export default function ProductCard({ product, store, tenantQuery }: ProductCard
   const isOutOfStock = product.gestiona_stock && (product.stock ?? 0) <= 0
   const isOffer = product.oferta_activa && product.precio_oferta !== null && product.precio_oferta < product.precio_base
   const effectivePrice = isOffer && product.precio_oferta ? product.precio_oferta : product.precio_base
+
+  // Detección de variantes activas (estilo Mercado Libre)
+  const activeVariants = Array.isArray(product.variants)
+    ? product.variants.filter((v) => v.activo)
+    : []
+  const hasVariants = activeVariants.length > 0
+  const variantCount = activeVariants.length
 
   // Formato de moneda
   const formatMoney = (val: number) => {
@@ -123,6 +133,14 @@ export default function ProductCard({ product, store, tenantQuery }: ProductCard
             )}
           </Link>
 
+          {/* Badge de opciones/variantes en la foto */}
+          {hasVariants && (
+            <span className="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/65 text-white text-[10px] font-medium backdrop-blur-xs flex items-center gap-1 shadow-xs pointer-events-none">
+              <Layers className="w-3 h-3 text-[var(--color-primario)]" />
+              <span>{variantCount} {variantCount === 1 ? 'opción' : 'opciones'}</span>
+            </span>
+          )}
+
           {/* Badge en la esquina superior izquierda */}
           {badgeText && (
             <span className="product-badge bg-[var(--color-superficie)] text-[var(--color-texto)] font-semibold text-[10px] shadow-xs">
@@ -195,17 +213,28 @@ export default function ProductCard({ product, store, tenantQuery }: ProductCard
         </div>
       </div>
 
-      {/* Fila Inferior: Swatches de color + Botón de Añadir / WhatsApp */}
+      {/* Fila Inferior: Indicador de variantes + Botón de Acción contextual */}
       <div className="mt-3 flex items-center justify-between pt-1">
-        {/* Swatches decorativos sutiles */}
-        <div className="flex items-center gap-1.5" aria-hidden="true">
-          <span className="swatch bg-[var(--color-primario)]" />
-          <span className="swatch bg-black/40 dark:bg-white/40" />
-          <span className="swatch bg-black/10 dark:bg-white/10" />
-        </div>
+        {/* Indicador sutil de opciones a la izquierda */}
+        {hasVariants ? (
+          <span className="text-[11px] font-medium text-[var(--color-primario-legible)] opacity-90 flex items-center gap-1 truncate max-w-[130px]">
+            <Layers className="w-3.5 h-3.5 shrink-0 text-[var(--color-primario)]" />
+            <span>{variantCount} opciones</span>
+          </span>
+        ) : (
+          <div />
+        )}
 
-        {/* Botón de Acción */}
-        {hasPrice && !isOutOfStock ? (
+        {/* Botón de Acción: Si tiene variantes, invita a elegir opción; sino compra directo */}
+        {hasVariants ? (
+          <Link
+            href={productUrl}
+            className="min-h-[32px] h-8 px-2.5 sm:px-3 rounded-lg text-[11px] font-semibold border border-black/10 dark:border-white/10 hover:bg-[var(--color-primario)] hover:text-[var(--color-primario-texto)] text-[var(--color-texto)] transition-all inline-flex items-center gap-1 shadow-xs cursor-pointer"
+          >
+            <span>Ver opciones</span>
+            <ChevronRight className="w-3.5 h-3.5 opacity-70" />
+          </Link>
+        ) : hasPrice && !isOutOfStock ? (
           <button
             type="button"
             onClick={handleAddToCart}
