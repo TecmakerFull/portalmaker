@@ -188,7 +188,7 @@ function StoreNavbarInner({ section, tenantQuery }: StoreNavbarProps) {
     }
 
     return (
-      <Link key={item.id} href={destUrl} className={linkClasses}>
+      <Link key={item.id} href={destUrl} prefetch={true} className={`${linkClasses} active:scale-[0.98]`}>
         {inner}
       </Link>
     )

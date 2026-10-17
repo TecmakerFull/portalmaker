@@ -111,6 +111,23 @@ export default function ProductDetailView({
     })
   }, [])
 
+  // Pre-cargar imágenes de todas las variantes en memoria para cambio instantáneo sin delay (0ms)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && variants.length > 0) {
+      variants.forEach((v) => {
+        const vImgs = Array.isArray(v.imagenes) && v.imagenes.length > 0
+          ? v.imagenes
+          : (v.imagen_url ? [v.imagen_url] : [])
+        vImgs.forEach((src) => {
+          if (src) {
+            const img = new Image()
+            img.src = src
+          }
+        })
+      })
+    }
+  }, [variants])
+
   // Promedio de estrellas
   const totalReviewsCount = reviewsList.length
   const avgRating = totalReviewsCount > 0

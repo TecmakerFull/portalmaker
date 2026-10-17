@@ -56,6 +56,18 @@ export default function ProductGallery({
     }
   }, [selectedImageOverride, displayImages, selectedIndex])
 
+  // Pre-carga en memoria de todas las imágenes de la galería para cambio instantáneo (0ms)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && displayImages.length > 0) {
+      displayImages.forEach((src) => {
+        if (src) {
+          const img = new Image()
+          img.src = src
+        }
+      })
+    }
+  }, [displayImages])
+
   const hasMultiple = displayImages.length > 1
 
   const handleSelectImage = useCallback((idx: number) => {

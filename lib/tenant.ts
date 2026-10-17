@@ -13,6 +13,7 @@
 //   5. Los datos de la tienda se pasan a todos los componentes como props
 // =============================================================================
 
+import { cache } from 'react'
 import { headers } from 'next/headers'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { Store, TenantContext } from '@/types/database'
@@ -27,16 +28,10 @@ export interface TenantResult {
 }
 
 /**
- * Resuelve la tienda activa para el request actual.
- * Debe llamarse desde un Server Component o Server Action.
- *
- * @returns Los datos de la tienda, o null si no existe o no está activa
- *
- * Ejemplo de uso en un layout:
- *   const tenant = await getTenantStore()
- *   if (!tenant) notFound()
+ * Resuelve la tienda activa para el request actual con memoización por petición (React cache).
+ * Evita llamadas redundantes a Supabase entre layout.tsx, metadata y page.tsx.
  */
-export async function getTenantStore(): Promise<TenantResult | null> {
+export const getTenantStore = cache(async function getTenantStore(): Promise<TenantResult | null> {
   const headersList = await headers()
 
   const storeSlug = headersList.get('x-store-slug')
@@ -78,7 +73,7 @@ export async function getTenantStore(): Promise<TenantResult | null> {
       resolved_by: tenantSource ?? (storeSlug ? 'subdomain' : 'custom_domain'),
     },
   }
-}
+})
 
 /**
  * Verifica si el usuario logueado es el admin de la tienda proporcionada.
@@ -87,7 +82,7 @@ export async function getTenantStore(): Promise<TenantResult | null> {
  * @param store - La tienda cuyo admin se quiere verificar
  * @returns true si el usuario es el admin de esa tienda, false en caso contrario
  */
-export async function isStoreAdmin(store: Store): Promise<boolean> {
+export const isStoreAdmin = cache(async function isStoreAdmin(store: Store): Promise<boolean> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -125,7 +120,7 @@ export async function isStoreAdmin(store: Store): Promise<boolean> {
   } catch {
     return false
   }
-}
+})
 
 /**
  * Verifica si el usuario logueado es un platform_admin (developer de Portalmaker).
@@ -133,7 +128,7 @@ export async function isStoreAdmin(store: Store): Promise<boolean> {
  *
  * @returns true si el usuario es platform_admin
  */
-export async function isPlatformAdmin(): Promise<boolean> {
+export const isPlatformAdmin = cache(async function isPlatformAdmin(): Promise<boolean> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -147,7 +142,7 @@ export async function isPlatformAdmin(): Promise<boolean> {
     .maybeSingle()
 
   return !!data
-}
+})
 
 /**
  * Calcula el estado de suscripción de una tienda basado en las fechas.

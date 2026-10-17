@@ -84,6 +84,7 @@
 html {
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
+  touch-action: manipulation;
 }
 
 body {
@@ -93,6 +94,15 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation;
+}
+
+/* Optimización táctil: elimina el delay de 300ms en celulares */
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Clases auxiliares para el tema */

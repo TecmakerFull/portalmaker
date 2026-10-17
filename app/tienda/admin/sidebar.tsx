@@ -286,7 +286,8 @@ export default function AdminSidebar({
             <div className="ml-4 pl-3 border-l border-[var(--color-borde)] space-y-1 mt-1">
               <Link
                 href={`/tienda/admin/branding${tenantQuery}`}
-                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                prefetch={true}
+                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
                   isBranding
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
                     : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
@@ -296,7 +297,8 @@ export default function AdminSidebar({
               </Link>
               <Link
                 href={`/tienda/admin/diseno${tenantQuery}`}
-                className={`min-h-[40px] flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                prefetch={true}
+                className={`min-h-[40px] flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
                   isDiseno
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
                     : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
@@ -309,7 +311,8 @@ export default function AdminSidebar({
               </Link>
               <Link
                 href={`/tienda/admin/banners${tenantQuery}`}
-                className={`min-h-[40px] flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                prefetch={true}
+                className={`min-h-[40px] flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
                   isBanners
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
                     : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
@@ -322,7 +325,8 @@ export default function AdminSidebar({
               </Link>
               <Link
                 href={`/tienda/admin/sobre-nosotros${tenantQuery}`}
-                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                prefetch={true}
+                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
                   isSobreNosotros
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
                     : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
@@ -332,7 +336,8 @@ export default function AdminSidebar({
               </Link>
               <Link
                 href={`/tienda/admin/contacto${tenantQuery}`}
-                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                prefetch={true}
+                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
                   isContacto
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
                     : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
@@ -342,7 +347,8 @@ export default function AdminSidebar({
               </Link>
               <Link
                 href={`/tienda/admin/pagos${tenantQuery}`}
-                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                prefetch={true}
+                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
                   isPagos
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
                     : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
@@ -352,7 +358,8 @@ export default function AdminSidebar({
               </Link>
               <Link
                 href={`/tienda/admin/dominio${tenantQuery}`}
-                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                prefetch={true}
+                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
                   isDominio
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
                     : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'

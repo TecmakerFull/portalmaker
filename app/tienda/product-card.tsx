@@ -113,8 +113,9 @@ export default function ProductCard({ product, store, tenantQuery }: ProductCard
         <div className="product-photo aspect-[1/1.04] bg-black/[0.03] dark:bg-white/[0.04] overflow-hidden relative rounded-md">
           <Link
             href={productUrl}
+            prefetch={true}
             aria-label={`Ver detalle de ${product.nombre}`}
-            className="block w-full h-full"
+            className="block w-full h-full active:scale-[0.99] transition-transform"
           >
             {firstImage ? (
               <img

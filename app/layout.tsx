@@ -15,6 +15,7 @@
 import type { Metadata } from "next";
 import { Inter, Outfit, Playfair_Display, Space_Grotesk, DM_Serif_Display, DM_Sans, Manrope } from "next/font/google";
 import "./globals.css";
+import NavigationProgress from "./components/navigation-progress";
 
 // ============================================================
 // FUENTES DE GOOGLE FONTS
@@ -158,6 +159,7 @@ export default function RootLayout({
           antialiased
         `}
       >
+        <NavigationProgress />
         {children}
       </body>
     </html>
