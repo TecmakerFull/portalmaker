@@ -234,9 +234,14 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
 
       {/* 3. Redes Sociales */}
       <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] space-y-4">
-        <div className="flex items-center gap-2 text-sm font-bold opacity-90 border-b border-[var(--color-borde)] pb-3">
-          <Globe className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-          <span>Redes Sociales de la Marca</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-sm font-bold opacity-90 border-b border-[var(--color-borde)] pb-3">
+          <div className="flex items-center gap-2">
+            <Globe className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+            <span>Redes Sociales de la Marca</span>
+          </div>
+          <span className="text-[11px] font-normal opacity-60">
+            Se mostrarán con sus respectivos íconos en el pie de página de tu tienda
+          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -250,7 +255,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
               type="text"
               value={instagramUrl}
               onChange={(e) => setInstagramUrl(e.target.value)}
-              placeholder="https://instagram.com/mitaller3d"
+              placeholder="https://instagram.com/mitienda"
               className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
             />
           </div>
@@ -265,7 +270,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
               type="text"
               value={facebookUrl}
               onChange={(e) => setFacebookUrl(e.target.value)}
-              placeholder="https://facebook.com/mitaller3d"
+              placeholder="https://facebook.com/mitienda"
               className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
             />
           </div>
@@ -280,7 +285,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
               type="text"
               value={tiktokUrl}
               onChange={(e) => setTiktokUrl(e.target.value)}
-              placeholder="https://tiktok.com/@mitaller3d"
+              placeholder="https://tiktok.com/@mitienda"
               className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
             />
           </div>
