@@ -94,11 +94,11 @@ export default function GuiaView({
       details: [
         {
           sub: '¿Qué categorías crear?',
-          desc: 'Crea carpetas claras como "Filamentos", "Impresión 3D", "Llaveros & Regalos", "Herramientas" o "Servicios".',
+          desc: 'Crea carpetas claras según tu rubro, como "Indumentaria", "Calzado", "Tecnología", "Hogar & Deco", "Accesorios" o "Servicios".',
         },
         {
           sub: 'Subcategorías opcionales',
-          desc: 'Si vendes mucho, puedes crear divisiones adentro (por ejemplo: dentro de "Filamentos", crear "PLA", "PETG", "FLEX").',
+          desc: 'Si tienes variedad de artículos, puedes crear divisiones adentro (por ejemplo: dentro de "Indumentaria", crear "Remeras", "Buzos", "Pantalones").',
         },
       ],
     },
@@ -115,15 +115,15 @@ export default function GuiaView({
       details: [
         {
           sub: 'A. El Producto Padre (La publicación principal)',
-          desc: 'Ponle el nombre general del producto (ej: "Filamento PLA 1kg — Filar" o "Soporte Auriculares RGB"). No le pongas solo el nombre de un color aquí.',
+          desc: 'Ponle el nombre general del producto (ej: "Remera Oversize Algodón", "Taza Cerámica Artesanal" o "Auriculares Bluetooth"). No le pongas solo el color o talle aquí.',
         },
         {
           sub: 'B. Las Variantes (Los colores, talles o modelos)',
-          desc: 'Si tu producto tiene opciones, agrega una variante por cada una: "Negro Azabache", "Blanco Antártida", "Rojo Carreras". Cada una lleva su stock individual.',
+          desc: 'Si tu producto tiene opciones, agrega una variante por cada una: "Negro / Talle M", "Blanco / Talle L", "Azul Marino". Cada una lleva su stock individual y precio propio si varía.',
         },
         {
           sub: 'C. Fotos Generales vs. Fotos de Variante',
-          desc: 'En el producto puedes subir hasta 10 fotos generales (ángulos, medidas, empaque). Y a cada variante le asignas 1 foto principal para que cuando el cliente toque el color, la foto cambie automáticamente.',
+          desc: 'En el producto puedes subir hasta 10 fotos generales (ángulos, medidas, empaque). Y a cada variante le asignas 1 foto principal para que cuando el cliente toque la opción, la foto cambie automáticamente.',
         },
         {
           sub: 'D. Subida Fácil y Rápida',
@@ -155,7 +155,7 @@ export default function GuiaView({
     {
       num: 5,
       category: 'tienda' as const,
-      title: 'Sobre Nosotros (Tu historia y taller)',
+      title: 'Sobre Nosotros (Tu historia y propuesta)',
       tag: 'Genera confianza',
       icon: HelpCircle,
       color: 'from-cyan-500/20 to-cyan-500/5 text-cyan-600 dark:text-cyan-400 border-cyan-400/30',
@@ -165,11 +165,11 @@ export default function GuiaView({
       details: [
         {
           sub: 'Tu presentación',
-          desc: 'Escribe de qué ciudad eres, qué máquinas tienes en tu taller (impresoras 3D, corte láser, CNC) y tu experiencia como maker.',
+          desc: 'Escribe de qué ciudad eres, a qué te dedicas, cómo elaboras o seleccionas tus productos y qué te apasiona de tu emprendimiento o negocio.',
         },
         {
-          sub: 'Foto del taller o equipo',
-          desc: 'Una foto real de tus impresoras trabajando o de tus piezas terminadas genera muchísima confianza en los compradores.',
+          sub: 'Foto de tu espacio o equipo',
+          desc: 'Una foto real de tu espacio de trabajo, de tu equipo o de tus productos terminados genera muchísima confianza y cercanía en los compradores.',
         },
       ],
     },
@@ -249,7 +249,7 @@ export default function GuiaView({
       details: [
         {
           sub: 'Registro de clientes',
-          desc: 'Cada usuario que inicia sesión en tu tienda para guardar piezas o consultar queda registrado automáticamente con su fecha de último ingreso.',
+          desc: 'Cada usuario que inicia sesión en tu tienda para guardar productos en favoritos o consultar queda registrado automáticamente con su fecha de último ingreso.',
         },
         {
           sub: 'Ficha de historial completo',
@@ -274,7 +274,7 @@ export default function GuiaView({
       details: [
         {
           sub: 'Calificación para usuarios de la tienda',
-          desc: 'Cualquier visitante registrado en tu tienda puede calificar piezas con 1 a 5 estrellas y escribir su experiencia en la pestaña de opiniones.',
+          desc: 'Cualquier visitante registrado en tu tienda puede calificar productos con 1 a 5 estrellas y escribir su experiencia en la pestaña de opiniones.',
         },
         {
           sub: 'Control total de visibilidad',
@@ -356,7 +356,7 @@ export default function GuiaView({
         </div>
 
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight font-[var(--font-heading)]">
-          Guía Completa para Administrar tu Tienda Maker
+          Guía Completa para Administrar tu Tienda
         </h1>
 
         <p className="text-xs sm:text-sm opacity-75 max-w-2xl leading-relaxed">
@@ -546,7 +546,7 @@ export default function GuiaView({
       <div className="bg-[var(--color-superficie)] p-6 sm:p-7 rounded-3xl border border-[var(--color-borde)] space-y-4">
         <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-texto)]">
           <Info className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-          <span>Dudas Frecuentes del Maker (Haz clic para ver la respuesta)</span>
+          <span>Dudas Frecuentes sobre tu Tienda (Haz clic para ver la respuesta)</span>
         </div>
 
         <div className="space-y-2 text-xs sm:text-sm leading-relaxed">
