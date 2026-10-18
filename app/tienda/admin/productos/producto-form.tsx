@@ -109,6 +109,7 @@ export default function ProductoForm({
   // 3. Fotos (hasta 10)
   const [imagenes, setImagenes] = useState<string[]>(initialProduct?.imagenes ?? [])
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [isDraggingPhotos, setIsDraggingPhotos] = useState(false)
 
   // 4. Precios & Modalidad
   const [sinPrecio, setSinPrecio] = useState(!initialProduct ? false : initialProduct.precio_base === 0 && !initialProduct.gestiona_stock)
@@ -174,6 +175,7 @@ export default function ProductoForm({
   const [variantPhotoPickerIndex, setVariantPhotoPickerIndex] = useState<number | null>(null)
   const [customVariantUrl, setCustomVariantUrl] = useState('')
   const [uploadingVariantImage, setUploadingVariantImage] = useState(false)
+  const [isDraggingVariant, setIsDraggingVariant] = useState(false)
   const variantFileInputRef = useRef<HTMLInputElement>(null)
 
   // Helpers para agregar/quitar imágenes a una variante
@@ -370,28 +372,84 @@ export default function ProductoForm({
     })
   }
 
-  // Subida de hasta 10 fotos desde selector de archivos
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
+  // Subida de múltiples fotos desde selector, arrastrar y soltar (drag & drop) o pegar
+  const handleFilesUpload = async (files: File[]) => {
     if (!files || files.length === 0) return
 
-    if (imagenes.length + files.length > 10) {
-      alert('Puedes subir como máximo 10 imágenes por producto.')
+    // Filtrar solo archivos de imagen
+    const imageFiles = files.filter((f) => f.type.startsWith('image/'))
+    if (imageFiles.length === 0) {
+      alert('Por favor selecciona únicamente archivos de imagen (JPG, PNG, WebP, etc.).')
       return
+    }
+
+    const availableSlots = 10 - imagenes.length
+    if (availableSlots <= 0) {
+      alert('Ya alcanzaste el límite máximo de 10 fotos por producto.')
+      return
+    }
+
+    const filesToProcess = imageFiles.slice(0, availableSlots)
+    if (imageFiles.length > availableSlots) {
+      alert(`Solo puedes cargar hasta 10 fotos en total. Se procesarán las primeras ${availableSlots} imagen(es).`)
     }
 
     setUploadingImage(true)
     setErrorMsg(null)
 
     try {
-      const fileArray = Array.from(files)
-      const newUrls = await Promise.all(fileArray.map(processImageFile))
+      const newUrls = await Promise.all(filesToProcess.map(processImageFile))
       setImagenes((prev) => [...prev, ...newUrls])
     } catch (err: any) {
       setErrorMsg(err?.message || 'Error al procesar las imágenes.')
     } finally {
       setUploadingImage(false)
-      e.target.value = ''
+    }
+  }
+
+  // Subida de hasta 10 fotos desde selector de archivos
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      await handleFilesUpload(Array.from(files))
+    }
+    e.target.value = ''
+  }
+
+  // Drag & drop para fotos generales del producto
+  const handlePhotosDragEnter = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+      setIsDraggingPhotos(true)
+    }
+  }
+
+  const handlePhotosDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = 'copy'
+    if (!isDraggingPhotos) {
+      setIsDraggingPhotos(true)
+    }
+  }
+
+  const handlePhotosDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDraggingPhotos(false)
+    }
+  }
+
+  const handlePhotosDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingPhotos(false)
+
+    const files = e.dataTransfer.files
+    if (files && files.length > 0) {
+      await handleFilesUpload(Array.from(files))
     }
   }
 
@@ -411,18 +469,7 @@ export default function ProductoForm({
 
     if (filesToUpload.length > 0) {
       e.preventDefault()
-      if (imagenes.length + filesToUpload.length > 10) {
-        alert('Puedes subir como máximo 10 imágenes por producto.')
-        return
-      }
-
-      setUploadingImage(true)
-      try {
-        const urls = await Promise.all(filesToUpload.map(processImageFile))
-        setImagenes((prev) => [...prev, ...urls])
-      } finally {
-        setUploadingImage(false)
-      }
+      await handleFilesUpload(filesToUpload)
       return
     }
 
@@ -1113,18 +1160,39 @@ export default function ProductoForm({
         {/* 3. Imágenes de tu producto (Hasta 10 fotos) */}
         <div
           onPaste={handlePasteImage}
-          className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4"
+          onDragEnter={handlePhotosDragEnter}
+          onDragOver={handlePhotosDragOver}
+          onDragLeave={handlePhotosDragLeave}
+          onDrop={handlePhotosDrop}
+          className={`bg-[var(--color-superficie)] rounded-3xl border p-5 sm:p-7 shadow-xs space-y-4 relative transition-all duration-200 ${
+            isDraggingPhotos
+              ? 'border-amber-400 bg-amber-400/5 ring-2 ring-amber-400/30'
+              : 'border-[var(--color-borde)]'
+          }`}
         >
+          {/* Overlay visual cuando se arrastran fotos desde la PC */}
+          {isDraggingPhotos && (
+            <div className="absolute inset-0 z-20 rounded-3xl bg-amber-400/10 backdrop-blur-xs border-2 border-dashed border-amber-400 flex flex-col items-center justify-center p-6 text-center pointer-events-none animate-in fade-in duration-150">
+              <Upload className="w-10 h-10 text-amber-500 animate-bounce mb-2" />
+              <span className="text-sm font-bold text-slate-900 dark:text-white">
+                ¡Suelta tus fotos aquí para agregarlas!
+              </span>
+              <span className="text-xs text-slate-600 dark:text-slate-300">
+                Se optimizarán automáticamente a WebP
+              </span>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold">Imágenes de tu producto</h2>
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 opacity-70">
-                  Soporta Ctrl + V
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-800 dark:text-amber-300">
+                  Arrastra fotos o Ctrl + V
                 </span>
               </div>
               <p className="text-xs opacity-70 mt-0.5">
-                Carga hasta 10 fotos. Puedes subir archivos, pegar capturas con <strong>Ctrl + V</strong> o ingresar enlaces URL. La primera foto será la portada principal.
+                Carga hasta 10 fotos. Puedes <strong>arrastrar archivos desde tu PC</strong>, pegar capturas con <strong>Ctrl + V</strong> o ingresar enlaces URL. La primera foto será la portada principal.
               </p>
             </div>
             <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 opacity-75 self-start sm:self-auto">
@@ -1175,7 +1243,17 @@ export default function ProductoForm({
 
             {/* Dropzone / Botón para agregar fotos */}
             {imagenes.length < 10 && (
-              <label className="aspect-square rounded-2xl border-2 border-dashed border-[var(--color-borde)] hover:border-amber-400 bg-[var(--color-fondo)]/40 hover:bg-amber-400/5 cursor-pointer flex flex-col items-center justify-center p-4 text-center transition-all">
+              <label
+                onDragEnter={handlePhotosDragEnter}
+                onDragOver={handlePhotosDragOver}
+                onDragLeave={handlePhotosDragLeave}
+                onDrop={handlePhotosDrop}
+                className={`aspect-square rounded-2xl border-2 border-dashed cursor-pointer flex flex-col items-center justify-center p-4 text-center transition-all ${
+                  isDraggingPhotos
+                    ? 'border-amber-500 bg-amber-400/20 scale-102 ring-2 ring-amber-400/50'
+                    : 'border-[var(--color-borde)] hover:border-amber-400 bg-[var(--color-fondo)]/40 hover:bg-amber-400/5'
+                }`}
+              >
                 <input
                   type="file"
                   multiple
@@ -1192,7 +1270,7 @@ export default function ProductoForm({
                 ) : (
                   <div className="flex flex-col items-center gap-1 opacity-75">
                     <Upload className="w-6 h-6 text-[#CA8A04] dark:text-[#FACC15]" />
-                    <span className="text-xs font-bold">Subir fotos</span>
+                    <span className="text-xs font-bold">Subir o arrastrar</span>
                     <span className="text-[10px] opacity-60">o presiona Ctrl+V</span>
                   </div>
                 )}
@@ -2073,7 +2151,40 @@ export default function ProductoForm({
             {/* 1. Botón de Subida Directa */}
             <div
               onClick={() => variantFileInputRef.current?.click()}
-              className="p-3.5 rounded-2xl border-2 border-dashed border-amber-400/50 hover:border-amber-500 bg-amber-400/5 hover:bg-amber-400/10 transition-all flex items-center justify-center gap-3 cursor-pointer group"
+              onDragEnter={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setIsDraggingVariant(true)
+              }}
+              onDragOver={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                e.dataTransfer.dropEffect = 'copy'
+                setIsDraggingVariant(true)
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setIsDraggingVariant(false)
+                }
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setIsDraggingVariant(false)
+                const file = e.dataTransfer.files?.[0]
+                if (file && file.type.startsWith('image/')) {
+                  handleUploadVariantFile(file)
+                } else if (file) {
+                  alert('Por favor arrastra un archivo de imagen válido.')
+                }
+              }}
+              className={`p-3.5 rounded-2xl border-2 border-dashed transition-all flex items-center justify-center gap-3 cursor-pointer group ${
+                isDraggingVariant
+                  ? 'border-amber-500 bg-amber-400/20 ring-2 ring-amber-400/50'
+                  : 'border-amber-400/50 hover:border-amber-500 bg-amber-400/5 hover:bg-amber-400/10'
+              }`}
             >
               {uploadingVariantImage ? (
                 <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-semibold text-xs">
@@ -2084,7 +2195,9 @@ export default function ProductoForm({
                 <>
                   <Upload className="w-4 h-4 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
                   <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    Subir foto exclusiva para esta variante (o pegar con Ctrl+V)
+                    {isDraggingVariant
+                      ? '¡Suelta la foto aquí!'
+                      : 'Subir o arrastrar foto para esta variante (o Ctrl+V)'}
                   </span>
                 </>
               )}
