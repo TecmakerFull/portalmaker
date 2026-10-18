@@ -36,6 +36,7 @@ import {
   Mail,
 } from 'lucide-react'
 import type { Store as StoreType } from '@/types/database'
+import ThemeToggle from '@/app/tienda/theme-toggle'
 
 export default function AdminSidebar({
   store,
@@ -530,6 +531,8 @@ export default function AdminSidebar({
             title={tiendaEncendida ? 'Tienda Encendida' : 'Tienda Apagada'}
           />
 
+          <ThemeToggle className="!w-8 !h-8 !min-w-[32px] !min-h-[32px] rounded-lg" />
+
           <Link
             href="/dashboard/maker"
             title="Volver al Portal"
@@ -598,7 +601,8 @@ export default function AdminSidebar({
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle className="!w-8 !h-8 !min-w-[32px] !min-h-[32px] rounded-lg" />
             <Link
               href="/dashboard/maker"
               title="Volver al Portal Maker"

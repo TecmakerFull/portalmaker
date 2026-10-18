@@ -5,22 +5,28 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { Sun, Moon } from 'lucide-react'
 
 export default function ThemeToggle({ className = '' }: { className?: string }) {
+  const pathname = usePathname()
+  const isAdmin = pathname?.startsWith('/tienda/admin')
+  const storageKey = isAdmin ? 'portalmaker-admin-theme' : 'portalmaker-theme'
+
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    // Leer el tema aplicado actualmente en el DOM por el script del <head>
+    // Leer el tema aplicado actualmente en el DOM o localStorage
+    const saved = localStorage.getItem(storageKey) as 'light' | 'dark' | null
     const currentTheme =
+      saved ||
       (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') ||
-      (localStorage.getItem('portalmaker-theme') as 'light' | 'dark') ||
-      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      (isAdmin ? 'light' : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
 
     setTheme(currentTheme)
     setMounted(true)
-  }, [])
+  }, [storageKey, isAdmin])
 
   const toggleTheme = () => {
     const current =
@@ -35,7 +41,7 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
     } else {
       document.documentElement.classList.remove('dark')
     }
-    localStorage.setItem('portalmaker-theme', next)
+    localStorage.setItem(storageKey, next)
     setTheme(next)
   }
 

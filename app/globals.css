@@ -144,6 +144,65 @@ a,
   --color-borde: rgba(255, 255, 255, 0.1);
 }
 
+/* =============================================================================
+ * PORTAL ADMIN — Estilos oficiales del panel de administración
+ * El portal de configuración usa siempre el diseño oficial de Portalmaker
+ * (Paleta 06 Yellow & Gray), idéntico al panel de Superadmin,
+ * completamente aislado de las personalizaciones de la tienda del tenant.
+ * ============================================================================= */
+.portal-admin-root {
+  --color-primario: #FACC15 !important;
+  --color-primario-texto: #111827 !important;
+  --color-primario-legible: #CA8A04 !important;
+  --color-secundario: #4B5563 !important;
+  --color-secundario-texto: #FFFFFF !important;
+  --color-secundario-legible: #374151 !important;
+  --color-acento: #FEF08A !important;
+  --color-fondo: #F3F4F6 !important;
+  --color-superficie: #FFFFFF !important;
+  --color-texto: #111827 !important;
+  --color-texto-muted: #4B5563 !important;
+  --color-borde: #E5E7EB !important;
+
+  --color-input-bg: #FFFFFF !important;
+  --color-input-bg-muted: #F9FAFB !important;
+  --color-input-borde: #D1D5DB !important;
+  --color-input-texto: #111827 !important;
+  --color-input-placeholder: #9CA3AF !important;
+
+  --font-heading: var(--font-portal-heading, var(--font-outfit)) !important;
+  --font-body: var(--font-portal-body, var(--font-inter)) !important;
+  font-family: var(--font-portal-body, var(--font-inter)), system-ui, sans-serif !important;
+}
+
+:root[data-theme="dark"] .portal-admin-root,
+.dark .portal-admin-root,
+.portal-admin-root.dark,
+.portal-admin-root[data-theme="dark"] {
+  --color-primario: #FACC15 !important;
+  --color-primario-texto: #111827 !important;
+  --color-primario-legible: #FACC15 !important;
+  --color-secundario: #9CA3AF !important;
+  --color-secundario-texto: #FFFFFF !important;
+  --color-secundario-legible: #9CA3AF !important;
+  --color-acento: #FDE68A !important;
+  --color-fondo: #111827 !important;
+  --color-superficie: #1F2937 !important;
+  --color-texto: #F9FAFB !important;
+  --color-texto-muted: #9CA3AF !important;
+  --color-borde: #374151 !important;
+
+  --color-input-bg: #111827 !important;
+  --color-input-bg-muted: #1F2937 !important;
+  --color-input-borde: #374151 !important;
+  --color-input-texto: #F9FAFB !important;
+  --color-input-placeholder: #6B7280 !important;
+
+  --font-heading: var(--font-portal-heading, var(--font-outfit)) !important;
+  --font-body: var(--font-portal-body, var(--font-inter)) !important;
+  font-family: var(--font-portal-body, var(--font-inter)), system-ui, sans-serif !important;
+}
+
 /* Clases de utilidad para accesibilidad de contraste automática */
 .btn-primary {
   background-color: var(--color-primario) !important;

@@ -4,6 +4,7 @@
 
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { CartProvider } from '@/lib/cart-context'
 import CartDrawer from './cart-drawer'
 import FloatingWhatsApp from './floating-whatsapp'
@@ -23,6 +24,14 @@ export default function CartProviderClient({
   showFloatingWhatsapp?: boolean
   children: React.ReactNode
 }) {
+  const pathname = usePathname()
+  const isAdmin = pathname?.startsWith('/tienda/admin')
+
+  // En el panel de administración (/tienda/admin) no renderizamos ni el carrito ni el WhatsApp flotante
+  if (isAdmin) {
+    return <>{children}</>
+  }
+
   return (
     <CartProvider storeId={storeId}>
       {children}

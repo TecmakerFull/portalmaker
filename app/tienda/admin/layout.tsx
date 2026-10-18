@@ -5,10 +5,31 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getTenantStore, isStoreAdmin } from '@/lib/tenant'
-import ThemeToggle from '@/app/tienda/theme-toggle'
 import { Package, Palette, Store, ExternalLink, ArrowLeft, LogIn } from 'lucide-react'
 
 import AdminSidebar from './sidebar'
+
+// Variables de estilo aisladas para el portal de administración.
+// Garantiza que la identidad de Portalmaker (Paleta 06 Industrial Yellow & Gray)
+// se use en todo el panel de configuración, independientemente de los colores de la tienda.
+const portalAdminStyles: React.CSSProperties = {
+  '--tenant-primario': '#FACC15',
+  '--tenant-primario-texto': '#111827',
+  '--tenant-primario-legible': '#CA8A04',
+  '--tenant-secundario': '#4B5563',
+  '--tenant-secundario-texto': '#FFFFFF',
+  '--tenant-secundario-legible': '#374151',
+  '--tenant-fondo': '#F3F4F6',
+  '--tenant-texto': '#111827',
+  '--tenant-primario-dark': '#FACC15',
+  '--tenant-primario-dark-texto': '#111827',
+  '--tenant-primario-dark-legible': '#FACC15',
+  '--tenant-secundario-dark': '#9CA3AF',
+  '--tenant-secundario-dark-texto': '#FFFFFF',
+  '--tenant-secundario-dark-legible': '#9CA3AF',
+  '--tenant-fondo-dark': '#111827',
+  '--tenant-texto-dark': '#F9FAFB',
+} as React.CSSProperties
 
 export default async function AdminLayout({
   children,
@@ -33,12 +54,15 @@ export default async function AdminLayout({
       : `/login?next=${encodeURIComponent(tenantQuery ? `/tienda/admin${tenantQuery}` : adminDestination)}`
 
     return (
-      <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] flex items-center justify-center p-4">
+      <div
+        style={portalAdminStyles}
+        className="portal-admin-root min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] flex items-center justify-center p-4"
+      >
         <div className="max-w-md w-full bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-6 sm:p-8 text-center shadow-lg">
           <div className="w-12 h-12 rounded-2xl bg-[#FACC15]/20 text-[#CA8A04] mx-auto flex items-center justify-center mb-4">
             <Store className="w-6 h-6" />
           </div>
-          <h2 className="text-xl font-bold font-[var(--font-heading)] mb-2">Acceso a la Administración</h2>
+          <h2 className="text-xl font-bold font-[var(--font-portal-heading)] mb-2">Acceso a la Administración</h2>
           <p className="text-sm opacity-70 mb-6">
             Para gestionar la tienda <strong>{store.nombre}</strong> debes iniciar sesión con una cuenta autorizada (propietario o colaborador invitado).
           </p>
@@ -65,7 +89,10 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] flex flex-col md:flex-row transition-colors duration-200">
+    <div
+      style={portalAdminStyles}
+      className="portal-admin-root min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-portal-body)] flex flex-col md:flex-row transition-colors duration-200"
+    >
       {/* Sidebar Expandible */}
       <AdminSidebar store={store} tenantQuery={tenantQuery} />
 

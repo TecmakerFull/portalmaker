@@ -5,6 +5,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 
 export default function StoreThemeSync({
   defaultTheme,
@@ -13,8 +14,29 @@ export default function StoreThemeSync({
   defaultTheme?: string | null
   faviconUrl?: string | null
 }) {
+  const pathname = usePathname()
+  const isAdmin = pathname?.startsWith('/tienda/admin')
+
   // 1. Sincronizar tema claro / oscuro de la tienda
   useEffect(() => {
+    // En el portal de administración (/tienda/admin) no aplicamos el tema de la tienda.
+    // Usamos el tema oficial del portal (por defecto claro o según preferencia del admin).
+    if (isAdmin) {
+      try {
+        const adminTheme =
+          (localStorage.getItem('portalmaker-admin-theme') as 'light' | 'dark') || 'light'
+        document.documentElement.setAttribute('data-theme', adminTheme)
+        if (adminTheme === 'dark') {
+          document.documentElement.classList.add('dark')
+        } else {
+          document.documentElement.classList.remove('dark')
+        }
+      } catch (e) {
+        // Ignorar si localStorage no está disponible
+      }
+      return
+    }
+
     try {
       const saved = localStorage.getItem('portalmaker-theme')
       if (!saved) {
@@ -37,10 +59,21 @@ export default function StoreThemeSync({
     } catch (e) {
       // Ignorar error si localStorage no está disponible
     }
-  }, [defaultTheme])
+  }, [defaultTheme, isAdmin])
 
   // 2. Sincronizar ícono de la pestaña del navegador con el logo de la tienda
   useEffect(() => {
+    if (isAdmin) {
+      // En el portal de administración mantenemos el favicon oficial de Portalmaker
+      try {
+        const existingIcons = document.querySelectorAll("link[rel*='icon']")
+        existingIcons.forEach((el) => {
+          el.setAttribute('href', '/favicon.ico')
+        })
+      } catch (e) {}
+      return
+    }
+
     if (!faviconUrl) return
 
     try {
@@ -70,7 +103,7 @@ export default function StoreThemeSync({
     } catch (err) {
       console.warn('Error actualizando favicon dinámico de la tienda:', err)
     }
-  }, [faviconUrl])
+  }, [faviconUrl, isAdmin])
 
   return null
 }
