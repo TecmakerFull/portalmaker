@@ -72,16 +72,22 @@ export default function BannerCarousel({ banners, tenantQuery }: BannerCarouselP
   // Construir URL con tenant si es interna
   const formatCtaUrl = (url: string | null) => {
     if (!url) return null
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url
+    const trimmed = url.trim()
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed
+    }
+    // Si no empieza con slash ni protocolo ni ancla, tratarlo como producto de la tienda
+    let formattedUrl = trimmed
+    if (!formattedUrl.startsWith('/') && !formattedUrl.startsWith('#')) {
+      formattedUrl = `/tienda/productos/${formattedUrl}`
     }
     // Agregar tenant query a URLs internas
     if (tenantQuery) {
-      const separator = url.includes('?') ? '&' : '?'
+      const separator = formattedUrl.includes('?') ? '&' : '?'
       const cleanTenant = tenantQuery.replace('?', '')
-      return `${url}${separator}${cleanTenant}`
+      return `${formattedUrl}${separator}${cleanTenant}`
     }
-    return url
+    return formattedUrl
   }
 
   return (

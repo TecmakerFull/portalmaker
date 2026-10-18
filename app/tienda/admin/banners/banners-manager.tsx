@@ -172,7 +172,12 @@ export default function BannersManager({
       } else if (tipo === 'categoria') {
         current.cta_url = valor ? `/tienda?cat=${valor}` : ''
       } else {
-        current.cta_url = valor || ''
+        const v = (valor || '').trim()
+        if (v && !v.startsWith('http://') && !v.startsWith('https://') && !v.startsWith('/') && !v.startsWith('#')) {
+          current.cta_url = `/tienda/productos/${v}`
+        } else {
+          current.cta_url = v
+        }
       }
     }
 

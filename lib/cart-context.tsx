@@ -259,10 +259,28 @@ export function CartProvider({
   )
 }
 
-export function useCart() {
+export function useCart(): CartContextType {
   const context = useContext(CartContext)
   if (!context) {
-    throw new Error('useCart debe utilizarse dentro de un CartProvider')
+    // Fallback defensivo para evitar caídas en previews aisladas o SSR
+    return {
+      items: [],
+      addItem: () => ({ success: false, message: 'Carrito no inicializado' }),
+      removeItem: () => {},
+      updateQuantity: () => ({ success: false }),
+      clearCart: () => {},
+      totalItems: 0,
+      totalAmount: 0,
+      hasReservas: false,
+      isCartOpen: false,
+      openCart: () => {},
+      closeCart: () => {},
+      toggleCart: () => {},
+      favorites: [],
+      toggleFavorite: () => {},
+      isFavorite: () => false,
+      clearFavorites: () => {},
+    }
   }
   return context
 }

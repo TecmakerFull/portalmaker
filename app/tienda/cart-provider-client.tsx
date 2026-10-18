@@ -27,16 +27,11 @@ export default function CartProviderClient({
   const pathname = usePathname()
   const isAdmin = pathname?.startsWith('/tienda/admin')
 
-  // En el panel de administración (/tienda/admin) no renderizamos ni el carrito ni el WhatsApp flotante
-  if (isAdmin) {
-    return <>{children}</>
-  }
-
   return (
     <CartProvider storeId={storeId}>
       {children}
-      <CartDrawer storeName={storeName} tenantQuery={tenantQuery} />
-      {showFloatingWhatsapp && (
+      {!isAdmin && <CartDrawer storeName={storeName} tenantQuery={tenantQuery} />}
+      {!isAdmin && showFloatingWhatsapp && (
         <FloatingWhatsApp phone={whatsappNumero} storeName={storeName} />
       )}
     </CartProvider>
