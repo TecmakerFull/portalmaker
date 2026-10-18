@@ -42,7 +42,7 @@ export default async function AdminBannersPage() {
     .order('orden', { ascending: true })
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-200">
+    <div className="w-full space-y-6 animate-in fade-in duration-200">
       <BannersManager
         store={store}
         initialBanners={banners ?? []}

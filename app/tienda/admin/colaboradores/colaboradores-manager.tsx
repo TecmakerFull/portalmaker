@@ -193,7 +193,7 @@ export default function ColaboradoresManager({
   }
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <div className="w-full space-y-6 sm:space-y-8">
       {/* Cabecera */}
       <div>
         <div className="flex items-center gap-2.5 text-[var(--color-primario)] mb-2">

@@ -28,7 +28,7 @@ export default async function AdminCategoriasPage() {
     .order('created_at', { ascending: true })
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       <CategoriasManager
         store={store}
         initialCategories={categories ?? []}

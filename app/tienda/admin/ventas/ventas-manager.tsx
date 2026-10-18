@@ -5,6 +5,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { Store, Order, OrderItem } from '@/types/database'
@@ -47,6 +48,8 @@ export default function VentasManager({
 
   const [orders, setOrders] = useState<Order[]>(initialOrders)
   const [filterStatus, setFilterStatus] = useState<string>('todos')
+  const [cardFilter, setCardFilter] = useState<'todos' | 'facturado' | 'pendientes' | 'clientes'>('todos')
+  const [selectedClientFilter, setSelectedClientFilter] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
@@ -79,31 +82,85 @@ export default function VentasManager({
     }
   }, [orders])
 
+  // Desglose de compradores únicos para la vista de clientes
+  const uniqueClientsList = useMemo(() => {
+    const map = new Map<string, {
+      key: string
+      nombre: string
+      telefono?: string | null
+      email?: string | null
+      totalOrders: number
+      totalSpent: number
+      lastOrderDate: string
+    }>()
+
+    orders.forEach((o) => {
+      const key = (o.telefono_comprador || (o as any).email_comprador || o.nombre_comprador || o.id).toLowerCase().trim()
+      const existing = map.get(key)
+      const orderTotal = Number(o.total) || 0
+
+      if (existing) {
+        existing.totalOrders += 1
+        existing.totalSpent += orderTotal
+        if (new Date(o.created_at) > new Date(existing.lastOrderDate)) {
+          existing.lastOrderDate = o.created_at
+        }
+      } else {
+        map.set(key, {
+          key,
+          nombre: o.nombre_comprador || 'Comprador sin nombre',
+          telefono: o.telefono_comprador,
+          email: (o as any).email_comprador,
+          totalOrders: 1,
+          totalSpent: orderTotal,
+          lastOrderDate: o.created_at,
+        })
+      }
+    })
+
+    return Array.from(map.values()).sort((a, b) => b.totalSpent - a.totalSpent)
+  }, [orders])
+
   // Pedidos filtrados
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
-      // Filtro por estado
+      // 1. Filtro especial por tarjeta superior
+      if (cardFilter === 'facturado') {
+        if (order.estado_pago !== 'aprobado') return false
+      } else if (cardFilter === 'pendientes') {
+        const isPending = order.estado_pedido === 'nuevo' || order.estado_pago === 'pendiente'
+        if (!isPending) return false
+      }
+
+      // 2. Filtro si se seleccionó un cliente específico
+      if (selectedClientFilter) {
+        const key = (order.telefono_comprador || (order as any).email_comprador || order.nombre_comprador || order.id).toLowerCase().trim()
+        if (key !== selectedClientFilter) return false
+      }
+
+      // 3. Filtro por estado
       if (filterStatus !== 'todos' && order.estado_pedido !== filterStatus) {
         return false
       }
 
-      // Filtro por búsqueda
+      // 4. Filtro por búsqueda
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase()
         const matchName = order.nombre_comprador?.toLowerCase().includes(q)
         const matchPhone = order.telefono_comprador?.toLowerCase().includes(q)
+        const matchEmail = (order as any).email_comprador?.toLowerCase().includes(q)
         const matchNotes = order.notas?.toLowerCase().includes(q)
         const matchItems = (order.items || []).some((it: OrderItem) =>
           it.nombre.toLowerCase().includes(q)
         )
-        if (!matchName && !matchPhone && !matchNotes && !matchItems) {
+        if (!matchName && !matchPhone && !matchEmail && !matchNotes && !matchItems) {
           return false
         }
       }
 
       return true
     })
-  }, [orders, filterStatus, searchQuery])
+  }, [orders, cardFilter, selectedClientFilter, filterStatus, searchQuery])
 
   // Abrir modal de detalle
   const handleOpenDetail = (order: Order) => {
@@ -308,7 +365,7 @@ export default function VentasManager({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6">
       {/* Encabezado */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)] font-[var(--font-heading)] flex items-center gap-2.5">
@@ -320,52 +377,205 @@ export default function VentasManager({
         </p>
       </div>
 
-      {/* 1. Métricas de Ventas y Clientes */}
+      {/* 1. Métricas de Ventas y Clientes (Tarjetas interactivas de filtro) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Facturado */}
-        <div className="p-4 sm:p-5 rounded-3xl bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-xs flex flex-col justify-between">
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedClientFilter(null)
+            if (cardFilter === 'facturado') {
+              setCardFilter('todos')
+            } else {
+              setCardFilter('facturado')
+              setFilterStatus('todos')
+            }
+          }}
+          className={`p-4 sm:p-5 rounded-3xl bg-[var(--color-superficie)] border text-left transition-all flex flex-col justify-between cursor-pointer min-h-[44px] ${
+            cardFilter === 'facturado'
+              ? 'border-emerald-500 ring-2 ring-emerald-500/40 shadow-sm'
+              : 'border-[var(--color-borde)] hover:border-[var(--color-texto-muted)] shadow-xs'
+          }`}
+        >
           <div className="flex items-center justify-between opacity-70 mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">Total Facturado</span>
             <DollarSign className="w-4 h-4 text-emerald-600" />
           </div>
-          <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
-            ${metrics.totalFacturado.toLocaleString('es-AR')}
-          </span>
-        </div>
+          <div>
+            <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
+              ${metrics.totalFacturado.toLocaleString('es-AR')}
+            </span>
+            <span className="block text-[11px] opacity-60 mt-1 font-medium">
+              {cardFilter === 'facturado' ? 'Filtrando pedidos cobrados' : 'Clic para filtrar cobrados'}
+            </span>
+          </div>
+        </button>
 
         {/* Total Pedidos */}
-        <div className="p-4 sm:p-5 rounded-3xl bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-xs flex flex-col justify-between">
+        <button
+          type="button"
+          onClick={() => {
+            setCardFilter('todos')
+            setSelectedClientFilter(null)
+            setFilterStatus('todos')
+          }}
+          className={`p-4 sm:p-5 rounded-3xl bg-[var(--color-superficie)] border text-left transition-all flex flex-col justify-between cursor-pointer min-h-[44px] ${
+            cardFilter === 'todos' && !selectedClientFilter
+              ? 'border-[#FACC15] ring-2 ring-[#FACC15]/40 shadow-sm'
+              : 'border-[var(--color-borde)] hover:border-[var(--color-texto-muted)] shadow-xs'
+          }`}
+        >
           <div className="flex items-center justify-between opacity-70 mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">Pedidos & Reservas</span>
             <ShoppingBag className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
           </div>
-          <span className="text-xl sm:text-2xl font-black text-[var(--color-texto)]">
-            {metrics.totalOrdersCount}
-          </span>
-        </div>
+          <div>
+            <span className="text-xl sm:text-2xl font-black text-[var(--color-texto)]">
+              {metrics.totalOrdersCount}
+            </span>
+            <span className="block text-[11px] opacity-60 mt-1 font-medium">
+              {cardFilter === 'todos' && !selectedClientFilter ? 'Mostrando todos' : 'Clic para ver todos'}
+            </span>
+          </div>
+        </button>
 
         {/* Pedidos Pendientes */}
-        <div className="p-4 sm:p-5 rounded-3xl bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-xs flex flex-col justify-between">
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedClientFilter(null)
+            if (cardFilter === 'pendientes') {
+              setCardFilter('todos')
+            } else {
+              setCardFilter('pendientes')
+              setFilterStatus('todos')
+            }
+          }}
+          className={`p-4 sm:p-5 rounded-3xl bg-[var(--color-superficie)] border text-left transition-all flex flex-col justify-between cursor-pointer min-h-[44px] ${
+            cardFilter === 'pendientes'
+              ? 'border-amber-500 ring-2 ring-amber-500/40 shadow-sm'
+              : 'border-[var(--color-borde)] hover:border-[var(--color-texto-muted)] shadow-xs'
+          }`}
+        >
           <div className="flex items-center justify-between opacity-70 mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">Pendientes</span>
             <Clock className="w-4 h-4 text-amber-500" />
           </div>
-          <span className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
-            {metrics.pendingCount}
-          </span>
-        </div>
+          <div>
+            <span className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
+              {metrics.pendingCount}
+            </span>
+            <span className="block text-[11px] opacity-60 mt-1 font-medium">
+              {cardFilter === 'pendientes' ? 'Filtrando pendientes' : 'Clic para filtrar pendientes'}
+            </span>
+          </div>
+        </button>
 
         {/* Clientes Únicos */}
-        <div className="p-4 sm:p-5 rounded-3xl bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-xs flex flex-col justify-between">
+        <button
+          type="button"
+          onClick={() => {
+            if (cardFilter === 'clientes') {
+              setCardFilter('todos')
+              setSelectedClientFilter(null)
+            } else {
+              setCardFilter('clientes')
+            }
+          }}
+          className={`p-4 sm:p-5 rounded-3xl bg-[var(--color-superficie)] border text-left transition-all flex flex-col justify-between cursor-pointer min-h-[44px] ${
+            cardFilter === 'clientes'
+              ? 'border-sky-500 ring-2 ring-sky-500/40 shadow-sm'
+              : 'border-[var(--color-borde)] hover:border-[var(--color-texto-muted)] shadow-xs'
+          }`}
+        >
           <div className="flex items-center justify-between opacity-70 mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">Clientes Únicos</span>
             <Users className="w-4 h-4 text-sky-500" />
           </div>
-          <span className="text-xl sm:text-2xl font-black text-[var(--color-texto)]">
-            {metrics.uniqueClients}
-          </span>
-        </div>
+          <div>
+            <span className="text-xl sm:text-2xl font-black text-[var(--color-texto)]">
+              {metrics.uniqueClients}
+            </span>
+            <span className="block text-[11px] opacity-60 mt-1 font-medium">
+              {cardFilter === 'clientes' ? 'Vista por clientes activa' : 'Clic para ver por cliente'}
+            </span>
+          </div>
+        </button>
       </div>
+
+      {/* Vista de Compradores Únicos cuando cardFilter === 'clientes' */}
+      {cardFilter === 'clientes' && (
+        <div className="p-4 sm:p-6 rounded-3xl bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-xs space-y-4 animate-in fade-in duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--color-borde)] pb-3">
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-[var(--color-texto)] flex items-center gap-2">
+                <Users className="w-4 h-4 text-sky-500" />
+                <span>Compradores de la Tienda ({uniqueClientsList.length})</span>
+              </h3>
+              <p className="text-xs opacity-60 mt-0.5">
+                Toca cualquier comprador para filtrar sus pedidos específicos abajo, o contactalo por WhatsApp.
+              </p>
+            </div>
+            <Link
+              href={`/tienda/admin/clientes${tenantQuery}`}
+              className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 self-start sm:self-auto"
+            >
+              <span>Ver Historial CRM Completo</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {uniqueClientsList.map((client) => {
+              const isSelected = selectedClientFilter === client.key
+              return (
+                <div
+                  key={client.key}
+                  onClick={() => setSelectedClientFilter(isSelected ? null : client.key)}
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
+                    isSelected
+                      ? 'border-[#FACC15] ring-2 ring-[#FACC15]/40 bg-[#FACC15]/5'
+                      : 'border-[var(--color-borde)] hover:border-[var(--color-texto-muted)] bg-black/[0.01] dark:bg-white/[0.01]'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-semibold text-xs sm:text-sm text-[var(--color-texto)]">{client.nombre}</div>
+                      {client.email && (
+                        <div className="text-[11px] opacity-60">{client.email}</div>
+                      )}
+                    </div>
+                    {isSelected && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FACC15] text-[#1F2937]">
+                        Filtrando
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--color-borde)]">
+                    <span className="opacity-70 font-medium">
+                      {client.totalOrders} {client.totalOrders === 1 ? 'pedido' : 'pedidos'} · <strong className="font-mono text-emerald-600 dark:text-emerald-400">${client.totalSpent.toLocaleString('es-AR')}</strong>
+                    </span>
+                    {client.telefono && (
+                      <a
+                        href={`https://wa.me/${client.telefono.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 text-[11px] font-semibold"
+                        title="Escribir por WhatsApp"
+                      >
+                        <MessageSquare className="w-3 h-3" />
+                        <span>Chat</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* 2. Filtros y Búsqueda */}
       <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-4 sm:p-5 shadow-xs space-y-3">
@@ -409,13 +619,67 @@ export default function VentasManager({
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
         </div>
+
+        {/* Indicador de Filtro Activo por Tarjeta */}
+        {(cardFilter !== 'todos' || selectedClientFilter) && (
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[var(--color-borde)] text-xs">
+            <span className="opacity-60 text-[11px] font-semibold uppercase tracking-wider">Filtro activo:</span>
+            {cardFilter === 'facturado' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
+                <span>Cobrados / Pagados</span>
+                <button
+                  type="button"
+                  onClick={() => setCardFilter('todos')}
+                  className="hover:opacity-100 opacity-60 cursor-pointer ml-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {cardFilter === 'pendientes' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 font-semibold">
+                <span>Pendientes</span>
+                <button
+                  type="button"
+                  onClick={() => setCardFilter('todos')}
+                  className="hover:opacity-100 opacity-60 cursor-pointer ml-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {selectedClientFilter && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20 font-semibold">
+                <span>Cliente: {uniqueClientsList.find((c) => c.key === selectedClientFilter)?.nombre || selectedClientFilter}</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedClientFilter(null)}
+                  className="hover:opacity-100 opacity-60 cursor-pointer ml-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setCardFilter('todos')
+                setSelectedClientFilter(null)
+                setFilterStatus('todos')
+              }}
+              className="text-xs text-amber-600 dark:text-amber-400 hover:underline cursor-pointer ml-auto font-semibold"
+            >
+              Restablecer filtros
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 3. Lista de Pedidos */}

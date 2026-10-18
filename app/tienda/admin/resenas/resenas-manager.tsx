@@ -137,7 +137,7 @@ export default function ResenasManager({
   }
 
   return (
-    <div className="space-y-8 max-w-6xl">
+    <div className="w-full space-y-6 sm:space-y-8">
       {/* Cabecera */}
       <div>
         <div className="flex items-center gap-2 text-[var(--color-primario)] mb-1">
