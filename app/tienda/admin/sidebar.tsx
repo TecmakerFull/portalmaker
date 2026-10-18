@@ -169,20 +169,7 @@ export default function AdminSidebar({
 
       {/* Menú de Navegación Vertical */}
       <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
-        {/* Inicio */}
-        <Link
-          href={`/tienda/admin${tenantQuery}`}
-          className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            isInicio
-              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
-              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-          }`}
-        >
-          <Home className="w-4 h-4" />
-          <span>Inicio</span>
-        </Link>
-
-        {/* Guía Paso a Paso */}
+        {/* 1. Guía Paso a Paso (Tutorial inicial de onboarding) */}
         <Link
           href={`/tienda/admin/guia${tenantQuery}`}
           className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
@@ -200,86 +187,8 @@ export default function AdminSidebar({
           </span>
         </Link>
 
-        {/* Ventas & Pedidos */}
-        <Link
-          href={`/tienda/admin/ventas${tenantQuery}`}
-          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            isVentas
-              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
-              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <ShoppingBag className="w-4 h-4" />
-            <span>Ventas & Pedidos</span>
-          </div>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
-            Nuevo
-          </span>
-        </Link>
-
-        {/* Clientes & CRM */}
-        <Link
-          href={`/tienda/admin/clientes${tenantQuery}`}
-          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            isClientes
-              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
-              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <Users className="w-4 h-4" />
-            <span>Clientes & CRM</span>
-          </div>
-        </Link>
-
-        {/* Reseñas */}
-        <Link
-          href={`/tienda/admin/resenas${tenantQuery}`}
-          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            isResenas
-              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
-              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <Star className="w-4 h-4" />
-            <span>Reseñas</span>
-          </div>
-        </Link>
-
-        {/* Colaboradores */}
-        <Link
-          href={`/tienda/admin/colaboradores${tenantQuery}`}
-          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            isColaboradores
-              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
-              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <UserCheck className="w-4 h-4 text-amber-500" />
-            <span>Colaboradores</span>
-          </div>
-        </Link>
-
-        {/* Marketing & Suscriptores */}
-        <Link
-          href={`/tienda/admin/suscriptores${tenantQuery}`}
-          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            isSuscriptores
-              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
-              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <Mail className="w-4 h-4" />
-            <span>Suscriptores</span>
-          </div>
-        </Link>
-
-        {/* Grupo: Mi Tienda */}
-        <div className="pt-2">
+        {/* 2. Grupo: Mi Tienda (Configuración de marca, diseño y datos del negocio) */}
+        <div className="pt-1">
           <button
             type="button"
             onClick={() => setOpenTienda(!openTienda)}
@@ -385,7 +294,7 @@ export default function AdminSidebar({
           )}
         </div>
 
-        {/* Grupo: Productos */}
+        {/* 3. Grupo: Productos (Catálogo, inventario y categorías) */}
         <div className="pt-1">
           <button
             type="button"
@@ -441,6 +350,100 @@ export default function AdminSidebar({
             </div>
           )}
         </div>
+
+        {/* 4. Luego lo demás: Gestión, métricas y operaciones */}
+        <div className="pt-2">
+          {/* Inicio / Dashboard */}
+          <Link
+            href={`/tienda/admin${tenantQuery}`}
+            className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              isInicio
+                ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+                : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <Home className="w-4 h-4" />
+            <span>Inicio</span>
+          </Link>
+        </div>
+
+        {/* Ventas & Pedidos */}
+        <Link
+          href={`/tienda/admin/ventas${tenantQuery}`}
+          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            isVentas
+              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <ShoppingBag className="w-4 h-4" />
+            <span>Ventas & Pedidos</span>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+            Nuevo
+          </span>
+        </Link>
+
+        {/* Clientes & CRM */}
+        <Link
+          href={`/tienda/admin/clientes${tenantQuery}`}
+          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            isClientes
+              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <Users className="w-4 h-4" />
+            <span>Clientes & CRM</span>
+          </div>
+        </Link>
+
+        {/* Reseñas */}
+        <Link
+          href={`/tienda/admin/resenas${tenantQuery}`}
+          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            isResenas
+              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <Star className="w-4 h-4" />
+            <span>Reseñas</span>
+          </div>
+        </Link>
+
+        {/* Colaboradores */}
+        <Link
+          href={`/tienda/admin/colaboradores${tenantQuery}`}
+          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            isColaboradores
+              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <UserCheck className="w-4 h-4 text-amber-500" />
+            <span>Colaboradores</span>
+          </div>
+        </Link>
+
+        {/* Marketing & Suscriptores */}
+        <Link
+          href={`/tienda/admin/suscriptores${tenantQuery}`}
+          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            isSuscriptores
+              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <Mail className="w-4 h-4" />
+            <span>Suscriptores</span>
+          </div>
+        </Link>
 
         {/* Mi Perfil / Cuenta */}
         <div className="pt-2">
