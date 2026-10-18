@@ -169,7 +169,20 @@ export default function AdminSidebar({
 
       {/* Menú de Navegación Vertical */}
       <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
-        {/* 1. Guía Paso a Paso (Tutorial inicial de onboarding) */}
+        {/* 1. Inicio */}
+        <Link
+          href={`/tienda/admin${tenantQuery}`}
+          className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            isInicio
+              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+          }`}
+        >
+          <Home className="w-4 h-4" />
+          <span>Inicio</span>
+        </Link>
+
+        {/* 2. Guía Paso a Paso (Tutorial inicial de onboarding) */}
         <Link
           href={`/tienda/admin/guia${tenantQuery}`}
           className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
@@ -187,7 +200,7 @@ export default function AdminSidebar({
           </span>
         </Link>
 
-        {/* 2. Grupo: Mi Tienda (Configuración de marca, diseño y datos del negocio) */}
+        {/* 3. Grupo: Mi Tienda (Configuración de marca, diseño y datos del negocio) */}
         <div className="pt-1">
           <button
             type="button"
@@ -352,21 +365,6 @@ export default function AdminSidebar({
         </div>
 
         {/* 4. Luego lo demás: Gestión, métricas y operaciones */}
-        <div className="pt-2">
-          {/* Inicio / Dashboard */}
-          <Link
-            href={`/tienda/admin${tenantQuery}`}
-            className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-              isInicio
-                ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
-                : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-            }`}
-          >
-            <Home className="w-4 h-4" />
-            <span>Inicio</span>
-          </Link>
-        </div>
-
         {/* Ventas & Pedidos */}
         <Link
           href={`/tienda/admin/ventas${tenantQuery}`}
