@@ -1,6 +1,6 @@
 // =============================================================================
-// PORTALMAKER — Helper de Rate Limiting Anti-Abuso (Q)
-// Control de frecuencia por IP y por tienda para checkout y cobros
+// PORTALMAKER — Rate Limiting Compartido y Anti-Abuso (Q, X)
+// Soporta Upstash Redis REST con fallback en memoria y verificación Cloudflare Turnstile
 // =============================================================================
 
 interface RateLimitRecord {
@@ -8,86 +8,204 @@ interface RateLimitRecord {
   resetAt: number
 }
 
-// Buckets en memoria con ventana deslizante
-const ipBuckets = new Map<string, RateLimitRecord>()
-const storeBuckets = new Map<string, RateLimitRecord>()
+// Fallback en memoria con ventana deslizante
+const localIpBuckets = new Map<string, RateLimitRecord>()
+const localStoreBuckets = new Map<string, RateLimitRecord>()
 
-// Limpieza periódica de entradas vencidas cada 60 segundos
 if (typeof setInterval !== 'undefined') {
   setInterval(() => {
     const now = Date.now()
-    for (const [key, val] of ipBuckets.entries()) {
-      if (val.resetAt <= now) ipBuckets.delete(key)
+    for (const [key, val] of localIpBuckets.entries()) {
+      if (val.resetAt <= now) localIpBuckets.delete(key)
     }
-    for (const [key, val] of storeBuckets.entries()) {
-      if (val.resetAt <= now) storeBuckets.delete(key)
+    for (const [key, val] of localStoreBuckets.entries()) {
+      if (val.resetAt <= now) localStoreBuckets.delete(key)
     }
   }, 60000)
 }
 
 /**
- * Obtiene la dirección IP cliente desde los headers de Cloudflare/Vercel/Proxy.
+ * X: Obtiene la IP del cliente priorizando x-real-ip y x-vercel-forwarded-for.
  */
 export function getClientIp(req: Request): string {
-  const forwarded = req.headers.get('x-forwarded-for')
-  if (forwarded) {
-    return forwarded.split(',')[0].trim()
-  }
-  const cf = req.headers.get('cf-connecting-ip')
-  if (cf) return cf.trim()
-  const realIp = req.headers.get('x-real-ip')
+  const headers = req.headers
+
+  const realIp = headers.get('x-real-ip')
   if (realIp) return realIp.trim()
+
+  const vercelForwarded = headers.get('x-vercel-forwarded-for')
+  if (vercelForwarded) return vercelForwarded.split(',')[0].trim()
+
+  const cfConnectingIp = headers.get('cf-connecting-ip')
+  if (cfConnectingIp) return cfConnectingIp.trim()
+
+  const forwarded = headers.get('x-forwarded-for')
+  if (forwarded) return forwarded.split(',')[0].trim()
+
   return '127.0.0.1'
 }
 
 /**
- * Comprueba si la petición está dentro de los límites de frecuencia permitidos.
+ * Consulta o incrementa un contador atómico en Upstash Redis vía HTTP REST.
  */
-export function checkRateLimit({
-  ip,
-  storeId,
-  maxPerIp = 15,
-  maxPerStore = 40,
-  windowMs = 60000,
-}: {
+async function checkUpstashRate(
+  key: string,
+  max: number,
+  windowSec: number
+): Promise<{ count: number; allowed: boolean; retryAfter?: number } | null> {
+  const url = process.env.UPSTASH_REDIS_REST_URL
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN
+
+  if (!url || !token) return null
+
+  try {
+    const cleanUrl = url.replace(/\/$/, '')
+    const res = await fetch(`${cleanUrl}/pipeline`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify([
+        ['INCR', key],
+        ['EXPIRE', key, windowSec, 'NX'],
+        ['TTL', key],
+      ]),
+      cache: 'no-store',
+    })
+
+    if (!res.ok) return null
+
+    const results = await res.json()
+    const currentCount = Number(results[0]?.result) || 1
+    const ttl = Number(results[2]?.result) || windowSec
+
+    return {
+      count: currentCount,
+      allowed: currentCount <= max,
+      retryAfter: currentCount > max ? Math.max(1, ttl) : undefined,
+    }
+  } catch (err) {
+    console.warn('Upstash Redis no disponible, recurriendo a memoria local:', err)
+    return null
+  }
+}
+
+export interface RateLimitOptions {
   ip: string
   storeId?: string
   maxPerIp?: number
-  maxPerStore?: number
+  alertPerStore?: number
   windowMs?: number
-}): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now()
+}
 
-  // 1. Limitar por IP
-  const cleanIp = ip || 'unknown-ip'
-  let ipRecord = ipBuckets.get(cleanIp)
-  if (!ipRecord || ipRecord.resetAt <= now) {
-    ipRecord = { count: 1, resetAt: now + windowMs }
-    ipBuckets.set(cleanIp, ipRecord)
+export interface RateLimitResult {
+  allowed: boolean
+  retryAfter?: number
+  storeAlert?: boolean
+}
+
+/**
+ * X: Rate limit distribuido por IP (bloqueo duro 429) y por tienda (soft alert / no bloqueo para evitar DoS)
+ */
+export async function checkRateLimit({
+  ip,
+  storeId,
+  maxPerIp = 15,
+  alertPerStore = 50,
+  windowMs = 60000,
+}: RateLimitOptions): Promise<RateLimitResult> {
+  const now = Date.now()
+  const windowSec = Math.max(1, Math.ceil(windowMs / 1000))
+  const cleanIp = (ip || 'unknown-ip').replace(/[^a-zA-Z0-9._:-]/g, '')
+
+  let ipAllowed = true
+  let retryAfter: number | undefined
+  let storeAlert = false
+
+  // 1. Limitar por IP usando Upstash Redis si está configurado
+  const upstashIpResult = await checkUpstashRate(`rl:ip:${cleanIp}`, maxPerIp, windowSec)
+
+  if (upstashIpResult) {
+    ipAllowed = upstashIpResult.allowed
+    retryAfter = upstashIpResult.retryAfter
   } else {
-    ipRecord.count++
+    // Fallback memoria local
+    let ipRecord = localIpBuckets.get(cleanIp)
+    if (!ipRecord || ipRecord.resetAt <= now) {
+      ipRecord = { count: 1, resetAt: now + windowMs }
+      localIpBuckets.set(cleanIp, ipRecord)
+    } else {
+      ipRecord.count++
+    }
+
+    if (ipRecord.count > maxPerIp) {
+      ipAllowed = false
+      retryAfter = Math.ceil((ipRecord.resetAt - now) / 1000)
+    }
   }
 
-  if (ipRecord.count > maxPerIp) {
-    const retryAfter = Math.ceil((ipRecord.resetAt - now) / 1000)
+  if (!ipAllowed) {
     return { allowed: false, retryAfter }
   }
 
-  // 2. Limitar por Tienda
+  // 2. Control por tienda: Alerta de volumen sin bloqueo duro (previene DoS a tiendas por terceros)
   if (storeId) {
-    let storeRecord = storeBuckets.get(storeId)
-    if (!storeRecord || storeRecord.resetAt <= now) {
-      storeRecord = { count: 1, resetAt: now + windowMs }
-      storeBuckets.set(storeId, storeRecord)
-    } else {
-      storeRecord.count++
-    }
+    const cleanStoreId = storeId.replace(/[^a-zA-Z0-9-]/g, '')
+    const upstashStoreResult = await checkUpstashRate(`rl:store:${cleanStoreId}`, alertPerStore, windowSec)
 
-    if (storeRecord.count > maxPerStore) {
-      const retryAfter = Math.ceil((storeRecord.resetAt - now) / 1000)
-      return { allowed: false, retryAfter }
+    if (upstashStoreResult) {
+      if (!upstashStoreResult.allowed) {
+        storeAlert = true
+      }
+    } else {
+      let storeRecord = localStoreBuckets.get(cleanStoreId)
+      if (!storeRecord || storeRecord.resetAt <= now) {
+        storeRecord = { count: 1, resetAt: now + windowMs }
+        localStoreBuckets.set(cleanStoreId, storeRecord)
+      } else {
+        storeRecord.count++
+      }
+
+      if (storeRecord.count > alertPerStore) {
+        storeAlert = true
+      }
     }
   }
 
-  return { allowed: true }
+  return { allowed: true, storeAlert }
+}
+
+/**
+ * X: Verifica token de Cloudflare Turnstile en el servidor
+ */
+export async function verifyTurnstileToken(token: string, remoteip?: string): Promise<boolean> {
+  const secretKey = process.env.TURNSTILE_SECRET_KEY
+  if (!secretKey) {
+    // Si no está configurada la variable en el entorno, permitir paso sin bloqueo
+    return true
+  }
+
+  if (!token) {
+    return false
+  }
+
+  try {
+    const formData = new URLSearchParams()
+    formData.append('secret', secretKey)
+    formData.append('response', token)
+    if (remoteip) formData.append('remoteip', remoteip)
+
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData,
+    })
+
+    const data = await res.json()
+    return Boolean(data.success)
+  } catch (err) {
+    console.error('Error al validar token de Cloudflare Turnstile:', err)
+    return false
+  }
 }

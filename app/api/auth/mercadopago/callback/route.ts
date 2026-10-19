@@ -53,8 +53,8 @@ export async function GET(req: Request) {
       data: { user },
     } = await supabase.auth.getUser()
 
-    if (stateRecord.user_id && user && stateRecord.user_id !== user.id) {
-      console.error(`Mismatch de usuario OAuth: esperado ${stateRecord.user_id}, actual ${user.id}`)
+    if (stateRecord.user_id && (!user || stateRecord.user_id !== user.id)) {
+      console.error(`Mismatch de usuario OAuth: esperado ${stateRecord.user_id}, actual ${user?.id || 'sin_sesion'}`)
       return NextResponse.redirect(`${returnUrl}?error=mp_user_mismatch`)
     }
 

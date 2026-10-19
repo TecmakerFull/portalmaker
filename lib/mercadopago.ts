@@ -216,8 +216,8 @@ export function getSafeReturnOrigin(candidateOrigin: string | null | undefined, 
   if (storeSubdomain) allowed.add(storeSubdomain)
   if (storeSubdomainAlt) allowed.add(storeSubdomainAlt)
 
-  // Solo incluir custom_domain si está presente
-  if (storeCustom) {
+  // V: Solo incluir custom_domain si está presente y verificado (custom_domain_verified = true)
+  if (storeCustom && store.custom_domain_verified === true) {
     try {
       const customParsed = new URL(storeCustom).origin
       allowed.add(customParsed)
@@ -243,7 +243,7 @@ export function getSafeReturnOrigin(candidateOrigin: string | null | undefined, 
     })
   }
 
-  // Validar el origen candidato provisto por el cliente
+  // Validar el origen candidato provisto por el cliente normalizado con new URL(x).origin
   if (candidateOrigin) {
     try {
       const parsed = new URL(candidateOrigin).origin
@@ -255,8 +255,8 @@ export function getSafeReturnOrigin(candidateOrigin: string | null | undefined, 
     }
   }
 
-  // B4: Fallback seguro y ordenado
-  if (storeCustom && (store.custom_domain_verified ?? true)) {
+  // B4 & V: Fallback seguro y ordenado (dominio propio solo si está verificado)
+  if (storeCustom && store.custom_domain_verified === true) {
     return storeCustom
   }
 

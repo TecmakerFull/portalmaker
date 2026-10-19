@@ -10,15 +10,16 @@ import { getValidMpAccessToken, getSafeReturnOrigin, calcularMarketplaceFee } fr
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { orderId, storeId: candidateStoreId, returnOrigin } = body
+    const { orderId, publicToken, storeId: candidateStoreId, returnOrigin } = body
 
-    if (!orderId) {
-      return NextResponse.json({ error: 'orderId es requerido' }, { status: 400 })
+    // T2: Exigir orderId + public_token
+    if (!orderId || !publicToken) {
+      return NextResponse.json({ error: 'orderId y publicToken son obligatorios' }, { status: 400 })
     }
 
     const supabaseAdmin = createSupabaseAdminClient()
 
-    // 1. SEGURIDAD: Obtener primero el pedido para determinar la tienda real
+    // 1. SEGURIDAD: Obtener primero el pedido para determinar la tienda real y validar token
     const { data: order, error: orderErr } = await supabaseAdmin
       .from('orders')
       .select('*')
@@ -29,9 +30,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 })
     }
 
-    // Validar estado del pedido
-    if (order.estado_pago === 'aprobado') {
-      return NextResponse.json({ error: 'El pedido ya fue pagado' }, { status: 400 })
+    // T2: Validar token público
+    if (order.public_token !== publicToken) {
+      return NextResponse.json({ error: 'Token de acceso no válido para este pedido' }, { status: 403 })
+    }
+
+    // T2: Rechazar si estado_pago no es pendiente
+    if (order.estado_pago !== 'pendiente') {
+      return NextResponse.json(
+        { error: `El pedido no se encuentra pendiente de pago (estado: ${order.estado_pago})` },
+        { status: 400 }
+      )
     }
 
     if (order.estado_pedido === 'cancelado') {
@@ -58,12 +67,17 @@ export async function POST(req: Request) {
       )
     }
 
-    // C8: Si el pedido ya tiene una preferencia e init_point generados y no expiró, reutilizarla
+    // C8 & T2: Reutilizar la preferencia si existe y no venció (48 horas de vigencia)
     if (order.mp_preference_id && order.mp_init_point) {
-      return NextResponse.json({
-        preferenceId: order.mp_preference_id,
-        initPoint: order.mp_init_point,
-      })
+      const orderUpdatedAt = new Date(order.updated_at).getTime()
+      const isExpired = Date.now() - orderUpdatedAt > 48 * 60 * 60 * 1000
+
+      if (!isExpired) {
+        return NextResponse.json({
+          preferenceId: order.mp_preference_id,
+          initPoint: order.mp_init_point,
+        })
+      }
     }
 
     // 3. SEGURIDAD: Obtener y validar el access token de la tienda (renueva automáticamente si expiró)

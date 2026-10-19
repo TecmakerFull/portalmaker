@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { checkRateLimit, getClientIp, verifyTurnstileToken } from '@/lib/rate-limit'
 
 // =============================================================================
-// PORTALMAKER — Endpoint Oficial de Creación de Pedidos (H1, P1, Q)
+// PORTALMAKER — Endpoint Oficial de Creación de Pedidos (H1, P1, Q, X)
 // Ejecuta en el servidor con service_role: valida catálogo, stock, email y precios oficiales.
 // =============================================================================
 
@@ -21,29 +21,45 @@ export async function POST(req: Request) {
       direccionEntrega,
       metodoPago,
       notas,
+      turnstileToken,
     } = body
 
     if (!storeId) {
       return NextResponse.json({ error: 'storeId es requerido' }, { status: 400 })
     }
 
-    // Anti-abuso (Q): Rate limit por IP y por tienda
-    const rateCheck = checkRateLimit({
+    // Anti-abuso (Q, X): Rate limit distribuido por IP con alerta de volumen por tienda
+    const rateCheck = await checkRateLimit({
       ip: clientIp,
       storeId: String(storeId),
       maxPerIp: 10,
-      maxPerStore: 30,
+      alertPerStore: 40,
       windowMs: 60000,
     })
 
     if (!rateCheck.allowed) {
       return NextResponse.json(
-        { error: 'Demasiadas solicitudes de compra. Por favor espera unos momentos.' },
+        { error: 'Demasiadas solicitudes de compra desde tu conexión. Por favor espera unos momentos.' },
         {
           status: 429,
           headers: { 'Retry-After': String(rateCheck.retryAfter || 30) },
         }
       )
+    }
+
+    if (rateCheck.storeAlert) {
+      console.warn(`Alerta de volumen en checkout para tienda ${storeId}: frecuencia elevada de compras.`)
+    }
+
+    // X: Validación de Cloudflare Turnstile si está configurado en el servidor
+    if (process.env.TURNSTILE_SECRET_KEY && turnstileToken) {
+      const isValidCaptcha = await verifyTurnstileToken(turnstileToken, clientIp)
+      if (!isValidCaptcha) {
+        return NextResponse.json(
+          { error: 'Validación de seguridad captcha fallida. Por favor recarga e intenta nuevamente.' },
+          { status: 400 }
+        )
+      }
     }
 
     // 1. Validar datos básicos del comprador

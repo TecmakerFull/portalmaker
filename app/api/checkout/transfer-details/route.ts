@@ -22,8 +22,8 @@ export async function GET(req: Request) {
       )
     }
 
-    // Rate limiting por IP (Q)
-    const ipCheck = checkRateLimit({
+    // Rate limiting distribuido por IP (Q, X)
+    const ipCheck = await checkRateLimit({
       ip: clientIp,
       maxPerIp: 20,
       windowMs: 60000,
@@ -60,19 +60,16 @@ export async function GET(req: Request) {
       )
     }
 
-    // Rate limiting adicional por tienda (Q)
-    const storeCheck = checkRateLimit({
+    // Alerta de volumen por tienda sin bloqueo duro (X: previene denegación de servicio)
+    const storeCheck = await checkRateLimit({
       ip: clientIp,
       storeId: order.store_id,
-      maxPerStore: 40,
+      alertPerStore: 40,
       windowMs: 60000,
     })
 
-    if (!storeCheck.allowed) {
-      return NextResponse.json(
-        { error: 'Límite de solicitudes alcanzado. Por favor aguarda un momento.' },
-        { status: 429, headers: { 'Retry-After': String(storeCheck.retryAfter || 30) } }
-      )
+    if (storeCheck.storeAlert) {
+      console.warn(`Alerta de volumen en transfer-details para tienda ${order.store_id}`)
     }
 
     // 2. Obtener datos de transferencia de la tienda

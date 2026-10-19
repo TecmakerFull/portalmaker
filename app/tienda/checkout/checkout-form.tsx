@@ -312,6 +312,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             orderId: createdOrder.id,
+            publicToken: createdOrder.publicToken,
             storeId: store.id,
             returnOrigin: window.location.origin,
           }),
