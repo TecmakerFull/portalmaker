@@ -29,6 +29,7 @@ import {
   Mail,
   Phone,
   User,
+  ShieldCheck,
 } from 'lucide-react'
 import WhatsAppIcon from '../sections/whatsapp-icon'
 
@@ -94,8 +95,16 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
     })
   }, [store.id])
 
-  // Opciones de pago: 'transferencia' | 'efectivo' | 'acordar'
-  const [metodoPago, setMetodoPago] = useState<'transferencia' | 'efectivo' | 'acordar'>('transferencia')
+  // Recargo de Mercado Pago si la tienda lo tiene habilitado
+  const mpRecargoPct = store.mp_connected ? Number(store.mp_recargo_porcentaje) || 0 : 0
+
+  // Opciones de pago: 'mercadopago' | 'transferencia' | 'efectivo' | 'acordar'
+  const [metodoPago, setMetodoPago] = useState<'mercadopago' | 'transferencia' | 'efectivo' | 'acordar'>(
+    store.mp_connected ? 'mercadopago' : 'transferencia'
+  )
+
+  const mpRecargoMonto = metodoPago === 'mercadopago' && mpRecargoPct > 0 ? (totalAmount * mpRecargoPct) / 100 : 0
+  const finalTotal = totalAmount + mpRecargoMonto
 
   // Notas
   const [notas, setNotas] = useState('')
@@ -195,7 +204,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
       tipo_entrega: tipoEntrega,
       metodo_pago: metodoPago,
       items: snapshotItems,
-      total: totalAmount,
+      total: finalTotal,
       costo_envio: 0,
       estado_pedido: 'nuevo',
       estado_pago: 'pendiente',
@@ -206,7 +215,11 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
 
     try {
       // 1. Guardar pedido en Supabase
-      const { error: insertError } = await supabase.from('orders').insert(orderPayload)
+      const { data: createdOrder, error: insertError } = await supabase
+        .from('orders')
+        .insert(orderPayload)
+        .select('id')
+        .single()
 
       if (insertError) throw insertError
 
@@ -238,6 +251,28 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
         }
       } catch (syncErr) {
         console.error('Error al sincronizar datos del cliente:', syncErr)
+      }
+
+      // Si el método de pago es Mercado Pago, generar preferencia y redirigir
+      if (metodoPago === 'mercadopago') {
+        const prefRes = await fetch('/api/checkout/mercadopago/preference', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: createdOrder.id,
+            storeId: store.id,
+            returnOrigin: window.location.origin,
+          }),
+        })
+
+        const prefData = await prefRes.json()
+        if (!prefRes.ok || !prefData.initPoint) {
+          throw new Error(prefData.error || 'No se pudo generar el link de cobro de Mercado Pago.')
+        }
+
+        clearCart()
+        window.location.href = prefData.initPoint
+        return
       }
 
       // 2. Construir mensaje de WhatsApp
@@ -702,7 +737,33 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
             <span>Forma de Pago</span>
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+          <div className={`grid grid-cols-1 ${store.mp_connected ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3'} gap-3 pt-1`}>
+            {/* Mercado Pago (si está habilitado por la tienda) */}
+            {store.mp_connected && (
+              <button
+                type="button"
+                onClick={() => setMetodoPago('mercadopago')}
+                className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                  metodoPago === 'mercadopago'
+                    ? 'border-[#009EE3] bg-[#009EE3]/10 ring-2 ring-[#009EE3]/30'
+                    : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] opacity-80 hover:opacity-100'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1 mb-1">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-[#009EE3]" />
+                    <span className="font-bold text-xs">Mercado Pago</span>
+                  </div>
+                  {mpRecargoPct > 0 && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[#009EE3]/15 text-[#009EE3]">
+                      +{mpRecargoPct}%
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] opacity-60">Tarjetas, Débito o Dinero</span>
+              </button>
+            )}
+
             {/* Transferencia */}
             <button
               type="button"
@@ -754,6 +815,24 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
               <span className="text-[11px] opacity-60">Por WhatsApp</span>
             </button>
           </div>
+
+          {/* Caja Explicativa de Mercado Pago */}
+          {metodoPago === 'mercadopago' && (
+            <div className="p-4 sm:p-5 rounded-2xl border border-[#009EE3]/30 bg-[#009EE3]/5 space-y-2 pt-3 animate-in fade-in duration-200">
+              <span className="text-xs font-bold text-[#009EE3] flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Pago Online Seguro con Mercado Pago</span>
+              </span>
+              <p className="text-xs opacity-80 leading-relaxed">
+                Al confirmar serás redirigido a Mercado Pago para abonar de forma 100% segura. Podés pagar con tarjeta de crédito en cuotas, tarjeta de débito o con tu saldo en cuenta de Mercado Pago.
+              </p>
+              {mpRecargoPct > 0 && (
+                <div className="text-[11px] font-semibold text-[#009EE3] bg-[#009EE3]/10 p-2.5 rounded-xl border border-[#009EE3]/20">
+                  Esta tienda aplica un recargo del {mpRecargoPct}% por operar con Mercado Pago (+${mpRecargoMonto.toLocaleString('es-AR')}).
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Caja con Datos Bancarios para Transferencia */}
           {metodoPago === 'transferencia' && (
@@ -933,10 +1012,16 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
 
           {/* Total */}
           <div className="pt-3 border-t border-black/10 dark:border-white/10 space-y-1">
-            <div className="flex justify-between items-baseline">
+            {mpRecargoMonto > 0 && (
+              <div className="flex justify-between items-center text-xs opacity-75">
+                <span>Recargo Mercado Pago (+{mpRecargoPct}%):</span>
+                <span className="font-medium">+${mpRecargoMonto.toLocaleString('es-AR')}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-baseline pt-1">
               <span className="text-sm font-semibold opacity-70">Total a pagar:</span>
               <span className="text-2xl sm:text-3xl font-bold text-[var(--color-primario-legible)] font-[var(--font-heading)]">
-                ${totalAmount.toLocaleString('es-AR')}
+                ${finalTotal.toLocaleString('es-AR')}
               </span>
             </div>
             <p className="text-[10px] opacity-50 text-right">
@@ -951,12 +1036,21 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
             <button
               type="submit"
               disabled={loading || items.length === 0}
-              className="min-h-[52px] w-full px-6 py-3.5 rounded-2xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-sm font-bold hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-2.5 shadow-md cursor-pointer disabled:opacity-50"
+              className={`min-h-[52px] w-full px-6 py-3.5 rounded-2xl text-sm font-bold active:scale-98 transition-all flex items-center justify-center gap-2.5 shadow-md cursor-pointer disabled:opacity-50 ${
+                metodoPago === 'mercadopago'
+                  ? 'bg-[#009EE3] text-white hover:bg-[#0089C7]'
+                  : 'bg-[var(--color-primario)] text-[var(--color-primario-texto)] hover:opacity-90'
+              }`}
             >
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Procesando pedido...</span>
+                </>
+              ) : metodoPago === 'mercadopago' ? (
+                <>
+                  <CreditCard className="w-4 h-4 shrink-0" />
+                  <span>Pagar con Mercado Pago</span>
                 </>
               ) : (
                 <>
@@ -968,7 +1062,9 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
           </div>
 
           <p className="text-[11px] opacity-60 text-center leading-relaxed">
-            Al hacer click, tu pedido se registra y se abrirá WhatsApp con el mensaje completo para coordinar directamente con el vendedor.
+            {metodoPago === 'mercadopago'
+              ? 'Al hacer clic, serás redirigido de forma segura a Mercado Pago para abonar tu compra.'
+              : 'Al hacer click, tu pedido se registra y se abrirá WhatsApp con el mensaje completo para coordinar directamente con el vendedor.'}
           </p>
         </div>
       </div>

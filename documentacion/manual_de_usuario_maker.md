@@ -176,15 +176,23 @@ Portalmaker incorpora un sistema de **Carrito de Compras y Reservas** inteligent
 
 ---
 
-## 7. Configuración de Cobros y Transferencia Bancaria
+## 7. Configuración de Cobros (Mercado Pago y Transferencias)
 
-Acceso: Desde el menú lateral en **Mi tienda → Cobros & Transferencia** (`/tienda/admin/pagos`).
+Acceso: Desde el menú lateral en **Mi tienda → Métodos de Pago y Cobro** (`/tienda/admin/pagos`).
 
-Puedes precargar tus datos para que tus clientes paguen directamente sin tener que pedirlos por mensaje:
+### A. Cobros Online con Mercado Pago (¡En 1 solo clic!)
+* **Vinculación Oficial**: Con un solo toque en **"Conectar con Mercado Pago"**, inicias sesión y tu tienda queda lista para recibir pagos.
+* **Medios Habilitados**: Tus compradores pueden pagar con tarjeta de crédito (en cuotas), débito o dinero en cuenta de Mercado Pago.
+* **Dinero Directo**: Los fondos de las ventas ingresan directamente a tu cuenta de Mercado Pago en el acto.
+* **Comisión de la Plataforma**: Portalmaker solo retiene una comisión mínima del 2% por venta (el 98% restante es todo tuyo).
+* **Recargo al Comprador (Opcional)**: Si prefieres no absorber el costo de la tarjeta, puedes fijar un recargo extra al cliente (ej: 10%). Si dejas 0%, el cliente paga el precio regular.
+* **Notificación de Venta Inmediata**: Apenas el comprador abona, recibes un correo electrónico automático con sus datos y un botón directo a WhatsApp para avisarle que su pedido está en preparación.
+
+### B. Cobro por Transferencia Bancaria Directa
 * **Interruptor de Transferencia**: Activa o desactiva la opción en el checkout.
-* **Alias**: Tu alias de banco o Mercado Pago (ej: `tecmaker.3d.mp`). Tus clientes tendrán un botón de **"Copiar"** con 1 toque.
+* **Alias**: Tu alias de banco o billetera virtual (ej: `tecmaker.3d.mp`). Tus clientes tendrán un botón de **"Copiar"** con 1 toque.
 * **CBU / CVU**: Clave bancaria uniforme de 22 dígitos.
-* **Banco / Billetera**: Nombre de la entidad (ej: *Mercado Pago*, *Banco Nación*, *Brubank*).
+* **Banco / Billetera**: Nombre de la entidad (ej: *Mercado Pago*, *Banco Nación*, *Santander*).
 * **Titular & CUIT**: Nombre completo y CUIT/CUIL del titular de la cuenta.
 * **Instrucciones**: Mensaje explicativo para el comprobante (ej: *"Enviar comprobante por WhatsApp indicando número de pedido"*).
 

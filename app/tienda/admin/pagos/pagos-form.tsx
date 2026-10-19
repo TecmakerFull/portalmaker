@@ -1,11 +1,11 @@
 // =============================================================================
-// PORTALMAKER — Formulario de Configuración de Datos de Transferencia y Cobros
+// PORTALMAKER — Formulario de Configuración de Cobros (Mercado Pago & Transferencia)
 // =============================================================================
 
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { Store } from '@/types/database'
 import {
@@ -16,10 +16,12 @@ import {
   AlertTriangle,
   AlertCircle,
   Banknote,
-  Building2,
-  User,
-  FileText,
-  Copy,
+  ShieldCheck,
+  Link2,
+  Unlink,
+  Percent,
+  ExternalLink,
+  Info,
 } from 'lucide-react'
 import { StickySaveBar } from '../components/sticky-save-bar'
 
@@ -31,8 +33,15 @@ export default function PagosForm({
   tenantQuery: string
 }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createSupabaseBrowserClient()
 
+  // Mercado Pago
+  const [mpConnected, setMpConnected] = useState(store.mp_connected ?? false)
+  const [mpRecargo, setMpRecargo] = useState<number | string>(store.mp_recargo_porcentaje ?? 0)
+  const [disconnectingMp, setDisconnectingMp] = useState(false)
+
+  // Transferencia Bancaria
   const [transferenciaActiva, setTransferenciaActiva] = useState(
     store.transferencia_activa ?? false
   )
@@ -49,16 +58,69 @@ export default function PagosForm({
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
+  // Feedback de OAuth por URL params
+  useEffect(() => {
+    const successParam = searchParams.get('success')
+    const errorParam = searchParams.get('error')
+
+    if (successParam === 'mp_connected') {
+      setSuccessMsg('Tu cuenta de Mercado Pago fue conectada exitosamente.')
+      setMpConnected(true)
+      router.replace(window.location.pathname + (tenantQuery || ''))
+    } else if (errorParam) {
+      if (errorParam === 'mp_denied') {
+        setErrorMsg('La autorización de Mercado Pago fue cancelada.')
+      } else {
+        setErrorMsg('Ocurrió un error al vincular tu cuenta de Mercado Pago. Reintenta.')
+      }
+      router.replace(window.location.pathname + (tenantQuery || ''))
+    }
+  }, [searchParams, router, tenantQuery])
+
+  // Desvincular Mercado Pago
+  const handleDisconnectMp = async () => {
+    if (!confirm('¿Estás seguro de que deseas desvincular tu cuenta de Mercado Pago? Tu tienda dejará de aceptar pagos online directos hasta que vuelvas a conectarla.')) {
+      return
+    }
+
+    setDisconnectingMp(true)
+    setErrorMsg(null)
+
+    try {
+      const res = await fetch('/api/auth/mercadopago/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storeId: store.id }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error al desvincular')
+
+      setMpConnected(false)
+      setSuccessMsg('Cuenta de Mercado Pago desvinculada.')
+      router.refresh()
+      setTimeout(() => setSuccessMsg(null), 4000)
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'No se pudo desvincular Mercado Pago.')
+    } finally {
+      setDisconnectingMp(false)
+    }
+  }
+
+  // Guardar configuración general
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setErrorMsg(null)
     setSuccessMsg(null)
 
+    const parsedRecargo = Number(mpRecargo) || 0
+
     try {
       const { error } = await supabase
         .from('stores')
         .update({
+          mp_recargo_porcentaje: parsedRecargo >= 0 ? parsedRecargo : 0,
           transferencia_activa: transferenciaActiva,
           transferencia_alias: alias.trim() || null,
           transferencia_cbu_cvu: cbuCvu.trim() || null,
@@ -72,7 +134,7 @@ export default function PagosForm({
 
       if (error) throw error
 
-      setSuccessMsg('¡Datos de cobro guardados correctamente!')
+      setSuccessMsg('Configuración de cobros guardada correctamente.')
       router.refresh()
       setTimeout(() => setSuccessMsg(null), 4000)
     } catch (err: any) {
@@ -87,36 +149,163 @@ export default function PagosForm({
       {/* Encabezado */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)] font-[var(--font-heading)] flex items-center gap-2.5">
-          <CreditCard className="w-7 h-7 text-[#CA8A04] dark:text-[#FACC15]" />
-          <span>Cobros & Datos de Transferencia</span>
+          <CreditCard className="w-7 h-7 text-[#009EE3]" />
+          <span>Métodos de Pago y Cobro</span>
         </h1>
         <p className="text-xs sm:text-sm opacity-70 mt-1">
-          Configura los datos bancarios para que tus compradores puedan transferir directamente y copiar tu alias o CBU en el checkout.
+          Configura cómo reciben el dinero de las ventas: vinculá tu cuenta de Mercado Pago para cobros automáticos o carga tus datos bancarios para transferencias directas.
         </p>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6 pb-24">
         {successMsg && (
-          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
-            <Check className="w-4 h-4 shrink-0" />
+          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs sm:text-sm font-semibold flex items-center gap-2.5">
+            <Check className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <span>{successMsg}</span>
           </div>
         )}
 
         {errorMsg && (
-          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
+          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs sm:text-sm font-semibold flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
             <span>{errorMsg}</span>
           </div>
         )}
 
-        {/* 1. Switch de Activación */}
-        <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs">
-          <div className="flex items-center justify-between gap-4">
+        {/* =========================================================================
+            1. MERCADO PAGO INTEGRATION CARD
+        ========================================================================== */}
+        <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--color-borde)]/60 pb-5">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[#009EE3]/10 border border-[#009EE3]/20 flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-[#009EE3]" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold flex items-center gap-2">
+                    <span>Mercado Pago</span>
+                    {mpConnected ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        Conectado
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
+                        No conectado
+                      </span>
+                    )}
+                  </h2>
+                  <p className="text-xs opacity-70">
+                    Tarjetas de crédito, débito, cuotas y dinero en cuenta con acreditación directa.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Acción de Conectar / Desconectar */}
+            <div className="shrink-0">
+              {mpConnected ? (
+                <button
+                  type="button"
+                  onClick={handleDisconnectMp}
+                  disabled={disconnectingMp}
+                  className="min-h-[44px] px-4 py-2 rounded-xl border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold hover:bg-rose-500/10 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {disconnectingMp ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Unlink className="w-4 h-4" />
+                  )}
+                  <span>Desvincular cuenta</span>
+                </button>
+              ) : (
+                <a
+                  href={`/api/auth/mercadopago/authorize?store_id=${store.id}`}
+                  className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#009EE3] text-white text-xs sm:text-sm font-semibold hover:bg-[#0089C7] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                >
+                  <Link2 className="w-4 h-4" />
+                  <span>Conectar con Mercado Pago</span>
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Información del Estado */}
+          {mpConnected ? (
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/15 flex items-start gap-3">
+                <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div className="text-xs sm:text-sm space-y-1">
+                  <p className="font-semibold text-emerald-800 dark:text-emerald-300">
+                    Tu tienda está lista para cobrar con Mercado Pago
+                  </p>
+                  <p className="opacity-80 text-xs">
+                    Cuando un cliente compra en tu tienda, el dinero neto se acredita directamente en tu cuenta de Mercado Pago en el momento.
+                    {store.mp_user_id && (
+                      <span className="block mt-1 font-mono text-[11px] opacity-70">
+                        ID de cuenta de vendedor: {store.mp_user_id}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Recargo opcional por pagar con Mercado Pago */}
+              <div className="pt-2">
+                <div className="max-w-md space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider opacity-70 flex items-center gap-1.5">
+                    <Percent className="w-3.5 h-3.5 text-[#009EE3]" />
+                    <span>Recargo adicional al comprador (%)</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={mpRecargo}
+                      onChange={(e) => setMpRecargo(e.target.value)}
+                      placeholder="0"
+                      className="w-full min-h-[44px] pl-3.5 pr-10 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#009EE3]"
+                    />
+                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold opacity-50">
+                      %
+                    </span>
+                  </div>
+                  <p className="text-[11px] opacity-60 leading-relaxed">
+                    Opcional: Si deseas compensar el costo financiero de la plataforma, podés definir un porcentaje extra (ej: 10%). Si dejás 0%, el comprador pagará el precio regular del producto.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-slate-500/5 border border-[var(--color-borde)] flex items-start gap-3">
+              <Info className="w-5 h-5 text-[#009EE3] shrink-0 mt-0.5" />
+              <div className="text-xs sm:text-sm space-y-1">
+                <p className="font-semibold text-[var(--color-texto)]">
+                  Vinculación oficial con 1 solo clic
+                </p>
+                <p className="text-xs opacity-70 leading-relaxed">
+                  Al hacer clic en &quot;Conectar con Mercado Pago&quot;, iniciarás sesión en tu cuenta de Mercado Pago y autorizarás a Portalmaker para procesar las compras. No necesitas ingresar claves secretas ni tokens manuales.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* =========================================================================
+            2. TRANSFERENCIA BANCARIA CARD
+        ========================================================================== */}
+        <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-5">
+          <div className="flex items-center justify-between gap-4 border-b border-[var(--color-borde)]/60 pb-5">
             <div>
-              <h2 className="text-base font-bold">Aceptar pagos por Transferencia Bancaria</h2>
+              <h2 className="text-base sm:text-lg font-bold flex items-center gap-2">
+                <Banknote className="w-5 h-5 text-[#CA8A04] dark:text-[#FACC15]" />
+                <span>Transferencia Bancaria o CVU</span>
+              </h2>
               <p className="text-xs opacity-70 mt-0.5">
-                Al activarlo, tus clientes verán la opción de transferir y tus datos precargados con botones de copia rápida.
+                Tus clientes verán tus datos precargados con botones de copia rápida para transferir y adjuntar su comprobante.
               </p>
             </div>
 
@@ -134,14 +323,6 @@ export default function PagosForm({
               />
             </button>
           </div>
-        </div>
-
-        {/* 2. Formulario de Datos Bancarios */}
-        <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
-          <h2 className="text-base font-bold flex items-center gap-2">
-            <Banknote className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-            <span>Datos de tu Cuenta Bancaria o Billetera Virtual</span>
-          </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
             {/* Alias */}
@@ -233,13 +414,13 @@ export default function PagosForm({
         {/* Botón Guardar y Feedback */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-2">
           {successMsg && (
-            <div className="p-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-sm flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+            <div className="p-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-sm flex items-center gap-2">
               <Check className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
               <span>{successMsg}</span>
             </div>
           )}
           {errorMsg && (
-            <div className="p-3 px-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-sm flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+            <div className="p-3 px-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-sm flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
               <span>{errorMsg}</span>
             </div>
@@ -248,7 +429,7 @@ export default function PagosForm({
           <button
             type="submit"
             disabled={loading}
-            className="min-h-[48px] px-7 py-3 rounded-2xl bg-[#FACC15] text-[#1F2937] font-bold text-sm hover:bg-[#EAB308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-50 shrink-0"
+            className="min-h-[48px] px-7 py-3 rounded-2xl bg-[#009EE3] text-white font-bold text-sm hover:bg-[#0089C7] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-50 shrink-0"
           >
             {loading ? (
               <>
@@ -258,7 +439,7 @@ export default function PagosForm({
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                <span>Guardar Datos de Cobro</span>
+                <span>Guardar Configuración de Cobros</span>
               </>
             )}
           </button>
@@ -267,11 +448,11 @@ export default function PagosForm({
         {/* Barra de Guardado Flotante Estandarizada */}
         <StickySaveBar
           loading={loading}
-          saveText="Guardar Datos de Cobro"
+          saveText="Guardar Configuración de Cobros"
           savingText="Guardando..."
           successMsg={successMsg}
           errorMsg={errorMsg}
-          message="Datos bancarios y transferencias"
+          message="Cobros, Mercado Pago y Transferencias"
           hasChanges={true}
         />
       </form>

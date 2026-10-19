@@ -63,6 +63,8 @@ export type SuperadminStoreItem = {
   checkout_activo?: boolean | null
   plan?: string | null
   precio_mensual?: number | null
+  comision_portalmaker?: number | null
+  mp_connected?: boolean | null
   estado_pago?: string | null
   notas_admin?: string | null
   limite_productos?: number | null
@@ -265,6 +267,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
       custom_domain: selectedStore.custom_domain || '',
       plan: selectedStore.plan || 'maker_pro',
       precio_mensual: selectedStore.precio_mensual ?? 0,
+      comision_portalmaker: selectedStore.comision_portalmaker ?? 0,
       limite_productos: selectedStore.limite_productos ?? 50,
       estado_pago: selectedStore.estado_pago || 'al_dia',
       fecha_proximo_vencimiento: selectedStore.fecha_proximo_vencimiento || '',
@@ -530,6 +533,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
         custom_domain: nuevoDominio,
         plan: subEditForm.plan,
         precio_mensual: Number(subEditForm.precio_mensual) || 0,
+        comision_portalmaker: Number(subEditForm.comision_portalmaker) || 0,
         limite_productos: Number(subEditForm.limite_productos) || 50,
         estado_pago: subEditForm.estado_pago,
         fecha_proximo_vencimiento: subEditForm.fecha_proximo_vencimiento || null,
@@ -1547,6 +1551,22 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                           onChange={(e) => setSubEditForm({ ...subEditForm, precio_mensual: Number(e.target.value) })}
                           className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                         />
+                      </div>
+
+                      <div>
+                        <label className="block font-medium mb-1.5 opacity-80">Comisión Portalmaker por Venta (%)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          value={subEditForm.comision_portalmaker ?? 0}
+                          onChange={(e) => setSubEditForm({ ...subEditForm, comision_portalmaker: Number(e.target.value) })}
+                          className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                        />
+                        <p className="text-[11px] opacity-60 mt-1">
+                          Porcentaje retenido en cada venta vía Mercado Pago hacia la cuenta de Portalmaker.
+                        </p>
                       </div>
 
                       <div>

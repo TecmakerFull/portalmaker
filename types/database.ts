@@ -116,6 +116,16 @@ export interface Store {
   transferencia_cuit?: string | null;
   transferencia_instrucciones?: string | null;
 
+  // Integración Mercado Pago (Marketplace OAuth y Split de pagos)
+  mp_connected?: boolean;
+  mp_user_id?: string | null;
+  mp_access_token?: string | null;
+  mp_refresh_token?: string | null;
+  mp_public_key?: string | null;
+  mp_token_expires_at?: Timestamp | null;
+  mp_recargo_porcentaje?: number;
+  comision_portalmaker?: number;
+
   created_at: Timestamp;
   updated_at: Timestamp;
 }
@@ -280,6 +290,14 @@ export interface Order {
   metodo_pago: string | null;
   zona_envio_id: UUID | null;
   notas: string | null;
+
+  // Integración Mercado Pago
+  mp_preference_id?: string | null;
+  mp_payment_id?: string | null;
+  mp_merchant_order_id?: string | null;
+  mp_fee_portalmaker?: number;
+  mp_net_received?: number;
+
   observaciones_admin: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -582,5 +600,15 @@ export interface NewsletterSubscriber {
   store_id: UUID;
   email: string;
   activo: boolean;
+  created_at: Timestamp;
+}
+
+// =============================================================================
+// MP_OAUTH_STATES — Estados temporales para autenticación OAuth con Mercado Pago
+// =============================================================================
+export interface MPOAuthState {
+  id: UUID;
+  store_id: UUID;
+  state: string;
   created_at: Timestamp;
 }

@@ -167,6 +167,16 @@ create table stores (
   transferencia_cuit          text,
   transferencia_instrucciones text,
 
+  -- Integración Mercado Pago (Marketplace OAuth y Split de pagos)
+  mp_connected          boolean default false,
+  mp_user_id            text,
+  mp_access_token       text,
+  mp_refresh_token      text,
+  mp_public_key         text,
+  mp_token_expires_at   timestamptz,
+  mp_recargo_porcentaje numeric(5,2) default 0.00,  -- recargo opcional que la tienda aplica si pagan con MP
+  comision_portalmaker  numeric(5,2) default 0.00,  -- % de comisión que retiene Portalmaker por cada venta
+
   -- Timestamps
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -459,6 +469,13 @@ create table orders (
 
   -- Notas del comprador (campo libre en el checkout)
   notas text,
+
+  -- Integración Mercado Pago
+  mp_preference_id      text,
+  mp_payment_id         text,
+  mp_merchant_order_id  text,
+  mp_fee_portalmaker    numeric(10,2) default 0.00,
+  mp_net_received       numeric(10,2) default 0.00,
 
   -- Observaciones internas del admin (solo visibles para el dueño de la tienda)
   observaciones_admin text,
@@ -1015,6 +1032,22 @@ create index if not exists idx_newsletter_subscribers_store on newsletter_subscr
 alter table newsletter_subscribers enable row level security;
 create policy "allow_all_newsletter_subscribers" on newsletter_subscribers for all using (true) with check (true);
 grant select, insert, update, delete on newsletter_subscribers to anon, authenticated, service_role;
+
+
+-- =============================================================================
+-- 24. MP_OAUTH_STATES — Estados de autenticación OAuth para Mercado Pago
+-- =============================================================================
+create table if not exists mp_oauth_states (
+  id          uuid primary key default gen_random_uuid(),
+  store_id    uuid not null references stores(id) on delete cascade,
+  state       text not null unique,
+  created_at  timestamptz default now()
+);
+
+create index if not exists idx_mp_oauth_states_state on mp_oauth_states(state);
+alter table mp_oauth_states enable row level security;
+create policy "allow_all_mp_oauth_states" on mp_oauth_states for all using (true) with check (true);
+grant select, insert, delete on mp_oauth_states to anon, authenticated, service_role;
 
 
 -- =============================================================================

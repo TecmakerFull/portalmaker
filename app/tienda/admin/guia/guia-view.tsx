@@ -176,17 +176,33 @@ export default function GuiaView({
     {
       num: 6,
       category: 'tienda' as const,
-      title: 'Datos de Cobro y Transferencia',
-      tag: 'Cómo te pagan',
+      title: 'Cobros: Mercado Pago y Transferencias',
+      tag: 'Cómo entra tu dinero',
       icon: CreditCard,
-      color: 'from-rose-500/20 to-rose-500/5 text-rose-600 dark:text-rose-400 border-rose-400/30',
+      color: 'from-[#009EE3]/20 to-[#009EE3]/5 text-[#009EE3] border-[#009EE3]/30',
       href: `/tienda/admin/pagos${tenantQuery}`,
-      buttonText: 'Configurar Datos de Pago',
-      summary: 'Ingresa tu Alias o CBU para que los clientes te transfieran directamente.',
+      buttonText: 'Configurar Mercado Pago y Cobros',
+      summary: 'Cobrá online con tarjetas en 1 solo clic o recibí transferencias directas a tu Alias.',
       details: [
         {
-          sub: 'Pago por Transferencia Bancaria / Mercado Pago',
-          desc: 'Al confirmar el pedido en la tienda, el comprador verá tus datos de cuenta para hacerte la transferencia y adjuntar el comprobante por WhatsApp.',
+          sub: '1. Mercado Pago en 1 solo clic',
+          desc: 'Entrá a la sección de Cobros y tocá el botón azul "Conectar con Mercado Pago". Iniciás sesión con tu cuenta y listo. Tus clientes ya pueden pagarte con tarjeta de crédito en cuotas, débito o dinero en cuenta.',
+        },
+        {
+          sub: '2. ¿A dónde va el dinero y cuál es la comisión?',
+          desc: 'La plata entra directo a tu propia cuenta de Mercado Pago en el acto. Portalmaker únicamente retiene una comisión mínima del 2% por cada venta exitosa (el 98% restante es todo tuyo).',
+        },
+        {
+          sub: '3. Recargo opcional al comprador',
+          desc: 'Si querés compensar el costo de operar con tarjetas, podés fijar un recargo porcentual al cliente (ej: 10%). Si dejás 0%, el comprador paga el precio regular del producto.',
+        },
+        {
+          sub: '4. Aviso inmediato por Email con botón a WhatsApp',
+          desc: 'Apenas un cliente te paga, recibís un email al instante con sus datos (nombre, teléfono y dirección) y un botón directo para escribirle por WhatsApp y decirle que su paquete ya está en preparación.',
+        },
+        {
+          sub: '5. Transferencia Bancaria clásica (Alias / CBU)',
+          desc: 'Si además querés recibir transferencias bancarias directas, activá la opción de Transferencia, cargá tu Alias o CBU y el cliente te adjuntará el comprobante.',
         },
       ],
     },
