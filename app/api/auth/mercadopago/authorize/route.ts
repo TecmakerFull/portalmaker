@@ -69,13 +69,15 @@ export async function GET(req: Request) {
       }
     }
 
-    // Generar un state seguro para prevenir ataques CSRF
+    // Generar un state seguro para prevenir ataques CSRF con 10 min de vigencia (O4)
     const stateToken = crypto.randomBytes(32).toString('hex')
-    const expiresAt = new Date(Date.now() + 3600000).toISOString() // 1 hora de vigencia
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
-    // Limpiar estados viejos de más de 1 hora y guardar el nuevo con user_id y expires_at (E1)
-    const oneHourAgo = new Date(Date.now() - 3600000).toISOString()
-    await supabaseAdmin.from('mp_oauth_states').delete().lt('created_at', oneHourAgo)
+    // O4: Limpiar estados vencidos usando expires_at
+    await supabaseAdmin
+      .from('mp_oauth_states')
+      .delete()
+      .or(`expires_at.lt.${new Date().toISOString()},created_at.lt.${new Date(Date.now() - 3600000).toISOString()}`)
 
     const { error: stateInsertErr } = await supabaseAdmin.from('mp_oauth_states').insert({
       store_id: store.id,

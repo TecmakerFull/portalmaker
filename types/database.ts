@@ -120,11 +120,6 @@ export interface Store {
 
   // Integración Mercado Pago (Marketplace OAuth y Split de pagos)
   mp_connected?: boolean;
-  mp_user_id?: string | null;
-  mp_access_token?: string | null;
-  mp_refresh_token?: string | null;
-  mp_public_key?: string | null;
-  mp_token_expires_at?: Timestamp | null;
   mp_recargo_porcentaje?: number;
   comision_portalmaker?: number;
 

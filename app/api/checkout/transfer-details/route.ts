@@ -1,28 +1,88 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 // =============================================================================
-// PORTALMAKER — Endpoint Seguro para Datos Bancarios en Checkout (G3)
-// Retorna información de transferencia bancaria solo bajo demanda de checkout.
+// PORTALMAKER — Endpoint Seguro para Datos Bancarios en Checkout (P3, Q)
+// Retorna información de transferencia bancaria ÚNICAMENTE para pedidos existentes
+// con método 'transferencia' y validando su public_token de comprador en el servidor.
 // =============================================================================
 
 export async function GET(req: Request) {
   try {
+    const clientIp = getClientIp(req)
     const { searchParams } = new URL(req.url)
-    const storeId = searchParams.get('store_id')
+    const orderId = searchParams.get('order_id') || searchParams.get('orderId')
+    const token = searchParams.get('token')
 
-    if (!storeId) {
-      return NextResponse.json({ error: 'store_id es requerido' }, { status: 400 })
+    if (!orderId || !token) {
+      return NextResponse.json(
+        { error: 'order_id y token de verificación son obligatorios' },
+        { status: 400 }
+      )
+    }
+
+    // Rate limiting por IP (Q)
+    const ipCheck = checkRateLimit({
+      ip: clientIp,
+      maxPerIp: 20,
+      windowMs: 60000,
+    })
+
+    if (!ipCheck.allowed) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes. Por favor aguarda un momento.' },
+        { status: 429, headers: { 'Retry-After': String(ipCheck.retryAfter || 30) } }
+      )
     }
 
     const supabaseAdmin = createSupabaseAdminClient()
-    const { data: store, error } = await supabaseAdmin
+
+    // 1. Validar que el pedido exista, corresponda a transferencia y el token coincida (P3)
+    const { data: order, error: orderErr } = await supabaseAdmin
+      .from('orders')
+      .select('id, store_id, metodo_pago, public_token')
+      .eq('id', orderId)
+      .maybeSingle()
+
+    if (orderErr || !order) {
+      return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 })
+    }
+
+    if (!order.public_token || order.public_token !== token) {
+      return NextResponse.json({ error: 'Token de acceso al pedido inválido' }, { status: 403 })
+    }
+
+    if (order.metodo_pago !== 'transferencia') {
+      return NextResponse.json(
+        { error: 'Este pedido no fue registrado con la modalidad de transferencia bancaria' },
+        { status: 400 }
+      )
+    }
+
+    // Rate limiting adicional por tienda (Q)
+    const storeCheck = checkRateLimit({
+      ip: clientIp,
+      storeId: order.store_id,
+      maxPerStore: 40,
+      windowMs: 60000,
+    })
+
+    if (!storeCheck.allowed) {
+      return NextResponse.json(
+        { error: 'Límite de solicitudes alcanzado. Por favor aguarda un momento.' },
+        { status: 429, headers: { 'Retry-After': String(storeCheck.retryAfter || 30) } }
+      )
+    }
+
+    // 2. Obtener datos de transferencia de la tienda
+    const { data: store, error: storeErr } = await supabaseAdmin
       .from('stores')
       .select('id, transferencia_activa, transferencia_alias, transferencia_cbu_cvu, transferencia_banco, transferencia_titular, transferencia_cuit, transferencia_instrucciones')
-      .eq('id', storeId)
-      .single()
+      .eq('id', order.store_id)
+      .maybeSingle()
 
-    if (error || !store || !store.transferencia_activa) {
+    if (storeErr || !store || !store.transferencia_activa) {
       return NextResponse.json({ transferencia_activa: false }, { status: 200 })
     }
 

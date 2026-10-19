@@ -61,12 +61,13 @@ create or replace function is_platform_admin()
 returns boolean
 language sql
 security definer
+set search_path = public
 stable  -- no modifica datos, puede ser cacheada por el planificador de queries
 as $$
   select exists (
     select 1
     from platform_admins
-    where email = auth.jwt() ->> 'email'
+    where lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
   );
 $$;
 
@@ -170,11 +171,6 @@ create table stores (
 
   -- Integración Mercado Pago (Marketplace OAuth y Split de pagos)
   mp_connected          boolean default false,
-  mp_user_id            text,
-  mp_access_token       text,
-  mp_refresh_token      text,
-  mp_public_key         text,
-  mp_token_expires_at   timestamptz,
   mp_recargo_porcentaje numeric(5,2) default 0.00
     check (mp_recargo_porcentaje >= 0.00 and mp_recargo_porcentaje <= 15.00), -- recargo opcional que la tienda aplica si pagan con MP (máx 15%)
   comision_portalmaker  numeric(5,2) default 0.00
@@ -528,6 +524,9 @@ create table orders (
   -- Control de stock
   stock_descontado boolean default false, -- true cuando el admin confirma y se descuenta del inventario
 
+  -- Token público seguro para acceso del comprador tras checkout (P1)
+  public_token text not null default gen_random_uuid()::text,
+
   -- Referencia a la zona de envío elegida
   zona_envio_id uuid,  -- FK a shipping_zones (se agrega como ALTER luego de crear esa tabla)
 
@@ -552,6 +551,7 @@ create table orders (
 );
 
 create index idx_orders_store on orders(store_id, estado_pedido, created_at desc);
+create unique index idx_orders_public_token on orders(public_token);
 
 alter table orders enable row level security;
 -- Solo el admin de la tienda o el platform_admin puede administrar pedidos (J2: lower())
@@ -561,9 +561,9 @@ create policy "admin_all_orders" on orders for all
     or lower(coalesce(auth.jwt() ->> 'email', '')) = lower((select admin_email from stores where id = orders.store_id))
   );
 
--- Eliminada la política "public_insert_orders": pedidos creados exclusivamente por servidor (H1)
-revoke insert, update on orders from anon;
-revoke insert on orders from authenticated;
+-- O3: Eliminada la política "public_insert_orders" y revocado DELETE (pedidos no se borran)
+revoke insert, update, delete on orders from anon;
+revoke insert, delete on orders from authenticated;
 grant select, update on orders to authenticated;
 grant all on orders to service_role;
 
@@ -1145,11 +1145,14 @@ create or replace function process_approved_payment(
   p_order_id uuid,
   p_payment_id text,
   p_net_received numeric,
-  p_fee numeric
+  p_fee numeric,
+  p_amount numeric default null,
+  p_currency text default 'ARS'
 )
 returns jsonb
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   v_order record;
@@ -1158,7 +1161,54 @@ declare
   v_variant_id uuid;
   v_product_id uuid;
 begin
-  -- 1. Intentar actualizar el pedido atómicamente solo si NO estaba aprobado
+  -- 1. Consultar el pedido actual
+  select id, store_id, total, items, stock_descontado, estado_pago
+  into v_order
+  from orders
+  where id = p_order_id;
+
+  if v_order.id is null then
+    return jsonb_build_object('success', false, 'error', 'order_not_found');
+  end if;
+
+  -- 2. Si ya estaba aprobado, responder idempotentemente
+  if v_order.estado_pago = 'aprobado' then
+    return jsonb_build_object(
+      'success', true,
+      'already_processed', true,
+      'first_time', false,
+      'status', 'aprobado'
+    );
+  end if;
+
+  -- 3. L3: Validar que la moneda sea ARS y el monto pagado no sea menor a (total - 1)
+  if (p_currency is not null and upper(trim(p_currency)) <> 'ARS') or
+     (p_amount is not null and p_amount < (v_order.total - 1.00)) then
+    -- Dejar pedido en 'revision', NO descontar stock
+    update orders
+    set
+      estado_pago = 'revision',
+      mp_payment_id = coalesce(p_payment_id, mp_payment_id),
+      observaciones_admin = concat(
+        coalesce(observaciones_admin || E'\n', ''),
+        'Revisión requerida (RPC): Moneda recibida: ', coalesce(p_currency, 'null'),
+        ', Monto recibido: $', coalesce(p_amount::text, 'null'),
+        ' vs Total esperado: $', v_order.total::text
+      ),
+      updated_at = now()
+    where id = p_order_id and estado_pago is distinct from 'aprobado';
+
+    return jsonb_build_object(
+      'success', true,
+      'status', 'revision',
+      'first_time', true,
+      'already_processed', false,
+      'order_id', v_order.id,
+      'store_id', v_order.store_id
+    );
+  end if;
+
+  -- 4. Actualizar pedido a 'aprobado' si estado_pago is distinct from 'aprobado'
   update orders
   set
     estado_pago = 'aprobado',
@@ -1166,15 +1216,9 @@ begin
     mp_net_received = p_net_received,
     mp_fee_portalmaker = p_fee,
     updated_at = now()
-  where id = p_order_id and estado_pago <> 'aprobado'
-  returning id, store_id, total, items, stock_descontado into v_order;
+  where id = p_order_id and estado_pago is distinct from 'aprobado';
 
-  -- 2. Si no devolvió fila, significa que ya estaba aprobado (idempotencia)
-  if v_order.id is null then
-    return jsonb_build_object('success', true, 'already_processed', true, 'first_time', false);
-  end if;
-
-  -- 3. Descontar stock atómicamente si aún no estaba descontado
+  -- 5. Descontar stock atómicamente si aún no estaba descontado
   if not coalesce(v_order.stock_descontado, false) then
     if v_order.items is not null and jsonb_typeof(v_order.items) = 'array' then
       for v_item in select * from jsonb_array_elements(v_order.items)
@@ -1205,13 +1249,16 @@ begin
     'success', true,
     'first_time', true,
     'already_processed', false,
+    'status', 'aprobado',
     'order_id', v_order.id,
     'store_id', v_order.store_id
   );
 end;
 $$;
 
-grant execute on function process_approved_payment to service_role;
+revoke all on function process_approved_payment(uuid, text, numeric, numeric) from public, anon, authenticated;
+revoke all on function process_approved_payment(uuid, text, numeric, numeric, numeric, text) from public, anon, authenticated;
+grant execute on function process_approved_payment(uuid, text, numeric, numeric, numeric, text) to service_role;
 
 
 -- =============================================================================
@@ -1227,13 +1274,14 @@ create table if not exists store_commission_audit (
 );
 
 alter table store_commission_audit enable row level security;
-revoke all on store_commission_audit from anon, authenticated;
+revoke all on store_commission_audit from anon, authenticated, public;
 grant all on store_commission_audit to service_role;
 
 create or replace function trg_audit_store_commission()
 returns trigger
 language plpgsql
 security definer
+set search_path = public
 as $$
 begin
   if old.comision_portalmaker is distinct from new.comision_portalmaker then
@@ -1255,6 +1303,8 @@ begin
   return new;
 end;
 $$;
+
+revoke all on function trg_audit_store_commission() from public, anon, authenticated;
 
 drop trigger if exists trg_store_commission_audit on stores;
 create trigger trg_store_commission_audit
@@ -1286,6 +1336,15 @@ begin
 
   -- Columnas reservadas exclusivamente para superadmin o service_role
   if not v_is_superadmin then
+    -- O1: Si cambia custom_domain, forzar custom_domain_verified := false
+    if old.custom_domain is distinct from new.custom_domain then
+      new.custom_domain_verified := false;
+    end if;
+
+    if old.custom_domain_verified is distinct from new.custom_domain_verified then
+      raise exception 'No tienes permisos para modificar custom_domain_verified';
+    end if;
+
     if old.comision_portalmaker is distinct from new.comision_portalmaker then
       raise exception 'No tienes permisos para modificar comision_portalmaker';
     end if;
@@ -1301,16 +1360,8 @@ begin
     if old.suscripcion_activa is distinct from new.suscripcion_activa then
       raise exception 'No tienes permisos para modificar suscripcion_activa';
     end if;
-    if old.custom_domain_verified is distinct from new.custom_domain_verified then
-      raise exception 'No tienes permisos para modificar custom_domain_verified';
-    end if;
-    if old.mp_access_token is distinct from new.mp_access_token or
-       old.mp_refresh_token is distinct from new.mp_refresh_token or
-       old.mp_public_key is distinct from new.mp_public_key or
-       old.mp_user_id is distinct from new.mp_user_id or
-       old.mp_token_expires_at is distinct from new.mp_token_expires_at or
-       old.mp_connected is distinct from new.mp_connected then
-      raise exception 'Las credenciales y estado de conexión de Mercado Pago solo pueden modificarse mediante el flujo seguro de backend';
+    if old.mp_connected is distinct from new.mp_connected then
+      raise exception 'El estado de conexión de Mercado Pago solo puede modificarse mediante el flujo seguro de backend';
     end if;
   end if;
 
@@ -1326,7 +1377,7 @@ create trigger trg_protect_store_columns
 
 
 -- =============================================================================
--- 29. PROTECT_ORDER_COLUMNS — Protección de totales, snapshots y MP en pedidos (H2)
+-- 29. PROTECT_ORDER_COLUMNS — Protección de totales, snapshots y MP en pedidos (H2, O2)
 -- =============================================================================
 create or replace function protect_order_sensitive_columns()
 returns trigger
@@ -1346,7 +1397,15 @@ begin
     return new;
   end if;
 
-  -- Para cualquier otro rol (dueño de tienda / usuario regular):
+  -- O2: Inmutable para cualquier otro rol en todos los pedidos
+  if old.store_id is distinct from new.store_id then
+    raise exception 'No está permitido modificar la tienda (store_id) de un pedido';
+  end if;
+
+  if old.public_token is distinct from new.public_token then
+    raise exception 'No está permitido modificar el public_token de un pedido';
+  end if;
+
   if old.total is distinct from new.total then
     raise exception 'No está permitido modificar el total de un pedido existente';
   end if;
@@ -1363,21 +1422,30 @@ begin
     raise exception 'No está permitido modificar el snapshot de mp_recargo_pct';
   end if;
 
-  if old.mp_payment_id is distinct from new.mp_payment_id or
-     old.mp_preference_id is distinct from new.mp_preference_id or
-     old.mp_merchant_order_id is distinct from new.mp_merchant_order_id or
-     old.mp_fee_portalmaker is distinct from new.mp_fee_portalmaker or
-     old.mp_net_received is distinct from new.mp_net_received then
-    raise exception 'Los campos de liquidación de Mercado Pago solo pueden ser modificados por el webhook oficial';
+  -- O2: Si el pedido es o fue Mercado Pago, proteger costo_envio, metodo_pago y campos de liquidación
+  if old.metodo_pago = 'mercadopago' or old.mp_payment_id is not null or old.mp_preference_id is not null then
+    if old.costo_envio is distinct from new.costo_envio then
+      raise exception 'No está permitido modificar el costo de envío de un pedido de Mercado Pago';
+    end if;
+
+    if old.metodo_pago is distinct from new.metodo_pago then
+      raise exception 'No está permitido cambiar el método de pago de un pedido de Mercado Pago';
+    end if;
+
+    if old.mp_payment_id is distinct from new.mp_payment_id or
+       old.mp_preference_id is distinct from new.mp_preference_id or
+       old.mp_merchant_order_id is distinct from new.mp_merchant_order_id or
+       old.mp_fee_portalmaker is distinct from new.mp_fee_portalmaker or
+       old.mp_net_received is distinct from new.mp_net_received then
+      raise exception 'Los campos de liquidación de Mercado Pago solo pueden ser modificados por el webhook oficial';
+    end if;
   end if;
 
   -- Modificación de estado_pago:
   if old.estado_pago is distinct from new.estado_pago then
-    -- Si el pedido es de Mercado Pago, el dueño no puede alterarlo a mano
     if old.metodo_pago = 'mercadopago' or old.mp_payment_id is not null or old.mp_preference_id is not null then
       raise exception 'Los pedidos con Mercado Pago no pueden cambiar su estado de pago manualmente. El estado se actualiza por webhook.';
     end if;
-    -- Si es transferencia bancaria o efectivo, se permite cambiar el estado de pago
   end if;
 
   return new;
@@ -1389,6 +1457,46 @@ create trigger trg_protect_order_columns
   before update on orders
   for each row
   execute function protect_order_sensitive_columns();
+
+
+-- =============================================================================
+-- 30. STORE_IS_ACTIVE — Verificación pública de tienda activa (M1)
+-- =============================================================================
+create or replace function store_is_active(p_store_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1
+    from stores
+    where id = p_store_id
+      and suscripcion_activa is not false
+  );
+$$;
+
+grant execute on function store_is_active(uuid) to anon, authenticated, service_role;
+
+
+-- =============================================================================
+-- 31. MP_OAUTH_STATES — Estados de flujo OAuth para vinculación de Mercado Pago (O4)
+-- =============================================================================
+create table if not exists mp_oauth_states (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references stores(id) on delete cascade,
+  state text not null unique,
+  user_id text,
+  expires_at timestamptz not null default (now() + interval '10 minutes'),
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_mp_oauth_states_expires_at on mp_oauth_states(expires_at);
+
+alter table mp_oauth_states enable row level security;
+revoke all on mp_oauth_states from anon, authenticated, public;
+grant all on mp_oauth_states to service_role;
 
 
 -- =============================================================================

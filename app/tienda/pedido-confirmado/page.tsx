@@ -2,22 +2,67 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { getTenantStore } from '@/lib/tenant'
-import { CheckCircle2, Clock, AlertTriangle, XCircle, MessageCircle, ArrowLeft, PackageCheck } from 'lucide-react'
+import {
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  XCircle,
+  MessageCircle,
+  ArrowLeft,
+  PackageCheck,
+  CreditCard,
+  ShieldAlert,
+} from 'lucide-react'
 
 // =============================================================================
 // PORTALMAKER — Pantalla de Confirmación de Pedido (Checkout Pro & Directo)
 // Valida el estado real del pedido desde la base de datos (nunca confía en query params).
+// Exige public_token en servidor para acceder a datos personales (P1, P2).
 // =============================================================================
 
 interface PageProps {
   searchParams: Promise<{
     order_id?: string
+    token?: string
     status?: string
   }>
 }
 
+/**
+ * Enmascara direcciones de correo electrónico para resguardar privacidad del comprador (P1).
+ * Ej: "juan.perez@dominio.com" -> "j***z@d***.com"
+ */
+function maskEmail(email: string): string {
+  if (!email || !email.includes('@')) return ''
+  const [local, domain] = email.split('@')
+  const maskedLocal =
+    local.length <= 2 ? `${local[0]}***` : `${local[0]}***${local[local.length - 1]}`
+  const domainParts = domain.split('.')
+  const maskedDomain = domainParts
+    .map((part, i) => (i === 0 ? `${part[0]}***` : part))
+    .join('.')
+  return `${maskedLocal}@${maskedDomain}`
+}
+
+/**
+ * Enmascara domicilios de entrega para resguardar la privacidad (P1).
+ * Ej: "Av. Corrientes 1234, CABA" -> "Av. Corrientes 12***, CABA"
+ */
+function maskAddress(addr: string): string {
+  if (!addr) return ''
+  const parts = addr.split(',')
+  if (parts.length > 1) {
+    const street = parts[0].trim()
+    const streetWords = street.split(' ')
+    const maskedStreet =
+      streetWords.length > 1 ? `${streetWords[0]} ***` : `${street.slice(0, 3)}***`
+    return `${maskedStreet}, ${parts.slice(1).join(',').trim()}`
+  }
+  return `${addr.slice(0, Math.min(6, addr.length))}***`
+}
+
 export default async function PedidoConfirmadoPage({ searchParams }: PageProps) {
-  const { order_id } = await searchParams
+  const { order_id, token } = await searchParams
 
   if (!order_id) {
     notFound()
@@ -31,10 +76,12 @@ export default async function PedidoConfirmadoPage({ searchParams }: PageProps) 
   const { store } = tenant
   const supabaseAdmin = createSupabaseAdminClient()
 
-  // Consultar el pedido de forma segura en la base de datos (solo campos necesarios para el comprador)
+  // Consultar el pedido de forma segura en la base de datos (P1)
   const { data: order, error } = await supabaseAdmin
     .from('orders')
-    .select('id, store_id, nombre_comprador, email_comprador, tipo_entrega, direccion_entrega, items, total, estado_pago, estado_pedido')
+    .select(
+      'id, store_id, nombre_comprador, email_comprador, tipo_entrega, direccion_entrega, items, total, estado_pago, estado_pedido, metodo_pago, public_token'
+    )
     .eq('id', order_id)
     .eq('store_id', store.id)
     .maybeSingle()
@@ -43,7 +90,10 @@ export default async function PedidoConfirmadoPage({ searchParams }: PageProps) 
     notFound()
   }
 
-  // Configuración visual según el estado real de pago registrado en la base de datos
+  // P1: Validar token. Si no coincide o falta, no se muestran datos personales del comprador
+  const hasValidToken = Boolean(token && order.public_token && token === order.public_token)
+
+  // Configuración visual según el estado real de pago registrado en la base de datos (P2)
   const estadoPago = order.estado_pago || 'pendiente'
 
   const estadoConfigMap: Record<
@@ -59,33 +109,43 @@ export default async function PedidoConfirmadoPage({ searchParams }: PageProps) 
   > = {
     aprobado: {
       titulo: '¡Pago y pedido confirmados!',
-      descripcion: 'Recibimos tu pago correctamente. El taller comenzará la preparación de tu compra.',
+      descripcion:
+        'Recibimos tu pago correctamente. El taller comenzará la preparación de tu compra.',
       badgeTexto: 'Pago Aprobado',
-      badgeClass: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+      badgeClass:
+        'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
       icono: CheckCircle2,
       iconoClass: 'text-emerald-600 dark:text-emerald-400',
     },
     pendiente: {
       titulo: 'Pago en proceso de acreditación',
-      descripcion: 'Tu pago está siendo verificado por Mercado Pago. Te avisaremos una vez confirmado.',
+      descripcion:
+        order.metodo_pago === 'transferencia'
+          ? 'Por favor realiza la transferencia a la cuenta bancaria informada abajo y envía el comprobante.'
+          : 'Tu pago está siendo verificado. Te avisaremos una vez confirmado.',
       badgeTexto: 'Pago Pendiente',
-      badgeClass: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+      badgeClass:
+        'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800',
       icono: Clock,
       iconoClass: 'text-amber-600 dark:text-amber-400',
     },
     revision: {
-      titulo: 'Pago en revisión',
-      descripcion: 'El pago requiere una breve verificación técnica. Nos pondremos en contacto contigo.',
+      titulo: 'Pago en revisión técnica',
+      descripcion:
+        'El pago requiere una breve verificación técnica. Nos pondremos en contacto contigo a la brevedad.',
       badgeTexto: 'En Revisión',
-      badgeClass: 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border-sky-200 dark:border-sky-800',
+      badgeClass:
+        'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border-sky-200 dark:border-sky-800',
       icono: Clock,
       iconoClass: 'text-sky-600 dark:text-sky-400',
     },
     rechazado: {
       titulo: 'Pago no completado',
-      descripcion: 'El pago fue rechazado o cancelado. Puedes volver a intentar con otro medio de pago.',
+      descripcion:
+        'El pago no pudo completarse o fue cancelado. Puedes volver a intentar con otro medio de pago.',
       badgeTexto: 'Pago Rechazado',
-      badgeClass: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+      badgeClass:
+        'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200 dark:border-rose-800',
       icono: XCircle,
       iconoClass: 'text-rose-600 dark:text-rose-400',
     },
@@ -93,7 +153,8 @@ export default async function PedidoConfirmadoPage({ searchParams }: PageProps) 
       titulo: 'Pago reembolsado',
       descripcion: 'Este pago fue reembolsado a tu cuenta de origen.',
       badgeTexto: 'Reembolsado',
-      badgeClass: 'bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+      badgeClass:
+        'bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
       icono: AlertTriangle,
       iconoClass: 'text-slate-600 dark:text-slate-400',
     },
@@ -101,7 +162,8 @@ export default async function PedidoConfirmadoPage({ searchParams }: PageProps) 
       titulo: 'Pago en disputa / contracargo',
       descripcion: 'Existe una retención o gestión de contracargo sobre esta operación.',
       badgeTexto: 'Contracargo',
-      badgeClass: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+      badgeClass:
+        'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200 dark:border-rose-800',
       icono: AlertTriangle,
       iconoClass: 'text-rose-600 dark:text-rose-400',
     },
@@ -118,10 +180,26 @@ export default async function PedidoConfirmadoPage({ searchParams }: PageProps) 
 
   const IconoComponent = estadoConfig.icono
 
+  // Si el pedido es por transferencia y el token es válido, consultar datos bancarios (P3)
+  let transferDetails: any = null
+  if (order.metodo_pago === 'transferencia' && hasValidToken) {
+    const { data: storeDetails } = await supabaseAdmin
+      .from('stores')
+      .select(
+        'transferencia_activa, transferencia_alias, transferencia_cbu_cvu, transferencia_banco, transferencia_titular, transferencia_cuit, transferencia_instrucciones'
+      )
+      .eq('id', store.id)
+      .maybeSingle()
+
+    if (storeDetails?.transferencia_activa) {
+      transferDetails = storeDetails
+    }
+  }
+
   // Construir enlace directo a WhatsApp para contacto con el vendedor
   const waNumero = store.whatsapp_numero?.replace(/[^0-9]/g, '')
   const waTexto = encodeURIComponent(
-    `Hola ${store.nombre}, tengo una consulta sobre mi pedido #${order.id.slice(0, 8)} (${order.nombre_comprador || 'Cliente'}).`
+    `Hola ${store.nombre}, tengo una consulta sobre mi pedido #${order.id.slice(0, 8)}.`
   )
   const waUrl = waNumero ? `https://wa.me/${waNumero}?text=${waTexto}` : null
 
@@ -151,6 +229,17 @@ export default async function PedidoConfirmadoPage({ searchParams }: PageProps) 
           </div>
         </div>
 
+        {/* Alerta si el token de seguridad no está presente */}
+        {!hasValidToken && (
+          <div className="mt-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2.5">
+            <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              Vista de verificación básica. Los datos personales sensibles del comprador están ocultos
+              porque no se suministró el token de seguridad del pedido.
+            </span>
+          </div>
+        )}
+
         {/* Resumen del pedido */}
         <div className="mt-8 border-t border-zinc-100 dark:border-zinc-800 pt-6 space-y-4">
           <div className="flex justify-between items-center text-sm">
@@ -163,15 +252,15 @@ export default async function PedidoConfirmadoPage({ searchParams }: PageProps) 
           <div className="flex justify-between items-center text-sm">
             <span className="text-zinc-500 dark:text-zinc-400">Comprador</span>
             <span className="font-medium text-zinc-800 dark:text-zinc-200">
-              {order.nombre_comprador || 'No especificado'}
+              {hasValidToken ? order.nombre_comprador || 'Cliente' : 'Cliente'}
             </span>
           </div>
 
-          {order.email_comprador && (
+          {hasValidToken && order.email_comprador && (
             <div className="flex justify-between items-center text-sm">
               <span className="text-zinc-500 dark:text-zinc-400">Email de notificación</span>
               <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                {order.email_comprador}
+                {maskEmail(order.email_comprador)}
               </span>
             </div>
           )}
@@ -180,20 +269,87 @@ export default async function PedidoConfirmadoPage({ searchParams }: PageProps) 
             <div className="flex justify-between items-center text-sm">
               <span className="text-zinc-500 dark:text-zinc-400">Modalidad de entrega</span>
               <span className="capitalize font-medium text-zinc-800 dark:text-zinc-200">
-                {order.tipo_entrega === 'retiro' ? 'Retiro en taller / local' : order.tipo_entrega === 'envio' ? 'Envío a domicilio' : 'A coordinar'}
+                {order.tipo_entrega === 'retiro'
+                  ? 'Retiro en taller / local'
+                  : order.tipo_entrega === 'envio'
+                  ? 'Envío a domicilio'
+                  : 'A coordinar'}
               </span>
             </div>
           )}
 
-          {order.direccion_entrega && (
+          {hasValidToken && order.direccion_entrega && (
             <div className="flex justify-between items-start text-sm">
               <span className="text-zinc-500 dark:text-zinc-400">Dirección</span>
               <span className="font-medium text-zinc-800 dark:text-zinc-200 text-right max-w-xs">
-                {order.direccion_entrega}
+                {maskAddress(order.direccion_entrega)}
               </span>
             </div>
           )}
         </div>
+
+        {/* Datos Bancarios si corresponde a transferencia bancaria (P3) */}
+        {transferDetails && (
+          <div className="mt-6 border-t border-zinc-100 dark:border-zinc-800 pt-6 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
+              <CreditCard className="w-4 h-4 text-emerald-600" />
+              <span>Datos Bancarios para Transferir</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              {transferDetails.transferencia_alias && (
+                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700">
+                  <span className="text-[10px] text-zinc-400 block uppercase font-medium">Alias</span>
+                  <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100 select-all text-sm">
+                    {transferDetails.transferencia_alias}
+                  </span>
+                </div>
+              )}
+
+              {transferDetails.transferencia_cbu_cvu && (
+                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700">
+                  <span className="text-[10px] text-zinc-400 block uppercase font-medium">CBU / CVU</span>
+                  <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100 select-all text-xs">
+                    {transferDetails.transferencia_cbu_cvu}
+                  </span>
+                </div>
+              )}
+
+              {transferDetails.transferencia_titular && (
+                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700">
+                  <span className="text-[10px] text-zinc-400 block uppercase font-medium">Titular</span>
+                  <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                    {transferDetails.transferencia_titular}
+                  </span>
+                </div>
+              )}
+
+              {transferDetails.transferencia_banco && (
+                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700">
+                  <span className="text-[10px] text-zinc-400 block uppercase font-medium">Banco / Billetera</span>
+                  <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                    {transferDetails.transferencia_banco}
+                  </span>
+                </div>
+              )}
+
+              {transferDetails.transferencia_cuit && (
+                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700">
+                  <span className="text-[10px] text-zinc-400 block uppercase font-medium">CUIT / CUIL</span>
+                  <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">
+                    {transferDetails.transferencia_cuit}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {transferDetails.transferencia_instrucciones && (
+              <p className="text-xs text-zinc-500 italic pt-1">
+                {transferDetails.transferencia_instrucciones}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Detalle de productos */}
         {items.length > 0 && (
@@ -240,7 +396,7 @@ export default async function PedidoConfirmadoPage({ searchParams }: PageProps) 
 
           {estadoPago === 'rechazado' && (
             <Link
-              href={`/tienda/checkout?order_id=${order.id}`}
+              href={`/tienda/checkout?order_id=${order.id}&token=${order.public_token || ''}`}
               className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-medium text-sm transition-colors min-h-[44px]"
             >
               Reintentar pago

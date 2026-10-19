@@ -56,11 +56,6 @@ export async function POST(req: Request) {
       .from('stores')
       .update({
         mp_connected: false,
-        mp_user_id: null,
-        mp_access_token: null,
-        mp_refresh_token: null,
-        mp_public_key: null,
-        mp_token_expires_at: null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', storeId)

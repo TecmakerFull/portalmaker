@@ -249,9 +249,9 @@ export async function POST(req: Request) {
         ...(order.direccion_entrega ? { address: { street_name: order.direccion_entrega.trim() } } : {}),
       },
       back_urls: {
-        success: `${safeOrigin}/tienda/pedido-confirmado?order_id=${order.id}&status=approved`,
-        failure: `${safeOrigin}/tienda/checkout?order_id=${order.id}&status=failure`,
-        pending: `${safeOrigin}/tienda/pedido-confirmado?order_id=${order.id}&status=pending`,
+        success: `${safeOrigin}/tienda/pedido-confirmado?order_id=${order.id}&token=${order.public_token || ''}&status=approved`,
+        failure: `${safeOrigin}/tienda/checkout?order_id=${order.id}&token=${order.public_token || ''}&status=failure`,
+        pending: `${safeOrigin}/tienda/pedido-confirmado?order_id=${order.id}&token=${order.public_token || ''}&status=pending`,
       },
       auto_return: 'approved',
       external_reference: order.id,

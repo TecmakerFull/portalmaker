@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 // =============================================================================
-// PORTALMAKER — Endpoint Oficial de Creación de Pedidos (H1)
+// PORTALMAKER — Endpoint Oficial de Creación de Pedidos (H1, P1, Q)
 // Ejecuta en el servidor con service_role: valida catálogo, stock, email y precios oficiales.
 // =============================================================================
 
 export async function POST(req: Request) {
   try {
+    const clientIp = getClientIp(req)
     const body = await req.json()
     const {
       storeId,
@@ -23,6 +25,25 @@ export async function POST(req: Request) {
 
     if (!storeId) {
       return NextResponse.json({ error: 'storeId es requerido' }, { status: 400 })
+    }
+
+    // Anti-abuso (Q): Rate limit por IP y por tienda
+    const rateCheck = checkRateLimit({
+      ip: clientIp,
+      storeId: String(storeId),
+      maxPerIp: 10,
+      maxPerStore: 30,
+      windowMs: 60000,
+    })
+
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes de compra. Por favor espera unos momentos.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(rateCheck.retryAfter || 30) },
+        }
+      )
     }
 
     // 1. Validar datos básicos del comprador
@@ -197,7 +218,7 @@ export async function POST(req: Request) {
         comision_portalmaker_pct: Number(store.comision_portalmaker) || 0.00,
         mp_recargo_pct: mpRecargoPct,
       })
-      .select('id')
+      .select('id, public_token')
       .single()
 
     if (insertError || !createdOrder) {
@@ -208,6 +229,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       orderId: createdOrder.id,
+      publicToken: createdOrder.public_token,
     })
   } catch (err: any) {
     console.error('Excepción en /api/checkout/orders:', err)

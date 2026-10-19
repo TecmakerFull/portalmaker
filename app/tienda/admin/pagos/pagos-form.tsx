@@ -246,11 +246,6 @@ export default function PagosForm({
                   </p>
                   <p className="opacity-80 text-xs">
                     Cuando un cliente compra en tu tienda, el dinero neto se acredita directamente en tu cuenta de Mercado Pago en el momento.
-                    {store.mp_user_id && (
-                      <span className="block mt-1 font-mono text-[11px] opacity-70">
-                        ID de cuenta de vendedor: {store.mp_user_id}
-                      </span>
-                    )}
                   </p>
                 </div>
               </div>

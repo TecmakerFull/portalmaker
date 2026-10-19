@@ -114,12 +114,15 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [completedOrder, setCompletedOrder] = useState<{
     orderCode: string
+    orderId: string
+    publicToken: string
     waUrl: string
     orderTotal: number
     orderItems: any[]
+    bankDetails?: any
   } | null>(null)
 
-  // Datos bancarios protegidos (G3): obtenidos exclusivamente por endpoint de checkout
+  // Datos bancarios protegidos (P3): se obtienen únicamente al crear el pedido con transferencia
   const [bankDetails, setBankDetails] = useState<{
     transferencia_activa: boolean
     alias?: string | null
@@ -129,15 +132,6 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
     cuit?: string | null
     instrucciones?: string | null
   } | null>(null)
-
-  useEffect(() => {
-    fetch(`/api/checkout/transfer-details?storeId=${store.id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data) setBankDetails(data)
-      })
-      .catch((err) => console.error('Error al cargar datos bancarios:', err))
-  }, [store.id])
 
   // Estado para copiar datos de transferencia
   const [copiedField, setCopiedField] = useState<string | null>(null)
@@ -260,7 +254,26 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
         throw new Error(orderData.error || 'No se pudo crear el pedido. Intenta nuevamente.')
       }
 
-      const createdOrder = { id: orderData.orderId }
+      const createdOrder = {
+        id: orderData.orderId,
+        publicToken: orderData.publicToken || '',
+      }
+
+      // Si el método es transferencia, obtener datos bancarios protegidos con el token del pedido (P3)
+      let fetchedBankDetails = null
+      if (metodoPago === 'transferencia' && createdOrder.publicToken) {
+        try {
+          const tRes = await fetch(
+            `/api/checkout/transfer-details?order_id=${createdOrder.id}&token=${createdOrder.publicToken}`
+          )
+          if (tRes.ok) {
+            fetchedBankDetails = await tRes.json()
+            setBankDetails(fetchedBankDetails)
+          }
+        } catch (tErr) {
+          console.warn('Aviso obteniendo datos de transferencia:', tErr)
+        }
+      }
 
       // Sincronizar datos del cliente en CRM y sesión de usuario
       try {
@@ -373,9 +386,12 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
       // 3. Guardar estado completado
       setCompletedOrder({
         orderCode,
+        orderId: createdOrder.id,
+        publicToken: createdOrder.publicToken,
         waUrl,
         orderTotal: totalAmount,
         orderItems: [...items],
+        bankDetails: fetchedBankDetails,
       })
 
       // 4. Limpiar carrito
@@ -437,7 +453,78 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
           </div>
         </div>
 
-        {/* Botón para abrir WhatsApp si no abrió */}
+        {/* Datos Bancarios si el pedido fue por transferencia (P3) */}
+        {completedOrder.bankDetails?.transferencia_activa && (
+          <div className="p-4 rounded-2xl bg-[var(--color-primario)]/5 border border-[var(--color-primario)]/25 text-left space-y-3">
+            <span className="text-xs font-bold text-[var(--color-primario)] flex items-center gap-1.5">
+              <CreditCard className="w-4 h-4" />
+              <span>Datos Bancarios para Transferir:</span>
+            </span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              {completedOrder.bankDetails.alias && (
+                <div className="p-2.5 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10 flex items-center justify-between">
+                  <div>
+                    <span className="opacity-60 text-[10px] block">Alias</span>
+                    <span className="font-mono font-bold select-all">{completedOrder.bankDetails.alias}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(completedOrder.bankDetails.alias!, 'alias')}
+                    className="min-h-[32px] px-2 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    {copiedField === 'alias' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedField === 'alias' ? 'Copiado' : 'Copiar'}</span>
+                  </button>
+                </div>
+              )}
+
+              {completedOrder.bankDetails.cbuCvu && (
+                <div className="p-2.5 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10 flex items-center justify-between">
+                  <div>
+                    <span className="opacity-60 text-[10px] block">CBU / CVU</span>
+                    <span className="font-mono font-bold select-all text-[11px]">{completedOrder.bankDetails.cbuCvu}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(completedOrder.bankDetails.cbuCvu!, 'cbu')}
+                    className="min-h-[32px] px-2 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    {copiedField === 'cbu' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedField === 'cbu' ? 'Copiado' : 'Copiar'}</span>
+                  </button>
+                </div>
+              )}
+
+              {completedOrder.bankDetails.titular && (
+                <div className="p-2.5 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10">
+                  <span className="opacity-60 text-[10px] block">Titular</span>
+                  <span className="font-semibold">{completedOrder.bankDetails.titular}</span>
+                </div>
+              )}
+
+              {completedOrder.bankDetails.banco && (
+                <div className="p-2.5 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10">
+                  <span className="opacity-60 text-[10px] block">Banco / Billetera</span>
+                  <span className="font-semibold">{completedOrder.bankDetails.banco}</span>
+                </div>
+              )}
+
+              {completedOrder.bankDetails.cuit && (
+                <div className="p-2.5 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10">
+                  <span className="opacity-60 text-[10px] block">CUIT / CUIL</span>
+                  <span className="font-semibold font-mono">{completedOrder.bankDetails.cuit}</span>
+                </div>
+              )}
+            </div>
+
+            {completedOrder.bankDetails.instrucciones && (
+              <p className="text-[11px] opacity-75 italic pt-1">{completedOrder.bankDetails.instrucciones}</p>
+            )}
+          </div>
+        )}
+
+        {/* Acciones post-pedido */}
         <div className="space-y-3 pt-2">
           <a
             href={completedOrder.waUrl}
@@ -448,6 +535,14 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
             <WhatsAppIcon className="w-5 h-5 shrink-0" />
             <span>Enviar / Abrir en WhatsApp</span>
           </a>
+
+          <Link
+            href={`/tienda/pedido-confirmado?order_id=${completedOrder.orderId}&token=${completedOrder.publicToken}${tenantQuery ? `&${tenantQuery.replace(/^\?/, '')}` : ''}`}
+            className="min-h-[44px] w-full px-4 py-2.5 rounded-xl border border-black/15 dark:border-white/15 text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-center gap-2"
+          >
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span>Ver comprobante y seguimiento del pedido</span>
+          </Link>
 
           <Link
             href={`/tienda${tenantQuery}`}
@@ -873,102 +968,22 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
             </div>
           )}
 
-          {/* Caja con Datos Bancarios para Transferencia */}
+          {/* Caja Informativa de Transferencia Bancaria (P3: datos entregados tras crear el pedido) */}
           {metodoPago === 'transferencia' && (
-            <div className="p-4 sm:p-5 rounded-2xl border border-[var(--color-primario)]/30 bg-[var(--color-primario)]/5 space-y-3.5 pt-3 animate-in fade-in duration-200">
+            <div className="p-4 sm:p-5 rounded-2xl border border-[var(--color-primario)]/30 bg-[var(--color-primario)]/5 space-y-3 pt-3 animate-in fade-in duration-200">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[var(--color-primario)] flex items-center gap-1.5">
                   <CreditCard className="w-4 h-4" />
-                  <span>Datos de la Cuenta Bancaria para Transferir:</span>
+                  <span>Transferencia Bancaria</span>
                 </span>
               </div>
-
-              {hasBankData ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  {bankDetails?.alias && (
-                    <div className="p-2.5 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10 flex items-center justify-between">
-                      <div>
-                        <span className="opacity-60 text-[10px] block">Alias</span>
-                        <span className="font-mono font-bold select-all">
-                          {bankDetails.alias}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => copyToClipboard(bankDetails.alias!, 'alias')}
-                        className="min-h-[32px] px-2 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-[10px] font-bold flex items-center gap-1 cursor-pointer"
-                      >
-                        {copiedField === 'alias' ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                        <span>{copiedField === 'alias' ? 'Copiado' : 'Copiar'}</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {bankDetails?.cbuCvu && (
-                    <div className="p-2.5 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10 flex items-center justify-between">
-                      <div>
-                        <span className="opacity-60 text-[10px] block">CBU / CVU</span>
-                        <span className="font-mono font-bold select-all text-[11px]">
-                          {bankDetails.cbuCvu}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => copyToClipboard(bankDetails.cbuCvu!, 'cbu')}
-                        className="min-h-[32px] px-2 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-[10px] font-bold flex items-center gap-1 cursor-pointer"
-                      >
-                        {copiedField === 'cbu' ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                        <span>{copiedField === 'cbu' ? 'Copiado' : 'Copiar'}</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {bankDetails?.titular && (
-                    <div className="p-2.5 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10">
-                      <span className="opacity-60 text-[10px] block">Titular</span>
-                      <span className="font-semibold">{bankDetails.titular}</span>
-                    </div>
-                  )}
-
-                  {bankDetails?.banco && (
-                    <div className="p-2.5 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10">
-                      <span className="opacity-60 text-[10px] block">Banco / Billetera</span>
-                      <span className="font-semibold">{bankDetails.banco}</span>
-                    </div>
-                  )}
-
-                  {bankDetails?.cuit && (
-                    <div className="p-2.5 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10">
-                      <span className="opacity-60 text-[10px] block">CUIT / CUIL</span>
-                      <span className="font-semibold font-mono">{bankDetails.cuit}</span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="p-3 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10 text-xs opacity-75">
-                  Los datos bancarios (Alias / CBU) de la cuenta te serán facilitados al confirmar por WhatsApp.
-                </div>
-              )}
-
-              {bankDetails?.instrucciones && (
-                <p className="text-[11px] opacity-75 italic pt-1">
-                  {bankDetails.instrucciones}
-                </p>
-              )}
-
-              {/* Aviso Obligatorio de Comprobante por WhatsApp */}
+              <p className="text-xs opacity-80 leading-relaxed">
+                Al confirmar tu compra, se generarán en tu comprobante seguro los datos bancarios oficiales (Alias, CBU y Titular) de <strong>{store.nombre}</strong> para realizar la transferencia.
+              </p>
               <div className="p-3 rounded-xl bg-[var(--color-primario)]/10 border border-[var(--color-primario)]/25 text-[var(--color-texto)] text-xs flex items-start gap-2">
                 <Info className="w-4 h-4 shrink-0 mt-0.5 text-[var(--color-primario)]" />
                 <span>
-                  <strong className="text-[var(--color-primario)]">Importante:</strong> Una vez efectuada la transferencia, enviá el comprobante de pago por WhatsApp para validar tu compra y comenzar la preparación del pedido.
+                  <strong className="text-[var(--color-primario)]">Aviso:</strong> Podrás adjuntar el comprobante directamente en el chat de WhatsApp con la tienda para validar el pedido y comenzar la preparación.
                 </span>
               </div>
             </div>

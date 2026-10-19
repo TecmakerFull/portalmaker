@@ -155,54 +155,21 @@ export async function POST(req: Request) {
     const paymentStatus = payment.status
 
     if (paymentStatus === 'approved') {
-      // A4: Validar moneda ARS
-      if (payment.currency_id !== 'ARS') {
-        console.warn(`Webhook MP: Moneda no esperada (${payment.currency_id}) para pedido ${order.id}`)
-        await supabaseAdmin
-          .from('orders')
-          .update({
-            estado_pago: 'revision',
-            mp_payment_id: String(paymentId),
-            observaciones_admin: `Revisión requerida: Moneda ${payment.currency_id} no coincide con ARS.`,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', order.id)
-
-        return NextResponse.json({ status: 'currency_mismatch_flagged_for_review' }, { status: 200 })
-      }
-
-      // A4: Validar monto pagado vs esperado
       const paidAmount = Number(payment.transaction_amount) || 0
-      const expectedAmount = Number(order.total) || 0
-
-      if (paidAmount < expectedAmount - 1) {
-        console.warn(
-          `Webhook MP: Monto pagado menor al esperado ($${paidAmount} < $${expectedAmount}) en pedido ${order.id}`
-        )
-        await supabaseAdmin
-          .from('orders')
-          .update({
-            estado_pago: 'revision',
-            mp_payment_id: String(paymentId),
-            observaciones_admin: `Revisión requerida: Monto abonado ($${paidAmount}) menor al total ($${expectedAmount}).`,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', order.id)
-
-        return NextResponse.json({ status: 'underpaid_flagged_for_review' }, { status: 200 })
-      }
-
+      const paymentCurrency = String(payment.currency_id || 'ARS')
       const netReceived = payment.transaction_details?.net_received_amount ?? null
       const feeDetails = payment.fee_details || []
       const mpFeePortalmaker =
         feeDetails.find((f: any) => f.type === 'marketplace_fee')?.amount ?? order.mp_fee_portalmaker
 
-      // A3: Ejecutar RPC atómica idempotente para actualizar pago y descontar stock
+      // A3/L3: Ejecutar RPC atómica idempotente para verificar monto/moneda, actualizar pago y descontar stock
       const { data: rpcResult, error: rpcErr } = await supabaseAdmin.rpc('process_approved_payment', {
         p_order_id: order.id,
         p_payment_id: String(paymentId),
         p_net_received: netReceived,
         p_fee: mpFeePortalmaker,
+        p_amount: paidAmount,
+        p_currency: paymentCurrency,
       })
 
       if (rpcErr) {
@@ -211,8 +178,19 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'rpc_execution_error' }, { status: 500 })
       }
 
-      // Enviar email al vendedor SOLO si es la primera vez que se procesa
-      if (rpcResult?.first_time) {
+      // L3: Si la RPC detectó monto menor o moneda inválida, quedó en 'revision' sin descontar stock
+      if (rpcResult?.status === 'revision') {
+        console.warn(
+          `Webhook MP: Pedido ${order.id} marcado en revision por la RPC (monto: $${paidAmount}, moneda: ${paymentCurrency})`
+        )
+        return NextResponse.json(
+          { success: true, status: 'revision', processed: true },
+          { status: 200 }
+        )
+      }
+
+      // Enviar email al vendedor SOLO si es la primera vez que se aprueba
+      if (rpcResult?.first_time && rpcResult?.status === 'aprobado') {
         try {
           await sendOrderPaidNotification({
             store,
@@ -223,7 +201,15 @@ export async function POST(req: Request) {
         }
       }
 
-      return NextResponse.json({ success: true, processed: true, firstTime: Boolean(rpcResult?.first_time) }, { status: 200 })
+      return NextResponse.json(
+        {
+          success: true,
+          processed: true,
+          status: rpcResult?.status || 'aprobado',
+          firstTime: Boolean(rpcResult?.first_time),
+        },
+        { status: 200 }
+      )
     }
 
     // A6: Manejo de otros estados de pago

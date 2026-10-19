@@ -22,9 +22,9 @@ export async function getValidMpAccessToken(store: Store): Promise<string | null
   const supabaseAdmin = createSupabaseAdminClient()
 
   // 1. Obtener credenciales desde la tabla segura `store_mp_credentials`
-  let accessToken = store.mp_access_token || null
-  let refreshToken = store.mp_refresh_token || null
-  let tokenExpiresAt = store.mp_token_expires_at || null
+  let accessToken: string | null = null
+  let refreshToken: string | null = null
+  let tokenExpiresAt: string | null = null
 
   try {
     const { data: creds } = await supabaseAdmin
@@ -35,8 +35,8 @@ export async function getValidMpAccessToken(store: Store): Promise<string | null
 
     if (creds?.mp_access_token) {
       accessToken = creds.mp_access_token
-      refreshToken = creds.mp_refresh_token || refreshToken
-      tokenExpiresAt = creds.mp_token_expires_at || tokenExpiresAt
+      refreshToken = creds.mp_refresh_token || null
+      tokenExpiresAt = creds.mp_token_expires_at || null
     }
   } catch (err) {
     console.warn(`Aviso al consultar store_mp_credentials para tienda ${store.id}:`, err)
@@ -160,19 +160,17 @@ export async function getValidMpAccessToken(store: Store): Promise<string | null
         store_id: store.id,
         mp_access_token: data.access_token,
         mp_refresh_token: newRefreshToken,
-        mp_public_key: data.public_key || store.mp_public_key || null,
+        mp_public_key: data.public_key || null,
         mp_token_expires_at: newExpiresAt,
-        mp_user_id: String(data.user_id || store.mp_user_id || ''),
+        mp_user_id: String(data.user_id || ''),
         updated_at: new Date().toISOString(),
       })
 
-    // Sincronizar estado en stores
+    // Sincronizar estado en stores (solo mp_connected)
     await supabaseAdmin
       .from('stores')
       .update({
         mp_connected: true,
-        mp_token_expires_at: newExpiresAt,
-        mp_public_key: data.public_key || store.mp_public_key || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', store.id)

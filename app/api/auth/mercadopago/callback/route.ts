@@ -123,37 +123,34 @@ export async function GET(req: Request) {
     const expiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString()
 
     // 4. Guardar credenciales vinculadas en la tabla segura store_mp_credentials y sincronizar stores
-    try {
-      await supabaseAdmin
-        .from('store_mp_credentials')
-        .upsert({
-          store_id: storeId,
-          mp_access_token: tokenData.access_token,
-          mp_refresh_token: tokenData.refresh_token || null,
-          mp_public_key: tokenData.public_key || null,
-          mp_token_expires_at: expiresAt,
-          mp_user_id: String(tokenData.user_id || ''),
-          updated_at: new Date().toISOString(),
-        })
-    } catch (credErr) {
-      console.warn('Aviso guardando en store_mp_credentials:', credErr)
-    }
-
-    const { error: updateErr } = await supabaseAdmin
-      .from('stores')
-      .update({
-        mp_connected: true,
-        mp_user_id: String(tokenData.user_id || ''),
+    const { error: credErr } = await supabaseAdmin
+      .from('store_mp_credentials')
+      .upsert({
+        store_id: storeId,
         mp_access_token: tokenData.access_token,
         mp_refresh_token: tokenData.refresh_token || null,
         mp_public_key: tokenData.public_key || null,
         mp_token_expires_at: expiresAt,
+        mp_user_id: String(tokenData.user_id || ''),
+        updated_at: new Date().toISOString(),
+      })
+
+    if (credErr) {
+      console.error('Error guardando en store_mp_credentials:', credErr)
+      return NextResponse.redirect(`${returnUrl}?error=mp_db_save_failed`)
+    }
+
+    // Actualizar flag de conexión en stores (sin almacenar tokens en la tabla stores)
+    const { error: updateErr } = await supabaseAdmin
+      .from('stores')
+      .update({
+        mp_connected: true,
         updated_at: new Date().toISOString(),
       })
       .eq('id', storeId)
 
     if (updateErr) {
-      console.error('Error al guardar credenciales de MP en la tienda:', updateErr)
+      console.error('Error al actualizar mp_connected en la tienda:', updateErr)
       return NextResponse.redirect(`${returnUrl}?error=mp_db_save_failed`)
     }
 
