@@ -1,6 +1,7 @@
 -- =============================================================================
 -- Migración: Integración Mercado Pago Marketplace (Split de Pagos y OAuth)
 -- Portalmaker — "El portal del Maker"
+-- Versión consolidada: Auditoría, Protección de Columnas y Snapshots en Pedidos
 -- =============================================================================
 
 -- 1. Campos de Mercado Pago y verificación en STORES
@@ -14,6 +15,15 @@ alter table stores
   add column if not exists mp_token_expires_at timestamptz,
   add column if not exists mp_recargo_porcentaje numeric(5,2) default 0.00,
   add column if not exists comision_portalmaker numeric(5,2) default 0.00;
+
+-- Restricciones de rango en porcentajes
+alter table stores drop constraint if exists stores_comision_portalmaker_check;
+alter table stores add constraint stores_comision_portalmaker_check
+  check (comision_portalmaker >= 0.00 and comision_portalmaker < 100.00);
+
+alter table stores drop constraint if exists stores_mp_recargo_porcentaje_check;
+alter table stores add constraint stores_mp_recargo_porcentaje_check
+  check (mp_recargo_porcentaje >= 0.00 and mp_recargo_porcentaje <= 100.00);
 
 -- 2. Tabla segura de credenciales de Mercado Pago (aislada de anon/authenticated)
 create table if not exists store_mp_credentials (
@@ -59,21 +69,123 @@ set
   mp_user_id = excluded.mp_user_id,
   updated_at = now();
 
--- 3. Campos de Mercado Pago en ORDERS
+-- 3. Tabla de auditoría de comisiones de plataforma (D3b)
+create table if not exists store_commission_audit (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references stores(id) on delete cascade,
+  changed_by text,
+  old_value numeric(5,2),
+  new_value numeric(5,2),
+  changed_at timestamptz default now()
+);
+
+alter table store_commission_audit enable row level security;
+revoke all on store_commission_audit from anon, authenticated;
+grant all on store_commission_audit to service_role;
+
+-- Trigger para registrar cambios de comisión en auditoría
+create or replace function trg_audit_store_commission()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  if old.comision_portalmaker is distinct from new.comision_portalmaker then
+    insert into store_commission_audit (
+      store_id,
+      changed_by,
+      old_value,
+      new_value,
+      changed_at
+    )
+    values (
+      new.id,
+      coalesce(auth.jwt() ->> 'email', 'service_role'),
+      old.comision_portalmaker,
+      new.comision_portalmaker,
+      now()
+    );
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_store_commission_audit on stores;
+create trigger trg_store_commission_audit
+  after update on stores
+  for each row
+  execute function trg_audit_store_commission();
+
+-- 4. Defensa en la base: Trigger para proteger columnas críticas de STORES (D2c)
+create or replace function protect_store_sensitive_columns()
+returns trigger
+language plpgsql
+security definer
+as $$
+declare
+  v_is_superadmin boolean;
+begin
+  -- Si la sesión es service_role (usado por el backend seguro), permitir
+  if current_user = 'service_role' or (auth.jwt() ->> 'role') = 'service_role' then
+    return new;
+  end if;
+
+  -- Comprobar si el usuario autenticado es superadmin (is_platform_admin())
+  v_is_superadmin := is_platform_admin();
+
+  -- Columnas reservadas exclusivamente para superadmin o service_role
+  if not v_is_superadmin then
+    if old.comision_portalmaker is distinct from new.comision_portalmaker then
+      raise exception 'No tienes permisos para modificar comision_portalmaker';
+    end if;
+    if old.plan is distinct from new.plan then
+      raise exception 'No tienes permisos para modificar el plan de la tienda';
+    end if;
+    if old.precio_mensual is distinct from new.precio_mensual then
+      raise exception 'No tienes permisos para modificar precio_mensual';
+    end if;
+    if old.limite_productos is distinct from new.limite_productos then
+      raise exception 'No tienes permisos para modificar limite_productos';
+    end if;
+    if old.suscripcion_activa is distinct from new.suscripcion_activa then
+      raise exception 'No tienes permisos para modificar suscripcion_activa';
+    end if;
+    if old.mp_access_token is distinct from new.mp_access_token or
+       old.mp_refresh_token is distinct from new.mp_refresh_token or
+       old.mp_user_id is distinct from new.mp_user_id or
+       old.mp_token_expires_at is distinct from new.mp_token_expires_at or
+       old.mp_connected is distinct from new.mp_connected then
+      raise exception 'Las credenciales de Mercado Pago solo pueden modificarse mediante el flujo seguro de backend';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_protect_store_columns on stores;
+create trigger trg_protect_store_columns
+  before update on stores
+  for each row
+  execute function protect_store_sensitive_columns();
+
+-- 5. Campos de Mercado Pago y snapshots en ORDERS (D3)
 alter table orders
   add column if not exists mp_preference_id text,
   add column if not exists mp_init_point text,
   add column if not exists mp_payment_id text,
   add column if not exists mp_merchant_order_id text,
   add column if not exists mp_fee_portalmaker numeric(10,2) default 0.00,
-  add column if not exists mp_net_received numeric(10,2) default 0.00;
+  add column if not exists mp_net_received numeric(10,2) default 0.00,
+  add column if not exists comision_portalmaker_pct numeric(5,2) default 0.00,
+  add column if not exists mp_recargo_pct numeric(5,2) default 0.00;
 
--- 4. Ampliar estados de pago permitidos en ORDERS (soporte para revision, reembolsado, contracargo)
+-- Ampliar estados de pago permitidos en ORDERS
 alter table orders drop constraint if exists orders_estado_pago_check;
 alter table orders add constraint orders_estado_pago_check
   check (estado_pago in ('pendiente', 'aprobado', 'rechazado', 'revision', 'reembolsado', 'contracargo'));
 
--- 5. Tabla para resguardar estados de autenticación OAuth (anti-CSRF)
+-- 6. Tabla para resguardar estados de autenticación OAuth (anti-CSRF)
 create table if not exists mp_oauth_states (
   id uuid primary key default gen_random_uuid(),
   store_id uuid not null references stores(id) on delete cascade,
@@ -86,7 +198,7 @@ drop policy if exists "mp_oauth_states_policy" on mp_oauth_states;
 create policy "mp_oauth_states_policy" on mp_oauth_states for all using (true) with check (true);
 grant select, insert, delete on mp_oauth_states to anon, authenticated, service_role;
 
--- 6. Función RPC atómica para procesar pagos aprobados y descontar stock (idempotente)
+-- 7. Función RPC atómica para procesar pagos aprobados y descontar stock (idempotente)
 create or replace function process_approved_payment(
   p_order_id uuid,
   p_payment_id text,

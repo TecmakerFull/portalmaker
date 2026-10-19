@@ -312,10 +312,24 @@ export interface Order {
   mp_merchant_order_id?: string | null;
   mp_fee_portalmaker?: number;
   mp_net_received?: number;
+  comision_portalmaker_pct?: number;
+  mp_recargo_pct?: number;
 
   observaciones_admin: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
+}
+
+// =============================================================================
+// STORE_COMMISSION_AUDIT — Historial de cambios de comisión de plataforma
+// =============================================================================
+export interface StoreCommissionAudit {
+  id: UUID;
+  store_id: UUID;
+  changed_by: string | null;
+  old_value: number | null;
+  new_value: number | null;
+  changed_at: Timestamp;
 }
 
 // =============================================================================

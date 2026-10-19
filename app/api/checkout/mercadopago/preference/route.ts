@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
-import { getValidMpAccessToken, getSafeReturnOrigin } from '@/lib/mercadopago'
+import { getValidMpAccessToken, getSafeReturnOrigin, calcularMarketplaceFee } from '@/lib/mercadopago'
 
 // =============================================================================
 // PORTALMAKER — Mercado Pago: Crear Preferencia de Pago Checkout Pro
@@ -195,12 +195,24 @@ export async function POST(req: Request) {
       console.warn(`Ajuste de total: order.total=${order.total} vs totalCobro=${totalCobro} en pedido ${order.id}`)
     }
 
-    // Comisión de Portalmaker (marketplace_fee)
+    // D3c: Comisión de Portalmaker (marketplace_fee) calculada mediante helper modular
     const comisionPortalmakerPct = Number(store.comision_portalmaker) || 0
     let marketplaceFee = 0
 
     if (comisionPortalmakerPct > 0) {
-      marketplaceFee = Number(((totalCobro * comisionPortalmakerPct) / 100).toFixed(2))
+      const subtotalProductos = validatedItems
+        .filter((it) => it.id !== 'recargo_mp' && it.id !== 'costo_envio')
+        .reduce((acc, it) => acc + it.quantity * it.unit_price, 0)
+      const montoRecargoItem = validatedItems.find((it) => it.id === 'recargo_mp')?.unit_price || 0
+      const costoEnvioItem = validatedItems.find((it) => it.id === 'costo_envio')?.unit_price || 0
+
+      marketplaceFee = calcularMarketplaceFee({
+        subtotalProductos,
+        montoRecargo: montoRecargoItem,
+        costoEnvio: costoEnvioItem,
+        comisionPct: comisionPortalmakerPct,
+      })
+
       // C6: Salvaguarda si la comisión supera el total con warning explícito
       if (marketplaceFee >= totalCobro) {
         console.warn(`marketplaceFee (${marketplaceFee}) >= totalCobro (${totalCobro}) en pedido ${order.id}, omitiendo fee.`)
@@ -278,7 +290,7 @@ export async function POST(req: Request) {
       )
     }
 
-    // 6. Actualizar la orden con preference_id, init_point, total real y comisión calculada
+    // 6. Actualizar la orden con preference_id, init_point, total real, comisión y snapshots de porcentaje (D3)
     const { error: updateOrderErr } = await supabaseAdmin
       .from('orders')
       .update({
@@ -286,6 +298,8 @@ export async function POST(req: Request) {
         mp_preference_id: mpData.id,
         mp_init_point: mpData.init_point,
         mp_fee_portalmaker: marketplaceFee,
+        comision_portalmaker_pct: comisionPortalmakerPct,
+        mp_recargo_pct: recargoPct,
         updated_at: new Date().toISOString(),
       })
       .eq('id', order.id)

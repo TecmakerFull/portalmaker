@@ -325,3 +325,34 @@ export function verifyMpWebhookSignature(
     return false
   }
 }
+
+export interface MarketplaceFeeParams {
+  subtotalProductos: number
+  montoRecargo: number
+  costoEnvio: number
+  comisionPct: number
+}
+
+/**
+ * D3c: Calcula la comisión de Portalmaker (marketplace_fee) para Checkout Pro.
+ * BASE DE CÁLCULO: Actualmente se calcula sobre la totalidad del cobro (productos + recargo + envío).
+ * Si a futuro se decide excluir el recargo, modificar la variable 'baseCalculo' indicada abajo.
+ */
+export function calcularMarketplaceFee({
+  subtotalProductos,
+  montoRecargo,
+  costoEnvio,
+  comisionPct,
+}: MarketplaceFeeParams): number {
+  if (comisionPct <= 0) return 0
+
+  // DECISIÓN DE NEGOCIO: Base total cobrada (productos + recargo + envío)
+  const baseCalculo = subtotalProductos + montoRecargo + costoEnvio
+
+  // Alternativa si el dueño decide excluir el recargo de MP de la base comisionable:
+  // const baseCalculo = subtotalProductos + costoEnvio
+
+  const fee = Number(((baseCalculo * comisionPct) / 100).toFixed(2))
+  return Math.max(0, fee)
+}
+

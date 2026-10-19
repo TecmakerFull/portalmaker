@@ -533,7 +533,13 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
         custom_domain: nuevoDominio,
         plan: subEditForm.plan,
         precio_mensual: Number(subEditForm.precio_mensual) || 0,
-        comision_portalmaker: Number(subEditForm.comision_portalmaker) || 0,
+        comision_portalmaker: (() => {
+          const raw = Number(subEditForm.comision_portalmaker)
+          if (isNaN(raw) || raw < 0 || raw >= 100) {
+            throw new Error('La comisión del portal debe ser un valor numérico entre 0% y 99.99%.')
+          }
+          return Number(raw.toFixed(2))
+        })(),
         limite_productos: Number(subEditForm.limite_productos) || 50,
         estado_pago: subEditForm.estado_pago,
         fecha_proximo_vencimiento: subEditForm.fecha_proximo_vencimiento || null,
@@ -786,6 +792,19 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                                 )}
                               </button>
                             </div>
+
+                            {/* D3d: Alerta para superadmin si MP está conectado pero la comisión es 0% */}
+                            {store.mp_connected && Number(store.comision_portalmaker || 0) === 0 && (
+                              <div className="mt-1">
+                                <span
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
+                                  title="Mercado Pago activo sin comisión configurada (0%)"
+                                >
+                                  <AlertTriangle className="w-2.5 h-2.5 shrink-0" />
+                                  MP Conectado (0% comisión)
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -958,6 +977,16 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                       <p className="font-mono text-xs text-[#CA8A04] dark:text-[#FACC15]">
                         {store.slug}.portalmaker.ar
                       </p>
+                      {/* D3d: Alerta para superadmin si MP está conectado con 0% de comisión */}
+                      {store.mp_connected && Number(store.comision_portalmaker || 0) === 0 && (
+                        <span
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800 mt-1"
+                          title="Mercado Pago activo sin comisión configurada (0%)"
+                        >
+                          <AlertTriangle className="w-2.5 h-2.5 shrink-0" />
+                          MP Conectado (0% comisión)
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -1557,9 +1586,9 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                         <label className="block font-medium mb-1.5 opacity-80">Comisión Portalmaker por Venta (%)</label>
                         <input
                           type="number"
-                          step="0.1"
+                          step="0.01"
                           min="0"
-                          max="100"
+                          max="99.99"
                           value={subEditForm.comision_portalmaker ?? 0}
                           onChange={(e) => setSubEditForm({ ...subEditForm, comision_portalmaker: Number(e.target.value) })}
                           className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"

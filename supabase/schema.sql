@@ -175,8 +175,10 @@ create table stores (
   mp_refresh_token      text,
   mp_public_key         text,
   mp_token_expires_at   timestamptz,
-  mp_recargo_porcentaje numeric(5,2) default 0.00,  -- recargo opcional que la tienda aplica si pagan con MP
-  comision_portalmaker  numeric(5,2) default 0.00,  -- % de comisión que retiene Portalmaker por cada venta
+  mp_recargo_porcentaje numeric(5,2) default 0.00
+    check (mp_recargo_porcentaje >= 0.00 and mp_recargo_porcentaje <= 100.00), -- recargo opcional que la tienda aplica si pagan con MP
+  comision_portalmaker  numeric(5,2) default 0.00
+    check (comision_portalmaker >= 0.00 and comision_portalmaker < 100.00),  -- % de comisión que retiene Portalmaker por cada venta
 
   -- Timestamps
   created_at timestamptz default now(),
@@ -472,12 +474,14 @@ create table orders (
   notas text,
 
   -- Integración Mercado Pago
-  mp_preference_id      text,
-  mp_init_point         text,
-  mp_payment_id         text,
-  mp_merchant_order_id  text,
-  mp_fee_portalmaker    numeric(10,2) default 0.00,
-  mp_net_received       numeric(10,2) default 0.00,
+  mp_preference_id         text,
+  mp_init_point            text,
+  mp_payment_id            text,
+  mp_merchant_order_id     text,
+  mp_fee_portalmaker       numeric(10,2) default 0.00,
+  mp_net_received          numeric(10,2) default 0.00,
+  comision_portalmaker_pct numeric(5,2)  default 0.00,
+  mp_recargo_pct           numeric(5,2)  default 0.00,
 
   -- Observaciones internas del admin (solo visibles para el dueño de la tienda)
   observaciones_admin text,
@@ -1145,6 +1149,108 @@ end;
 $$;
 
 grant execute on function process_approved_payment to service_role;
+
+
+-- =============================================================================
+-- 27. STORE_COMMISSION_AUDIT — Auditoría de comisiones de plataforma
+-- =============================================================================
+create table if not exists store_commission_audit (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references stores(id) on delete cascade,
+  changed_by text,
+  old_value numeric(5,2),
+  new_value numeric(5,2),
+  changed_at timestamptz default now()
+);
+
+alter table store_commission_audit enable row level security;
+revoke all on store_commission_audit from anon, authenticated;
+grant all on store_commission_audit to service_role;
+
+create or replace function trg_audit_store_commission()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  if old.comision_portalmaker is distinct from new.comision_portalmaker then
+    insert into store_commission_audit (
+      store_id,
+      changed_by,
+      old_value,
+      new_value,
+      changed_at
+    )
+    values (
+      new.id,
+      coalesce(auth.jwt() ->> 'email', 'service_role'),
+      old.comision_portalmaker,
+      new.comision_portalmaker,
+      now()
+    );
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_store_commission_audit on stores;
+create trigger trg_store_commission_audit
+  after update on stores
+  for each row
+  execute function trg_audit_store_commission();
+
+
+-- =============================================================================
+-- 28. PROTECT_STORE_COLUMNS — Defensa en la base para campos protegidos
+-- =============================================================================
+create or replace function protect_store_sensitive_columns()
+returns trigger
+language plpgsql
+security definer
+as $$
+declare
+  v_is_superadmin boolean;
+begin
+  if current_user = 'service_role' or (auth.jwt() ->> 'role') = 'service_role' then
+    return new;
+  end if;
+
+  v_is_superadmin := is_platform_admin();
+
+  if not v_is_superadmin then
+    if old.comision_portalmaker is distinct from new.comision_portalmaker then
+      raise exception 'No tienes permisos para modificar comision_portalmaker';
+    end if;
+    if old.plan is distinct from new.plan then
+      raise exception 'No tienes permisos para modificar el plan de la tienda';
+    end if;
+    if old.precio_mensual is distinct from new.precio_mensual then
+      raise exception 'No tienes permisos para modificar precio_mensual';
+    end if;
+    if old.limite_productos is distinct from new.limite_productos then
+      raise exception 'No tienes permisos para modificar limite_productos';
+    end if;
+    if old.suscripcion_activa is distinct from new.suscripcion_activa then
+      raise exception 'No tienes permisos para modificar suscripcion_activa';
+    end if;
+    if old.mp_access_token is distinct from new.mp_access_token or
+       old.mp_refresh_token is distinct from new.mp_refresh_token or
+       old.mp_user_id is distinct from new.mp_user_id or
+       old.mp_token_expires_at is distinct from new.mp_token_expires_at or
+       old.mp_connected is distinct from new.mp_connected then
+      raise exception 'Las credenciales de Mercado Pago solo pueden modificarse mediante el flujo seguro de backend';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_protect_store_columns on stores;
+create trigger trg_protect_store_columns
+  before update on stores
+  for each row
+  execute function protect_store_sensitive_columns();
 
 
 -- =============================================================================

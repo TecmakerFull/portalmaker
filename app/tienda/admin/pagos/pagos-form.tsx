@@ -107,33 +107,37 @@ export default function PagosForm({
     }
   }
 
-  // Guardar configuración general
+  // Guardar configuración general mediante endpoint seguro (D2d)
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setErrorMsg(null)
     setSuccessMsg(null)
 
-    const parsedRecargo = Number(mpRecargo) || 0
-
     try {
-      const { error } = await supabase
-        .from('stores')
-        .update({
-          mp_recargo_porcentaje: parsedRecargo >= 0 ? parsedRecargo : 0,
-          transferencia_activa: transferenciaActiva,
-          transferencia_alias: alias.trim() || null,
-          transferencia_cbu_cvu: cbuCvu.trim() || null,
-          transferencia_banco: banco.trim() || null,
-          transferencia_titular: titular.trim() || null,
-          transferencia_cuit: cuit.trim() || null,
-          transferencia_instrucciones: instrucciones.trim() || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', store.id)
+      const res = await fetch('/api/store/payment-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId: store.id,
+          mpRecargoPorcentaje: mpRecargo,
+          transferenciaActiva,
+          transferenciaAlias: alias,
+          transferenciaCbuCvu: cbuCvu,
+          transferenciaBanco: banco,
+          transferenciaTitular: titular,
+          transferenciaCuit: cuit,
+          transferenciaInstrucciones: instrucciones,
+        }),
+      })
 
-      if (error) throw error
+      const data = await res.json()
 
+      if (!res.ok) {
+        throw new Error(data.error || 'No se pudo guardar la configuración de cobros.')
+      }
+
+      setMpRecargo(data.recargo ?? mpRecargo)
       setSuccessMsg('Configuración de cobros guardada correctamente.')
       router.refresh()
       setTimeout(() => setSuccessMsg(null), 4000)
