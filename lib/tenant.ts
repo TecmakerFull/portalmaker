@@ -45,22 +45,40 @@ export const getTenantStore = cache(async function getTenantStore(): Promise<Ten
 
   const supabase = await createSupabaseServerClient()
 
-  let query = supabase
-    .from('stores')
-    .select('*')
+  // Intentar cargar store con perfil completo si el usuario autenticado es el dueño o superadmin
+  // Para visitantes y compradores anónimos, consultar stores_public (sin admin_email ni datos bancarios)
+  let store: any = null
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (storeSlug) {
-    // Tienda por subdominio: tecmaker.portalmaker.com.ar → slug = "tecmaker"
-    query = query.eq('slug', storeSlug)
-  } else if (storeDomain) {
-    // Tienda por dominio propio: tecmaker3d.com.ar (soporta con o sin www)
-    const cleanDomain = storeDomain.replace(/^www\./, '')
-    query = query.or(`custom_domain.eq.${storeDomain},custom_domain.eq.${cleanDomain}`)
+  if (user) {
+    let adminQuery = supabase.from('stores').select('*')
+    if (storeSlug) {
+      adminQuery = adminQuery.eq('slug', storeSlug)
+    } else if (storeDomain) {
+      const cleanDomain = storeDomain.replace(/^www\./, '')
+      adminQuery = adminQuery.or(`custom_domain.eq.${storeDomain},custom_domain.eq.${cleanDomain}`)
+    }
+    const { data: adminStore } = await adminQuery.maybeSingle()
+    if (adminStore) {
+      store = adminStore
+    }
   }
 
-  const { data: store, error } = await query.single()
+  if (!store) {
+    let publicQuery = supabase.from('stores_public').select('*')
+    if (storeSlug) {
+      publicQuery = publicQuery.eq('slug', storeSlug)
+    } else if (storeDomain) {
+      const cleanDomain = storeDomain.replace(/^www\./, '')
+      publicQuery = publicQuery.or(`custom_domain.eq.${storeDomain},custom_domain.eq.${cleanDomain}`)
+    }
+    const { data: publicStore } = await publicQuery.maybeSingle()
+    if (publicStore) {
+      store = publicStore
+    }
+  }
 
-  if (error || !store) {
+  if (!store) {
     // Tienda no encontrada en la BD — el Server Component mostrará un 404
     return null
   }
@@ -87,18 +105,33 @@ export const isStoreAdmin = cache(async function isStoreAdmin(store: Store): Pro
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user?.email) return false
+  const userEmail = user.email.trim().toLowerCase()
+  const storeAdminEmail = (store.admin_email || '').trim().toLowerCase()
 
   // El dueño de la tienda siempre tiene acceso
-  if (user.email === store.admin_email) return true
+  if (storeAdminEmail && userEmail === storeAdminEmail) return true
 
-  // El dueño del portal / superadmin (temperini@gmail.com o miembros de platform_admins) tiene acceso universal
-  if (user.email === 'temperini@gmail.com') return true
+  // Si admin_email no venía en el objeto (por resolución vía stores_public), validar directamente contra stores
+  try {
+    const { data: storeRow } = await supabase
+      .from('stores')
+      .select('admin_email')
+      .eq('id', store.id)
+      .maybeSingle()
 
+    if (storeRow?.admin_email && storeRow.admin_email.trim().toLowerCase() === userEmail) {
+      return true
+    }
+  } catch {
+    // Continuar con verificación de platform_admins
+  }
+
+  // Verificar si es superadmin registrado en platform_admins
   try {
     const { data: platformAdmin } = await supabase
       .from('platform_admins')
       .select('id')
-      .eq('email', user.email)
+      .ilike('email', userEmail)
       .maybeSingle()
 
     if (platformAdmin) return true
@@ -112,7 +145,7 @@ export const isStoreAdmin = cache(async function isStoreAdmin(store: Store): Pro
       .from('store_collaborators')
       .select('id')
       .eq('store_id', store.id)
-      .eq('email', user.email)
+      .ilike('email', userEmail)
       .eq('estado', 'activo')
       .maybeSingle()
 
@@ -133,12 +166,12 @@ export const isPlatformAdmin = cache(async function isPlatformAdmin(): Promise<b
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user?.email) return false
-  if (user.email === 'temperini@gmail.com') return true
+  const userEmail = user.email.trim().toLowerCase()
 
   const { data } = await supabase
     .from('platform_admins')
     .select('id')
-    .eq('email', user.email)
+    .ilike('email', userEmail)
     .maybeSingle()
 
   return !!data

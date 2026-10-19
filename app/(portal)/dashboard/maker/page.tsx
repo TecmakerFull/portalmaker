@@ -20,20 +20,22 @@ export default async function MakerDashboardPage() {
     redirect('/login')
   }
 
+  const userEmail = (user.email || '').trim().toLowerCase()
+
   // 2. Verificar si es platform_admin
   const { data: platformAdmin } = await supabase
     .from('platform_admins')
     .select('id')
-    .eq('email', user.email)
-    .single()
+    .ilike('email', userEmail)
+    .maybeSingle()
 
-  const isSuperadmin = Boolean(platformAdmin) || user.email === 'temperini@gmail.com'
+  const isSuperadmin = Boolean(platformAdmin)
 
   // 3. Buscar si el maker es dueño de tiendas
   const { data: stores } = await supabase
     .from('stores')
     .select('*')
-    .eq('admin_email', user.email)
+    .ilike('admin_email', userEmail)
     .order('created_at', { ascending: false })
 
   const userStores = stores ?? []

@@ -31,27 +31,19 @@ export default async function SuperadminDashboardPage() {
     redirect('/login')
   }
 
+  const userEmail = (user.email || '').trim().toLowerCase()
+
   // 2. Verificar si es platform_admin
   const { data: platformAdmin } = await supabase
     .from('platform_admins')
     .select('id')
-    .eq('email', user.email)
+    .ilike('email', userEmail)
     .maybeSingle()
 
-  // Si no está registrado en platform_admins, verificar si es el dueño
-  const isSuperadmin = Boolean(platformAdmin) || user.email === 'temperini@gmail.com'
+  const isSuperadmin = Boolean(platformAdmin)
 
   if (!isSuperadmin) {
     redirect('/dashboard/maker')
-  }
-
-  // Asegurar registro en platform_admins para compatibilidad con RLS policies
-  if (!platformAdmin && user.email === 'temperini@gmail.com') {
-    try {
-      await supabase.from('platform_admins').insert({ email: user.email })
-    } catch {
-      // Ignorar si ya fue insertado concurrentemente
-    }
   }
 
   // 3. Obtener todas las tiendas de la plataforma con conteo de productos

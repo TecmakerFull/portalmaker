@@ -49,14 +49,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
     }
 
+    const userEmail = (user.email || '').trim().toLowerCase()
+    const storeAdminEmail = (store.admin_email || '').trim().toLowerCase()
+
     const { data: platformAdmin } = await supabaseAdmin
       .from('platform_admins')
       .select('id')
-      .eq('email', user.email)
+      .ilike('email', userEmail)
       .maybeSingle()
 
-    const isOwner = store.admin_email === user.email
-    const isSuperadmin = Boolean(platformAdmin) || user.email === 'temperini@gmail.com'
+    const isOwner = storeAdminEmail === userEmail
+    const isSuperadmin = Boolean(platformAdmin)
 
     if (!isOwner && !isSuperadmin) {
       return NextResponse.json({ error: 'No tienes permisos sobre esta tienda' }, { status: 403 })

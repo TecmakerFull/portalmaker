@@ -119,6 +119,26 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
     orderItems: any[]
   } | null>(null)
 
+  // Datos bancarios protegidos (G3): obtenidos exclusivamente por endpoint de checkout
+  const [bankDetails, setBankDetails] = useState<{
+    transferencia_activa: boolean
+    alias?: string | null
+    cbuCvu?: string | null
+    banco?: string | null
+    titular?: string | null
+    cuit?: string | null
+    instrucciones?: string | null
+  } | null>(null)
+
+  useEffect(() => {
+    fetch(`/api/checkout/transfer-details?storeId=${store.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data) setBankDetails(data)
+      })
+      .catch((err) => console.error('Error al cargar datos bancarios:', err))
+  }, [store.id])
+
   // Estado para copiar datos de transferencia
   const [copiedField, setCopiedField] = useState<string | null>(null)
 
@@ -214,14 +234,33 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
     }
 
     try {
-      // 1. Guardar pedido en Supabase
-      const { data: createdOrder, error: insertError } = await supabase
-        .from('orders')
-        .insert(orderPayload)
-        .select('id')
-        .single()
+      // 1. Guardar pedido en Supabase vía endpoint de servidor con service_role (H1)
+      const orderRes = await fetch('/api/checkout/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId: store.id,
+          nombre: nombre.trim(),
+          email: email.trim(),
+          telefono: telefono.trim(),
+          tipoEntrega,
+          direccionEntrega: fullShippingAddress,
+          metodoPago,
+          notas: notas.trim() || null,
+          items: items.map((it) => ({
+            productId: it.productId,
+            variantId: it.variantId || null,
+            quantity: it.quantity,
+          })),
+        }),
+      })
 
-      if (insertError) throw insertError
+      const orderData = await orderRes.json()
+      if (!orderRes.ok || !orderData.orderId) {
+        throw new Error(orderData.error || 'No se pudo crear el pedido. Intenta nuevamente.')
+      }
+
+      const createdOrder = { id: orderData.orderId }
 
       // Sincronizar datos del cliente en CRM y sesión de usuario
       try {
@@ -446,11 +485,11 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
   }
 
   const hasBankData = Boolean(
-    store.transferencia_alias ||
-    store.transferencia_cbu_cvu ||
-    store.transferencia_titular ||
-    store.transferencia_banco ||
-    store.transferencia_cuit
+    bankDetails?.alias ||
+    bankDetails?.cbuCvu ||
+    bankDetails?.titular ||
+    bankDetails?.banco ||
+    bankDetails?.cuit
   )
 
   return (
@@ -846,17 +885,17 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
 
               {hasBankData ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  {store.transferencia_alias && (
+                  {bankDetails?.alias && (
                     <div className="p-2.5 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10 flex items-center justify-between">
                       <div>
                         <span className="opacity-60 text-[10px] block">Alias</span>
                         <span className="font-mono font-bold select-all">
-                          {store.transferencia_alias}
+                          {bankDetails.alias}
                         </span>
                       </div>
                       <button
                         type="button"
-                        onClick={() => copyToClipboard(store.transferencia_alias!, 'alias')}
+                        onClick={() => copyToClipboard(bankDetails.alias!, 'alias')}
                         className="min-h-[32px] px-2 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-[10px] font-bold flex items-center gap-1 cursor-pointer"
                       >
                         {copiedField === 'alias' ? (
@@ -869,17 +908,17 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                     </div>
                   )}
 
-                  {store.transferencia_cbu_cvu && (
+                  {bankDetails?.cbuCvu && (
                     <div className="p-2.5 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10 flex items-center justify-between">
                       <div>
                         <span className="opacity-60 text-[10px] block">CBU / CVU</span>
                         <span className="font-mono font-bold select-all text-[11px]">
-                          {store.transferencia_cbu_cvu}
+                          {bankDetails.cbuCvu}
                         </span>
                       </div>
                       <button
                         type="button"
-                        onClick={() => copyToClipboard(store.transferencia_cbu_cvu!, 'cbu')}
+                        onClick={() => copyToClipboard(bankDetails.cbuCvu!, 'cbu')}
                         className="min-h-[32px] px-2 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-[10px] font-bold flex items-center gap-1 cursor-pointer"
                       >
                         {copiedField === 'cbu' ? (
@@ -892,24 +931,24 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                     </div>
                   )}
 
-                  {store.transferencia_titular && (
+                  {bankDetails?.titular && (
                     <div className="p-2.5 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10">
                       <span className="opacity-60 text-[10px] block">Titular</span>
-                      <span className="font-semibold">{store.transferencia_titular}</span>
+                      <span className="font-semibold">{bankDetails.titular}</span>
                     </div>
                   )}
 
-                  {store.transferencia_banco && (
+                  {bankDetails?.banco && (
                     <div className="p-2.5 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10">
                       <span className="opacity-60 text-[10px] block">Banco / Billetera</span>
-                      <span className="font-semibold">{store.transferencia_banco}</span>
+                      <span className="font-semibold">{bankDetails.banco}</span>
                     </div>
                   )}
 
-                  {store.transferencia_cuit && (
+                  {bankDetails?.cuit && (
                     <div className="p-2.5 rounded-xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10">
                       <span className="opacity-60 text-[10px] block">CUIT / CUIL</span>
-                      <span className="font-semibold font-mono">{store.transferencia_cuit}</span>
+                      <span className="font-semibold font-mono">{bankDetails.cuit}</span>
                     </div>
                   )}
                 </div>
@@ -919,9 +958,9 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                 </div>
               )}
 
-              {store.transferencia_instrucciones && (
+              {bankDetails?.instrucciones && (
                 <p className="text-[11px] opacity-75 italic pt-1">
-                  {store.transferencia_instrucciones}
+                  {bankDetails.instrucciones}
                 </p>
               )}
 

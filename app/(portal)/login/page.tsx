@@ -94,8 +94,14 @@ function LoginFormContent() {
 
         if (error) throw error
 
-        const isSuperadminEmail = email.trim().toLowerCase() === 'temperini@gmail.com'
-        const destination = nextParam || (isSuperadminEmail ? '/dashboard/admin' : '/dashboard/maker')
+        // Verificar si es superadmin consultando platform_admins
+        const { data: isAdmin } = await supabase
+          .from('platform_admins')
+          .select('id')
+          .ilike('email', email.trim())
+          .maybeSingle()
+
+        const destination = nextParam || (isAdmin ? '/dashboard/admin' : '/dashboard/maker')
 
         router.push(destination)
         router.refresh()

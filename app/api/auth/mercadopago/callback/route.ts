@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createSupabaseAdminClient } from '@/lib/supabase/server'
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server'
 
 // =============================================================================
 // PORTALMAKER — Mercado Pago OAuth: Callback
@@ -28,16 +28,34 @@ export async function GET(req: Request) {
   }
 
   try {
-    // 1. Validar el state contra la base de datos para recuperar el store_id
+    // 1. Consumir el state de forma atómica (DELETE ... RETURNING) para prevenir replays (E2)
     const { data: stateRecord, error: stateErr } = await supabaseAdmin
       .from('mp_oauth_states')
-      .select('id, store_id')
+      .delete()
       .eq('state', state)
-      .single()
+      .select('id, store_id, user_id, expires_at')
+      .maybeSingle()
 
     if (stateErr || !stateRecord) {
-      console.error('State inválido o expirado:', state)
+      console.error('State inválido, ya consumido o inexistente:', state)
       return NextResponse.redirect(`${returnUrl}?error=mp_invalid_state`)
+    }
+
+    // Validar expiración del state
+    if (stateRecord.expires_at && new Date(stateRecord.expires_at).getTime() < Date.now()) {
+      console.error('State OAuth expirado:', state)
+      return NextResponse.redirect(`${returnUrl}?error=mp_state_expired`)
+    }
+
+    // Validar que el usuario que inició el flujo coincida con la sesión activa si existe
+    const supabase = await createSupabaseServerClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (stateRecord.user_id && user && stateRecord.user_id !== user.id) {
+      console.error(`Mismatch de usuario OAuth: esperado ${stateRecord.user_id}, actual ${user.id}`)
+      return NextResponse.redirect(`${returnUrl}?error=mp_user_mismatch`)
     }
 
     const storeId = stateRecord.store_id
@@ -139,10 +157,7 @@ export async function GET(req: Request) {
       return NextResponse.redirect(`${returnUrl}?error=mp_db_save_failed`)
     }
 
-    // 5. Eliminar el state usado
-    await supabaseAdmin.from('mp_oauth_states').delete().eq('id', stateRecord.id)
-
-    // 6. Redirigir con éxito a la administración de pagos
+    // 5. Redirigir con éxito a la administración de pagos
     return NextResponse.redirect(`${returnUrl}?success=mp_connected`)
   } catch (err: any) {
     console.error('Excepción en /api/auth/mercadopago/callback:', err)

@@ -31,10 +31,10 @@ export default async function PedidoConfirmadoPage({ searchParams }: PageProps) 
   const { store } = tenant
   const supabaseAdmin = createSupabaseAdminClient()
 
-  // Consultar el pedido de forma segura en la base de datos
+  // Consultar el pedido de forma segura en la base de datos (solo campos necesarios para el comprador)
   const { data: order, error } = await supabaseAdmin
     .from('orders')
-    .select('*')
+    .select('id, store_id, nombre_comprador, email_comprador, tipo_entrega, direccion_entrega, items, total, estado_pago, estado_pedido')
     .eq('id', order_id)
     .eq('store_id', store.id)
     .maybeSingle()

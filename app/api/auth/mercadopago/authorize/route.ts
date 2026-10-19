@@ -39,14 +39,17 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
     }
 
+    const userEmail = (user.email || '').trim().toLowerCase()
+    const storeAdminEmail = (store.admin_email || '').trim().toLowerCase()
+
     // Validar permisos
-    const { data: isAdmin } = await supabaseAdmin
+    const { data: platformAdmin } = await supabaseAdmin
       .from('platform_admins')
       .select('id')
-      .eq('email', user.email)
+      .ilike('email', userEmail)
       .maybeSingle()
 
-    if (store.admin_email !== user.email && !isAdmin) {
+    if (storeAdminEmail !== userEmail && !platformAdmin) {
       return NextResponse.json({ error: 'No tienes permisos sobre esta tienda' }, { status: 403 })
     }
 
@@ -68,14 +71,17 @@ export async function GET(req: Request) {
 
     // Generar un state seguro para prevenir ataques CSRF
     const stateToken = crypto.randomBytes(32).toString('hex')
+    const expiresAt = new Date(Date.now() + 3600000).toISOString() // 1 hora de vigencia
 
-    // Limpiar estados viejos de más de 1 hora y guardar el nuevo
+    // Limpiar estados viejos de más de 1 hora y guardar el nuevo con user_id y expires_at (E1)
     const oneHourAgo = new Date(Date.now() - 3600000).toISOString()
     await supabaseAdmin.from('mp_oauth_states').delete().lt('created_at', oneHourAgo)
 
     const { error: stateInsertErr } = await supabaseAdmin.from('mp_oauth_states').insert({
       store_id: store.id,
+      user_id: user.id,
       state: stateToken,
+      expires_at: expiresAt,
     })
 
     if (stateInsertErr) {

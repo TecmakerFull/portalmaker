@@ -176,7 +176,7 @@ create table stores (
   mp_public_key         text,
   mp_token_expires_at   timestamptz,
   mp_recargo_porcentaje numeric(5,2) default 0.00
-    check (mp_recargo_porcentaje >= 0.00 and mp_recargo_porcentaje <= 100.00), -- recargo opcional que la tienda aplica si pagan con MP
+    check (mp_recargo_porcentaje >= 0.00 and mp_recargo_porcentaje <= 15.00), -- recargo opcional que la tienda aplica si pagan con MP (máx 15%)
   comision_portalmaker  numeric(5,2) default 0.00
     check (comision_portalmaker >= 0.00 and comision_portalmaker < 100.00),  -- % de comisión que retiene Portalmaker por cada venta
 
@@ -192,14 +192,20 @@ create index idx_stores_domain on stores(custom_domain);
 -- RLS
 alter table stores enable row level security;
 
--- El comprador puede leer datos de cualquier tienda (necesita los colores, logo, etc.)
-create policy "public_read_stores" on stores for select using (true);
+-- Solo el dueño, platform_admin o backend service_role pueden leer la fila completa de stores (G3)
+create policy "owner_admin_read_stores" on stores for select
+  using (
+    is_platform_admin()
+    or lower(admin_email) = lower(coalesce(auth.jwt()->>'email', ''))
+    or current_user in ('service_role', 'postgres', 'supabase_admin')
+    or (auth.jwt() ->> 'role') = 'service_role'
+  );
 
--- Solo el admin de la tienda o el platform_admin puede actualizar sus datos
+-- Solo el admin de la tienda o el platform_admin puede actualizar sus datos (J2)
 create policy "admin_write_stores" on stores for update
   using (
-    auth.jwt() ->> 'email' = admin_email
-    or is_platform_admin()
+    is_platform_admin()
+    or lower(admin_email) = lower(coalesce(auth.jwt()->>'email', ''))
   );
 
 -- Solo el platform_admin puede crear tiendas (el maker no se registra solo, lo hace el developer)
@@ -207,8 +213,63 @@ create policy "platform_admin_insert_stores" on stores for insert
   with check (is_platform_admin());
 
 -- GRANTs
-grant select on stores to anon, authenticated;
-grant insert, update on stores to authenticated;
+grant select, update on stores to authenticated;
+grant all on stores to service_role;
+
+-- -----------------------------------------------------------------------------
+-- STORES_PUBLIC (Vista pública para visitantes y compradores de tiendas)
+-- Expone exclusivamente los datos de vitrina y branding. Excluye datos bancarios y PII.
+-- -----------------------------------------------------------------------------
+create or replace view stores_public as
+select
+  id,
+  nombre,
+  slug,
+  custom_domain,
+  custom_domain_verified,
+  modo_operacion,
+  checkout_activo,
+  whatsapp_numero,
+  plan,
+  suscripcion_activa,
+  logo_url,
+  icono_url,
+  favicon_url,
+  hero_banner_url,
+  banners_activo,
+  slogan,
+  logo_tamano,
+  mostrar_nombre_header,
+  color_primario,
+  color_secundario,
+  color_fondo,
+  color_texto,
+  color_primario_dark,
+  color_secundario_dark,
+  color_fondo_dark,
+  color_texto_dark,
+  tema_por_defecto,
+  font_heading,
+  font_body,
+  instagram_url,
+  facebook_url,
+  tiktok_url,
+  email_contacto,
+  horario_atencion,
+  direccion,
+  meta_title,
+  meta_description,
+  ga_measurement_id,
+  meta_pixel_id,
+  google_maps_embed_url,
+  transferencia_activa,
+  mp_connected,
+  mp_recargo_porcentaje,
+  created_at,
+  updated_at
+from stores;
+
+grant select on stores_public to anon, authenticated, service_role;
 
 
 -- =============================================================================
@@ -493,16 +554,18 @@ create table orders (
 create index idx_orders_store on orders(store_id, estado_pedido, created_at desc);
 
 alter table orders enable row level security;
--- El comprador sin login NO puede leer pedidos (solo los ve el admin de la tienda)
+-- Solo el admin de la tienda o el platform_admin puede administrar pedidos (J2: lower())
 create policy "admin_all_orders" on orders for all
   using (
-    auth.jwt() ->> 'email' = (select admin_email from stores where id = orders.store_id)
-    or is_platform_admin()
+    is_platform_admin()
+    or lower(coalesce(auth.jwt() ->> 'email', '')) = lower((select admin_email from stores where id = orders.store_id))
   );
--- Permitir insert sin autenticación (el comprador hace el pedido sin cuenta)
-create policy "public_insert_orders" on orders for insert with check (true);
 
-grant select, insert, update on orders to anon, authenticated;
+-- Eliminada la política "public_insert_orders": pedidos creados exclusivamente por servidor (H1)
+revoke insert, update on orders from anon;
+revoke insert on orders from authenticated;
+grant select, update on orders to authenticated;
+grant all on orders to service_role;
 
 
 -- =============================================================================
@@ -1206,17 +1269,22 @@ create trigger trg_store_commission_audit
 create or replace function protect_store_sensitive_columns()
 returns trigger
 language plpgsql
-security definer
+security invoker
 as $$
 declare
   v_is_superadmin boolean;
 begin
-  if current_user = 'service_role' or (auth.jwt() ->> 'role') = 'service_role' then
+  -- Dejar pasar a service_role, postgres y supabase_admin
+  if current_user in ('service_role', 'postgres', 'supabase_admin') or
+     (auth.jwt() ->> 'role') = 'service_role' or
+     auth.role() = 'service_role' then
     return new;
   end if;
 
+  -- Comprobar si el usuario autenticado es superadmin (is_platform_admin())
   v_is_superadmin := is_platform_admin();
 
+  -- Columnas reservadas exclusivamente para superadmin o service_role
   if not v_is_superadmin then
     if old.comision_portalmaker is distinct from new.comision_portalmaker then
       raise exception 'No tienes permisos para modificar comision_portalmaker';
@@ -1233,12 +1301,16 @@ begin
     if old.suscripcion_activa is distinct from new.suscripcion_activa then
       raise exception 'No tienes permisos para modificar suscripcion_activa';
     end if;
+    if old.custom_domain_verified is distinct from new.custom_domain_verified then
+      raise exception 'No tienes permisos para modificar custom_domain_verified';
+    end if;
     if old.mp_access_token is distinct from new.mp_access_token or
        old.mp_refresh_token is distinct from new.mp_refresh_token or
+       old.mp_public_key is distinct from new.mp_public_key or
        old.mp_user_id is distinct from new.mp_user_id or
        old.mp_token_expires_at is distinct from new.mp_token_expires_at or
        old.mp_connected is distinct from new.mp_connected then
-      raise exception 'Las credenciales de Mercado Pago solo pueden modificarse mediante el flujo seguro de backend';
+      raise exception 'Las credenciales y estado de conexión de Mercado Pago solo pueden modificarse mediante el flujo seguro de backend';
     end if;
   end if;
 
@@ -1251,6 +1323,72 @@ create trigger trg_protect_store_columns
   before update on stores
   for each row
   execute function protect_store_sensitive_columns();
+
+
+-- =============================================================================
+-- 29. PROTECT_ORDER_COLUMNS — Protección de totales, snapshots y MP en pedidos (H2)
+-- =============================================================================
+create or replace function protect_order_sensitive_columns()
+returns trigger
+language plpgsql
+security invoker
+as $$
+begin
+  -- Dejar pasar a service_role, postgres y supabase_admin
+  if current_user in ('service_role', 'postgres', 'supabase_admin') or
+     (auth.jwt() ->> 'role') = 'service_role' or
+     auth.role() = 'service_role' then
+    return new;
+  end if;
+
+  -- Dejar pasar a platform_admin
+  if is_platform_admin() then
+    return new;
+  end if;
+
+  -- Para cualquier otro rol (dueño de tienda / usuario regular):
+  if old.total is distinct from new.total then
+    raise exception 'No está permitido modificar el total de un pedido existente';
+  end if;
+
+  if old.items is distinct from new.items then
+    raise exception 'No está permitido modificar los productos o variantes de un pedido existente';
+  end if;
+
+  if old.comision_portalmaker_pct is distinct from new.comision_portalmaker_pct then
+    raise exception 'No está permitido modificar el snapshot de comision_portalmaker_pct';
+  end if;
+
+  if old.mp_recargo_pct is distinct from new.mp_recargo_pct then
+    raise exception 'No está permitido modificar el snapshot de mp_recargo_pct';
+  end if;
+
+  if old.mp_payment_id is distinct from new.mp_payment_id or
+     old.mp_preference_id is distinct from new.mp_preference_id or
+     old.mp_merchant_order_id is distinct from new.mp_merchant_order_id or
+     old.mp_fee_portalmaker is distinct from new.mp_fee_portalmaker or
+     old.mp_net_received is distinct from new.mp_net_received then
+    raise exception 'Los campos de liquidación de Mercado Pago solo pueden ser modificados por el webhook oficial';
+  end if;
+
+  -- Modificación de estado_pago:
+  if old.estado_pago is distinct from new.estado_pago then
+    -- Si el pedido es de Mercado Pago, el dueño no puede alterarlo a mano
+    if old.metodo_pago = 'mercadopago' or old.mp_payment_id is not null or old.mp_preference_id is not null then
+      raise exception 'Los pedidos con Mercado Pago no pueden cambiar su estado de pago manualmente. El estado se actualiza por webhook.';
+    end if;
+    -- Si es transferencia bancaria o efectivo, se permite cambiar el estado de pago
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_protect_order_columns on orders;
+create trigger trg_protect_order_columns
+  before update on orders
+  for each row
+  execute function protect_order_sensitive_columns();
 
 
 -- =============================================================================

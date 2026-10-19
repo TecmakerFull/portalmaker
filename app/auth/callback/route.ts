@@ -103,21 +103,23 @@ export async function GET(request: NextRequest) {
 
       // 2. Si estamos en el portal central y no se especificó ?next=..., enrutar inteligentemente por rol
       if (!isStoreDomain && user?.email && !nextParam) {
+        const userEmail = user.email.trim().toLowerCase()
+
         // A. Verificar si es Superadmin de Portalmaker
         const { data: platformAdmin } = await supabase
           .from('platform_admins')
           .select('id')
-          .eq('email', user.email)
-          .single()
+          .ilike('email', userEmail)
+          .maybeSingle()
 
-        if (platformAdmin || user.email === 'temperini@gmail.com') {
+        if (platformAdmin) {
           targetUrl = `${origin}/dashboard/admin`
         } else {
           // B. Verificar si es dueño de alguna tienda
           const { data: stores } = await supabase
             .from('stores')
             .select('slug, custom_domain')
-            .eq('admin_email', user.email)
+            .ilike('admin_email', userEmail)
             .order('created_at', { ascending: false })
 
           if (stores && stores.length === 1) {
