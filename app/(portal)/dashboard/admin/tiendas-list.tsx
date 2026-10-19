@@ -257,8 +257,12 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
       return
     }
 
-    // Inicializar formulario de edición de suscripción
+    // Inicializar formulario de edición de suscripción y datos de la tienda
     setSubEditForm({
+      nombre: selectedStore.nombre || '',
+      slug: selectedStore.slug || '',
+      admin_email: selectedStore.admin_email || '',
+      custom_domain: selectedStore.custom_domain || '',
       plan: selectedStore.plan || 'maker_pro',
       precio_mensual: selectedStore.precio_mensual ?? 0,
       limite_productos: selectedStore.limite_productos ?? 50,
@@ -478,14 +482,52 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
     }
   }
 
-  // Guardar cambios en Suscripción y Límites
+  // Guardar cambios en Identidad, Suscripción y Límites
   const handleSaveSubEdit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedStore) return
     setSavingSubEdit(true)
 
     try {
+      const nuevoNombre = subEditForm.nombre?.trim() || ''
+      if (!nuevoNombre) {
+        throw new Error('El nombre de la tienda es obligatorio.')
+      }
+
+      const rawSlug = subEditForm.slug?.trim().toLowerCase() || ''
+      const nuevoSlug = rawSlug.replace(/[^a-z0-9-]/g, '')
+      if (!nuevoSlug) {
+        throw new Error('El subdominio (slug) es obligatorio y debe contener solo letras minúsculas, números o guiones.')
+      }
+
+      const nuevoEmail = subEditForm.admin_email?.trim() || ''
+      if (!nuevoEmail || !nuevoEmail.includes('@')) {
+        throw new Error('El email del administrador debe tener un formato válido.')
+      }
+
+      // Si el slug cambió, validar que no esté ocupado por otra tienda
+      if (nuevoSlug !== selectedStore.slug) {
+        const { data: existing, error: checkErr } = await supabase
+          .from('stores')
+          .select('id, nombre')
+          .eq('slug', nuevoSlug)
+          .neq('id', selectedStore.id)
+          .maybeSingle()
+
+        if (checkErr) throw checkErr
+        if (existing) {
+          throw new Error(`El subdominio '${nuevoSlug}' ya está asignado a la tienda '${existing.nombre}'. Por favor elige uno diferente.`)
+        }
+      }
+
+      const rawDomain = subEditForm.custom_domain?.trim().toLowerCase() || null
+      const nuevoDominio = rawDomain ? rawDomain.replace(/^https?:\/\//, '').replace(/\/$/, '') : null
+
       const updateData = {
+        nombre: nuevoNombre,
+        slug: nuevoSlug,
+        admin_email: nuevoEmail,
+        custom_domain: nuevoDominio,
         plan: subEditForm.plan,
         precio_mensual: Number(subEditForm.precio_mensual) || 0,
         limite_productos: Number(subEditForm.limite_productos) || 50,
@@ -508,7 +550,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
       const updated = { ...selectedStore, ...updateData } as SuperadminStoreItem
       setStores((prev) => prev.map((s) => (s.id === selectedStore.id ? updated : s)))
       setSelectedStore(updated)
-      showToast('Datos de la cuenta y suscripción actualizados.')
+      showToast('Datos de la tienda y suscripción actualizados con éxito.')
     } catch (err: any) {
       alert('Error al guardar datos: ' + err.message)
     } finally {
@@ -1092,7 +1134,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                   }`}
                 >
                   <Sliders className="w-3.5 h-3.5" />
-                  <span>Vencimiento & Límites</span>
+                  <span>Datos & Plan</span>
                 </button>
 
                 <button
@@ -1356,10 +1398,95 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                 )}
 
                 {/* ==============================================================
-                    PESTAÑA 2: VENCIMIENTOS, LÍMITES Y SUSCRIPCIÓN
+                    PESTAÑA 2: IDENTIDAD, VENCIMIENTOS, LÍMITES Y SUSCRIPCIÓN
                     ============================================================== */}
                 {activeDrawerTab === 'suscripcion' && (
                   <form onSubmit={handleSaveSubEdit} className="space-y-5">
+                    {/* Sección 1: Identidad y Subdominio de la Tienda */}
+                    <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/[0.04] dark:bg-amber-400/[0.03] border border-amber-400/30 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Store className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                        <div>
+                          <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                            Identidad, Subdominio y Acceso
+                          </h4>
+                          <p className="text-[11px] opacity-70">
+                            Modifica el nombre público de la tienda, la URL de subdominio o el email de la cuenta.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
+                        <div>
+                          <label className="block font-medium mb-1.5 opacity-80">
+                            Nombre de la Tienda <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={subEditForm.nombre || ''}
+                            onChange={(e) => setSubEditForm({ ...subEditForm, nombre: e.target.value })}
+                            placeholder="Ej. Llaverix"
+                            className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-medium mb-1.5 opacity-80">
+                            Subdominio / Slug <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative flex items-center">
+                            <input
+                              type="text"
+                              required
+                              value={subEditForm.slug || ''}
+                              onChange={(e) =>
+                                setSubEditForm({
+                                  ...subEditForm,
+                                  slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''),
+                                })
+                              }
+                              placeholder="llaverix"
+                              className="w-full h-11 pl-3.5 pr-28 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                            />
+                            <span className="absolute right-3 text-[11px] font-mono text-zinc-500 dark:text-zinc-400 pointer-events-none select-none">
+                              .portalmaker.ar
+                            </span>
+                          </div>
+                          <p className="text-[10px] opacity-60 mt-1">
+                            Solo letras minúsculas, números y guiones.
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block font-medium mb-1.5 opacity-80">
+                            Email del Administrador / Titular <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="email"
+                            required
+                            value={subEditForm.admin_email || ''}
+                            onChange={(e) => setSubEditForm({ ...subEditForm, admin_email: e.target.value })}
+                            placeholder="titular@ejemplo.com"
+                            className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-medium mb-1.5 opacity-80">
+                            Dominio Personalizado (Opcional)
+                          </label>
+                          <input
+                            type="text"
+                            value={subEditForm.custom_domain || ''}
+                            onChange={(e) => setSubEditForm({ ...subEditForm, custom_domain: e.target.value })}
+                            placeholder="ej. mitiendapropia.com.ar"
+                            className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Acciones Rápidas de Extensión con 1 clic */}
                     <div className="p-4 rounded-2xl bg-amber-400/[0.04] border border-amber-400/30 space-y-2">
                       <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 block">
@@ -1508,7 +1635,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                         className="min-h-[44px] px-6 rounded-xl bg-[#CA8A04] hover:bg-[#A16207] text-white text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
                       >
                         {savingSubEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        <span>Guardar Cambios de Suscripción</span>
+                        <span>Guardar Cambios de la Tienda</span>
                       </button>
                     </div>
                   </form>
@@ -1621,13 +1748,23 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                           <span className="text-[10px] uppercase font-semibold opacity-60 block">Email del Administrador</span>
                           <span className="font-mono text-xs">{selectedStore.admin_email}</span>
                         </div>
-                        <a
-                          href={`mailto:${selectedStore.admin_email}`}
-                          className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 font-semibold flex items-center gap-1.5"
-                        >
-                          <Mail className="w-3.5 h-3.5" />
-                          <span>Enviar Mail</span>
-                        </a>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setActiveDrawerTab('suscripcion')}
+                            className="min-h-[36px] px-3 py-1.5 rounded-xl border border-amber-500/30 text-[#CA8A04] dark:text-[#FACC15] hover:bg-amber-400/10 font-semibold flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                            <span>Editar</span>
+                          </button>
+                          <a
+                            href={`mailto:${selectedStore.admin_email}`}
+                            className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 font-semibold flex items-center gap-1.5"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                            <span>Enviar Mail</span>
+                          </a>
+                        </div>
                       </div>
 
                       {selectedStore.whatsapp_numero && (
