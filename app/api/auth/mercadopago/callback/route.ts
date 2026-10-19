@@ -50,7 +50,14 @@ export async function GET(req: Request) {
       .single()
 
     if (store) {
-      returnUrl = `${origin}/tienda/admin/pagos`
+      const host = req.headers.get('host') || ''
+      if (store.custom_domain) {
+        returnUrl = `https://${store.custom_domain}/admin/pagos`
+      } else if (host.includes('localhost') || host.includes('vercel.app')) {
+        returnUrl = `${origin}/tienda/admin/pagos?tenant=${store.slug}`
+      } else {
+        returnUrl = `https://${store.slug}.portalmaker.ar/admin/pagos`
+      }
     }
 
     const clientId = process.env.MP_CLIENT_ID

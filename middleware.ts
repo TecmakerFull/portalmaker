@@ -37,7 +37,12 @@ export function middleware(request: NextRequest) {
     (base) => host === base || host === `www.${base}`
   )
 
-  // Interceptar callbacks de OAuth o Auth que lleguen a cualquier ruta con ?code=...
+  // Rutas de API deben ejecutarse limpiamente sin intercepciones ni reescrituras de auth
+  if (nextUrl.pathname.startsWith('/api/')) {
+    return NextResponse.next()
+  }
+
+  // Interceptar callbacks de OAuth de Supabase que lleguen a cualquier ruta con ?code=...
   if (nextUrl.searchParams.has('code') && !nextUrl.pathname.startsWith('/auth/callback')) {
     const callbackUrl = new URL('/auth/callback', request.url)
     // Si no tiene 'next', asignarle el pathname + query original (sin el code) para volver exactamente donde estaba
