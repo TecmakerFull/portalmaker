@@ -91,6 +91,7 @@ create table stores (
   nombre        text not null,                   -- nombre público de la tienda
   slug          text not null unique,             -- subdominio: tecmaker → tecmaker.portalmaker.com.ar
   custom_domain text unique,                      -- dominio propio: tecmaker3d.com.ar (opcional)
+  custom_domain_verified boolean default false,   -- validado para orígenes seguros de Checkout Pro
   admin_email   text not null unique,             -- email del dueño (validado contra JWT de Google OAuth)
 
   -- Operación
@@ -453,7 +454,7 @@ create table orders (
 
   -- Estado del pago
   estado_pago text default 'pendiente'
-    check (estado_pago in ('pendiente', 'aprobado', 'rechazado')),
+    check (estado_pago in ('pendiente', 'aprobado', 'rechazado', 'revision', 'reembolsado', 'contracargo')),
 
   -- Método de pago elegido por el comprador
   metodo_pago text,  -- 'mercadopago' | 'transferencia' | 'efectivo' | 'acordar'
@@ -472,6 +473,7 @@ create table orders (
 
   -- Integración Mercado Pago
   mp_preference_id      text,
+  mp_init_point         text,
   mp_payment_id         text,
   mp_merchant_order_id  text,
   mp_fee_portalmaker    numeric(10,2) default 0.00,
@@ -1048,6 +1050,101 @@ create index if not exists idx_mp_oauth_states_state on mp_oauth_states(state);
 alter table mp_oauth_states enable row level security;
 create policy "allow_all_mp_oauth_states" on mp_oauth_states for all using (true) with check (true);
 grant select, insert, delete on mp_oauth_states to anon, authenticated, service_role;
+
+
+-- =============================================================================
+-- 25. STORE_MP_CREDENTIALS — Credenciales aisladas de Mercado Pago OAuth
+-- =============================================================================
+create table if not exists store_mp_credentials (
+  store_id uuid primary key references stores(id) on delete cascade,
+  mp_access_token text not null,
+  mp_refresh_token text,
+  mp_public_key text,
+  mp_token_expires_at timestamptz,
+  mp_user_id text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+alter table store_mp_credentials enable row level security;
+revoke all on store_mp_credentials from anon, authenticated;
+grant all on store_mp_credentials to service_role;
+
+
+-- =============================================================================
+-- 26. PROCESS_APPROVED_PAYMENT — Procesamiento atómico e idempotente de pagos
+-- =============================================================================
+create or replace function process_approved_payment(
+  p_order_id uuid,
+  p_payment_id text,
+  p_net_received numeric,
+  p_fee numeric
+)
+returns jsonb
+language plpgsql
+security definer
+as $$
+declare
+  v_order record;
+  v_item jsonb;
+  v_qty int;
+  v_variant_id uuid;
+  v_product_id uuid;
+begin
+  -- 1. Intentar actualizar el pedido atómicamente solo si NO estaba aprobado
+  update orders
+  set
+    estado_pago = 'aprobado',
+    mp_payment_id = p_payment_id,
+    mp_net_received = p_net_received,
+    mp_fee_portalmaker = p_fee,
+    updated_at = now()
+  where id = p_order_id and estado_pago <> 'aprobado'
+  returning id, store_id, total, items, stock_descontado into v_order;
+
+  -- 2. Si no devolvió fila, significa que ya estaba aprobado (idempotencia)
+  if v_order.id is null then
+    return jsonb_build_object('success', true, 'already_processed', true, 'first_time', false);
+  end if;
+
+  -- 3. Descontar stock atómicamente si aún no estaba descontado
+  if not coalesce(v_order.stock_descontado, false) then
+    if v_order.items is not null and jsonb_typeof(v_order.items) = 'array' then
+      for v_item in select * from jsonb_array_elements(v_order.items)
+      loop
+        v_qty := coalesce((v_item->>'cantidad')::int, 0);
+        if v_qty > 0 then
+          -- Descontar de variante si aplica
+          if (v_item->>'variant_id') is not null and (v_item->>'variant_id') <> '' and (v_item->>'variant_id') <> 'null' then
+            v_variant_id := (v_item->>'variant_id')::uuid;
+            update product_variants
+            set stock = greatest(stock - v_qty, 0)
+            where id = v_variant_id and stock is not null;
+          -- Descontar de producto simple si gestiona_stock = true
+          elsif (v_item->>'product_id') is not null and (v_item->>'product_id') <> '' and (v_item->>'product_id') <> 'null' then
+            v_product_id := (v_item->>'product_id')::uuid;
+            update products
+            set stock = greatest(stock - v_qty, 0)
+            where id = v_product_id and gestiona_stock = true and stock is not null;
+          end if;
+        end if;
+      end loop;
+    end if;
+
+    update orders set stock_descontado = true where id = p_order_id;
+  end if;
+
+  return jsonb_build_object(
+    'success', true,
+    'first_time', true,
+    'already_processed', false,
+    'order_id', v_order.id,
+    'store_id', v_order.store_id
+  );
+end;
+$$;
+
+grant execute on function process_approved_payment to service_role;
 
 
 -- =============================================================================

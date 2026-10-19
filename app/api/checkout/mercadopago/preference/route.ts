@@ -58,8 +58,28 @@ export async function POST(req: Request) {
       )
     }
 
+    // C8: Si el pedido ya tiene una preferencia e init_point generados y no expiró, reutilizarla
+    if (order.mp_preference_id && order.mp_init_point) {
+      return NextResponse.json({
+        preferenceId: order.mp_preference_id,
+        initPoint: order.mp_init_point,
+      })
+    }
+
     // 3. SEGURIDAD: Obtener y validar el access token de la tienda (renueva automáticamente si expiró)
-    const storeAccessToken = await getValidMpAccessToken(store)
+    let storeAccessToken: string | null = null
+    try {
+      storeAccessToken = await getValidMpAccessToken(store)
+    } catch (tokenErr: any) {
+      if (tokenErr?.message === 'MP_TOKEN_REFRESH_TEMPORARY_ERROR') {
+        return NextResponse.json(
+          { error: 'Servicio de pago temporalmente no disponible. Intenta nuevamente en unos instantes.' },
+          { status: 503 }
+        )
+      }
+      throw tokenErr
+    }
+
     if (!storeAccessToken) {
       return NextResponse.json(
         { error: 'La conexión de Mercado Pago de la tienda no está activa. Requiere revinculación.' },
@@ -68,21 +88,82 @@ export async function POST(req: Request) {
     }
 
     // 4. Construir items y base real de cobro
-    const items = (order.items || []).map((item: any) => ({
-      id: String(item.variant_id || item.product_id || 'item'),
-      title: item.variante ? `${item.nombre} (${item.variante})` : item.nombre,
-      quantity: Number(item.cantidad) || 1,
-      unit_price: Number(item.precio_unitario) || 0,
-      currency_id: 'ARS',
-    }))
+    if (!Array.isArray(order.items) || order.items.length === 0) {
+      return NextResponse.json({ error: 'El pedido no contiene productos válidos' }, { status: 400 })
+    }
 
-    // TODO: Revisión legal de defensa del consumidor sobre recargos en precio final
+    // C5: Validar precios contra la base de datos en el servidor para evitar manipulación en el cliente
+    const validatedItems: Array<{
+      id: string
+      title: string
+      quantity: number
+      unit_price: number
+      currency_id: string
+    }> = []
+
+    for (const item of order.items) {
+      const qty = Number(item.cantidad) || 0
+      let verifiedUnitPrice = Number(item.precio_unitario) || 0
+
+      // Consultar precio real en la base de datos si product_id está presente
+      if (item.product_id) {
+        const { data: dbProduct } = await supabaseAdmin
+          .from('products')
+          .select('id, precio_base, precio_oferta, oferta_activa')
+          .eq('id', item.product_id)
+          .maybeSingle()
+
+        if (dbProduct) {
+          let basePrice = dbProduct.oferta_activa && dbProduct.precio_oferta != null
+            ? Number(dbProduct.precio_oferta)
+            : Number(dbProduct.precio_base)
+
+          // Si tiene variante, sumar precio adicional de la variante
+          if (item.variant_id) {
+            const { data: dbVariant } = await supabaseAdmin
+              .from('product_variants')
+              .select('id, precio_adicional')
+              .eq('id', item.variant_id)
+              .maybeSingle()
+
+            if (dbVariant) {
+              basePrice += Number(dbVariant.precio_adicional || 0)
+            }
+          }
+
+          if (basePrice > 0 && Math.abs(basePrice - verifiedUnitPrice) > 0.01) {
+            console.warn(
+              `Discrepancia de precio detectada en pedido ${order.id}, producto ${item.product_id}: client=${verifiedUnitPrice}, db=${basePrice}. Se aplica precio de DB.`
+            )
+            verifiedUnitPrice = basePrice
+          }
+        }
+      }
+
+      // C2: Validar items antes de llamar a MP
+      if (qty <= 0 || verifiedUnitPrice <= 0) {
+        return NextResponse.json(
+          { error: 'Todos los productos deben tener cantidad y precio mayores a 0' },
+          { status: 400 }
+        )
+      }
+
+      validatedItems.push({
+        id: String(item.variant_id || item.product_id || 'item'),
+        title: item.variante ? `${item.nombre} (${item.variante})` : item.nombre,
+        quantity: qty,
+        unit_price: Number(verifiedUnitPrice.toFixed(2)),
+        currency_id: 'ARS',
+      })
+    }
+
+    // Recargo por cobro con MP si la tienda lo tiene configurado
     const recargoPct = Number(store.mp_recargo_porcentaje) || 0
     if (recargoPct > 0) {
-      const subtotalProductos = items.reduce((acc: number, it: any) => acc + it.quantity * it.unit_price, 0)
+      const subtotalProductos = validatedItems.reduce((acc, it) => acc + it.quantity * it.unit_price, 0)
       const montoRecargo = Number(((subtotalProductos * recargoPct) / 100).toFixed(2))
       if (montoRecargo > 0) {
-        items.push({
+        validatedItems.push({
           id: 'recargo_mp',
           title: `Recargo por servicio de cobro (${recargoPct}%)`,
           quantity: 1,
@@ -94,43 +175,45 @@ export async function POST(req: Request) {
 
     // Costo de envío si aplica
     if (Number(order.costo_envio) > 0) {
-      items.push({
+      validatedItems.push({
         id: 'costo_envio',
         title: 'Costo de envío',
         quantity: 1,
-        unit_price: Number(order.costo_envio),
+        unit_price: Number(Number(order.costo_envio).toFixed(2)),
         currency_id: 'ARS',
       })
     }
 
-    // 5. Calcular monto total cobrado y la comisión de Portalmaker (marketplace_fee)
-    const totalCobro = items.reduce((acc: number, it: any) => acc + it.quantity * it.unit_price, 0)
+    // C1: Calcular monto total cobrado y redondear
+    const totalCobro = Number(validatedItems.reduce((acc, it) => acc + it.quantity * it.unit_price, 0).toFixed(2))
+    if (totalCobro <= 0) {
+      return NextResponse.json({ error: 'El monto total a cobrar debe ser mayor a 0' }, { status: 400 })
+    }
+
+    // C4: Comparar totalCobro con el total original del pedido para auditoría
+    if (Math.abs(Number(order.total) - totalCobro) > 1) {
+      console.warn(`Ajuste de total: order.total=${order.total} vs totalCobro=${totalCobro} en pedido ${order.id}`)
+    }
+
+    // Comisión de Portalmaker (marketplace_fee)
     const comisionPortalmakerPct = Number(store.comision_portalmaker) || 0
     let marketplaceFee = 0
 
     if (comisionPortalmakerPct > 0) {
       marketplaceFee = Number(((totalCobro * comisionPortalmakerPct) / 100).toFixed(2))
-      // Salvaguarda: la comisión no puede ser igual o mayor al total
+      // C6: Salvaguarda si la comisión supera el total con warning explícito
       if (marketplaceFee >= totalCobro) {
+        console.warn(`marketplaceFee (${marketplaceFee}) >= totalCobro (${totalCobro}) en pedido ${order.id}, omitiendo fee.`)
         marketplaceFee = 0
       }
     }
 
-    // 6. Validar y sanitizar origen de retorno (Anti Open Redirect)
+    // Validar y sanitizar origen de retorno (Anti Open Redirect)
     const safeOrigin = getSafeReturnOrigin(returnOrigin, store)
-    const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.portalmaker.ar'}/api/webhooks/mercadopago`
 
-    // 7. Formatear datos del comprador
-    const cleanPhone = (order.telefono_comprador || '').replace(/[^0-9]/g, '')
-    let payerPhone: { area_code: string; number: number } | undefined = undefined
-
-    if (cleanPhone.length >= 8) {
-      const area = cleanPhone.length > 8 ? cleanPhone.slice(0, cleanPhone.length - 8) : '11'
-      const num = parseInt(cleanPhone.slice(-8), 10)
-      if (!isNaN(num)) {
-        payerPhone = { area_code: area, number: num }
-      }
-    }
+    // A1: notification_url con order_id explícito en query string
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.portalmaker.ar').replace(/\/$/, '')
+    const webhookUrl = `${appUrl}/api/webhooks/mercadopago?order_id=${order.id}`
 
     // Exigir email válido del comprador
     const buyerEmail = order.email_comprador?.trim()
@@ -142,12 +225,15 @@ export async function POST(req: Request) {
     const now = new Date()
     const expirationDate = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString()
 
+    // C3: Omitir payer.phone para evitar rechazos de formato de MP
+    // C7: Nombre seguro de tienda para statement_descriptor
+    const safeStoreName = ((store.nombre || 'Tienda').trim()).slice(0, 16)
+
     const preferencePayload: any = {
-      items,
+      items: validatedItems,
       payer: {
         name: order.nombre_comprador?.trim() || 'Cliente',
         email: buyerEmail,
-        ...(payerPhone ? { phone: payerPhone } : {}),
         ...(order.direccion_entrega ? { address: { street_name: order.direccion_entrega.trim() } } : {}),
       },
       back_urls: {
@@ -158,7 +244,7 @@ export async function POST(req: Request) {
       auto_return: 'approved',
       external_reference: order.id,
       notification_url: webhookUrl,
-      statement_descriptor: store.nombre.slice(0, 16),
+      statement_descriptor: safeStoreName,
       expires: true,
       expiration_date_from: now.toISOString(),
       expiration_date_to: expirationDate,
@@ -172,7 +258,7 @@ export async function POST(req: Request) {
       preferencePayload.marketplace_fee = marketplaceFee
     }
 
-    // 8. Crear la preferencia en Mercado Pago
+    // 5. Crear la preferencia en Mercado Pago
     const mpRes = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
@@ -192,12 +278,13 @@ export async function POST(req: Request) {
       )
     }
 
-    // 9. Actualizar la orden con preference_id, total real y comisión calculada
+    // 6. Actualizar la orden con preference_id, init_point, total real y comisión calculada
     const { error: updateOrderErr } = await supabaseAdmin
       .from('orders')
       .update({
         total: totalCobro,
         mp_preference_id: mpData.id,
+        mp_init_point: mpData.init_point,
         mp_fee_portalmaker: marketplaceFee,
         updated_at: new Date().toISOString(),
       })

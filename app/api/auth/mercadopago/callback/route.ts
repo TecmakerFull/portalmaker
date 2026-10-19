@@ -104,7 +104,23 @@ export async function GET(req: Request) {
     const expiresInSeconds = tokenData.expires_in || 15552000 // 180 días por defecto
     const expiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString()
 
-    // 4. Guardar credenciales vinculadas en la tienda
+    // 4. Guardar credenciales vinculadas en la tabla segura store_mp_credentials y sincronizar stores
+    try {
+      await supabaseAdmin
+        .from('store_mp_credentials')
+        .upsert({
+          store_id: storeId,
+          mp_access_token: tokenData.access_token,
+          mp_refresh_token: tokenData.refresh_token || null,
+          mp_public_key: tokenData.public_key || null,
+          mp_token_expires_at: expiresAt,
+          mp_user_id: String(tokenData.user_id || ''),
+          updated_at: new Date().toISOString(),
+        })
+    } catch (credErr) {
+      console.warn('Aviso guardando en store_mp_credentials:', credErr)
+    }
+
     const { error: updateErr } = await supabaseAdmin
       .from('stores')
       .update({

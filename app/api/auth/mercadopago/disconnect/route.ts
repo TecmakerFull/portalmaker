@@ -46,7 +46,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No tienes permisos sobre esta tienda' }, { status: 403 })
     }
 
-    // Desvincular cuenta en la base de datos
+    // Desvincular cuenta en la base de datos y limpiar store_mp_credentials
+    await supabaseAdmin
+      .from('store_mp_credentials')
+      .delete()
+      .eq('store_id', storeId)
+
     const { error: updateErr } = await supabaseAdmin
       .from('stores')
       .update({

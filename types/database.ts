@@ -116,6 +116,8 @@ export interface Store {
   transferencia_cuit?: string | null;
   transferencia_instrucciones?: string | null;
 
+  custom_domain_verified?: boolean;
+
   // Integración Mercado Pago (Marketplace OAuth y Split de pagos)
   mp_connected?: boolean;
   mp_user_id?: string | null;
@@ -126,6 +128,18 @@ export interface Store {
   mp_recargo_porcentaje?: number;
   comision_portalmaker?: number;
 
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+// Credenciales aisladas de Mercado Pago (tabla store_mp_credentials con acceso service_role)
+export interface StoreMpCredentials {
+  store_id: UUID;
+  mp_access_token: string;
+  mp_refresh_token: string | null;
+  mp_public_key: string | null;
+  mp_token_expires_at: Timestamp | null;
+  mp_user_id: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
 }
@@ -286,13 +300,14 @@ export interface Order {
   total: number;
   costo_envio: number;
   estado_pedido: 'nuevo' | 'en_produccion' | 'despachado' | 'entregado' | 'cancelado';
-  estado_pago: 'pendiente' | 'aprobado' | 'rechazado';
+  estado_pago: 'pendiente' | 'aprobado' | 'rechazado' | 'revision' | 'reembolsado' | 'contracargo';
   metodo_pago: string | null;
   zona_envio_id: UUID | null;
   notas: string | null;
 
   // Integración Mercado Pago
   mp_preference_id?: string | null;
+  mp_init_point?: string | null;
   mp_payment_id?: string | null;
   mp_merchant_order_id?: string | null;
   mp_fee_portalmaker?: number;
