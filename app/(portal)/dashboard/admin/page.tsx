@@ -15,6 +15,8 @@ import {
   Clock,
   LogOut,
   Package,
+  Truck,
+  AlertTriangle,
 } from 'lucide-react'
 import SuperadminTiendasList from './tiendas-list'
 import NuevaTiendaModal from './nueva-tienda-modal'
@@ -85,6 +87,14 @@ export default async function SuperadminDashboardPage() {
     const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
     return diffDays <= 7
   }).length
+
+  // 6. Consultar envíos en estado de error en la plataforma (Fase 6)
+  const { data: failedShipments } = await supabase
+    .from('shipments')
+    .select('id, provider, estado, error_message, attempts, next_retry_at, updated_at, stores(id, nombre, slug), orders(id, total, nombre_comprador)')
+    .eq('estado', 'error')
+    .order('updated_at', { ascending: false })
+    .limit(10)
 
   return (
     <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-portal-body)] pb-16 transition-colors duration-200">
@@ -217,6 +227,54 @@ export default async function SuperadminDashboardPage() {
             <p className="text-[11px] opacity-60 mt-0.5">MRR de tiendas activas</p>
           </div>
         </div>
+
+        {/* Panel de Incidencias de Logística (Fase 6) */}
+        {failedShipments && failedShipments.length > 0 && (
+          <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                <h2 className="text-sm font-bold text-rose-800 dark:text-rose-300 uppercase tracking-wider">
+                  Envíos con Error en la Plataforma ({failedShipments.length})
+                </h2>
+              </div>
+              <span className="text-xs text-rose-600 dark:text-rose-400 font-semibold">
+                Atención Requerida
+              </span>
+            </div>
+
+            <p className="text-xs text-rose-700 dark:text-rose-400">
+              Pedidos donde el proveedor logístico rechazó la emisión automática y requiere reintento o verificación de credenciales/origen.
+            </p>
+
+            <div className="divide-y divide-rose-500/20 bg-white/60 dark:bg-black/30 rounded-xl border border-rose-500/20 overflow-hidden text-xs">
+              {failedShipments.map((s: any) => (
+                <div key={s.id} className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {s.stores?.nombre || 'Tienda'}
+                    </span>
+                    <span className="opacity-60 ml-2">Pedido #{s.orders?.id?.slice(0, 8)}</span>
+                    <span className="block text-rose-600 dark:text-rose-400 mt-0.5">
+                      Carrier: {s.provider?.toUpperCase()} — {s.error_message || 'Fallo desconocido'}
+                    </span>
+                  </div>
+
+                  <div className="text-left sm:text-right shrink-0">
+                    <span className="opacity-70 block text-[11px]">
+                      Intentos: {s.attempts || 0}/5
+                    </span>
+                    {s.next_retry_at && (
+                      <span className="text-[11px] text-slate-500 block">
+                        Reintento: {new Date(s.next_retry_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Listado y Gestión Avanzada de Cuentas */}
         <div className="space-y-4">

@@ -314,13 +314,18 @@ export async function POST(req: Request) {
       )
     }
 
-    // 6. Actualizar la orden con preference_id, init_point, total real, comisión y snapshots de porcentaje (D3)
+    // 6. Actualizar la orden con preference_id, init_point (o sandbox_init_point si MP_SANDBOX=true), total real y comisión
+    const selectedInitPoint =
+      process.env.MP_SANDBOX === 'true' && mpData.sandbox_init_point
+        ? mpData.sandbox_init_point
+        : mpData.init_point
+
     const { error: updateOrderErr } = await supabaseAdmin
       .from('orders')
       .update({
         total: totalCobro,
         mp_preference_id: mpData.id,
-        mp_init_point: mpData.init_point,
+        mp_init_point: selectedInitPoint,
         mp_preference_created_at: new Date().toISOString(),
         mp_fee_portalmaker: marketplaceFee,
         comision_portalmaker_pct: comisionPortalmakerPct,
@@ -335,7 +340,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       preferenceId: mpData.id,
-      initPoint: mpData.init_point,
+      initPoint: selectedInitPoint,
     })
   } catch (err: any) {
     console.error('Excepción al crear preferencia de Mercado Pago:', err)
