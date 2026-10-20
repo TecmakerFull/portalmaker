@@ -30,17 +30,56 @@ import {
   RotateCcw,
   Calendar,
   ExternalLink,
+  Plus,
+  ChevronDown,
+  ChevronUp,
+  User,
+  Phone,
+  Mail,
+  Trash2,
+  ArrowUpDown,
 } from 'lucide-react'
+
+export interface ProductSummaryForSale {
+  id: string
+  nombre: string
+  precio_base: number
+  precio_oferta: number | null
+  oferta_activa: boolean
+  stock: number | null
+  gestiona_stock: boolean
+  variants?: Array<{
+    id: string
+    nombre: string
+    precio_adicional: number
+    stock: number | null
+    activo: boolean
+  }> | null
+}
+
+export interface CustomerSummaryForSale {
+  id: string
+  nombre: string
+  email: string | null
+  telefono: string | null
+}
 
 interface VentasManagerProps {
   store: Store
   initialOrders: Order[]
+  initialProducts?: ProductSummaryForSale[]
+  initialCustomers?: CustomerSummaryForSale[]
   tenantQuery: string
 }
+
+type DateRangeFilter = 'todos' | 'hoy' | '7dias' | '30dias' | 'este_mes'
+type SortOrder = 'desc' | 'asc'
 
 export default function VentasManager({
   store,
   initialOrders = [],
+  initialProducts = [],
+  initialCustomers = [],
   tenantQuery,
 }: VentasManagerProps) {
   const router = useRouter()
@@ -51,12 +90,64 @@ export default function VentasManager({
   const [cardFilter, setCardFilter] = useState<'todos' | 'facturado' | 'pendientes' | 'clientes'>('todos')
   const [selectedClientFilter, setSelectedClientFilter] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  
+  // Nuevo: Filtro temporal y Ordenación
+  const [dateFilter, setDateFilter] = useState<DateRangeFilter>('todos')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
+
+  // Nuevo: Paginación / "Ver más" (mostrar de a 20)
+  const [visibleCount, setVisibleCount] = useState<number>(20)
+
+  // Nuevo: Acordeón de filas expandidas para vista compacta
+  const [expandedOrderIds, setExpandedOrderIds] = useState<Set<string>>(new Set())
+
+  // Modal de Detalle completo de orden
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
 
-  // Estados de acción dentro del modal
+  // Estados de acción dentro del modal de detalle
   const [updatingOrder, setUpdatingOrder] = useState(false)
   const [modalFeedback, setModalFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  // Modal de Nueva Venta Manual
+  const [isNewSaleOpen, setIsNewSaleOpen] = useState(false)
+  const [creatingSale, setCreatingSale] = useState(false)
+  const [saleError, setSaleError] = useState<string | null>(null)
+
+  // Formulario de Nueva Venta Manual
+  const [clienteTipo, setClienteTipo] = useState<'consumidor_final' | 'existente' | 'nuevo'>('consumidor_final')
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('')
+  const [manualNombre, setManualNombre] = useState('')
+  const [manualTelefono, setManualTelefono] = useState('')
+  const [manualEmail, setManualEmail] = useState('')
+  const [manualMetodoPago, setManualMetodoPago] = useState<string>('efectivo')
+  const [manualTipoEntrega, setManualTipoEntrega] = useState<'acordar' | 'retiro' | 'envio'>('retiro')
+  const [manualNotas, setManualNotas] = useState('')
+  const [manualDescontarStock, setManualDescontarStock] = useState(true)
+
+  // Items en la nueva venta manual
+  interface ManualItemRow {
+    productId: string
+    variantId: string
+    nombre: string
+    variante: string
+    cantidad: number
+    precio_unitario: number
+    gestiona_stock: boolean
+  }
+  const [manualItems, setManualItems] = useState<ManualItemRow[]>([])
+
+  const toggleExpandOrder = (orderId: string) => {
+    setExpandedOrderIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(orderId)) {
+        next.delete(orderId)
+      } else {
+        next.add(orderId)
+      }
+      return next
+    })
+  }
 
   // Métricas de ventas y clientes
   const metrics = useMemo(() => {
@@ -121,9 +212,11 @@ export default function VentasManager({
     return Array.from(map.values()).sort((a, b) => b.totalSpent - a.totalSpent)
   }, [orders])
 
-  // Pedidos filtrados
+  // Pedidos filtrados y ordenados
   const filteredOrders = useMemo(() => {
-    return orders.filter((order) => {
+    const now = new Date()
+
+    const result = orders.filter((order) => {
       // 1. Filtro especial por tarjeta superior
       if (cardFilter === 'facturado') {
         if (order.estado_pago !== 'aprobado') return false
@@ -143,24 +236,62 @@ export default function VentasManager({
         return false
       }
 
-      // 4. Filtro por búsqueda
+      // 4. Filtro temporal
+      if (dateFilter !== 'todos') {
+        const orderDate = new Date(order.created_at)
+        if (dateFilter === 'hoy') {
+          const isToday =
+            orderDate.getDate() === now.getDate() &&
+            orderDate.getMonth() === now.getMonth() &&
+            orderDate.getFullYear() === now.getFullYear()
+          if (!isToday) return false
+        } else if (dateFilter === '7dias') {
+          const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          if (orderDate < sevenDaysAgo) return false
+        } else if (dateFilter === '30dias') {
+          const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+          if (orderDate < thirtyDaysAgo) return false
+        } else if (dateFilter === 'este_mes') {
+          const isThisMonth =
+            orderDate.getMonth() === now.getMonth() &&
+            orderDate.getFullYear() === now.getFullYear()
+          if (!isThisMonth) return false
+        }
+      }
+
+      // 5. Filtro por búsqueda de texto
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase()
         const matchName = order.nombre_comprador?.toLowerCase().includes(q)
         const matchPhone = order.telefono_comprador?.toLowerCase().includes(q)
         const matchEmail = (order as any).email_comprador?.toLowerCase().includes(q)
         const matchNotes = order.notas?.toLowerCase().includes(q)
+        const matchId = order.id.toLowerCase().includes(q)
         const matchItems = (order.items || []).some((it: OrderItem) =>
           it.nombre.toLowerCase().includes(q)
         )
-        if (!matchName && !matchPhone && !matchEmail && !matchNotes && !matchItems) {
+        if (!matchName && !matchPhone && !matchEmail && !matchNotes && !matchItems && !matchId) {
           return false
         }
       }
 
       return true
     })
-  }, [orders, cardFilter, selectedClientFilter, filterStatus, searchQuery])
+
+    // Ordenar (por defecto: última arriba / desc)
+    result.sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime()
+      const dateB = new Date(b.created_at).getTime()
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB
+    })
+
+    return result
+  }, [orders, cardFilter, selectedClientFilter, filterStatus, dateFilter, searchQuery, sortOrder])
+
+  // Pedidos visibles según paginación (bloques de 20)
+  const visibleOrders = useMemo(() => {
+    return filteredOrders.slice(0, visibleCount)
+  }, [filteredOrders, visibleCount])
 
   // Abrir modal de detalle
   const handleOpenDetail = (order: Order) => {
@@ -219,7 +350,6 @@ export default function VentasManager({
       for (const item of itemsList) {
         const qty = item.cantidad || 1
 
-        // Si tiene variante con ID
         if (item.variant_id) {
           const { data: vData } = await supabase
             .from('product_variants')
@@ -236,7 +366,6 @@ export default function VentasManager({
           }
         }
 
-        // Si el producto base gestiona stock
         if (item.product_id) {
           const { data: pData } = await supabase
             .from('products')
@@ -254,49 +383,46 @@ export default function VentasManager({
         }
       }
 
-      // 2. Marcar pedido como confirmado, pagado y stock_descontado = true
       const orderUpdates: Partial<Order> = {
-        stock_descontado: true,
         estado_pedido: 'en_produccion',
         estado_pago: 'aprobado',
-        observaciones_admin: `${selectedOrder.observaciones_admin || ''} | Stock descontado el ${new Date().toLocaleDateString('es-AR')}`,
+        stock_descontado: true,
         updated_at: new Date().toISOString(),
       }
 
-      const { error: orderError } = await supabase
+      const { error } = await supabase
         .from('orders')
         .update(orderUpdates)
         .eq('id', selectedOrder.id)
 
-      if (orderError) throw orderError
+      if (error) throw error
 
       const updated = { ...selectedOrder, ...orderUpdates }
       setSelectedOrder(updated)
       setOrders((prev) => prev.map((o) => (o.id === selectedOrder.id ? updated : o)))
       setModalFeedback({
         type: 'success',
-        text: '¡Venta confirmada y stock descontado exitosamente del inventario!',
+        text: 'Venta confirmada: stock descontado y estado pasado a En Producción.',
       })
       router.refresh()
     } catch (err: any) {
-      console.error(err)
-      setModalFeedback({
-        type: 'error',
-        text: err?.message || 'Error al descontar stock.',
-      })
+      setModalFeedback({ type: 'error', text: err?.message || 'Error al descontar stock.' })
     } finally {
       setUpdatingOrder(false)
     }
   }
 
-  // Cancelar Pedido y Restaurar Stock si fue descontado
+  // Cancelar Pedido y Restaurar Stock
   const handleCancelOrderAndRestoreStock = async () => {
     if (!selectedOrder) return
+    if (!confirm('¿Estás seguro de cancelar este pedido? Si el stock fue descontado, se restaurará automáticamente.')) {
+      return
+    }
+
     setUpdatingOrder(true)
     setModalFeedback(null)
 
     try {
-      // Si el stock ya había sido descontado, lo restauramos
       if (selectedOrder.stock_descontado) {
         const itemsList = selectedOrder.items || []
 
@@ -364,17 +490,231 @@ export default function VentasManager({
     }
   }
 
+  // Agregar ítem al formulario de venta manual
+  const handleAddManualItem = (productId: string, variantId: string = '') => {
+    const prod = initialProducts.find((p) => p.id === productId)
+    if (!prod) return
+
+    let price = prod.oferta_activa && prod.precio_oferta != null ? prod.precio_oferta : prod.precio_base
+    let variantName = ''
+
+    if (variantId && prod.variants) {
+      const v = prod.variants.find((vr) => vr.id === variantId)
+      if (v) {
+        price += v.precio_adicional || 0
+        variantName = v.nombre
+      }
+    }
+
+    setManualItems((prev) => [
+      ...prev,
+      {
+        productId: prod.id,
+        variantId: variantId || '',
+        nombre: prod.nombre,
+        variante: variantName,
+        cantidad: 1,
+        precio_unitario: price,
+        gestiona_stock: prod.gestiona_stock,
+      },
+    ])
+  }
+
+  const handleUpdateManualItemQty = (index: number, newQty: number) => {
+    if (newQty < 1) return
+    setManualItems((prev) =>
+      prev.map((it, idx) => (idx === index ? { ...it, cantidad: newQty } : it))
+    )
+  }
+
+  const handleUpdateManualItemPrice = (index: number, newPrice: number) => {
+    if (newPrice < 0) return
+    setManualItems((prev) =>
+      prev.map((it, idx) => (idx === index ? { ...it, precio_unitario: newPrice } : it))
+    )
+  }
+
+  const handleRemoveManualItem = (index: number) => {
+    setManualItems((prev) => prev.filter((_, idx) => idx !== index))
+  }
+
+  const manualTotal = useMemo(() => {
+    return manualItems.reduce((acc, it) => acc + it.precio_unitario * it.cantidad, 0)
+  }, [manualItems])
+
+  // Crear la Venta Manual
+  const handleCreateManualSale = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaleError(null)
+
+    if (manualItems.length === 0) {
+      setSaleError('Debes agregar al menos un producto a la venta.')
+      return
+    }
+
+    let finalNombre = 'Consumidor Final'
+    let finalTelefono: string | null = null
+    let finalEmail: string | null = null
+
+    if (clienteTipo === 'existente') {
+      const cust = initialCustomers.find((c) => c.id === selectedCustomerId)
+      if (!cust) {
+        setSaleError('Selecciona un cliente de la lista.')
+        return
+      }
+      finalNombre = cust.nombre
+      finalTelefono = cust.telefono
+      finalEmail = cust.email
+    } else if (clienteTipo === 'nuevo') {
+      if (!manualNombre.trim()) {
+        setSaleError('Indica el nombre del cliente.')
+        return
+      }
+      finalNombre = manualNombre.trim()
+      finalTelefono = manualTelefono.trim() || null
+      finalEmail = manualEmail.trim() || null
+    }
+
+    setCreatingSale(true)
+
+    try {
+      // 1. Snapshot inmutable de items
+      const snapshotItems: OrderItem[] = manualItems.map((it) => ({
+        product_id: it.productId,
+        variant_id: it.variantId || null,
+        nombre: it.nombre,
+        variante: it.variante || undefined,
+        cantidad: it.cantidad,
+        precio_unitario: it.precio_unitario,
+        subtotal: it.precio_unitario * it.cantidad,
+        gestiona_stock: it.gestiona_stock,
+      }))
+
+      // 2. Si se eligió descontar stock, actualizar inventario
+      if (manualDescontarStock) {
+        for (const it of manualItems) {
+          if (it.variantId) {
+            const { data: vData } = await supabase
+              .from('product_variants')
+              .select('stock')
+              .eq('id', it.variantId)
+              .single()
+
+            if (vData && vData.stock !== null) {
+              await supabase
+                .from('product_variants')
+                .update({ stock: Math.max(0, vData.stock - it.cantidad) })
+                .eq('id', it.variantId)
+            }
+          }
+
+          if (it.productId) {
+            const { data: pData } = await supabase
+              .from('products')
+              .select('stock, gestiona_stock')
+              .eq('id', it.productId)
+              .single()
+
+            if (pData && pData.gestiona_stock && pData.stock !== null) {
+              await supabase
+                .from('products')
+                .update({ stock: Math.max(0, pData.stock - it.cantidad) })
+                .eq('id', it.productId)
+            }
+          }
+        }
+      }
+
+      // 3. Crear el pedido en la base de datos
+      const newOrderPayload: any = {
+        store_id: store.id,
+        nombre_comprador: finalNombre,
+        telefono_comprador: finalTelefono,
+        email_comprador: finalEmail,
+        tipo_entrega: manualTipoEntrega,
+        direccion_entrega: null,
+        items: snapshotItems,
+        total: manualTotal,
+        costo_envio: 0,
+        estado_pedido: 'entregado', // Venta manual completada
+        estado_pago: 'aprobado',
+        metodo_pago: manualMetodoPago,
+        stock_descontado: manualDescontarStock,
+        notas: manualNotas.trim() ? `[Venta Manual] ${manualNotas.trim()}` : '[Venta Manual]',
+        observaciones_admin: 'Venta ingresada manualmente por el dueño de la tienda.',
+      }
+
+      const { data: insertedOrder, error: insertErr } = await supabase
+        .from('orders')
+        .insert(newOrderPayload)
+        .select()
+        .single()
+
+      if (insertErr) throw insertErr
+
+      // 4. Si era cliente nuevo con datos, guardarlo en store_customers si tiene email
+      if (clienteTipo === 'nuevo' && finalEmail) {
+        try {
+          await supabase.from('store_customers').upsert(
+            {
+              store_id: store.id,
+              email: finalEmail.toLowerCase(),
+              nombre: finalNombre,
+              telefono: finalTelefono,
+              ultimo_login: new Date().toISOString(),
+            },
+            { onConflict: 'store_id,email' }
+          )
+        } catch (e) {
+          console.error('Error guardando nuevo cliente en CRM:', e)
+        }
+      }
+
+      // 5. Actualizar estado local
+      setOrders((prev) => [insertedOrder, ...prev])
+      setIsNewSaleOpen(false)
+      // Reset de form
+      setManualItems([])
+      setManualNombre('')
+      setManualTelefono('')
+      setManualEmail('')
+      setManualNotas('')
+      setClienteTipo('consumidor_final')
+
+      router.refresh()
+    } catch (err: any) {
+      console.error('Error al registrar venta manual:', err)
+      setSaleError(err?.message || 'Error al guardar la venta manual.')
+    } finally {
+      setCreatingSale(false)
+    }
+  }
+
   return (
-    <div className="w-full space-y-6">
-      {/* Encabezado */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)] font-[var(--font-heading)] flex items-center gap-2.5">
-          <ShoppingBag className="w-7 h-7 text-[#CA8A04] dark:text-[#FACC15]" />
-          <span>Ventas & Pedidos</span>
-        </h1>
-        <p className="text-xs sm:text-sm opacity-70 mt-1">
-          Gestiona las compras y reservas recibidas desde tu tienda online, confirma pagos y descuenta stock automáticamente.
-        </p>
+    <div className="w-full space-y-6 pb-20">
+      {/* Encabezado con Botón de + Nueva Venta */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)] font-[var(--font-heading)] flex items-center gap-2.5">
+            <ShoppingBag className="w-7 h-7 text-[#CA8A04] dark:text-[#FACC15]" />
+            <span>Ventas & Pedidos</span>
+          </h1>
+          <p className="text-xs sm:text-sm opacity-70 mt-1">
+            Gestiona las compras online y ventas de mostrador de tu tienda en un solo lugar.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setIsNewSaleOpen(true)
+            setSaleError(null)
+          }}
+          className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-bold text-xs sm:text-sm hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0 self-start sm:self-auto"
+        >
+          <Plus className="w-4 h-4 stroke-[2.5]" />
+          <span>+ Nueva Venta</span>
+        </button>
       </div>
 
       {/* 1. Métricas de Ventas y Clientes (Tarjetas interactivas de filtro) */}
@@ -577,11 +917,12 @@ export default function VentasManager({
         </div>
       )}
 
-      {/* 2. Filtros y Búsqueda */}
+      {/* 2. Barra de Filtros, Estado, Rango de Fecha y Búsqueda */}
       <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-4 sm:p-5 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Pills de Estado */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {/* Fila 1: Filtro de Estado + Filtro Temporal + Orden + Búsqueda */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Pills de Estado de Pedido */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
             {[
               { key: 'todos', label: 'Todos' },
               { key: 'nuevo', label: 'Nuevos' },
@@ -605,30 +946,60 @@ export default function VentasManager({
             ))}
           </div>
 
-          {/* Campo de Búsqueda */}
-          <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-50 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar cliente o ítem..."
-              className="w-full min-h-[40px] pl-9 pr-8 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-xs focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 cursor-pointer"
+          {/* Controles secundarios: Temporal, Orden y Búsqueda */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Filtro Temporal */}
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 opacity-50 shrink-0" />
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value as DateRangeFilter)}
+                className="min-h-[38px] px-2.5 py-1.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
               >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+                <option value="todos">Cualquier fecha</option>
+                <option value="hoy">Hoy</option>
+                <option value="7dias">Últimos 7 días</option>
+                <option value="30dias">Últimos 30 días</option>
+                <option value="este_mes">Este mes</option>
+              </select>
+            </div>
+
+            {/* Orden Asc / Desc */}
+            <button
+              type="button"
+              onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+              title={sortOrder === 'desc' ? 'Orden: Más recientes primero' : 'Orden: Más antiguos primero'}
+              className="min-h-[38px] px-2.5 py-1.5 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5 opacity-60" />
+              <span className="text-[11px]">{sortOrder === 'desc' ? 'Recientes' : 'Antiguos'}</span>
+            </button>
+
+            {/* Campo de Búsqueda */}
+            <div className="relative w-full sm:w-56">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 opacity-50 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar cliente o ítem..."
+                className="w-full min-h-[38px] pl-8 pr-7 py-1.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-xs focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Indicador de Filtro Activo por Tarjeta */}
-        {(cardFilter !== 'todos' || selectedClientFilter) && (
+        {/* Indicador de Filtro Activo por Tarjeta o Fecha */}
+        {(cardFilter !== 'todos' || selectedClientFilter || dateFilter !== 'todos' || filterStatus !== 'todos') && (
           <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[var(--color-borde)] text-xs">
             <span className="opacity-60 text-[11px] font-semibold uppercase tracking-wider">Filtro activo:</span>
             {cardFilter === 'facturado' && (
@@ -655,6 +1026,18 @@ export default function VentasManager({
                 </button>
               </span>
             )}
+            {dateFilter !== 'todos' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20 font-semibold">
+                <span>Fecha: {dateFilter}</span>
+                <button
+                  type="button"
+                  onClick={() => setDateFilter('todos')}
+                  className="hover:opacity-100 opacity-60 cursor-pointer ml-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
             {selectedClientFilter && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20 font-semibold">
                 <span>Cliente: {uniqueClientsList.find((c) => c.key === selectedClientFilter)?.nombre || selectedClientFilter}</span>
@@ -673,6 +1056,8 @@ export default function VentasManager({
                 setCardFilter('todos')
                 setSelectedClientFilter(null)
                 setFilterStatus('todos')
+                setDateFilter('todos')
+                setSearchQuery('')
               }}
               className="text-xs text-amber-600 dark:text-amber-400 hover:underline cursor-pointer ml-auto font-semibold"
             >
@@ -682,144 +1067,250 @@ export default function VentasManager({
         )}
       </div>
 
-      {/* 3. Lista de Pedidos */}
+      {/* 3. Lista Limpia y Compacta de Pedidos con Desplegable */}
       <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] overflow-hidden shadow-xs">
         {filteredOrders.length === 0 ? (
           <div className="p-12 text-center space-y-3 opacity-60">
             <ShoppingBag className="w-12 h-12 mx-auto stroke-[1.5]" />
-            <p className="font-bold text-sm">No hay pedidos para mostrar</p>
+            <p className="font-bold text-sm">No hay ventas registradas con los filtros seleccionados</p>
             <p className="text-xs opacity-70">
-              {searchQuery || filterStatus !== 'todos'
-                ? 'Prueba cambiando los filtros de búsqueda.'
-                : 'Los pedidos que realicen los compradores en tu tienda aparecerán aquí.'}
+              {searchQuery || filterStatus !== 'todos' || dateFilter !== 'todos'
+                ? 'Prueba cambiando los filtros de fecha o búsqueda.'
+                : 'Las ventas realizadas online o manuales aparecerán aquí.'}
             </p>
           </div>
         ) : (
           <div className="divide-y divide-[var(--color-borde)]">
-            {filteredOrders.map((order) => {
+            {visibleOrders.map((order) => {
               const cleanPhone = order.telefono_comprador
                 ? order.telefono_comprador.replace(/[^0-9]/g, '')
                 : null
               const waChatUrl = cleanPhone
                 ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-                    `Hola ${order.nombre_comprador}! Te escribo de ${store.nombre} respecto a tu pedido.`
+                    `Hola ${order.nombre_comprador || ''}! Te escribo de ${store.nombre} respecto a tu compra #${order.id.slice(0, 8)}.`
                   )}`
                 : null
 
               const createdDate = new Date(order.created_at)
+              const isExpanded = expandedOrderIds.has(order.id)
+              const itemsCount = (order.items || []).reduce((acc: number, it: any) => acc + (it.cantidad || 1), 0)
 
               return (
-                <div
-                  key={order.id}
-                  className="p-4 sm:p-5 hover:bg-black/[0.01] dark:hover:bg-white/[0.01] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                >
-                  <div className="space-y-1.5 flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono font-bold text-xs bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded-md">
-                        #{order.id.slice(0, 8)}
-                      </span>
-
-                      {/* Badge Estado Pedido */}
-                      <span
-                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full capitalize ${
-                          order.estado_pedido === 'entregado'
-                            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
-                            : order.estado_pedido === 'cancelado'
-                            ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20'
-                            : order.estado_pedido === 'en_produccion'
-                            ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20'
-                            : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
-                        }`}
-                      >
-                        {order.estado_pedido === 'en_produccion'
-                          ? 'En Producción'
-                          : order.estado_pedido}
-                      </span>
-
-                      {/* Badge Estado Pago */}
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                          order.estado_pago === 'aprobado'
-                            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                            : order.estado_pago === 'rechazado'
-                            ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400'
-                            : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                        }`}
-                      >
-                        Pago {order.estado_pago}
-                      </span>
-
-                      {/* Badge Stock Descontado */}
-                      {order.stock_descontado && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-700 dark:text-purple-300 flex items-center gap-1">
-                          <Box className="w-3 h-3" />
-                          <span>Stock descontado</span>
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm sm:text-base">
-                        {order.nombre_comprador || 'Cliente sin nombre'}
-                      </span>
-                      {order.telefono_comprador && (
-                        <span className="text-xs opacity-60 font-mono">
-                          ({order.telefono_comprador})
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Resumen de items */}
-                    <p className="text-xs opacity-70 truncate max-w-xl">
-                      {(order.items || [])
-                        .map((it: OrderItem) => `${it.cantidad}x ${it.nombre}`)
-                        .join(', ')}
-                    </p>
-
-                    <span className="text-[11px] opacity-50 block">
-                      {createdDate.toLocaleDateString('es-AR')} a las{' '}
-                      {createdDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-
-                  {/* Acciones y Precio */}
-                  <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 shrink-0">
-                    <span className="text-lg sm:text-xl font-black text-[#CA8A04] dark:text-[#FACC15]">
-                      ${Number(order.total).toLocaleString('es-AR')}
-                    </span>
-
-                    <div className="flex items-center gap-2">
-                      {waChatUrl && (
-                        <a
-                          href={waChatUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="min-h-[36px] px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all"
-                          title="Chatear por WhatsApp"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">WhatsApp</span>
-                        </a>
-                      )}
-
+                <div key={order.id} className="transition-colors hover:bg-black/[0.01] dark:hover:bg-white/[0.01]">
+                  {/* Fila Principal Resumida y Limpia */}
+                  <div className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    {/* Lado Izquierdo: ID, Estado, Cliente y Fecha */}
+                    <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                      {/* Botón desplegable */}
                       <button
                         type="button"
-                        onClick={() => handleOpenDetail(order)}
-                        className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[var(--color-borde)] hover:border-[#FACC15] text-xs font-bold flex items-center gap-1.5 hover:bg-[#FACC15]/10 text-[#CA8A04] dark:text-[#FACC15] transition-all cursor-pointer"
+                        onClick={() => toggleExpandOrder(order.id)}
+                        className="min-h-[36px] min-w-[36px] rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100 transition-colors shrink-0"
+                        title={isExpanded ? 'Ocultar detalle rápido' : 'Ver detalle rápido'}
                       >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Ver Detalle</span>
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
                       </button>
+
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-mono font-bold text-xs bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded-md">
+                            #{order.id.slice(0, 8)}
+                          </span>
+
+                          {/* Badge Estado Pedido */}
+                          <span
+                            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full capitalize ${
+                              order.estado_pedido === 'entregado'
+                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                                : order.estado_pedido === 'cancelado'
+                                ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20'
+                                : order.estado_pedido === 'en_produccion'
+                                ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20'
+                                : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+                            }`}
+                          >
+                            {order.estado_pedido === 'en_produccion'
+                              ? 'En Producción'
+                              : order.estado_pedido}
+                          </span>
+
+                          {/* Badge Estado Pago */}
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              order.estado_pago === 'aprobado'
+                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                                : order.estado_pago === 'rechazado'
+                                ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400'
+                                : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                            }`}
+                          >
+                            Pago {order.estado_pago}
+                          </span>
+
+                          {/* Badge Venta Manual si corresponde */}
+                          {order.notas?.includes('[Venta Manual]') && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
+                              Manual
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Nombre del Comprador y cantidad resumida de items */}
+                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs">
+                          <span className="font-bold text-sm text-[var(--color-texto)] truncate max-w-xs">
+                            {order.nombre_comprador || 'Consumidor Final'}
+                          </span>
+                          <span className="opacity-50">·</span>
+                          <span className="opacity-70 text-[11px]">
+                            {itemsCount} {itemsCount === 1 ? 'producto' : 'productos'}
+                          </span>
+                          <span className="opacity-50">·</span>
+                          <span className="opacity-50 text-[11px]">
+                            {createdDate.toLocaleDateString('es-AR')} {createdDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Lado Derecho: Monto y Botones Compactos */}
+                    <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--color-borde)]/40">
+                      <span className="text-base sm:text-lg font-bold text-[#CA8A04] dark:text-[#FACC15] font-mono">
+                        ${Number(order.total).toLocaleString('es-AR')}
+                      </span>
+
+                      <div className="flex items-center gap-1.5">
+                        {/* Botón WhatsApp compacto */}
+                        {waChatUrl && (
+                          <a
+                            href={waChatUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="min-h-[34px] min-w-[34px] p-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center transition-all shadow-xs"
+                            title="Chat de WhatsApp con el cliente"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+
+                        {/* Botón Ver Detalle Completo */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDetail(order)}
+                          className="min-h-[34px] px-3 py-1 rounded-xl border border-[var(--color-borde)] hover:border-[#FACC15] text-xs font-semibold flex items-center gap-1.5 hover:bg-[#FACC15]/10 text-[var(--color-texto)] transition-all cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5 opacity-70" />
+                          <span>Detalle</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
+
+                  {/* Panel Desplegable con Todos los Datos Rápidos */}
+                  {isExpanded && (
+                    <div className="px-4 py-3 sm:px-6 bg-black/[0.02] dark:bg-white/[0.02] border-t border-[var(--color-borde)]/60 space-y-3 animate-in fade-in duration-150 text-xs">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {/* Datos de contacto y entrega */}
+                        <div className="space-y-1">
+                          <span className="font-bold text-[11px] uppercase tracking-wider opacity-60 block">
+                            Contacto & Entrega
+                          </span>
+                          <p>
+                            <strong className="opacity-70">Teléfono:</strong>{' '}
+                            {order.telefono_comprador || 'No registrado'}
+                          </p>
+                          <p>
+                            <strong className="opacity-70">Email:</strong>{' '}
+                            {order.email_comprador || 'No registrado'}
+                          </p>
+                          <p>
+                            <strong className="opacity-70">Forma de Entrega:</strong>{' '}
+                            <span className="capitalize">{order.tipo_entrega || 'A convenir'}</span>
+                            {order.direccion_entrega ? ` (${order.direccion_entrega})` : ''}
+                          </p>
+                        </div>
+
+                        {/* Datos de pago y stock */}
+                        <div className="space-y-1">
+                          <span className="font-bold text-[11px] uppercase tracking-wider opacity-60 block">
+                            Pago & Stock
+                          </span>
+                          <p>
+                            <strong className="opacity-70">Método de Pago:</strong>{' '}
+                            <span className="capitalize">{order.metodo_pago || 'A convenir'}</span>
+                          </p>
+                          <p>
+                            <strong className="opacity-70">Control de Stock:</strong>{' '}
+                            {order.stock_descontado ? (
+                              <span className="text-purple-600 dark:text-purple-400 font-semibold">Descontado del inventario</span>
+                            ) : (
+                              <span className="opacity-60">Pendiente de descuento</span>
+                            )}
+                          </p>
+                          {order.mp_payment_id && (
+                            <p className="font-mono text-[11px] opacity-70">
+                              MP ID: {order.mp_payment_id}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Notas */}
+                        <div className="space-y-1">
+                          <span className="font-bold text-[11px] uppercase tracking-wider opacity-60 block">
+                            Notas & Aclaraciones
+                          </span>
+                          <p className="opacity-80 italic">
+                            {order.notas || 'Sin notas adicionales.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Lista de productos desglosados */}
+                      <div className="pt-2 border-t border-[var(--color-borde)]/40">
+                        <span className="font-bold text-[11px] uppercase tracking-wider opacity-60 block mb-1.5">
+                          Ítems de la Venta:
+                        </span>
+                        <div className="space-y-1 divide-y divide-[var(--color-borde)]/30">
+                          {(order.items || []).map((it: OrderItem, idx: number) => (
+                            <div key={idx} className="pt-1 first:pt-0 flex items-center justify-between text-xs">
+                              <span className="opacity-90">
+                                {it.cantidad}x <strong>{it.nombre}</strong> {it.variante ? `(${it.variante})` : ''}
+                              </span>
+                              <span className="font-mono opacity-80">
+                                ${((it.precio_unitario || 0) * (it.cantidad || 1)).toLocaleString('es-AR')}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             })}
           </div>
         )}
+
+        {/* Botón Ver Más (Paginación de a 20) */}
+        {filteredOrders.length > visibleCount && (
+          <div className="p-4 text-center border-t border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01]">
+            <button
+              type="button"
+              onClick={() => setVisibleCount((prev) => prev + 20)}
+              className="min-h-[40px] px-6 py-2 rounded-xl border border-[var(--color-borde)] hover:border-[#FACC15] text-xs font-bold hover:bg-[#FACC15]/10 text-[#CA8A04] dark:text-[#FACC15] transition-all cursor-pointer"
+            >
+              Ver más ventas ({filteredOrders.length - visibleCount} restantes)
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* 4. Modal de Detalle y Gestión del Pedido */}
+      {/* =========================================================================
+          4. MODAL DETALLE Y GESTIÓN COMPLETA DEL PEDIDO
+      ========================================================================== */}
       {isDetailOpen && selectedOrder && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-[var(--color-superficie)] text-[var(--color-texto)] rounded-3xl border border-[var(--color-borde)] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-5 sm:p-7 space-y-6 shadow-2xl relative">
@@ -982,6 +1473,334 @@ export default function VentasManager({
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          5. MODAL NUEVA VENTA MANUAL (Control Total del Negocio)
+      ========================================================================== */}
+      {isNewSaleOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-[var(--color-superficie)] text-[var(--color-texto)] rounded-3xl border border-[var(--color-borde)] w-full max-w-2xl max-h-[92vh] overflow-y-auto p-5 sm:p-7 space-y-6 shadow-2xl relative">
+            {/* Header Modal */}
+            <div className="flex items-start justify-between border-b border-[var(--color-borde)] pb-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                  Control de Negocio
+                </span>
+                <h2 className="text-xl font-bold font-[var(--font-heading)] mt-0.5 flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-[#CA8A04] dark:text-[#FACC15]" />
+                  <span>Registrar Nueva Venta Manual</span>
+                </h2>
+                <p className="text-xs opacity-70 mt-1">
+                  Ingresa ventas de mostrador, pedidos telefónicos o ventas directas seleccionando tus productos oficiales.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsNewSaleOpen(false)}
+                className="min-h-[36px] min-w-[36px] rounded-xl hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-5 h-5 opacity-60" />
+              </button>
+            </div>
+
+            {saleError && (
+              <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>{saleError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateManualSale} className="space-y-6">
+              {/* Sección A: Selección de Cliente */}
+              <div className="space-y-3 bg-[var(--color-fondo)]/40 p-4 rounded-2xl border border-[var(--color-borde)]">
+                <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
+                  1. Cliente
+                </label>
+
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { key: 'consumidor_final', label: 'Consumidor Final' },
+                    { key: 'existente', label: 'De la Lista' },
+                    { key: 'nuevo', label: '+ Cliente Nuevo' },
+                  ].map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => setClienteTipo(t.key as any)}
+                      className={`min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        clienteTipo === t.key
+                          ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+                          : 'border border-[var(--color-borde)] opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
+                {clienteTipo === 'existente' && (
+                  <div className="pt-2 space-y-1.5">
+                    <label className="text-[11px] font-semibold opacity-70 block">Seleccionar cliente registrado:</label>
+                    <select
+                      value={selectedCustomerId}
+                      onChange={(e) => setSelectedCustomerId(e.target.value)}
+                      className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                    >
+                      <option value="">-- Elige un cliente --</option>
+                      {initialCustomers.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nombre} {c.telefono ? `(${c.telefono})` : ''} {c.email ? `· ${c.email}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {clienteTipo === 'nuevo' && (
+                  <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                    <div className="space-y-1">
+                      <span className="font-semibold opacity-70 block">Nombre y Apellido *</span>
+                      <input
+                        type="text"
+                        required
+                        value={manualNombre}
+                        onChange={(e) => setManualNombre(e.target.value)}
+                        placeholder="Ej: Laura Gómez"
+                        className="w-full min-h-[40px] px-3 py-1.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)]"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="font-semibold opacity-70 block">WhatsApp / Teléfono</span>
+                      <input
+                        type="text"
+                        value={manualTelefono}
+                        onChange={(e) => setManualTelefono(e.target.value)}
+                        placeholder="Ej: 3415866464"
+                        className="w-full min-h-[40px] px-3 py-1.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="font-semibold opacity-70 block">Email (Opcional)</span>
+                      <input
+                        type="email"
+                        value={manualEmail}
+                        onChange={(e) => setManualEmail(e.target.value)}
+                        placeholder="cliente@gmail.com"
+                        className="w-full min-h-[40px] px-3 py-1.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)]"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Sección B: Selección de Productos */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
+                    2. Productos de la Tienda
+                  </label>
+                  <span className="text-[11px] opacity-60">
+                    {manualItems.length} {manualItems.length === 1 ? 'ítem cargado' : 'ítems cargados'}
+                  </span>
+                </div>
+
+                {/* Selector rápido para añadir producto */}
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <select
+                    id="productSelector"
+                    className="flex-1 min-h-[44px] px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                    defaultValue=""
+                    onChange={(e) => {
+                      const val = e.target.value
+                      if (!val) return
+                      const [prodId, varId] = val.split('__')
+                      handleAddManualItem(prodId, varId || '')
+                      e.target.value = ''
+                    }}
+                  >
+                    <option value="">+ Seleccionar producto para agregar...</option>
+                    {initialProducts.map((p) => {
+                      if (p.variants && p.variants.length > 0) {
+                        return p.variants.map((v) => (
+                          <option key={`${p.id}__${v.id}`} value={`${p.id}__${v.id}`}>
+                            {p.nombre} — {v.nombre} (${(p.precio_base + (v.precio_adicional || 0)).toLocaleString('es-AR')})
+                          </option>
+                        ))
+                      }
+                      const pr = p.oferta_activa && p.precio_oferta != null ? p.precio_oferta : p.precio_base
+                      return (
+                        <option key={p.id} value={`${p.id}__`}>
+                          {p.nombre} (${pr.toLocaleString('es-AR')})
+                        </option>
+                      )
+                    })}
+                  </select>
+                </div>
+
+                {/* Lista de productos agregados */}
+                {manualItems.length > 0 ? (
+                  <div className="divide-y divide-[var(--color-borde)] border border-[var(--color-borde)] rounded-2xl overflow-hidden bg-[var(--color-fondo)]/20 text-xs">
+                    {manualItems.map((it, idx) => (
+                      <div key={idx} className="p-3 flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-sm text-[var(--color-texto)] truncate">
+                            {it.nombre}
+                          </div>
+                          {it.variante && (
+                            <span className="text-[11px] text-[#CA8A04] dark:text-[#FACC15] block">
+                              Variante: {it.variante}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Cantidad y Precio unitario editable */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] opacity-60">Cant:</span>
+                            <input
+                              type="number"
+                              min="1"
+                              max="999"
+                              value={it.cantidad}
+                              onChange={(e) => handleUpdateManualItemQty(idx, parseInt(e.target.value) || 1)}
+                              className="w-14 min-h-[36px] text-center px-1 py-1 rounded-lg border border-[var(--color-borde)] bg-[var(--color-superficie)] font-bold text-xs"
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] opacity-60">$ Unit:</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="10"
+                              value={it.precio_unitario}
+                              onChange={(e) => handleUpdateManualItemPrice(idx, parseFloat(e.target.value) || 0)}
+                              className="w-20 min-h-[36px] text-right px-1.5 py-1 rounded-lg border border-[var(--color-borde)] bg-[var(--color-superficie)] font-bold text-xs"
+                            />
+                          </div>
+
+                          <span className="font-mono font-bold text-xs w-16 text-right">
+                            ${(it.precio_unitario * it.cantidad).toLocaleString('es-AR')}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveManualItem(idx)}
+                            className="min-h-[32px] min-w-[32px] text-rose-500 hover:bg-rose-500/10 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+                            title="Eliminar ítem"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="p-3 bg-[var(--color-fondo)]/40 flex justify-between items-center font-bold text-sm">
+                      <span>Total de la Venta:</span>
+                      <span className="text-base text-[#CA8A04] dark:text-[#FACC15] font-mono font-black">
+                        ${manualTotal.toLocaleString('es-AR')}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl border border-dashed border-[var(--color-borde)] text-center text-xs opacity-60">
+                    Aún no agregaste productos. Selecciona uno en el desplegable superior.
+                  </div>
+                )}
+              </div>
+
+              {/* Sección C: Parámetros de Cobro y Entrega */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs bg-[var(--color-fondo)]/40 p-4 rounded-2xl border border-[var(--color-borde)]">
+                <div className="space-y-1.5">
+                  <label className="font-bold uppercase tracking-wider opacity-70 block">
+                    Forma de Cobro
+                  </label>
+                  <select
+                    value={manualMetodoPago}
+                    onChange={(e) => setManualMetodoPago(e.target.value)}
+                    className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                  >
+                    <option value="efectivo">Efectivo (Mostrador)</option>
+                    <option value="transferencia">Transferencia Bancaria</option>
+                    <option value="mercadopago">Mercado Pago / Débito</option>
+                    <option value="acordar">A convenir / Cuenta Corriente</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold uppercase tracking-wider opacity-70 block">
+                    Entrega
+                  </label>
+                  <select
+                    value={manualTipoEntrega}
+                    onChange={(e) => setManualTipoEntrega(e.target.value as any)}
+                    className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                  >
+                    <option value="retiro">Entregado en local / Retiro</option>
+                    <option value="envio">Envío a domicilio</option>
+                    <option value="acordar">A coordinar</option>
+                  </select>
+                </div>
+
+                {/* Checkbox Descontar Stock */}
+                <div className="sm:col-span-2 pt-1 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="descontarStock"
+                    checked={manualDescontarStock}
+                    onChange={(e) => setManualDescontarStock(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#FACC15] focus:ring-[#FACC15] cursor-pointer"
+                  />
+                  <label htmlFor="descontarStock" className="cursor-pointer font-semibold select-none">
+                    Descontar automáticamente las cantidades del stock disponible de la tienda
+                  </label>
+                </div>
+
+                {/* Notas adicionales */}
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="font-semibold opacity-70 block">Notas de la Venta (Opcional)</label>
+                  <input
+                    type="text"
+                    value={manualNotas}
+                    onChange={(e) => setManualNotas(e.target.value)}
+                    placeholder="Ej: Descuento aplicado por cliente habitual / Seña previa"
+                    className="w-full min-h-[40px] px-3 py-1.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Botón de Confirmación */}
+              <div className="flex items-center justify-end gap-3 pt-2 border-t border-[var(--color-borde)]">
+                <button
+                  type="button"
+                  onClick={() => setIsNewSaleOpen(false)}
+                  className="min-h-[44px] px-4 py-2.5 rounded-xl border border-[var(--color-borde)] text-xs font-bold hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={creatingSale || manualItems.length === 0}
+                  className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-bold text-xs sm:text-sm hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {creatingSale ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
+                      <span>Registrando venta...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-[#1F2937]" />
+                      <span>Guardar Venta (${manualTotal.toLocaleString('es-AR')})</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
