@@ -56,7 +56,7 @@ export const getTenantStore = cache(async function getTenantStore(): Promise<Ten
     'color_texto', 'color_primario_dark', 'color_secundario_dark', 'color_fondo_dark',
     'color_texto_dark', 'tema_por_defecto', 'font_heading', 'font_body',
     'instagram_url', 'facebook_url', 'tiktok_url', 'email_contacto',
-    'horario_atencion', 'direccion', 'meta_title', 'meta_description',
+    'horario_atencion', 'mostrar_horarios', 'horarios_semanales', 'direccion', 'meta_title', 'meta_description',
     'ga_measurement_id', 'meta_pixel_id', 'google_maps_embed_url',
     'modo_operacion', 'checkout_activo', 'transferencia_activa',
     'transferencia_alias', 'transferencia_cbu_cvu', 'transferencia_banco',

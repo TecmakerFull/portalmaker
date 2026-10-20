@@ -19,6 +19,12 @@ import {
   ExternalLink,
   Globe,
 } from 'lucide-react'
+import {
+  parseHorarios,
+  getEstadoTienda,
+  DIAS_SEMANA,
+  limpiarTextoHorario,
+} from '@/lib/horarios'
 
 // Iconos vectoriales de Redes Sociales alineados a Lucide (24x24, 2px stroke)
 function InstagramIcon({ className = 'w-4 h-4' }: { className?: string }) {
@@ -161,6 +167,10 @@ export default function ContactoClient({ store, tenantQuery }: ContactoClientPro
       ? `https://maps.google.com/?q=${encodeURIComponent(store.direccion)}`
       : null
 
+  // Configuración de horarios y estado en vivo
+  const horariosConfig = parseHorarios(store)
+  const estadoTienda = getEstadoTienda(horariosConfig)
+
   return (
     <div className="space-y-10">
       {/* Encabezado */}
@@ -194,13 +204,93 @@ export default function ContactoClient({ store, tenantQuery }: ContactoClientPro
               </p>
             )}
 
-            {store.horario_atencion && (
+            {store.horario_atencion && !horariosConfig.mostrar && (
               <p className="mt-1 text-xs opacity-75 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 opacity-60" />
-                <span>Horario: {store.horario_atencion}</span>
+                <span>Horario: {limpiarTextoHorario(store.horario_atencion)}</span>
               </p>
             )}
           </div>
+
+          {/* Horarios de Atención del Taller en Vivo (si está habilitado mostrar) */}
+          {horariosConfig.mostrar && (
+            <div className="p-5 rounded-3xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/10 dark:border-white/10 pb-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-[var(--color-primario)]" />
+                  <h2 className="text-base font-semibold text-[var(--color-texto)]">
+                    Horarios de Atención y Retiro
+                  </h2>
+                </div>
+
+                {/* Badge en vivo con timezone de Argentina */}
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      estadoTienda.abierto
+                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
+                        : 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+                    }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        estadoTienda.abierto ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+                      }`}
+                    />
+                    <span>{estadoTienda.mensaje}</span>
+                  </span>
+                </div>
+              </div>
+
+              {estadoTienda.detalleTurno && (
+                <p className="text-xs opacity-70">
+                  {estadoTienda.detalleTurno}
+                </p>
+              )}
+
+              {/* Lista semanal estructurada (Lunes a Domingo) */}
+              <div className="space-y-1.5 pt-1 text-xs">
+                {DIAS_SEMANA.map((dia) => {
+                  const dConfig = horariosConfig.dias[dia.key]
+                  const esHoy = estadoTienda.diaActualKey === dia.key
+                  return (
+                    <div
+                      key={dia.key}
+                      className={`flex items-center justify-between py-1.5 px-3 rounded-xl transition-colors ${
+                        esHoy
+                          ? 'bg-amber-500/15 font-semibold text-[var(--color-texto)] border border-amber-500/25'
+                          : 'opacity-80'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-20">{dia.label}</span>
+                        {esHoy && (
+                          <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-md bg-amber-500 text-slate-950">
+                            Hoy
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="text-right">
+                        {dConfig.activo ? (
+                          <span>
+                            {dConfig.turno1.desde} a {dConfig.turno1.hasta} hs
+                            {dConfig.dobleTurno && dConfig.turno2.desde && dConfig.turno2.hasta && (
+                              <span className="opacity-90">
+                                {' '}y {dConfig.turno2.desde} a {dConfig.turno2.hasta} hs
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="opacity-50 italic">Cerrado</span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           <div>
             <Package className="mb-3 w-6 h-6 text-[var(--color-primario)]" />

@@ -1,6 +1,6 @@
 // =============================================================================
-// PORTALMAKER — Formulario Unificado de Contacto, Ubicación del Taller y Redes
-// Integra la dirección física del taller con el origen logístico de envíos.
+// PORTALMAKER — Formulario Unificado de Contacto, Ubicación del Taller,
+// Horarios de Atención Semanales y Redes
 // =============================================================================
 
 'use client'
@@ -24,6 +24,10 @@ import {
   Building2,
   ChevronDown,
   ChevronUp,
+  Copy,
+  Sun,
+  Moon,
+  Sparkles,
 } from 'lucide-react'
 import { StickySaveBar } from '../components/sticky-save-bar'
 import {
@@ -32,6 +36,16 @@ import {
   isValidCodigoPostal,
   normalizeCodigoPostal,
 } from '@/lib/shipping-validators'
+import {
+  parseHorarios,
+  serializeHorarioPayload,
+  generarTextoHorarios,
+  getEstadoTienda,
+  DIAS_SEMANA,
+  type HorariosConfig,
+  type DiaSemana,
+  type DiaHorario,
+} from '@/lib/horarios'
 
 // Provincias argentinas normalizadas según el estándar de carriers
 const PROVINCIAS = [
@@ -73,10 +87,11 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
   // 1. Canales de atención
   const [whatsapp, setWhatsapp] = useState(store.whatsapp_numero ?? '')
   const [emailContacto, setEmailContacto] = useState(store.email_contacto ?? '')
-  const [horarioAtencion, setHorarioAtencion] = useState(store.horario_atencion ?? '')
 
-  // 2. Ubicación estructurada del taller y origen logístico
-  // Si no hay calle pero hay una dirección libre previa, se precargan los campos
+  // 2. Horarios de atención estructurados (Lunes a Domingo, hasta 2 turnos por día)
+  const [horariosConfig, setHorariosConfig] = useState<HorariosConfig>(() => parseHorarios(store))
+
+  // 3. Ubicación estructurada del taller y origen logístico
   const [calle, setCalle] = useState(store.origen_calle ?? '')
   const [altura, setAltura] = useState(store.origen_altura ?? '')
   const [pisoDepto, setPisoDepto] = useState(store.origen_piso_depto ?? '')
@@ -90,7 +105,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
   const [cuit, setCuit] = useState(store.origen_cuit ?? '')
   const [razonSocial, setRazonSocial] = useState(store.origen_razon_social ?? '')
 
-  // 3. Redes sociales
+  // 4. Redes sociales
   const [instagramUrl, setInstagramUrl] = useState(store.instagram_url ?? '')
   const [facebookUrl, setFacebookUrl] = useState(store.facebook_url ?? '')
   const [tiktokUrl, setTiktokUrl] = useState(store.tiktok_url ?? '')
@@ -99,6 +114,99 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
   const [loading, setLoading] = useState(false)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  // Modificadores de estado de horarios
+  const toggleDiaActivo = (diaKey: DiaSemana) => {
+    setHorariosConfig((prev) => ({
+      ...prev,
+      dias: {
+        ...prev.dias,
+        [diaKey]: {
+          ...prev.dias[diaKey],
+          activo: !prev.dias[diaKey].activo,
+        },
+      },
+    }))
+  }
+
+  const toggleDobleTurno = (diaKey: DiaSemana) => {
+    setHorariosConfig((prev) => ({
+      ...prev,
+      dias: {
+        ...prev.dias,
+        [diaKey]: {
+          ...prev.dias[diaKey],
+          dobleTurno: !prev.dias[diaKey].dobleTurno,
+        },
+      },
+    }))
+  }
+
+  const updateTurno1 = (diaKey: DiaSemana, campo: 'desde' | 'hasta', valor: string) => {
+    setHorariosConfig((prev) => ({
+      ...prev,
+      dias: {
+        ...prev.dias,
+        [diaKey]: {
+          ...prev.dias[diaKey],
+          turno1: {
+            ...prev.dias[diaKey].turno1,
+            [campo]: valor,
+          },
+        },
+      },
+    }))
+  }
+
+  const updateTurno2 = (diaKey: DiaSemana, campo: 'desde' | 'hasta', valor: string) => {
+    setHorariosConfig((prev) => ({
+      ...prev,
+      dias: {
+        ...prev.dias,
+        [diaKey]: {
+          ...prev.dias[diaKey],
+          turno2: {
+            ...prev.dias[diaKey].turno2,
+            [campo]: valor,
+          },
+        },
+      },
+    }))
+  }
+
+  // Atajos rápidos
+  const copiarLunesALunVie = () => {
+    const lunes = horariosConfig.dias.lunes
+    setHorariosConfig((prev) => ({
+      ...prev,
+      dias: {
+        ...prev.dias,
+        martes: { ...lunes },
+        miercoles: { ...lunes },
+        jueves: { ...lunes },
+        viernes: { ...lunes },
+      },
+    }))
+  }
+
+  const copiarLunesATodaLaSemana = () => {
+    const lunes = horariosConfig.dias.lunes
+    setHorariosConfig((prev) => ({
+      ...prev,
+      dias: {
+        lunes: { ...lunes },
+        martes: { ...lunes },
+        miercoles: { ...lunes },
+        jueves: { ...lunes },
+        viernes: { ...lunes },
+        sabado: { ...lunes },
+        domingo: { ...lunes },
+      },
+    }))
+  }
+
+  const estadoEnVivoSimulado = getEstadoTienda(horariosConfig)
+  const resumenTexto = generarTextoHorarios(horariosConfig)
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -129,43 +237,67 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
 
       const direccionPublicaGenerada = partesDireccion.length > 0 ? partesDireccion.join(', ') : null
 
-      const { error } = await supabase
-        .from('stores')
-        .update({
-          // Canales de contacto
-          whatsapp_numero: whatsapp.trim() || null,
-          email_contacto: emailContacto.trim() || null,
-          horario_atencion: horarioAtencion.trim() || null,
+      const { payloadCompleto } = serializeHorarioPayload(horariosConfig)
 
-          // Ubicación física y mapa
-          direccion: direccionPublicaGenerada || store.direccion || null,
-          google_maps_embed_url: googleMapsEmbedUrl.trim() || null,
+      const baseUpdate: Record<string, any> = {
+        // Canales de contacto
+        whatsapp_numero: whatsapp.trim() || null,
+        email_contacto: emailContacto.trim() || null,
+        horario_atencion: payloadCompleto,
 
-          // Origen logístico unificado (utilizado por cotizadores de Zipnova y carriers)
-          origen_calle: calle.trim() || null,
-          origen_altura: altura.trim() || null,
-          origen_piso_depto: pisoDepto.trim() || null,
-          origen_localidad: localidad.trim() || null,
-          origen_provincia: provincia || null,
-          origen_codigo_postal: codigoPostal.trim() ? normalizeCodigoPostal(codigoPostal) : null,
-          origen_cuit: cuit.trim() ? formatCuit(cuit) : null,
-          origen_razon_social: razonSocial.trim() || null,
+        // Ubicación física y mapa
+        direccion: direccionPublicaGenerada || store.direccion || null,
+        google_maps_embed_url: googleMapsEmbedUrl.trim() || null,
 
-          // Redes sociales
-          instagram_url: instagramUrl.trim() || null,
-          facebook_url: facebookUrl.trim() || null,
-          tiktok_url: tiktokUrl.trim() || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', store.id)
+        // Origen logístico unificado (utilizado por cotizadores de Zipnova y carriers)
+        origen_calle: calle.trim() || null,
+        origen_altura: altura.trim() || null,
+        origen_piso_depto: pisoDepto.trim() || null,
+        origen_localidad: localidad.trim() || null,
+        origen_provincia: provincia || null,
+        origen_codigo_postal: codigoPostal.trim() ? normalizeCodigoPostal(codigoPostal) : null,
+        origen_cuit: cuit.trim() ? formatCuit(cuit) : null,
+        origen_razon_social: razonSocial.trim() || null,
 
-      if (error) throw error
+        // Redes sociales
+        instagram_url: instagramUrl.trim() || null,
+        facebook_url: facebookUrl.trim() || null,
+        tiktok_url: tiktokUrl.trim() || null,
+        updated_at: new Date().toISOString(),
+      }
 
-      setSuccessMsg('Datos de contacto, taller y logística guardados correctamente.')
+      // Guardar intentando incluir las columnas dedicadas mostrar_horarios y horarios_semanales
+      try {
+        const { error: fullError } = await supabase
+          .from('stores')
+          .update({
+            ...baseUpdate,
+            mostrar_horarios: horariosConfig.mostrar,
+            horarios_semanales: horariosConfig.dias,
+          })
+          .eq('id', store.id)
+
+        if (fullError) {
+          // Si la columna aún no está en cache de Supabase, guardamos con baseUpdate (que contiene el payload estructurado embebido)
+          const { error: fallbackError } = await supabase
+            .from('stores')
+            .update(baseUpdate)
+            .eq('id', store.id)
+          if (fallbackError) throw fallbackError
+        }
+      } catch {
+        const { error: fallbackError } = await supabase
+          .from('stores')
+          .update(baseUpdate)
+          .eq('id', store.id)
+        if (fallbackError) throw fallbackError
+      }
+
+      setSuccessMsg('Datos de contacto, horarios y ubicación guardados correctamente.')
       router.refresh()
       setTimeout(() => setSuccessMsg(null), 4000)
     } catch (err: unknown) {
-      console.error('Error al guardar contacto y ubicación:', err)
+      console.error('Error al guardar contacto y horarios:', err)
       setErrorMsg(err instanceof Error ? err.message : 'Error inesperado al guardar los cambios.')
     } finally {
       setLoading(false)
@@ -174,6 +306,8 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
 
   const inputClass =
     'w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#FACC15] transition-all'
+  const timeInputClass =
+    'min-h-[40px] px-2.5 py-1.5 rounded-lg border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs font-mono focus:outline-hidden focus:ring-2 focus:ring-[#FACC15]'
   const labelClass = 'block text-xs font-semibold mb-1.5 opacity-80'
 
   return (
@@ -182,10 +316,10 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)] font-[var(--font-heading)]">
-            Contacto & Ubicación
+            Contacto, Horarios & Ubicación
           </h1>
           <p className="text-xs sm:text-sm opacity-70 mt-1">
-            Configurá los canales de atención de tu taller, redes y dirección física para retiros y cotización de envíos.
+            Configurá los canales de atención de tu taller, horarios semanales, redes y dirección física para retiros y cotización de envíos.
           </p>
         </div>
 
@@ -251,22 +385,199 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
               Email visible en la ficha de contacto para presupuestos y clientes.
             </p>
           </div>
-
-          {/* Horario de Atención */}
-          <div className="md:col-span-2">
-            <label className={labelClass}>Horario de Atención y Retiro de Pedidos</label>
-            <input
-              type="text"
-              value={horarioAtencion}
-              onChange={(e) => setHorarioAtencion(e.target.value)}
-              placeholder="Lunes a Viernes de 9:00 a 18:00 hs — Sábados de 10:00 a 13:00 hs"
-              className={inputClass}
-            />
-          </div>
         </div>
       </div>
 
-      {/* 2. Ubicación del Taller & Origen de Despacho Logístico (UNIFICADO) */}
+      {/* 2. Horarios de Atención del Taller (Lunes a Domingo con 2 franjas) */}
+      <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] space-y-5 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--color-borde)] pb-3">
+          <div className="flex items-center gap-2 text-sm font-bold opacity-90">
+            <Clock className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+            <span>Horarios de Atención del Taller</span>
+          </div>
+
+          {/* Switch de visibilidad en la tienda pública */}
+          <label className="flex items-center gap-2.5 text-xs font-semibold cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={horariosConfig.mostrar}
+              onChange={(e) =>
+                setHorariosConfig((prev) => ({ ...prev, mostrar: e.target.checked }))
+              }
+              className="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 cursor-pointer"
+            />
+            <span className="text-[var(--color-texto)]">
+              Mostrar horarios de atención en la tienda
+            </span>
+          </label>
+        </div>
+
+        <p className="text-xs opacity-70">
+          Configurá los días y horarios en que atendés a tus clientes o realizás entregas en el taller. Podés definir dos franjas por día (por ejemplo, mañana y tarde).
+        </p>
+
+        {/* Barra de atajos y vista previa */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-[var(--color-borde)]">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] font-semibold opacity-70">Acciones rápidas:</span>
+            <button
+              type="button"
+              onClick={copiarLunesALunVie}
+              className="min-h-[36px] px-3 py-1 text-xs rounded-lg border border-[var(--color-borde)] bg-[var(--color-superficie)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5 cursor-pointer font-medium"
+            >
+              <Copy className="w-3 h-3 text-amber-500" />
+              <span>Copiar Lunes a Lun-Vie</span>
+            </button>
+            <button
+              type="button"
+              onClick={copiarLunesATodaLaSemana}
+              className="min-h-[36px] px-3 py-1 text-xs rounded-lg border border-[var(--color-borde)] bg-[var(--color-superficie)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5 cursor-pointer font-medium"
+            >
+              <Copy className="w-3 h-3 text-amber-500" />
+              <span>Copiar Lunes a toda la semana</span>
+            </button>
+          </div>
+
+          {/* Badge simulado de estado en vivo */}
+          <div className="flex items-center gap-2 text-xs self-start sm:self-auto">
+            <span
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-semibold text-[11px] ${
+                estadoEnVivoSimulado.abierto
+                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                  : 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  estadoEnVivoSimulado.abierto ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+                }`}
+              />
+              <span>{estadoEnVivoSimulado.mensaje}</span>
+            </span>
+            {estadoEnVivoSimulado.detalleTurno && (
+              <span className="text-[11px] opacity-60 hidden md:inline">
+                ({estadoEnVivoSimulado.detalleTurno})
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Grilla de los 7 días de la semana */}
+        <div className="space-y-3 pt-1">
+          {DIAS_SEMANA.map((dia) => {
+            const configDia = horariosConfig.dias[dia.key]
+            return (
+              <div
+                key={dia.key}
+                className={`p-3 sm:p-4 rounded-2xl border transition-all ${
+                  configDia.activo
+                    ? 'border-[var(--color-borde)] bg-[var(--color-fondo)]'
+                    : 'border-dashed border-black/10 dark:border-white/10 opacity-60 bg-transparent'
+                }`}
+              >
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                  {/* Selector Activo / Cerrado */}
+                  <div className="flex items-center gap-3 min-w-[130px]">
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={configDia.activo}
+                        onChange={() => toggleDiaActivo(dia.key)}
+                        className="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 cursor-pointer"
+                      />
+                      <span className="text-sm font-semibold text-[var(--color-texto)]">
+                        {dia.label}
+                      </span>
+                    </label>
+                    <span
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                        configDia.activo
+                          ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                          : 'bg-zinc-500/15 text-zinc-500'
+                      }`}
+                    >
+                      {configDia.activo ? 'Abierto' : 'Cerrado'}
+                    </span>
+                  </div>
+
+                  {/* Franjas Horarias si está abierto */}
+                  {configDia.activo ? (
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1 justify-end">
+                      {/* Franja 1: Turno Mañana */}
+                      <div className="flex items-center gap-2">
+                        <Sun className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span className="text-xs opacity-70 text-[11px]">Turno 1:</span>
+                        <input
+                          type="time"
+                          value={configDia.turno1.desde}
+                          onChange={(e) => updateTurno1(dia.key, 'desde', e.target.value)}
+                          className={timeInputClass}
+                        />
+                        <span className="text-xs opacity-50">a</span>
+                        <input
+                          type="time"
+                          value={configDia.turno1.hasta}
+                          onChange={(e) => updateTurno1(dia.key, 'hasta', e.target.value)}
+                          className={timeInputClass}
+                        />
+                      </div>
+
+                      {/* Separador sutil */}
+                      <div className="hidden sm:block w-px h-6 bg-[var(--color-borde)]" />
+
+                      {/* Franja 2: Turno Tarde (Opcional) */}
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-1.5 text-[11px] font-medium opacity-80 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={configDia.dobleTurno}
+                            onChange={() => toggleDobleTurno(dia.key)}
+                            className="w-3.5 h-3.5 rounded text-amber-500 focus:ring-amber-400 cursor-pointer"
+                          />
+                          <Moon className="w-3 h-3 text-indigo-400 shrink-0" />
+                          <span>Turno tarde:</span>
+                        </label>
+
+                        {configDia.dobleTurno ? (
+                          <div className="flex items-center gap-1.5 animate-in fade-in duration-150">
+                            <input
+                              type="time"
+                              value={configDia.turno2.desde}
+                              onChange={(e) => updateTurno2(dia.key, 'desde', e.target.value)}
+                              className={timeInputClass}
+                            />
+                            <span className="text-xs opacity-50">a</span>
+                            <input
+                              type="time"
+                              value={configDia.turno2.hasta}
+                              onChange={(e) => updateTurno2(dia.key, 'hasta', e.target.value)}
+                              className={timeInputClass}
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-[11px] opacity-40 italic">Solo un turno</span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs opacity-50 italic">
+                      No hay atención al público ni retiros en este día.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Resumen textual generado */}
+        <div className="pt-2 text-xs opacity-75 border-t border-[var(--color-borde)]">
+          <span className="font-semibold text-[var(--color-texto)]">Resumen público: </span>
+          <span>{resumenTexto}</span>
+        </div>
+      </div>
+
+      {/* 3. Ubicación del Taller & Origen de Despacho Logístico (UNIFICADO) */}
       <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] space-y-4 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--color-borde)] pb-3">
           <div className="flex items-center gap-2 text-sm font-bold opacity-90">
@@ -429,7 +740,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
         </div>
       </div>
 
-      {/* 3. Redes Sociales */}
+      {/* 4. Redes Sociales */}
       <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] space-y-4 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-sm font-bold opacity-90 border-b border-[var(--color-borde)] pb-3">
           <div className="flex items-center gap-2">
@@ -505,7 +816,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
           ) : (
             <>
               <Check className="w-4 h-4 text-[#1F2937]" />
-              <span>Guardar Configuración de Contacto & Ubicación</span>
+              <span>Guardar Configuración Completa</span>
             </>
           )}
         </button>
@@ -514,11 +825,11 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
       {/* Barra de Guardado Flotante Estandarizada */}
       <StickySaveBar
         loading={loading}
-        saveText="Guardar Configuración de Contacto & Ubicación"
+        saveText="Guardar Configuración Completa"
         savingText="Guardando..."
         successMsg={successMsg}
         errorMsg={errorMsg}
-        message="Canales de contacto, taller y logística"
+        message="Canales de contacto, horarios, taller y logística"
         hasChanges={true}
       />
     </form>

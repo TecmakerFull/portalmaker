@@ -8,6 +8,7 @@
 import Link from 'next/link'
 import type { Store } from '@/types/database'
 import { ShieldCheck } from 'lucide-react'
+import { parseHorarios, getEstadoTienda } from '@/lib/horarios'
 
 // Iconos vectoriales de Redes Sociales con diseño alineado al sistema Lucide (24x24, 2px stroke)
 function InstagramIcon({ className = 'w-4 h-4' }: { className?: string }) {
@@ -118,6 +119,8 @@ export default function StoreFooter({ store, tenantQuery }: StoreFooterProps) {
   const facebookHref = formatSocialUrl(store.facebook_url, 'facebook')
   const tiktokHref = formatSocialUrl(store.tiktok_url, 'tiktok')
   const hasSocial = Boolean(instagramHref || facebookHref || tiktokHref)
+  const horariosConfig = parseHorarios(store)
+  const estadoTienda = horariosConfig.mostrar ? getEstadoTienda(horariosConfig) : null
 
   return (
     <footer className="border-t border-black/10 dark:border-white/10 mt-16 sm:mt-24 pt-12 pb-8 bg-[var(--color-fondo)] text-[var(--color-texto)] transition-colors">
@@ -209,8 +212,16 @@ export default function StoreFooter({ store, tenantQuery }: StoreFooterProps) {
               Te ayudamos
             </h3>
             <div className="grid gap-2.5 text-xs opacity-75">
-              <Link href={withTenant('/tienda/contacto')} className="hover:opacity-100 hover:text-[var(--color-primario)] transition-colors">
-                Contacto & Taller
+              <Link href={withTenant('/tienda/contacto')} className="hover:opacity-100 hover:text-[var(--color-primario)] transition-colors inline-flex items-center gap-1.5">
+                <span>Contacto & Taller</span>
+                {estadoTienda && (
+                  <span
+                    className={`inline-block w-1.5 h-1.5 rounded-full ${
+                      estadoTienda.abierto ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500/70'
+                    }`}
+                    title={estadoTienda.mensaje}
+                  />
+                )}
               </Link>
               <Link href={withTenant('/tienda/ayuda')} className="hover:opacity-100 hover:text-[var(--color-primario)] transition-colors">
                 Envíos y devoluciones

@@ -151,6 +151,8 @@ create table stores (
   tiktok_url       text,
   email_contacto   text,
   horario_atencion text,  -- texto libre: "Lun a Vie 9-18hs"
+  mostrar_horarios boolean not null default false,
+  horarios_semanales jsonb,
   direccion        text,  -- dirección física del taller (para página de contacto)
 
   -- SEO y analítica (para el <head> de la tienda)
@@ -262,7 +264,9 @@ select
   mp_connected,
   mp_recargo_porcentaje,
   created_at,
-  updated_at
+  updated_at,
+  mostrar_horarios,
+  horarios_semanales
 from stores;
 
 grant select on stores_public to anon, authenticated, service_role;

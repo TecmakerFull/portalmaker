@@ -98,6 +98,8 @@ export interface Store {
   tiktok_url: string | null;
   email_contacto: string | null;
   horario_atencion: string | null;
+  mostrar_horarios?: boolean | null;
+  horarios_semanales?: Record<string, any> | null;
   direccion: string | null;
 
   // SEO y analítica

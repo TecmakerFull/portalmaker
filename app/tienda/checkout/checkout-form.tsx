@@ -904,7 +904,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
 
                   {store.horario_atencion && (
                     <div className="text-[11px] opacity-70 pt-1">
-                      <strong>Horarios de atención:</strong> {store.horario_atencion}
+                      <strong>Horarios de atención:</strong> {store.horario_atencion.split('<!--')[0].trim()}
                     </div>
                   )}
                 </div>
