@@ -400,19 +400,27 @@ export default function PagosForm({
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setTransferenciaActiva(!transferenciaActiva)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                transferenciaActiva ? 'bg-[#FACC15]' : 'bg-slate-300 dark:bg-slate-700'
-              }`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                  transferenciaActiva ? 'translate-x-5' : 'translate-x-0'
+            <div className="flex items-center gap-3">
+              <span className={`text-xs font-bold uppercase tracking-wider ${transferenciaActiva ? 'text-emerald-700 dark:text-emerald-400' : 'opacity-50'}`}>
+                {transferenciaActiva ? 'Habilitada' : 'Deshabilitada'}
+              </span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={transferenciaActiva}
+                onClick={() => setTransferenciaActiva((prev) => !prev)}
+                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none min-h-[44px] min-w-[44px] items-center p-0.5 ${
+                  transferenciaActiva ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
                 }`}
-              />
-            </button>
+                title={transferenciaActiva ? 'Click para deshabilitar transferencia' : 'Click para habilitar transferencia'}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                    transferenciaActiva ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">

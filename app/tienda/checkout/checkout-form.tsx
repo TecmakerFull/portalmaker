@@ -99,10 +99,12 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
   const mpRecargoPct = store.mp_connected ? Number(store.mp_recargo_porcentaje) || 0 : 0
 
   // Opciones de pago: 'transferencia' | 'efectivo' | 'mercadopago' | 'acordar'
-  // Por defecto se preselecciona 'transferencia' para que no figure el recargo/interés de entrada
-  const [metodoPago, setMetodoPago] = useState<'transferencia' | 'efectivo' | 'mercadopago' | 'acordar'>(
-    'transferencia'
-  )
+  // Por defecto se preselecciona 'transferencia' si la tienda la tiene activa;
+  // de lo contrario efectivo (o acordar), manteniendo Mercado Pago al final para no mostrar recargo de entrada.
+  const [metodoPago, setMetodoPago] = useState<'transferencia' | 'efectivo' | 'mercadopago' | 'acordar'>(() => {
+    if (store.transferencia_activa) return 'transferencia'
+    return 'efectivo'
+  })
 
   const mpRecargoMonto = metodoPago === 'mercadopago' && mpRecargoPct > 0 ? (totalAmount * mpRecargoPct) / 100 : 0
   const finalTotal = totalAmount + mpRecargoMonto
@@ -873,23 +875,25 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
             <span>Forma de Pago</span>
           </h2>
 
-          <div className={`grid grid-cols-1 ${store.mp_connected ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3'} gap-3 pt-1`}>
-            {/* 1. Transferencia */}
-            <button
-              type="button"
-              onClick={() => setMetodoPago('transferencia')}
-              className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                metodoPago === 'transferencia'
-                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 ring-2 ring-[var(--color-primario)]/30'
-                  : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] opacity-80 hover:opacity-100'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <CreditCard className="w-4 h-4 text-[var(--color-primario)]" />
-                <span className="font-bold text-xs">Transferencia</span>
-              </div>
-              <span className="text-[11px] opacity-60">Alias / CBU directo</span>
-            </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+            {/* 1. Transferencia (solo si la tienda la tiene activa) */}
+            {store.transferencia_activa && (
+              <button
+                type="button"
+                onClick={() => setMetodoPago('transferencia')}
+                className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                  metodoPago === 'transferencia'
+                    ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 ring-2 ring-[var(--color-primario)]/30'
+                    : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] opacity-80 hover:opacity-100'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <CreditCard className="w-4 h-4 text-[var(--color-primario)]" />
+                  <span className="font-bold text-xs">Transferencia</span>
+                </div>
+                <span className="text-[11px] opacity-60">Alias / CBU directo</span>
+              </button>
+            )}
 
             {/* 2. Efectivo */}
             <button
