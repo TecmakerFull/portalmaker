@@ -89,16 +89,26 @@ export function middleware(request: NextRequest) {
   const tenantParam = nextUrl.searchParams.get('tenant')
 
   if (tenantParam && isDevOrPreview) {
-    const targetPath = nextUrl.pathname.startsWith('/tienda')
-      ? nextUrl.pathname
-      : `/tienda${nextUrl.pathname}`
-    const rewriteUrl = new URL(targetPath, request.url)
+    requestHeaders.set('x-store-slug', tenantParam)
+    requestHeaders.set('x-tenant-source', 'query-param-dev')
+
+    // Si la ruta ya incluye /tienda, solo propagamos headers hacia el Server Component
+    if (nextUrl.pathname.startsWith('/tienda')) {
+      const response = NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      })
+      response.headers.set('x-store-slug', tenantParam)
+      response.headers.set('x-tenant-source', 'query-param-dev')
+      return applySecurityHeaders(response)
+    }
+
+    // Si no incluye /tienda (ej: /admin/productos?tenant=llaverix), reescribimos internamente
+    const rewriteUrl = new URL(`/tienda${nextUrl.pathname}`, request.url)
     nextUrl.searchParams.forEach((val, key) => {
       rewriteUrl.searchParams.set(key, val)
     })
-
-    requestHeaders.set('x-store-slug', tenantParam)
-    requestHeaders.set('x-tenant-source', 'query-param-dev')
 
     const response = NextResponse.rewrite(rewriteUrl, {
       request: {

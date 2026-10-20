@@ -7,8 +7,7 @@
     "dev": "node dev.js",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "test": "vitest run"
+    "lint": "eslint"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
@@ -26,8 +25,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "vite": "^8.3.4",
-    "vitest": "^5.0.5"
+    "typescript": "^5"
   }
 }

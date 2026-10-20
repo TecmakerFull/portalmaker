@@ -6,7 +6,8 @@
 // 3. Adaptador de envíos manuales (coincidencia de CP y peso).
 // =============================================================================
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
 import { encryptCarrierCredentials, decryptCarrierCredentials } from './crypto'
 import { ShippingError } from './errors'
 import { carrierFetch } from './http'
@@ -18,14 +19,14 @@ describe('Shipping Crypto (AES-256-GCM)', () => {
     const original = JSON.stringify({ apiKey: 'zip_test_12345', secret: 'sec_abcdef' })
     const encrypted = encryptCarrierCredentials(original)
 
-    expect(encrypted).toContain('.')
+    assert.ok(encrypted.includes('.'))
     const [iv, ciphertext] = encrypted.split('.')
-    expect(iv).toBeDefined()
-    expect(ciphertext).toBeDefined()
+    assert.ok(iv)
+    assert.ok(ciphertext)
 
     const decrypted = decryptCarrierCredentials(encrypted)
-    expect(decrypted).toBe(original)
-    expect(JSON.parse(decrypted)).toEqual({ apiKey: 'zip_test_12345', secret: 'sec_abcdef' })
+    assert.equal(decrypted, original)
+    assert.deepEqual(JSON.parse(decrypted), { apiKey: 'zip_test_12345', secret: 'sec_abcdef' })
   })
 
   it('falla al intentar descifrar con payload corrupto o adulterado', () => {
@@ -35,42 +36,48 @@ describe('Shipping Crypto (AES-256-GCM)', () => {
 
     // Adulterar el ciphertext
     const tampered = `${iv}.${ciphertext.slice(0, -4)}XXXX`
-    expect(() => decryptCarrierCredentials(tampered)).toThrow()
+    assert.throws(() => decryptCarrierCredentials(tampered))
   })
 
   it('falla ante cadenas vacías o sin formato iv.ciphertext', () => {
-    expect(() => decryptCarrierCredentials('')).toThrow()
-    expect(() => decryptCarrierCredentials('invalid_payload_without_dot')).toThrow()
+    assert.throws(() => decryptCarrierCredentials(''))
+    assert.throws(() => decryptCarrierCredentials('invalid_payload_without_dot'))
   })
 })
 
 describe('Shipping HTTP & Errors', () => {
   it('identifica correctamente las instancias de ShippingError', () => {
     const err = new ShippingError('AUTH', 'Credenciales inválidas', { statusCode: 401 })
-    expect(err).toBeInstanceOf(ShippingError)
-    expect(err.code).toBe('AUTH')
-    expect(err.statusCode).toBe(401)
+    assert.ok(err instanceof ShippingError)
+    assert.equal(err.code, 'AUTH')
+    assert.equal(err.statusCode, 401)
   })
 
   it('maneja timeouts emitiendo ShippingError TIMEOUT', async () => {
+    const originalFetch = globalThis.fetch
     // Mock de fetch nativo con retardo mayor al timeoutMs
-    const slowFetch = vi.fn().mockImplementation((url, opts) => {
-      return new Promise((resolve, reject) => {
-        opts.signal.addEventListener('abort', () => {
+    globalThis.fetch = (async (_url: any, opts?: any) => {
+      return new Promise((_resolve, reject) => {
+        opts?.signal?.addEventListener('abort', () => {
           const abortError = new Error('The operation was aborted')
           abortError.name = 'AbortError'
           reject(abortError)
         })
       })
-    })
+    }) as any
 
-    vi.stubGlobal('fetch', slowFetch)
-
-    await expect(
-      carrierFetch('https://api.carrier.example/test', { timeoutMs: 100, maxRetries: 0 })
-    ).rejects.toThrowError(ShippingError)
-
-    vi.unstubAllGlobals()
+    try {
+      await assert.rejects(
+        async () => {
+          await carrierFetch('https://api.carrier.example/test', { timeoutMs: 100, maxRetries: 0 })
+        },
+        (err: any) => {
+          return err instanceof ShippingError && err.code === 'TIMEOUT'
+        }
+      )
+    } finally {
+      globalThis.fetch = originalFetch
+    }
   })
 })
 
@@ -117,9 +124,9 @@ describe('ManualShippingProvider', () => {
     })
 
     // Debe incluir tanto la zona específica (1414) como la nacional general
-    expect(options.length).toBe(2)
-    expect(options.some((o) => o.serviceName === 'CABA y Alrededores')).toBe(true)
-    expect(options.some((o) => o.serviceName === 'Envíos Nacionales')).toBe(true)
+    assert.equal(options.length, 2)
+    assert.ok(options.some((o) => o.serviceName === 'CABA y Alrededores'))
+    assert.ok(options.some((o) => o.serviceName === 'Envíos Nacionales'))
   })
 
   it('no ofrece zonas cuyo peso máximo sea excedido', async () => {
@@ -134,8 +141,8 @@ describe('ManualShippingProvider', () => {
       valorDeclaradoTotal: 5000,
     })
 
-    expect(options.length).toBe(1)
-    expect(options[0].serviceName).toBe('Envíos Nacionales')
+    assert.equal(options.length, 1)
+    assert.equal(options[0].serviceName, 'Envíos Nacionales')
   })
 
   it('crea el envío manual asignando un identificador de seguimiento local', async () => {
@@ -162,7 +169,7 @@ describe('ManualShippingProvider', () => {
       valorDeclaradoTotal: 1000,
     })
 
-    expect(result.providerShipmentId).toBeDefined()
-    expect(result.providerShipmentId.startsWith('MAN-')).toBe(true)
+    assert.ok(result.providerShipmentId)
+    assert.ok(result.providerShipmentId.startsWith('MAN-'))
   })
 })
