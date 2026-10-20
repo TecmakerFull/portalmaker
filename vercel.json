@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/mp-reconcile",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/shipments",
+      "schedule": "0 5 * * *"
+    }
+  ]
+}

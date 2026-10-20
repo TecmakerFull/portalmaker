@@ -168,6 +168,7 @@ export interface PlatformAlertParams {
     | 'pago_duplicado'
     | 'seller_token_revoked'
     | 'unrecognized_fee_type'
+    | 'shipping_carrier_error'
   store: Store | null
   order?: Order | null
   details: string
@@ -198,6 +199,7 @@ export async function notifyPlatformAlert({
     pago_duplicado: 'ALERTA CRÍTICA: Posible pago duplicado recibido',
     seller_token_revoked: 'ALERTA: Token de Mercado Pago revocado o desconectado',
     unrecognized_fee_type: 'ADVERTENCIA: Tipo de fee no reconocido en Mercado Pago',
+    shipping_carrier_error: 'ALERTA LOGÍSTICA: Error al emitir envío con el transportista',
   }
 
   const subject = `[Portalmaker ${type.toUpperCase()}] ${alertTitles[type] || 'Alerta de Plataforma'} — ${store?.nombre || 'Portal'}`

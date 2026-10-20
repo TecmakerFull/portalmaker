@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { getValidMpAccessToken } from '@/lib/mercadopago'
 import { sendOrderPaidNotification, notifyPlatformAlert } from '@/lib/email-notifications'
+import { handlePostPaymentShipping } from '@/lib/shipping/post-payment'
 
 export interface ProcessMpPaymentResult {
   status: string
@@ -336,8 +337,34 @@ export async function processMpPayment(params: {
 
     // Enviar email de venta confirmada solo en la primera aprobación exitosa
     if (rpcResult?.first_time && rpcResult?.status === 'aprobado') {
+      void Promise.resolve(
+        supabaseAdmin.from('order_events').insert([
+          {
+            order_id: order.id,
+            store_id: store.id,
+            tipo: 'estado_pago',
+            de: 'pendiente',
+            a: 'aprobado',
+            actor: 'webhook',
+          },
+          {
+            order_id: order.id,
+            store_id: store.id,
+            tipo: 'estado_pedido',
+            de: 'pendiente',
+            a: 'confirmado',
+            actor: 'webhook',
+          },
+        ])
+      ).catch((e: unknown) => console.error('Error registrando order_events de pago aprobado:', e))
+
       sendOrderPaidNotification({ store, order }).catch((e) =>
         console.error('Error enviando email de orden pagada:', e)
+      )
+
+      // Automatización Logística Post-Pago (Fase 5): emisión de envío sin demorar la respuesta de MP
+      handlePostPaymentShipping(order.id, store).catch((e) =>
+        console.error('Error en post-payment shipping automation:', e)
       )
     }
 

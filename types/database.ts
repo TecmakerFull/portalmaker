@@ -134,6 +134,7 @@ export interface Store {
   envio_markup_porcentaje?: number;
   envio_tarifa_fallback?: number | null;
   envio_retiro_local_activo?: boolean;
+  retiro_local_direccion?: string | null;
   envio_comision_incluye_envio?: boolean;
 
   // Integración Mercado Pago (Marketplace OAuth y Split de pagos)
@@ -331,6 +332,12 @@ export interface Order {
   envio_codigo_postal?: string | null;
   envio_referencias?: string | null;
   documento_comprador?: string | null;
+  public_token?: string | null;
+  envio_tipo?: string | null;
+  direccion_envio?: string | null;
+  codigo_postal?: string | null;
+  envio_direccion?: Record<string, unknown> | null;
+  notas_comprador?: string | null;
   envio_proveedor?: string | null;
   envio_servicio?: string | null;
   envio_modalidad?: 'domicilio' | 'sucursal' | 'retiro_local' | 'manual' | null;

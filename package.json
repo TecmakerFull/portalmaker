@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "npx tsx --test lib/shipping/checkout.test.ts"
+    "test": "npx tsx --test lib/shipping/checkout.test.ts lib/shipping/post-payment.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

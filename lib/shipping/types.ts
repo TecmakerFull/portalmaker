@@ -78,6 +78,7 @@ export interface RecipientInput {
   calle: string
   altura: string
   piso?: string
+  depto?: string
   localidad: string
   provincia: string
   codigoPostal: string
@@ -86,9 +87,12 @@ export interface RecipientInput {
 
 export interface ShipmentInput {
   orderId: string
-  storeId: string
-  provider: ShippingProviderType
-  serviceType: ShippingServiceType
+  storeId?: string
+  provider?: ShippingProviderType
+  serviceType?: ShippingServiceType
+  serviceCode?: string
+  modalidad?: string
+  sucursal?: Record<string, unknown> | null
   branchId?: string
   origen: QuoteInput['origen'] & {
     cuit?: string
@@ -97,9 +101,9 @@ export interface ShipmentInput {
     contactoNombre?: string
   }
   destinatario: RecipientInput
-  items: ShippingPackageItem[]
+  items?: ShippingPackageItem[]
   pesoTotalKg: number
-  volumenTotalCm3: number
+  volumenTotalCm3?: number
   valorDeclaradoTotal: number
   carrierMetadata?: Record<string, unknown>
 }

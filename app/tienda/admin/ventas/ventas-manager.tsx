@@ -417,6 +417,32 @@ export default function VentasManager({
 
       if (error) throw error
 
+      // Auditoría en order_events (Fase 5)
+      const eventsToInsert: any[] = []
+      if (newEstadoPedido && newEstadoPedido !== selectedOrder.estado_pedido) {
+        eventsToInsert.push({
+          order_id: selectedOrder.id,
+          store_id: store.id,
+          tipo: 'estado_pedido',
+          de: selectedOrder.estado_pedido,
+          a: newEstadoPedido,
+          actor: 'admin',
+        })
+      }
+      if (newEstadoPago && newEstadoPago !== selectedOrder.estado_pago) {
+        eventsToInsert.push({
+          order_id: selectedOrder.id,
+          store_id: store.id,
+          tipo: 'estado_pago',
+          de: selectedOrder.estado_pago,
+          a: newEstadoPago,
+          actor: 'admin',
+        })
+      }
+      if (eventsToInsert.length > 0) {
+        await supabase.from('order_events').insert(eventsToInsert)
+      }
+
       const updatedOrder = { ...selectedOrder, ...updates }
       setSelectedOrder(updatedOrder)
       setOrders((prev) => prev.map((o) => (o.id === selectedOrder.id ? updatedOrder : o)))
@@ -488,6 +514,25 @@ export default function VentasManager({
         .eq('id', selectedOrder.id)
 
       if (error) throw error
+
+      await supabase.from('order_events').insert([
+        {
+          order_id: selectedOrder.id,
+          store_id: store.id,
+          tipo: 'estado_pedido',
+          de: selectedOrder.estado_pedido,
+          a: 'en_produccion',
+          actor: 'admin',
+        },
+        {
+          order_id: selectedOrder.id,
+          store_id: store.id,
+          tipo: 'estado_pago',
+          de: selectedOrder.estado_pago,
+          a: 'aprobado',
+          actor: 'admin',
+        },
+      ])
 
       const updated = { ...selectedOrder, ...orderUpdates }
       setSelectedOrder(updated)
@@ -566,6 +611,25 @@ export default function VentasManager({
         .eq('id', selectedOrder.id)
 
       if (error) throw error
+
+      await supabase.from('order_events').insert([
+        {
+          order_id: selectedOrder.id,
+          store_id: store.id,
+          tipo: 'estado_pedido',
+          de: selectedOrder.estado_pedido,
+          a: 'cancelado',
+          actor: 'admin',
+        },
+        {
+          order_id: selectedOrder.id,
+          store_id: store.id,
+          tipo: 'estado_pago',
+          de: selectedOrder.estado_pago,
+          a: 'rechazado',
+          actor: 'admin',
+        },
+      ])
 
       const updated = { ...selectedOrder, ...orderUpdates }
       setSelectedOrder(updated)
