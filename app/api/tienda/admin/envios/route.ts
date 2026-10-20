@@ -10,13 +10,30 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { encryptCarrierCredentials } from '@/lib/shipping/crypto'
 import { ZipnovaShippingProvider } from '@/lib/shipping/zipnova'
 
-export async function GET(_req: NextRequest) {
+async function resolveStoreFromReq(req: NextRequest): Promise<any | null> {
   const tenant = await getTenantStore()
-  if (!tenant) {
+  if (tenant?.store) return tenant.store
+
+  const tenantSlug = req.nextUrl.searchParams.get('tenant')
+  if (tenantSlug) {
+    const supabase = createSupabaseAdminClient()
+    const { data: store } = await supabase
+      .from('stores')
+      .select('*')
+      .eq('slug', tenantSlug)
+      .maybeSingle()
+    if (store) return store
+  }
+
+  return null
+}
+
+export async function GET(req: NextRequest) {
+  const store = await resolveStoreFromReq(req)
+  if (!store) {
     return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
   }
 
-  const { store } = tenant
   const isAdmin = await isStoreAdmin(store)
   if (!isAdmin) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
@@ -65,12 +82,11 @@ export async function GET(_req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const tenant = await getTenantStore()
-  if (!tenant) {
+  const store = await resolveStoreFromReq(req)
+  if (!store) {
     return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
   }
 
-  const { store } = tenant
   const isAdmin = await isStoreAdmin(store)
   if (!isAdmin) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
@@ -213,6 +229,42 @@ export async function POST(req: NextRequest) {
           envio_tarifa_fallback: envio_tarifa_fallback !== '' && envio_tarifa_fallback !== null ? Number(envio_tarifa_fallback) : null,
           envio_retiro_local_activo: Boolean(envio_retiro_local_activo),
           envio_comision_incluye_envio: Boolean(envio_comision_incluye_envio),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', store.id)
+
+      if (error) throw error
+      return NextResponse.json({ ok: true })
+    }
+
+    // 5. Guardar origen de despacho del taller directamente desde el panel de envíos
+    if (action === 'save_origen') {
+      const {
+        calle,
+        altura,
+        pisoDepto,
+        localidad,
+        provincia,
+        codigoPostal,
+        cuit,
+        razonSocial,
+        telefono,
+        email,
+      } = body
+
+      const { error } = await supabase
+        .from('stores')
+        .update({
+          origen_calle: calle?.trim() || null,
+          origen_altura: altura?.trim() || null,
+          origen_piso_depto: pisoDepto?.trim() || null,
+          origen_localidad: localidad?.trim() || null,
+          origen_provincia: provincia || null,
+          origen_codigo_postal: codigoPostal?.trim() || null,
+          origen_cuit: cuit?.trim() || null,
+          origen_razon_social: razonSocial?.trim() || null,
+          origen_telefono: telefono?.trim() || null,
+          origen_email: email?.trim().toLowerCase() || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', store.id)

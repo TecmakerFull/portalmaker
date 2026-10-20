@@ -52,7 +52,34 @@ export function middleware(request: NextRequest) {
   requestHeaders.delete('x-store-domain')
   requestHeaders.delete('x-tenant-source')
 
-  // Rutas de API deben ejecutarse limpiamente sin intercepciones ni reescrituras de auth
+  // Detección previa de tenant para inyectar headers tanto en APIs como en páginas
+  const isDevOrPreview = process.env.NODE_ENV !== 'production' || isLocalhost || isVercelDomain || isBasePortalDomain
+  const tenantParam = nextUrl.searchParams.get('tenant')
+
+  if (tenantParam && isDevOrPreview) {
+    requestHeaders.set('x-store-slug', tenantParam)
+    requestHeaders.set('x-tenant-source', 'query-param-dev')
+  } else if (!isLocalhost && !isVercelDomain && !isBasePortalDomain) {
+    let subdomain: string | null = null
+    for (const baseDomain of BASE_PORTAL_DOMAINS) {
+      if (host.endsWith(`.${baseDomain}`)) {
+        const candidate = host.slice(0, -(baseDomain.length + 1))
+        if (candidate && candidate !== 'www') {
+          subdomain = candidate
+          break
+        }
+      }
+    }
+    if (subdomain) {
+      requestHeaders.set('x-store-slug', subdomain)
+      requestHeaders.set('x-tenant-source', 'subdomain')
+    } else {
+      requestHeaders.set('x-store-domain', host)
+      requestHeaders.set('x-tenant-source', 'custom-domain')
+    }
+  }
+
+  // Rutas de API deben ejecutarse limpiamente sin intercepciones ni reescrituras de auth, con headers de tenant
   if (nextUrl.pathname.startsWith('/api/')) {
     return applySecurityHeaders(NextResponse.next({
       request: {
@@ -85,9 +112,6 @@ export function middleware(request: NextRequest) {
   // 1. Simulación o acceso de tienda mediante query param (?tenant=slug)
   // Permitido en desarrollo, previews de Vercel y también en el dominio principal del portal
   // (por ejemplo desde el panel de control o enlaces directos).
-  const isDevOrPreview = process.env.NODE_ENV !== 'production' || isLocalhost || isVercelDomain || isBasePortalDomain
-  const tenantParam = nextUrl.searchParams.get('tenant')
-
   if (tenantParam && isDevOrPreview) {
     requestHeaders.set('x-store-slug', tenantParam)
     requestHeaders.set('x-tenant-source', 'query-param-dev')
