@@ -38,6 +38,7 @@ import {
   Mail,
   Trash2,
   ArrowUpDown,
+  Check,
 } from 'lucide-react'
 
 export interface ProductSummaryForSale {
@@ -91,14 +92,14 @@ export default function VentasManager({
   const [selectedClientFilter, setSelectedClientFilter] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   
-  // Nuevo: Filtro temporal y Ordenación
+  // Filtro temporal y Ordenación
   const [dateFilter, setDateFilter] = useState<DateRangeFilter>('todos')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
-  // Nuevo: Paginación / "Ver más" (mostrar de a 20)
+  // Paginación / "Ver más" (mostrar de a 20)
   const [visibleCount, setVisibleCount] = useState<number>(20)
 
-  // Nuevo: Acordeón de filas expandidas para vista compacta
+  // Acordeón de filas expandidas para vista compacta
   const [expandedOrderIds, setExpandedOrderIds] = useState<Set<string>>(new Set())
 
   // Modal de Detalle completo de orden
@@ -125,6 +126,9 @@ export default function VentasManager({
   const [manualNotas, setManualNotas] = useState('')
   const [manualDescontarStock, setManualDescontarStock] = useState(true)
 
+  // Búsqueda de productos en modal de nueva venta
+  const [productSearchQuery, setProductSearchQuery] = useState('')
+
   // Items en la nueva venta manual
   interface ManualItemRow {
     productId: string
@@ -148,6 +152,62 @@ export default function VentasManager({
       return next
     })
   }
+
+  // Lista aplanada de opciones de producto y variantes para selección rápida y búsqueda
+  const flatProductOptions = useMemo(() => {
+    const list: Array<{
+      key: string
+      productId: string
+      variantId: string
+      productName: string
+      variantName: string
+      displayName: string
+      price: number
+      stock: number | null
+      gestionaStock: boolean
+    }> = []
+
+    initialProducts.forEach((p) => {
+      if (p.variants && p.variants.length > 0) {
+        p.variants.forEach((v) => {
+          const pr = (p.oferta_activa && p.precio_oferta != null ? p.precio_oferta : p.precio_base) + (v.precio_adicional || 0)
+          list.push({
+            key: `${p.id}__${v.id}`,
+            productId: p.id,
+            variantId: v.id,
+            productName: p.nombre,
+            variantName: v.nombre,
+            displayName: `${p.nombre} — ${v.nombre}`,
+            price: pr,
+            stock: v.stock,
+            gestionaStock: p.gestiona_stock,
+          })
+        })
+      } else {
+        const pr = p.oferta_activa && p.precio_oferta != null ? p.precio_oferta : p.precio_base
+        list.push({
+          key: `${p.id}__`,
+          productId: p.id,
+          variantId: '',
+          productName: p.nombre,
+          variantName: '',
+          displayName: p.nombre,
+          price: pr,
+          stock: p.stock,
+          gestionaStock: p.gestiona_stock,
+        })
+      }
+    })
+
+    return list
+  }, [initialProducts])
+
+  // Opciones de productos filtradas por búsqueda en el modal
+  const filteredProductOptions = useMemo(() => {
+    if (!productSearchQuery.trim()) return flatProductOptions
+    const q = productSearchQuery.toLowerCase()
+    return flatProductOptions.filter((opt) => opt.displayName.toLowerCase().includes(q))
+  }, [flatProductOptions, productSearchQuery])
 
   // Métricas de ventas y clientes
   const metrics = useMemo(() => {
@@ -542,7 +602,7 @@ export default function VentasManager({
     return manualItems.reduce((acc, it) => acc + it.precio_unitario * it.cantidad, 0)
   }, [manualItems])
 
-  // Crear la Venta Manual
+  // Crear la Venta Manual a través de la API segura
   const handleCreateManualSale = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaleError(null)
@@ -578,107 +638,40 @@ export default function VentasManager({
     setCreatingSale(true)
 
     try {
-      // 1. Snapshot inmutable de items
-      const snapshotItems: OrderItem[] = manualItems.map((it) => ({
-        product_id: it.productId,
-        variant_id: it.variantId || null,
-        nombre: it.nombre,
-        variante: it.variante || undefined,
-        cantidad: it.cantidad,
-        precio_unitario: it.precio_unitario,
-        subtotal: it.precio_unitario * it.cantidad,
-        gestiona_stock: it.gestiona_stock,
-      }))
+      const res = await fetch('/api/store/manual-sale', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId: store.id,
+          nombreComprador: finalNombre,
+          telefonoComprador: finalTelefono,
+          emailComprador: finalEmail,
+          tipoEntrega: manualTipoEntrega,
+          metodoPago: manualMetodoPago,
+          notas: manualNotas,
+          descontarStock: manualDescontarStock,
+          items: manualItems,
+        }),
+      })
 
-      // 2. Si se eligió descontar stock, actualizar inventario
-      if (manualDescontarStock) {
-        for (const it of manualItems) {
-          if (it.variantId) {
-            const { data: vData } = await supabase
-              .from('product_variants')
-              .select('stock')
-              .eq('id', it.variantId)
-              .single()
+      const data = await res.json()
 
-            if (vData && vData.stock !== null) {
-              await supabase
-                .from('product_variants')
-                .update({ stock: Math.max(0, vData.stock - it.cantidad) })
-                .eq('id', it.variantId)
-            }
-          }
-
-          if (it.productId) {
-            const { data: pData } = await supabase
-              .from('products')
-              .select('stock, gestiona_stock')
-              .eq('id', it.productId)
-              .single()
-
-            if (pData && pData.gestiona_stock && pData.stock !== null) {
-              await supabase
-                .from('products')
-                .update({ stock: Math.max(0, pData.stock - it.cantidad) })
-                .eq('id', it.productId)
-            }
-          }
-        }
+      if (!res.ok) {
+        throw new Error(data.error || 'Error al registrar la venta manual.')
       }
 
-      // 3. Crear el pedido en la base de datos
-      const newOrderPayload: any = {
-        store_id: store.id,
-        nombre_comprador: finalNombre,
-        telefono_comprador: finalTelefono,
-        email_comprador: finalEmail,
-        tipo_entrega: manualTipoEntrega,
-        direccion_entrega: null,
-        items: snapshotItems,
-        total: manualTotal,
-        costo_envio: 0,
-        estado_pedido: 'entregado', // Venta manual completada
-        estado_pago: 'aprobado',
-        metodo_pago: manualMetodoPago,
-        stock_descontado: manualDescontarStock,
-        notas: manualNotas.trim() ? `[Venta Manual] ${manualNotas.trim()}` : '[Venta Manual]',
-        observaciones_admin: 'Venta ingresada manualmente por el dueño de la tienda.',
+      if (data.order) {
+        setOrders((prev) => [data.order, ...prev])
       }
 
-      const { data: insertedOrder, error: insertErr } = await supabase
-        .from('orders')
-        .insert(newOrderPayload)
-        .select()
-        .single()
-
-      if (insertErr) throw insertErr
-
-      // 4. Si era cliente nuevo con datos, guardarlo en store_customers si tiene email
-      if (clienteTipo === 'nuevo' && finalEmail) {
-        try {
-          await supabase.from('store_customers').upsert(
-            {
-              store_id: store.id,
-              email: finalEmail.toLowerCase(),
-              nombre: finalNombre,
-              telefono: finalTelefono,
-              ultimo_login: new Date().toISOString(),
-            },
-            { onConflict: 'store_id,email' }
-          )
-        } catch (e) {
-          console.error('Error guardando nuevo cliente en CRM:', e)
-        }
-      }
-
-      // 5. Actualizar estado local
-      setOrders((prev) => [insertedOrder, ...prev])
       setIsNewSaleOpen(false)
-      // Reset de form
+      // Reset del formulario
       setManualItems([])
       setManualNombre('')
       setManualTelefono('')
       setManualEmail('')
       setManualNotas('')
+      setProductSearchQuery('')
       setClienteTipo('consumidor_final')
 
       router.refresh()
@@ -692,7 +685,7 @@ export default function VentasManager({
 
   return (
     <div className="w-full space-y-6 pb-20">
-      {/* Encabezado con Botón de + Nueva Venta */}
+      {/* Encabezado con Botón de Nueva Venta (sin doble '+') */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)] font-[var(--font-heading)] flex items-center gap-2.5">
@@ -713,7 +706,7 @@ export default function VentasManager({
           className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-bold text-xs sm:text-sm hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0 self-start sm:self-auto"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>+ Nueva Venta</span>
+          <span>Nueva Venta</span>
         </button>
       </div>
 
@@ -1596,22 +1589,47 @@ export default function VentasManager({
                 )}
               </div>
 
-              {/* Sección B: Selección de Productos */}
+              {/* Sección B: Selección de Productos con Buscador y Agregado Múltiple */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
-                    2. Productos de la Tienda
+                    2. Productos de la Venta
                   </label>
                   <span className="text-[11px] opacity-60">
-                    {manualItems.length} {manualItems.length === 1 ? 'ítem cargado' : 'ítems cargados'}
+                    {manualItems.length} {manualItems.length === 1 ? 'producto cargado' : 'productos cargados'}
                   </span>
                 </div>
 
-                {/* Selector rápido para añadir producto */}
-                <div className="flex flex-col sm:flex-row gap-2">
+                {/* Buscador de productos del catálogo */}
+                <div className="space-y-2 p-3.5 rounded-2xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)]">
+                  <span className="text-[11px] font-semibold opacity-70 block">
+                    Buscar y sumar productos del catálogo:
+                  </span>
+                  
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 opacity-50 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={productSearchQuery}
+                      onChange={(e) => setProductSearchQuery(e.target.value)}
+                      placeholder="Filtrar por nombre o variante para agregar..."
+                      className="w-full min-h-[40px] pl-8 pr-7 py-1.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                    />
+                    {productSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setProductSearchQuery('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Selector o lista rápida según búsqueda */}
                   <select
                     id="productSelector"
-                    className="flex-1 min-h-[44px] px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                    className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
                     defaultValue=""
                     onChange={(e) => {
                       const val = e.target.value
@@ -1621,30 +1639,22 @@ export default function VentasManager({
                       e.target.value = ''
                     }}
                   >
-                    <option value="">+ Seleccionar producto para agregar...</option>
-                    {initialProducts.map((p) => {
-                      if (p.variants && p.variants.length > 0) {
-                        return p.variants.map((v) => (
-                          <option key={`${p.id}__${v.id}`} value={`${p.id}__${v.id}`}>
-                            {p.nombre} — {v.nombre} (${(p.precio_base + (v.precio_adicional || 0)).toLocaleString('es-AR')})
-                          </option>
-                        ))
-                      }
-                      const pr = p.oferta_activa && p.precio_oferta != null ? p.precio_oferta : p.precio_base
-                      return (
-                        <option key={p.id} value={`${p.id}__`}>
-                          {p.nombre} (${pr.toLocaleString('es-AR')})
-                        </option>
-                      )
-                    })}
+                    <option value="">
+                      + Clic aquí para sumar un producto a la venta ({filteredProductOptions.length} disponibles)...
+                    </option>
+                    {filteredProductOptions.map((opt) => (
+                      <option key={opt.key} value={opt.key}>
+                        {opt.displayName} — ${opt.price.toLocaleString('es-AR')} {opt.gestionaStock && opt.stock !== null ? `(Stock: ${opt.stock})` : ''}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
-                {/* Lista de productos agregados */}
+                {/* Lista de productos agregados a la venta */}
                 {manualItems.length > 0 ? (
                   <div className="divide-y divide-[var(--color-borde)] border border-[var(--color-borde)] rounded-2xl overflow-hidden bg-[var(--color-fondo)]/20 text-xs">
                     {manualItems.map((it, idx) => (
-                      <div key={idx} className="p-3 flex items-center justify-between gap-3">
+                      <div key={idx} className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="font-bold text-sm text-[var(--color-texto)] truncate">
                             {it.nombre}
@@ -1657,7 +1667,7 @@ export default function VentasManager({
                         </div>
 
                         {/* Cantidad y Precio unitario editable */}
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
                           <div className="flex items-center gap-1">
                             <span className="text-[10px] opacity-60">Cant:</span>
                             <input
@@ -1678,19 +1688,19 @@ export default function VentasManager({
                               step="10"
                               value={it.precio_unitario}
                               onChange={(e) => handleUpdateManualItemPrice(idx, parseFloat(e.target.value) || 0)}
-                              className="w-20 min-h-[36px] text-right px-1.5 py-1 rounded-lg border border-[var(--color-borde)] bg-[var(--color-superficie)] font-bold text-xs"
+                              className="w-24 min-h-[36px] text-right px-1.5 py-1 rounded-lg border border-[var(--color-borde)] bg-[var(--color-superficie)] font-bold text-xs"
                             />
                           </div>
 
-                          <span className="font-mono font-bold text-xs w-16 text-right">
+                          <span className="font-mono font-bold text-xs w-20 text-right">
                             ${(it.precio_unitario * it.cantidad).toLocaleString('es-AR')}
                           </span>
 
                           <button
                             type="button"
                             onClick={() => handleRemoveManualItem(idx)}
-                            className="min-h-[32px] min-w-[32px] text-rose-500 hover:bg-rose-500/10 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
-                            title="Eliminar ítem"
+                            className="min-h-[36px] min-w-[36px] text-rose-500 hover:bg-rose-500/10 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+                            title="Quitar este producto"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -1707,7 +1717,7 @@ export default function VentasManager({
                   </div>
                 ) : (
                   <div className="p-4 rounded-xl border border-dashed border-[var(--color-borde)] text-center text-xs opacity-60">
-                    Aún no agregaste productos. Selecciona uno en el desplegable superior.
+                    Aún no agregaste productos. Usa el buscador o el desplegable para sumar el primer producto.
                   </div>
                 )}
               </div>
