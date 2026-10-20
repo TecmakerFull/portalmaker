@@ -35,10 +35,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Token de acceso no válido para este pedido' }, { status: 403 })
     }
 
-    // T2: Rechazar si estado_pago no es pendiente
-    if (order.estado_pago !== 'pendiente') {
+    // Ronda 7: Exigir metodo_pago === 'mercadopago'
+    if (order.metodo_pago !== 'mercadopago') {
       return NextResponse.json(
-        { error: `El pedido no se encuentra pendiente de pago (estado: ${order.estado_pago})` },
+        { error: `El pedido no fue creado para abonar con Mercado Pago (método actual: ${order.metodo_pago})` },
+        { status: 400 }
+      )
+    }
+
+    // Ronda 7: Aceptar pendiente y rechazado para permitir reintentos; rechazar aprobado, revision, reembolsado, contracargo
+    if (!['pendiente', 'rechazado'].includes(order.estado_pago)) {
+      return NextResponse.json(
+        { error: `El pedido no admite nuevo intento de pago en su estado actual (estado: ${order.estado_pago})` },
         { status: 400 }
       )
     }
@@ -65,19 +73,6 @@ export async function POST(req: Request) {
         { error: 'La tienda no tiene una cuenta de Mercado Pago vinculada' },
         { status: 400 }
       )
-    }
-
-    // C8 & T2: Reutilizar la preferencia si existe y no venció (48 horas de vigencia)
-    if (order.mp_preference_id && order.mp_init_point) {
-      const orderUpdatedAt = new Date(order.updated_at).getTime()
-      const isExpired = Date.now() - orderUpdatedAt > 48 * 60 * 60 * 1000
-
-      if (!isExpired) {
-        return NextResponse.json({
-          preferenceId: order.mp_preference_id,
-          initPoint: order.mp_init_point,
-        })
-      }
     }
 
     // 3. SEGURIDAD: Obtener y validar el access token de la tienda (renueva automáticamente si expiró)
@@ -171,8 +166,11 @@ export async function POST(req: Request) {
       })
     }
 
-    // Recargo por cobro con MP si la tienda lo tiene configurado
-    const recargoPct = Number(store.mp_recargo_porcentaje) || 0
+    // Ronda 7: El recargo sale del snapshot order.mp_recargo_pct (lo que vio el comprador)
+    const recargoPct = order.mp_recargo_pct != null
+      ? Number(order.mp_recargo_pct)
+      : (Number(store.mp_recargo_porcentaje) || 0)
+
     if (recargoPct > 0) {
       const subtotalProductos = validatedItems.reduce((acc, it) => acc + it.quantity * it.unit_price, 0)
       const montoRecargo = Number(((subtotalProductos * recargoPct) / 100).toFixed(2))
@@ -198,36 +196,48 @@ export async function POST(req: Request) {
       })
     }
 
-    // C1: Calcular monto total cobrado y redondear
+    // C1, AB2: Calcular monto total cobrado y redondear
     const totalCobro = Number(validatedItems.reduce((acc, it) => acc + it.quantity * it.unit_price, 0).toFixed(2))
     if (totalCobro <= 0) {
       return NextResponse.json({ error: 'El monto total a cobrar debe ser mayor a 0' }, { status: 400 })
     }
 
-    // C4: Comparar totalCobro con el total original del pedido para auditoría
-    if (Math.abs(Number(order.total) - totalCobro) > 1) {
-      console.warn(`Ajuste de total: order.total=${order.total} vs totalCobro=${totalCobro} en pedido ${order.id}`)
+    // Ronda 7: Si el total recalculado difiere del order.total mostrado en más de $1, responder 409
+    if (Math.abs(Number(order.total) - totalCobro) > 1.00) {
+      console.warn(`Discrepancia de total detectada: order.total=${order.total} vs totalCobro=${totalCobro} en pedido ${order.id}`)
+      return NextResponse.json(
+        {
+          error: 'El total del pedido difiere del cálculo actual debido a una actualización de precios. Por favor recarga el checkout.',
+          code: 'TOTAL_MISMATCH',
+          expected: Number(order.total),
+          calculated: totalCobro,
+        },
+        { status: 409 }
+      )
     }
 
-    // D3c: Comisión de Portalmaker (marketplace_fee) calculada mediante helper modular
+    // Ronda 7: Reutilizar preferencia solo si tiene menos de 24h según mp_preference_created_at, está pendiente y el total no cambió
+    if (order.mp_preference_id && order.mp_init_point && order.mp_preference_created_at) {
+      const prefCreatedAt = new Date(order.mp_preference_created_at).getTime()
+      const isUnder24Hours = !isNaN(prefCreatedAt) && (Date.now() - prefCreatedAt < 24 * 60 * 60 * 1000)
+      const totalUnchanged = Math.abs(Number(order.total) - totalCobro) < 0.01
+
+      if (isUnder24Hours && order.estado_pago === 'pendiente' && totalUnchanged) {
+        return NextResponse.json({
+          preferenceId: order.mp_preference_id,
+          initPoint: order.mp_init_point,
+        })
+      }
+    }
+
+    // D3c, AB3: Comisión de Portalmaker (marketplace_fee) calculada mediante helper centralizado
     const comisionPortalmakerPct = Number(store.comision_portalmaker) || 0
     let marketplaceFee = 0
 
     if (comisionPortalmakerPct > 0) {
-      const subtotalProductos = validatedItems
-        .filter((it) => it.id !== 'recargo_mp' && it.id !== 'costo_envio')
-        .reduce((acc, it) => acc + it.quantity * it.unit_price, 0)
-      const montoRecargoItem = validatedItems.find((it) => it.id === 'recargo_mp')?.unit_price || 0
-      const costoEnvioItem = validatedItems.find((it) => it.id === 'costo_envio')?.unit_price || 0
+      marketplaceFee = calcularMarketplaceFee(validatedItems, store)
 
-      marketplaceFee = calcularMarketplaceFee({
-        subtotalProductos,
-        montoRecargo: montoRecargoItem,
-        costoEnvio: costoEnvioItem,
-        comisionPct: comisionPortalmakerPct,
-      })
-
-      // C6: Salvaguarda si la comisión supera el total con warning explícito
+      // C6, AB2: Salvaguarda si la comisión supera el total con warning explícito
       if (marketplaceFee >= totalCobro) {
         console.warn(`marketplaceFee (${marketplaceFee}) >= totalCobro (${totalCobro}) en pedido ${order.id}, omitiendo fee.`)
         marketplaceFee = 0
@@ -311,6 +321,7 @@ export async function POST(req: Request) {
         total: totalCobro,
         mp_preference_id: mpData.id,
         mp_init_point: mpData.init_point,
+        mp_preference_created_at: new Date().toISOString(),
         mp_fee_portalmaker: marketplaceFee,
         comision_portalmaker_pct: comisionPortalmakerPct,
         mp_recargo_pct: recargoPct,

@@ -194,37 +194,48 @@ export async function getValidMpAccessToken(store: Store): Promise<string | null
  */
 export function getSafeReturnOrigin(candidateOrigin: string | null | undefined, store: Store): string {
   const defaultPortal = process.env.NEXT_PUBLIC_APP_URL || 'https://www.portalmaker.ar'
-  const storeSubdomain = store.slug ? `https://${store.slug}.portalmaker.ar` : null
-  const storeSubdomainAlt = store.slug ? `https://${store.slug}.portalmaker.com.ar` : null
-  const storeCustom = store.custom_domain ? `https://${store.custom_domain}` : null
+  let normalizedDefault = 'https://www.portalmaker.ar'
+  try {
+    normalizedDefault = new URL(defaultPortal).origin
+  } catch {
+    // Si defaultPortal no tiene esquema válido
+  }
 
-  // Conjunto de orígenes permitidos
+  let storeSubdomainOrigin: string | null = null
+  if (store.slug) {
+    try {
+      storeSubdomainOrigin = new URL(`https://${store.slug}.portalmaker.ar`).origin
+    } catch {}
+  }
+
+  let storeSubdomainAltOrigin: string | null = null
+  if (store.slug) {
+    try {
+      storeSubdomainAltOrigin = new URL(`https://${store.slug}.portalmaker.com.ar`).origin
+    } catch {}
+  }
+
+  let storeCustomOrigin: string | null = null
+  // V: Solo incluir custom_domain si está presente y verificado (custom_domain_verified = true)
+  if (store.custom_domain && store.custom_domain_verified === true) {
+    try {
+      const raw = store.custom_domain.startsWith('http') ? store.custom_domain : `https://${store.custom_domain}`
+      storeCustomOrigin = new URL(raw).origin
+    } catch {}
+  }
+
+  // Conjunto de orígenes permitidos normalizados
   const allowed = new Set<string>([
     'https://www.portalmaker.ar',
     'https://portalmaker.ar',
     'https://portalmaker.com.ar',
     'https://www.portalmaker.com.ar',
+    normalizedDefault,
   ])
 
-  try {
-    const defaultParsed = new URL(defaultPortal).origin
-    allowed.add(defaultParsed)
-  } catch {
-    // Si defaultPortal no tiene esquema válido
-  }
-
-  if (storeSubdomain) allowed.add(storeSubdomain)
-  if (storeSubdomainAlt) allowed.add(storeSubdomainAlt)
-
-  // V: Solo incluir custom_domain si está presente y verificado (custom_domain_verified = true)
-  if (storeCustom && store.custom_domain_verified === true) {
-    try {
-      const customParsed = new URL(storeCustom).origin
-      allowed.add(customParsed)
-    } catch {
-      // Ignorar si el formato es inválido
-    }
-  }
+  if (storeSubdomainOrigin) allowed.add(storeSubdomainOrigin)
+  if (storeSubdomainAltOrigin) allowed.add(storeSubdomainAltOrigin)
+  if (storeCustomOrigin) allowed.add(storeCustomOrigin)
 
   // En desarrollo local o preview se permite localhost
   if (process.env.NODE_ENV !== 'production') {
@@ -255,16 +266,16 @@ export function getSafeReturnOrigin(candidateOrigin: string | null | undefined, 
     }
   }
 
-  // B4 & V: Fallback seguro y ordenado (dominio propio solo si está verificado)
-  if (storeCustom && store.custom_domain_verified === true) {
-    return storeCustom
+  // Fallback seguro y siempre normalizado
+  if (storeCustomOrigin) {
+    return storeCustomOrigin
   }
 
-  if (storeSubdomain) {
-    return storeSubdomain
+  if (storeSubdomainOrigin) {
+    return storeSubdomainOrigin
   }
 
-  return defaultPortal
+  return normalizedDefault
 }
 
 /**
@@ -324,31 +335,37 @@ export function verifyMpWebhookSignature(
   }
 }
 
-export interface MarketplaceFeeParams {
-  subtotalProductos: number
-  montoRecargo: number
-  costoEnvio: number
-  comisionPct: number
-}
+/**
+ * AB3: Constante de configuración comercial de Portalmaker para la base de comisión.
+ * 'total': sobre subtotal de productos + recargo + costo de envío (default actual).
+ * 'productos': únicamente sobre el subtotal de productos (excluye recargo y costo de envío).
+ * Decisión de negocio pendiente del dueño del portal; dejarla comentada con su default.
+ */
+export const COMISION_BASE: 'total' | 'productos' = 'total'
 
 /**
- * D3c: Calcula la comisión de Portalmaker (marketplace_fee) para Checkout Pro.
- * BASE DE CÁLCULO: Actualmente se calcula sobre la totalidad del cobro (productos + recargo + envío).
- * Si a futuro se decide excluir el recargo, modificar la variable 'baseCalculo' indicada abajo.
+ * AB3: Centraliza el cálculo de la comisión de Portalmaker (marketplace_fee) para Checkout Pro.
+ * @param items - Lista de items validados que componen el cobro (incluyendo recargo o envío si aplican)
+ * @param store - Tienda con el campo comision_portalmaker configurado
  */
-export function calcularMarketplaceFee({
-  subtotalProductos,
-  montoRecargo,
-  costoEnvio,
-  comisionPct,
-}: MarketplaceFeeParams): number {
-  if (comisionPct <= 0) return 0
+export function calcularMarketplaceFee(
+  items: Array<{ id: string; quantity: number; unit_price: number }>,
+  store: { comision_portalmaker?: number | null }
+): number {
+  const comisionPct = Number(store?.comision_portalmaker) || 0
+  if (comisionPct <= 0 || !Array.isArray(items) || items.length === 0) return 0
 
-  // DECISIÓN DE NEGOCIO: Base total cobrada (productos + recargo + envío)
-  const baseCalculo = subtotalProductos + montoRecargo + costoEnvio
+  let baseCalculo = 0
 
-  // Alternativa si el dueño decide excluir el recargo de MP de la base comisionable:
-  // const baseCalculo = subtotalProductos + costoEnvio
+  if (COMISION_BASE === 'total') {
+    // Comportamiento actual (default): Base total cobrada al comprador
+    baseCalculo = items.reduce((acc, it) => acc + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0)
+  } else {
+    // Alternativa: Solo productos, excluyendo recargo por cobro con MP y costo de envío
+    baseCalculo = items
+      .filter((it) => it.id !== 'recargo_mp' && it.id !== 'costo_envio')
+      .reduce((acc, it) => acc + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0)
+  }
 
   const fee = Number(((baseCalculo * comisionPct) / 100).toFixed(2))
   return Math.max(0, fee)

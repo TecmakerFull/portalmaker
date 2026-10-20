@@ -7,7 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import ThemeToggle from '@/app/tienda/theme-toggle'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
-import { Sparkles, Store, Palette, MessageSquare, ArrowRight, ShieldCheck, Zap, Mail, HelpCircle, ArrowUpRight } from 'lucide-react'
+import { Sparkles, Store, Palette, MessageSquare, CreditCard, ArrowRight, ShieldCheck, Zap, Mail, HelpCircle, ArrowUpRight } from 'lucide-react'
 
 // Contacto oficial del portal
 const PORTAL_WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_PORTAL_WHATSAPP ?? '5493415866464'
@@ -138,37 +138,48 @@ export default function PortalHomePage() {
 
       {/* Características Destacadas */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Card 1 */}
-          <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-6 sm:p-8 shadow-sm space-y-3.5 transition-colors duration-200">
-            <div className="w-12 h-12 rounded-xl bg-[#FACC15]/20 text-[#CA8A04] flex items-center justify-center">
-              <Store className="w-6 h-6" />
+          <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-6 shadow-xs space-y-3 transition-colors duration-200">
+            <div className="w-11 h-11 rounded-xl bg-[#FACC15]/20 text-[#CA8A04] flex items-center justify-center">
+              <Store className="w-5 h-5" />
             </div>
-            <h3 className="text-xl font-bold font-[var(--font-portal-heading)]">Catálogo con Fotos</h3>
-            <p className="text-sm opacity-75 leading-relaxed">
+            <h3 className="text-lg font-bold font-[var(--font-portal-heading)]">Catálogo con Fotos</h3>
+            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
               Sube tus imágenes en alta resolución con especificaciones técnicas, tiempos de fabricación y variantes.
             </p>
           </div>
 
           {/* Card 2 */}
-          <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-6 sm:p-8 shadow-sm space-y-3.5 transition-colors duration-200">
-            <div className="w-12 h-12 rounded-xl bg-[#FACC15]/20 text-[#CA8A04] flex items-center justify-center">
-              <Palette className="w-6 h-6" />
+          <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-6 shadow-xs space-y-3 transition-colors duration-200">
+            <div className="w-11 h-11 rounded-xl bg-[#FACC15]/20 text-[#CA8A04] flex items-center justify-center">
+              <CreditCard className="w-5 h-5" />
             </div>
-            <h3 className="text-xl font-bold font-[var(--font-portal-heading)]">10 Paletas de Color</h3>
-            <p className="text-sm opacity-75 leading-relaxed">
-              Elige entre 10 paletas de diseño profesional, tipografías modernas y modo oscuro automático para tus clientes.
+            <h3 className="text-lg font-bold font-[var(--font-portal-heading)]">Cobros con Mercado Pago</h3>
+            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
+              Enlaza tu cuenta en un clic para recibir pagos con tarjeta y cuotas. El dinero ingresa directo a tu billetera.
             </p>
           </div>
 
           {/* Card 3 */}
-          <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-6 sm:p-8 shadow-sm space-y-3.5 transition-colors duration-200">
-            <div className="w-12 h-12 rounded-xl bg-[#FACC15]/20 text-[#CA8A04] flex items-center justify-center">
-              <MessageSquare className="w-6 h-6" />
+          <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-6 shadow-xs space-y-3 transition-colors duration-200">
+            <div className="w-11 h-11 rounded-xl bg-[#FACC15]/20 text-[#CA8A04] flex items-center justify-center">
+              <Palette className="w-5 h-5" />
             </div>
-            <h3 className="text-xl font-bold font-[var(--font-portal-heading)]">Ventas por WhatsApp</h3>
-            <p className="text-sm opacity-75 leading-relaxed">
-              Tus compradores consultan por WhatsApp con el producto y precio precargados, sin comisiones ni intermediarios.
+            <h3 className="text-lg font-bold font-[var(--font-portal-heading)]">10 Paletas de Color</h3>
+            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
+              Elige entre 10 paletas profesionales, tipografías modernas y modo oscuro automático para tus clientes.
+            </p>
+          </div>
+
+          {/* Card 4 */}
+          <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-6 shadow-xs space-y-3 transition-colors duration-200">
+            <div className="w-11 h-11 rounded-xl bg-[#FACC15]/20 text-[#CA8A04] flex items-center justify-center">
+              <MessageSquare className="w-5 h-5" />
+            </div>
+            <h3 className="text-lg font-bold font-[var(--font-portal-heading)]">Ventas por WhatsApp</h3>
+            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
+              Tus compradores consultan por WhatsApp con el producto y precio precargados, sin fricciones ni esperas.
             </p>
           </div>
         </div>

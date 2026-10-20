@@ -158,3 +158,89 @@ export async function sendOrderPaidNotification({ store, order }: SendOrderNotif
     return { ok: false, error: err?.message }
   }
 }
+
+export interface PlatformAlertParams {
+  type:
+    | 'revision'
+    | 'reembolsado'
+    | 'contracargo'
+    | 'stock_warning'
+    | 'pago_duplicado'
+    | 'seller_token_revoked'
+    | 'unrecognized_fee_type'
+  store: Store | null
+  order?: Order | null
+  details: string
+  paymentId?: string
+}
+
+/**
+ * Ronda 7: Alertas reales por email para eventos críticos de plataforma
+ * Destinatarios: admin_email de la tienda y email del portal.
+ */
+export async function notifyPlatformAlert({
+  type,
+  store,
+  order,
+  details,
+  paymentId,
+}: PlatformAlertParams) {
+  const portalEmail = process.env.NEXT_PUBLIC_PORTAL_EMAIL || 'temperini@gmail.com'
+  const storeEmail = store?.admin_email?.trim() || store?.email_contacto?.trim() || null
+
+  const recipients = Array.from(new Set([portalEmail, storeEmail].filter(Boolean))) as string[]
+
+  const alertTitles: Record<string, string> = {
+    revision: 'ALERTA: Pedido enviado a REVISIÓN por discrepancia',
+    reembolsado: 'AVISO: Pago reembolsado en Mercado Pago',
+    contracargo: 'ALERTA URGENTE: Contracargo recibido en Mercado Pago',
+    stock_warning: 'ALERTA: Sobreventa detectada (Stock insuficiente)',
+    pago_duplicado: 'ALERTA CRÍTICA: Posible pago duplicado recibido',
+    seller_token_revoked: 'ALERTA: Token de Mercado Pago revocado o desconectado',
+    unrecognized_fee_type: 'ADVERTENCIA: Tipo de fee no reconocido en Mercado Pago',
+  }
+
+  const subject = `[Portalmaker ${type.toUpperCase()}] ${alertTitles[type] || 'Alerta de Plataforma'} — ${store?.nombre || 'Portal'}`
+  console.warn(`[NOTIFY_PLATFORM_ALERT] ${subject} -> Destinatarios: ${recipients.join(', ')}. Detalle: ${details}`)
+
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    return { ok: false, error: 'RESEND_API_KEY no configurado' }
+  }
+
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'Portalmaker <alertas@resend.dev>'
+  const htmlContent = `
+    <div style="font-family: sans-serif; padding: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; max-width: 600px;">
+      <h2 style="color: #b91c1c; margin-top: 0;">${alertTitles[type] || 'Alerta de Mercado Pago'}</h2>
+      <p><strong>Tienda:</strong> ${store?.nombre || 'N/A'} (${store?.slug || 'N/A'})</p>
+      ${order ? `<p><strong>Pedido ID:</strong> ${order.id}<br><strong>Total:</strong> $${order.total}</p>` : ''}
+      ${paymentId ? `<p><strong>Mercado Pago ID:</strong> ${paymentId}</p>` : ''}
+      <div style="background: #f8fafc; padding: 14px; border-left: 4px solid #b91c1c; margin: 16px 0; font-family: monospace; font-size: 13px;">
+        ${details}
+      </div>
+      <p style="font-size: 12px; color: #64748b;">Notificación automática de seguridad generada por Portalmaker.</p>
+    </div>
+  `
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: recipients,
+        subject,
+        html: htmlContent,
+      }),
+    })
+
+    const data = await res.json()
+    return { ok: res.ok, data }
+  } catch (err: any) {
+    console.error('Error al enviar platform alert email:', err)
+    return { ok: false, error: err?.message }
+  }
+}

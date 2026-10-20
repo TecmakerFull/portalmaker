@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server'
+import { verifyStoreAccess } from '@/lib/store-auth'
 
 // =============================================================================
 // PORTALMAKER — Mercado Pago OAuth: Callback
@@ -47,35 +48,35 @@ export async function GET(req: Request) {
       return NextResponse.redirect(`${returnUrl}?error=mp_state_expired`)
     }
 
-    // Validar que el usuario que inició el flujo coincida con la sesión activa si existe
-    const supabase = await createSupabaseServerClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (stateRecord.user_id && (!user || stateRecord.user_id !== user.id)) {
-      console.error(`Mismatch de usuario OAuth: esperado ${stateRecord.user_id}, actual ${user?.id || 'sin_sesion'}`)
-      return NextResponse.redirect(`${returnUrl}?error=mp_user_mismatch`)
-    }
-
     const storeId = stateRecord.store_id
 
-    // Obtener datos de la tienda para construir la URL de retorno correcta
-    const { data: store } = await supabaseAdmin
-      .from('stores')
-      .select('id, slug, custom_domain')
-      .eq('id', storeId)
-      .single()
+    // Z: Revalidación obligatoria de seguridad en la base de datos (Item 6: rechazar si user_id es null)
+    if (!stateRecord.user_id) {
+      console.error(`Callback MP: state ${state} carece de user_id asociado`)
+      return NextResponse.redirect(`${returnUrl}?error=mp_missing_user`)
+    }
 
-    if (store) {
-      const host = req.headers.get('host') || ''
-      if (store.custom_domain) {
-        returnUrl = `https://${store.custom_domain}/admin/pagos`
-      } else if (host.includes('localhost') || host.includes('vercel.app')) {
-        returnUrl = `${origin}/tienda/admin/pagos?tenant=${store.slug}`
-      } else {
-        returnUrl = `https://${store.slug}.portalmaker.ar/admin/pagos`
-      }
+    const { data: storeAdminUser } = await supabaseAdmin.auth.admin.getUserById(stateRecord.user_id)
+    const userEmail = storeAdminUser?.user?.email || null
+
+    const authResult = await verifyStoreAccess(userEmail, storeId)
+    if (!authResult.authorized || !authResult.store) {
+      console.error(
+        `Callback MP: Usuario ${stateRecord.user_id} (${userEmail}) no tiene permisos sobre la tienda ${storeId}`
+      )
+      return NextResponse.redirect(`${returnUrl}?error=mp_user_not_authorized`)
+    }
+
+    const store = authResult.store
+
+    const host = req.headers.get('host') || ''
+    // Item 6: Usar el dominio propio en el redirect final solo si custom_domain_verified = true
+    if (store.custom_domain && store.custom_domain_verified === true) {
+      returnUrl = `https://${store.custom_domain}/admin/pagos`
+    } else if (host.includes('localhost') || host.includes('vercel.app')) {
+      returnUrl = `${origin}/tienda/admin/pagos?tenant=${store.slug}`
+    } else {
+      returnUrl = `https://${store.slug}.portalmaker.ar/admin/pagos`
     }
 
     const clientId = process.env.MP_CLIENT_ID
@@ -114,7 +115,7 @@ export async function GET(req: Request) {
     const tokenData = await tokenResponse.json()
 
     if (!tokenResponse.ok || !tokenData.access_token) {
-      console.error('Error al intercambiar token en Mercado Pago:', tokenData)
+      console.error('Error al intercambiar token en Mercado Pago:', tokenData?.message || tokenData?.error || 'Error desconocido')
       return NextResponse.redirect(`${returnUrl}?error=mp_token_exchange_failed`)
     }
 

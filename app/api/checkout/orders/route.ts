@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
-import { checkRateLimit, getClientIp, verifyTurnstileToken } from '@/lib/rate-limit'
+import { checkRateLimit, getClientIp, verifyTurnstileToken, isTurnstileConfigured } from '@/lib/rate-limit'
 
 // =============================================================================
 // PORTALMAKER — Endpoint Oficial de Creación de Pedidos (H1, P1, Q, X)
@@ -51,8 +51,14 @@ export async function POST(req: Request) {
       console.warn(`Alerta de volumen en checkout para tienda ${storeId}: frecuencia elevada de compras.`)
     }
 
-    // X: Validación de Cloudflare Turnstile si está configurado en el servidor
-    if (process.env.TURNSTILE_SECRET_KEY && turnstileToken) {
+    // Ronda 7: Turnstile obligatorio si está configurado en el servidor (isTurnstileConfigured())
+    if (isTurnstileConfigured()) {
+      if (!turnstileToken) {
+        return NextResponse.json(
+          { error: 'Verificación de seguridad requerida (token faltante). Por favor recarga e intenta nuevamente.' },
+          { status: 400 }
+        )
+      }
       const isValidCaptcha = await verifyTurnstileToken(turnstileToken, clientIp)
       if (!isValidCaptcha) {
         return NextResponse.json(
@@ -62,7 +68,19 @@ export async function POST(req: Request) {
       }
     }
 
-    // 1. Validar datos básicos del comprador
+    // Ronda 7: Whitelist estricta de metodoPago y tipoEntrega
+    const ALLOWED_METODOS_PAGO = ['mercadopago', 'transferencia', 'efectivo', 'acordar']
+    const ALLOWED_TIPOS_ENTREGA = ['retiro', 'envio']
+
+    if (!metodoPago || !ALLOWED_METODOS_PAGO.includes(metodoPago)) {
+      return NextResponse.json({ error: `Método de pago no válido: ${metodoPago}` }, { status: 400 })
+    }
+
+    if (tipoEntrega && !ALLOWED_TIPOS_ENTREGA.includes(tipoEntrega)) {
+      return NextResponse.json({ error: `Tipo de entrega no válido: ${tipoEntrega}` }, { status: 400 })
+    }
+
+    // 1. Validar datos básicos y límites de longitud del comprador
     const cleanNombre = String(nombre || '').trim()
     const cleanEmail = String(email || '').trim().toLowerCase()
     const cleanTelefono = String(telefono || '').trim()
@@ -72,21 +90,74 @@ export async function POST(req: Request) {
     if (!cleanNombre) {
       return NextResponse.json({ error: 'El nombre del comprador es obligatorio' }, { status: 400 })
     }
+    if (cleanNombre.length > 100) {
+      return NextResponse.json({ error: 'El nombre del comprador no puede superar los 100 caracteres' }, { status: 400 })
+    }
 
-    if (!cleanEmail || !cleanEmail.includes('@') || cleanEmail.length < 5) {
-      return NextResponse.json({ error: 'Ingresa un email de contacto válido' }, { status: 400 })
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!cleanEmail || cleanEmail.length > 150 || !EMAIL_REGEX.test(cleanEmail)) {
+      return NextResponse.json({ error: 'Ingresa un email de contacto válido (máximo 150 caracteres)' }, { status: 400 })
+    }
+
+    if (cleanTelefono && cleanTelefono.length > 30) {
+      return NextResponse.json({ error: 'El teléfono no puede superar los 30 caracteres' }, { status: 400 })
+    }
+
+    if (cleanDireccion && cleanDireccion.length > 200) {
+      return NextResponse.json({ error: 'La dirección no puede superar los 200 caracteres' }, { status: 400 })
+    }
+
+    if (cleanNotas && cleanNotas.length > 500) {
+      return NextResponse.json({ error: 'Las notas no pueden superar los 500 caracteres' }, { status: 400 })
     }
 
     if (!Array.isArray(clientItems) || clientItems.length === 0) {
       return NextResponse.json({ error: 'El pedido no contiene productos' }, { status: 400 })
     }
 
+    // Límite máximo de 50 líneas
+    if (clientItems.length > 50) {
+      return NextResponse.json({ error: 'El pedido supera el límite máximo permitido de 50 líneas de productos' }, { status: 400 })
+    }
+
+    // Ronda 7: Validar cantidades (entero entre 1 y 999) y agrupar líneas repetidas de un mismo producto o variante
+    const groupedItemsMap = new Map<string, { productId: string; variantId: string | null; quantity: number }>()
+
+    for (const rawItem of clientItems) {
+      const productId = rawItem.productId || rawItem.product_id
+      const variantId = rawItem.variantId || rawItem.variant_id || null
+      const rawQty = rawItem.quantity != null ? rawItem.quantity : rawItem.cantidad
+      const quantity = Number(rawQty)
+
+      if (!productId || !Number.isInteger(quantity) || quantity < 1 || quantity > 999) {
+        return NextResponse.json(
+          { error: 'Cada producto debe contener un identificador válido y una cantidad entera entre 1 y 999' },
+          { status: 400 }
+        )
+      }
+
+      const groupKey = `${productId}__${variantId || 'novar'}`
+      const existing = groupedItemsMap.get(groupKey)
+      if (existing) {
+        const combinedQty = existing.quantity + quantity
+        if (combinedQty > 999) {
+          return NextResponse.json(
+            { error: 'La cantidad combinada de un mismo producto o variante no puede superar 999 unidades' },
+            { status: 400 }
+          )
+        }
+        existing.quantity = combinedQty
+      } else {
+        groupedItemsMap.set(groupKey, { productId, variantId, quantity })
+      }
+    }
+
     const supabaseAdmin = createSupabaseAdminClient()
 
-    // 2. Validar que la tienda exista, esté activa y tenga checkout habilitado
+    // 2. Validar que la tienda exista, esté activa, con checkout activo y métodos habilitados
     const { data: store, error: storeErr } = await supabaseAdmin
       .from('stores')
-      .select('id, nombre, suscripcion_activa, checkout_activo, modo_operacion, mp_connected, mp_recargo_porcentaje, comision_portalmaker')
+      .select('id, nombre, suscripcion_activa, checkout_activo, modo_operacion, mp_connected, mp_recargo_porcentaje, comision_portalmaker, transferencia_activa')
       .eq('id', storeId)
       .single()
 
@@ -98,7 +169,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'La tienda se encuentra temporalmente inactiva' }, { status: 403 })
     }
 
-    // 3. Reconciliar ítems y calcular precios oficiales desde la base de datos (NUNCA del cliente)
+    if (!store.checkout_activo) {
+      return NextResponse.json({ error: 'El checkout se encuentra deshabilitado para esta tienda' }, { status: 403 })
+    }
+
+    if (metodoPago === 'mercadopago' && !store.mp_connected) {
+      return NextResponse.json({ error: 'Mercado Pago no está habilitado en esta tienda' }, { status: 400 })
+    }
+
+    if (metodoPago === 'transferencia' && !store.transferencia_activa) {
+      return NextResponse.json({ error: 'El pago por transferencia no está habilitado en esta tienda' }, { status: 400 })
+    }
+
+    // 3. Reconciliar ítems agrupados y calcular precios oficiales desde la base de datos (NUNCA del cliente)
     const verifiedSnapshotItems: Array<{
       product_id: string
       variant_id: string | null
@@ -111,14 +194,8 @@ export async function POST(req: Request) {
       is_reserva: boolean
     }> = []
 
-    for (const rawItem of clientItems) {
-      const productId = rawItem.productId || rawItem.product_id
-      const variantId = rawItem.variantId || rawItem.variant_id || null
-      const quantity = Math.floor(Number(rawItem.quantity || rawItem.cantidad) || 0)
-
-      if (!productId || quantity <= 0) {
-        return NextResponse.json({ error: 'Producto o cantidad inválida en el carrito' }, { status: 400 })
-      }
+    for (const group of groupedItemsMap.values()) {
+      const { productId, variantId, quantity } = group
 
       // Consultar producto oficial en la tienda
       const { data: product, error: prodErr } = await supabaseAdmin

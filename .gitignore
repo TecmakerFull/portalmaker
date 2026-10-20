@@ -44,3 +44,8 @@ next-env.d.ts
 
 # demo reference
 TiendaDemo/
+
+# evidencia y diffs locales
+evidencia/
+*.diff
+ronda3.diff

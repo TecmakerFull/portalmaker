@@ -53,14 +53,14 @@ begin
     where mp_access_token is not null
     on conflict (store_id) do nothing;
 
-    -- Validar que no queden tiendas con mp_connected sin credenciales antes de eliminar columnas
+    -- Validar que no queden tiendas con mp_connected sin credenciales o con token nulo antes de eliminar columnas
     select count(*) into v_missing_creds_count
     from stores s
     left join store_mp_credentials c on c.store_id = s.id
-    where s.mp_connected = true and c.store_id is null;
+    where s.mp_connected = true and (c.store_id is null or c.mp_access_token is null or trim(c.mp_access_token) = '');
 
     if v_missing_creds_count > 0 then
-      raise exception 'Abortando migración: existen % tiendas con mp_connected = true sin registro en store_mp_credentials', v_missing_creds_count;
+      raise exception 'Abortando migración: existen % tiendas con mp_connected = true sin credencial válida (mp_access_token no nulo) en store_mp_credentials', v_missing_creds_count;
     end if;
 
     -- Blanquear columnas legacy y eliminarlas de stores
@@ -314,17 +314,20 @@ declare
   v_order record;
   v_item jsonb;
   v_qty int;
+  v_current_stock int;
   v_variant_id uuid;
   v_product_id uuid;
+  v_stock_warning boolean := false;
+  v_warning_notes text := '';
 begin
   -- 1. Consultar el pedido actual
-  select id, store_id, total, items, stock_descontado, estado_pago
+  select id, store_id, total, items, stock_descontado, estado_pago, observaciones_admin
   into v_order
   from orders
   where id = p_order_id;
 
   if v_order.id is null then
-    return jsonb_build_object('success', false, 'error', 'order_not_found');
+    return jsonb_build_object('success', false, 'error', 'order_not_found', 'status', 'error');
   end if;
 
   -- 2. Si ya estaba aprobado, responder idempotentemente
@@ -334,6 +337,16 @@ begin
       'already_processed', true,
       'first_time', false,
       'status', 'aprobado'
+    );
+  end if;
+
+  -- AA3: No permitir aprobar pedidos que hayan sido reembolsados o tengan contracargo
+  if v_order.estado_pago in ('reembolsado', 'contracargo') then
+    return jsonb_build_object(
+      'success', false,
+      'error', 'cannot_approve_refunded_or_chargeback_order',
+      'status', v_order.estado_pago,
+      'first_time', false
     );
   end if;
 
@@ -364,7 +377,7 @@ begin
     );
   end if;
 
-  -- 4. Actualizar pedido a 'aprobado' si estado_pago is distinct from 'aprobado'
+  -- 4. Actualizar pedido a 'aprobado' solo si no estaba aprobado ni en reembolso/contracargo
   update orders
   set
     estado_pago = 'aprobado',
@@ -372,31 +385,74 @@ begin
     mp_net_received = p_net_received,
     mp_fee_portalmaker = p_fee,
     updated_at = now()
-  where id = p_order_id and estado_pago is distinct from 'aprobado';
+  where id = p_order_id
+    and estado_pago is distinct from 'aprobado'
+    and estado_pago not in ('reembolsado', 'contracargo');
 
-  -- 5. Descontar stock atómicamente si aún no estaba descontado
+  -- 5. AA2: Descontar stock atómicamente; si es insuficiente, descontar igual y reportar stock_warning
   if not coalesce(v_order.stock_descontado, false) then
     if v_order.items is not null and jsonb_typeof(v_order.items) = 'array' then
       for v_item in select * from jsonb_array_elements(v_order.items)
       loop
         v_qty := coalesce((v_item->>'cantidad')::int, 0);
         if v_qty > 0 then
+          -- Variante de producto
           if (v_item->>'variant_id') is not null and (v_item->>'variant_id') <> '' and (v_item->>'variant_id') <> 'null' then
             v_variant_id := (v_item->>'variant_id')::uuid;
-            update product_variants
-            set stock = greatest(stock - v_qty, 0)
+
+            select stock into v_current_stock
+            from product_variants
             where id = v_variant_id and stock is not null;
+
+            if v_current_stock is not null then
+              if v_current_stock < v_qty then
+                v_stock_warning := true;
+                v_warning_notes := concat(
+                  v_warning_notes,
+                  E'\nAlerta de sobreventa (variante ' || coalesce(v_item->>'variante', v_variant_id::text) || '): stock disponible ' || v_current_stock || ' menor a cantidad ' || v_qty
+                );
+              end if;
+              -- Descontar igual (refleja faltante real)
+              update product_variants
+              set stock = stock - v_qty
+              where id = v_variant_id;
+            end if;
+
+          -- Producto simple
           elsif (v_item->>'product_id') is not null and (v_item->>'product_id') <> '' and (v_item->>'product_id') <> 'null' then
             v_product_id := (v_item->>'product_id')::uuid;
-            update products
-            set stock = greatest(stock - v_qty, 0)
+
+            select stock into v_current_stock
+            from products
             where id = v_product_id and gestiona_stock = true and stock is not null;
+
+            if v_current_stock is not null then
+              if v_current_stock < v_qty then
+                v_stock_warning := true;
+                v_warning_notes := concat(
+                  v_warning_notes,
+                  E'\nAlerta de sobreventa (producto ' || coalesce(v_item->>'nombre', v_product_id::text) || '): stock disponible ' || v_current_stock || ' menor a cantidad ' || v_qty
+                );
+              end if;
+              -- Descontar igual
+              update products
+              set stock = stock - v_qty
+              where id = v_product_id and gestiona_stock = true;
+            end if;
           end if;
         end if;
       end loop;
     end if;
 
-    update orders set stock_descontado = true where id = p_order_id;
+    -- Registrar observaciones de stock si hubo sobreventa
+    if v_stock_warning then
+      update orders
+      set stock_descontado = true,
+          observaciones_admin = concat(coalesce(observaciones_admin, ''), v_warning_notes)
+      where id = p_order_id;
+    else
+      update orders set stock_descontado = true where id = p_order_id;
+    end if;
   end if;
 
   return jsonb_build_object(
@@ -404,6 +460,7 @@ begin
     'first_time', true,
     'already_processed', false,
     'status', 'aprobado',
+    'stock_warning', v_stock_warning,
     'order_id', v_order.id,
     'store_id', v_order.store_id
   );

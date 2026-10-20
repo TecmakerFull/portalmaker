@@ -547,7 +547,6 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
         modo_operacion: subEditForm.modo_operacion || 'vitrina',
         checkout_activo: Boolean(subEditForm.checkout_activo),
         suscripcion_activa: Boolean(subEditForm.suscripcion_activa),
-        notas_admin: subEditForm.notas_admin?.trim() || null,
       }
 
       const { error } = await supabase
@@ -557,7 +556,17 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
 
       if (error) throw error
 
-      const updated = { ...selectedStore, ...updateData } as SuperadminStoreItem
+      // Las notas internas se guardan aparte, en la tabla solo superadmin
+      const notasLimpias = subEditForm.notas_admin?.trim() || null
+      const { error: notesError } = await supabase
+        .from('store_admin_notes')
+        .upsert(
+          { store_id: selectedStore.id, notas: notasLimpias, updated_at: new Date().toISOString() },
+          { onConflict: 'store_id' }
+        )
+      if (notesError) throw notesError
+
+      const updated = { ...selectedStore, ...updateData, notas_admin: notasLimpias } as SuperadminStoreItem
       setStores((prev) => prev.map((s) => (s.id === selectedStore.id ? updated : s)))
       setSelectedStore(updated)
       showToast('Datos de la tienda y suscripción actualizados con éxito.')
@@ -573,9 +582,15 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
     if (!selectedStore) return
     try {
       const { error } = await supabase
-        .from('stores')
-        .update({ notas_admin: subEditForm.notas_admin?.trim() || null })
-        .eq('id', selectedStore.id)
+        .from('store_admin_notes')
+        .upsert(
+          {
+            store_id: selectedStore.id,
+            notas: subEditForm.notas_admin?.trim() || null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'store_id' }
+        )
 
       if (error) throw error
 

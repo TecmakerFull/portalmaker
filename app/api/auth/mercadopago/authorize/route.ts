@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server'
+import { verifyStoreAccess } from '@/lib/store-auth'
 import crypto from 'crypto'
 
 // =============================================================================
@@ -29,29 +30,11 @@ export async function GET(req: Request) {
     const supabaseAdmin = createSupabaseAdminClient()
 
     // Verificar que el usuario sea el dueño de la tienda o un platform admin
-    const { data: store, error: storeErr } = await supabaseAdmin
-      .from('stores')
-      .select('id, admin_email, slug')
-      .eq('id', storeId)
-      .single()
-
-    if (storeErr || !store) {
-      return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
+    const authResult = await verifyStoreAccess(user.email, storeId)
+    if (!authResult.authorized || !authResult.store) {
+      return NextResponse.json({ error: authResult.error || 'No tienes permisos sobre esta tienda' }, { status: 403 })
     }
-
-    const userEmail = (user.email || '').trim().toLowerCase()
-    const storeAdminEmail = (store.admin_email || '').trim().toLowerCase()
-
-    // Validar permisos
-    const { data: platformAdmin } = await supabaseAdmin
-      .from('platform_admins')
-      .select('id')
-      .ilike('email', userEmail)
-      .maybeSingle()
-
-    if (storeAdminEmail !== userEmail && !platformAdmin) {
-      return NextResponse.json({ error: 'No tienes permisos sobre esta tienda' }, { status: 403 })
-    }
+    const store = authResult.store
 
     const clientId = process.env.MP_CLIENT_ID
     if (!clientId) {

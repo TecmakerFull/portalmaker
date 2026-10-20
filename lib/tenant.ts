@@ -45,19 +45,46 @@ export const getTenantStore = cache(async function getTenantStore(): Promise<Ten
 
   const supabase = await createSupabaseServerClient()
 
+  const HOSTNAME_REGEX = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/i
+
+  // Columnas explícitas para stores (excluye notas_admin que pertenece a store_admin_notes)
+  const EXPLICIT_STORE_COLUMNS = [
+    'id', 'nombre', 'slug', 'custom_domain', 'custom_domain_verified',
+    'admin_email', 'whatsapp_numero', 'slogan', 'logo_url', 'icono_url',
+    'favicon_url', 'hero_banner_url', 'banners_activo', 'logo_tamano',
+    'mostrar_nombre_header', 'color_primario', 'color_secundario', 'color_fondo',
+    'color_texto', 'color_primario_dark', 'color_secundario_dark', 'color_fondo_dark',
+    'color_texto_dark', 'tema_por_defecto', 'font_heading', 'font_body',
+    'instagram_url', 'facebook_url', 'tiktok_url', 'email_contacto',
+    'horario_atencion', 'direccion', 'meta_title', 'meta_description',
+    'ga_measurement_id', 'meta_pixel_id', 'google_maps_embed_url',
+    'modo_operacion', 'checkout_activo', 'transferencia_activa',
+    'transferencia_alias', 'transferencia_cbu_cvu', 'transferencia_banco',
+    'transferencia_titular', 'transferencia_cuit', 'transferencia_instrucciones',
+    'plan', 'precio_mensual', 'comision_portalmaker', 'mp_connected',
+    'mp_recargo_porcentaje', 'estado_pago', 'limite_productos',
+    'suscripcion_activa', 'fecha_inicio_suscripcion', 'fecha_proximo_vencimiento',
+    'dias_gracia', 'created_at', 'updated_at'
+  ].join(',')
+
   // Intentar cargar store con perfil completo si el usuario autenticado es el dueño o superadmin
   // Para visitantes y compradores anónimos, consultar stores_public (sin admin_email ni datos bancarios)
   let store: any = null
   const { data: { user } } = await supabase.auth.getUser()
 
   if (user) {
-    let adminQuery = supabase.from('stores').select('*')
+    let adminQuery = supabase.from('stores').select(EXPLICIT_STORE_COLUMNS)
     if (storeSlug) {
       adminQuery = adminQuery.eq('slug', storeSlug)
+    } else if (storeDomain && HOSTNAME_REGEX.test(storeDomain)) {
+      const cleanDomain = storeDomain.replace(/^www\./i, '')
+      const validDomains = Array.from(new Set([storeDomain.toLowerCase(), cleanDomain.toLowerCase()]))
+      adminQuery = adminQuery.in('custom_domain', validDomains)
     } else if (storeDomain) {
-      const cleanDomain = storeDomain.replace(/^www\./, '')
-      adminQuery = adminQuery.or(`custom_domain.eq.${storeDomain},custom_domain.eq.${cleanDomain}`)
+      // Hostname no cumple regex -> no consultar
+      return null
     }
+
     const { data: adminStore } = await adminQuery.maybeSingle()
     if (adminStore) {
       store = adminStore
@@ -68,10 +95,14 @@ export const getTenantStore = cache(async function getTenantStore(): Promise<Ten
     let publicQuery = supabase.from('stores_public').select('*')
     if (storeSlug) {
       publicQuery = publicQuery.eq('slug', storeSlug)
+    } else if (storeDomain && HOSTNAME_REGEX.test(storeDomain)) {
+      const cleanDomain = storeDomain.replace(/^www\./i, '')
+      const validDomains = Array.from(new Set([storeDomain.toLowerCase(), cleanDomain.toLowerCase()]))
+      publicQuery = publicQuery.in('custom_domain', validDomains)
     } else if (storeDomain) {
-      const cleanDomain = storeDomain.replace(/^www\./, '')
-      publicQuery = publicQuery.or(`custom_domain.eq.${storeDomain},custom_domain.eq.${cleanDomain}`)
+      return null
     }
+
     const { data: publicStore } = await publicQuery.maybeSingle()
     if (publicStore) {
       store = publicStore

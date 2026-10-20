@@ -34,7 +34,7 @@ export default async function MakerDashboardPage() {
   // 3. Buscar si el maker es dueño de tiendas
   const { data: stores } = await supabase
     .from('stores')
-    .select('*')
+    .select('id, nombre, slug, logo_url, custom_domain, suscripcion_activa, modo_operacion, plan, estado_pago, created_at, slogan, color_primario, color_secundario, color_fondo, font_heading')
     .ilike('admin_email', userEmail)
     .order('created_at', { ascending: false })
 
@@ -43,7 +43,7 @@ export default async function MakerDashboardPage() {
   // 4. Buscar si el usuario es colaborador activo de alguna tienda
   const { data: collabs } = await supabase
     .from('store_collaborators')
-    .select('id, rol, store:stores(*)')
+    .select('id, rol, store:stores(id, nombre, slug, logo_url, custom_domain, suscripcion_activa, modo_operacion, plan, estado_pago, created_at, slogan, color_primario, color_secundario, color_fondo, font_heading)')
     .eq('email', user.email)
     .eq('estado', 'activo')
 

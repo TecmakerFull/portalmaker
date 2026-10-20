@@ -54,9 +54,12 @@ export default function PagosForm({
     store.transferencia_instrucciones ?? 'Enviar comprobante de transferencia por WhatsApp indicando el número de pedido.'
   )
 
-  const [loading, setLoading] = useState(false)
-  const [successMsg, setSuccessMsg] = useState<string | null>(null)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [loadingMp, setLoadingMp] = useState(false)
+  const [loadingTransf, setLoadingTransf] = useState(false)
+  const [successMpMsg, setSuccessMpMsg] = useState<string | null>(null)
+  const [successTransfMsg, setSuccessTransfMsg] = useState<string | null>(null)
+  const [errorMpMsg, setErrorMpMsg] = useState<string | null>(null)
+  const [errorTransfMsg, setErrorTransfMsg] = useState<string | null>(null)
 
   // Feedback de OAuth por URL params
   useEffect(() => {
@@ -64,14 +67,14 @@ export default function PagosForm({
     const errorParam = searchParams.get('error')
 
     if (successParam === 'mp_connected') {
-      setSuccessMsg('Tu cuenta de Mercado Pago fue conectada exitosamente.')
+      setSuccessMpMsg('Tu cuenta de Mercado Pago fue conectada exitosamente.')
       setMpConnected(true)
       router.replace(window.location.pathname + (tenantQuery || ''))
     } else if (errorParam) {
       if (errorParam === 'mp_denied') {
-        setErrorMsg('La autorización de Mercado Pago fue cancelada.')
+        setErrorMpMsg('La autorización de Mercado Pago fue cancelada.')
       } else {
-        setErrorMsg('Ocurrió un error al vincular tu cuenta de Mercado Pago. Reintenta.')
+        setErrorMpMsg('Ocurrió un error al vincular tu cuenta de Mercado Pago. Reintenta.')
       }
       router.replace(window.location.pathname + (tenantQuery || ''))
     }
@@ -84,7 +87,7 @@ export default function PagosForm({
     }
 
     setDisconnectingMp(true)
-    setErrorMsg(null)
+    setErrorMpMsg(null)
 
     try {
       const res = await fetch('/api/auth/mercadopago/disconnect', {
@@ -97,22 +100,22 @@ export default function PagosForm({
       if (!res.ok) throw new Error(data.error || 'Error al desvincular')
 
       setMpConnected(false)
-      setSuccessMsg('Cuenta de Mercado Pago desvinculada.')
+      setSuccessMpMsg('Cuenta de Mercado Pago desvinculada.')
       router.refresh()
-      setTimeout(() => setSuccessMsg(null), 4000)
+      setTimeout(() => setSuccessMpMsg(null), 4000)
     } catch (err: any) {
-      setErrorMsg(err?.message || 'No se pudo desvincular Mercado Pago.')
+      setErrorMpMsg(err?.message || 'No se pudo desvincular Mercado Pago.')
     } finally {
       setDisconnectingMp(false)
     }
   }
 
-  // Guardar configuración general mediante endpoint seguro (D2d)
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setErrorMsg(null)
-    setSuccessMsg(null)
+  // Guardar exclusivamente configuración de Mercado Pago (Recargo)
+  const handleSaveMp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    setLoadingMp(true)
+    setErrorMpMsg(null)
+    setSuccessMpMsg(null)
 
     try {
       const res = await fetch('/api/store/payment-settings', {
@@ -120,7 +123,41 @@ export default function PagosForm({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           storeId: store.id,
+          section: 'mp',
           mpRecargoPorcentaje: mpRecargo,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'No se pudo guardar la configuración de Mercado Pago.')
+      }
+
+      setMpRecargo(data.recargo ?? mpRecargo)
+      setSuccessMpMsg('Configuración de Mercado Pago guardada correctamente.')
+      router.refresh()
+      setTimeout(() => setSuccessMpMsg(null), 4000)
+    } catch (err: any) {
+      setErrorMpMsg(err?.message || 'Error al guardar los datos de Mercado Pago.')
+    } finally {
+      setLoadingMp(false)
+    }
+  }
+
+  // Guardar exclusivamente configuración de Transferencia Bancaria
+  const handleSaveTransferencia = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    setLoadingTransf(true)
+    setErrorTransfMsg(null)
+    setSuccessTransfMsg(null)
+
+    try {
+      const res = await fetch('/api/store/payment-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId: store.id,
+          section: 'transferencia',
           transferenciaActiva,
           transferenciaAlias: alias,
           transferenciaCbuCvu: cbuCvu,
@@ -132,24 +169,22 @@ export default function PagosForm({
       })
 
       const data = await res.json()
-
       if (!res.ok) {
-        throw new Error(data.error || 'No se pudo guardar la configuración de cobros.')
+        throw new Error(data.error || 'No se pudo guardar los datos de transferencia.')
       }
 
-      setMpRecargo(data.recargo ?? mpRecargo)
-      setSuccessMsg('Configuración de cobros guardada correctamente.')
+      setSuccessTransfMsg('Datos de transferencia bancaria guardados correctamente.')
       router.refresh()
-      setTimeout(() => setSuccessMsg(null), 4000)
+      setTimeout(() => setSuccessTransfMsg(null), 4000)
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Error al guardar los datos de cobro.')
+      setErrorTransfMsg(err?.message || 'Error al guardar los datos de transferencia.')
     } finally {
-      setLoading(false)
+      setLoadingTransf(false)
     }
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       {/* Encabezado */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)] font-[var(--font-heading)] flex items-center gap-2.5">
@@ -161,25 +196,11 @@ export default function PagosForm({
         </p>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-6 pb-24">
-        {successMsg && (
-          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs sm:text-sm font-semibold flex items-center gap-2.5">
-            <Check className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-            <span>{successMsg}</span>
-          </div>
-        )}
-
-        {errorMsg && (
-          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs sm:text-sm font-semibold flex items-center gap-2.5">
-            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
-
+      <div className="space-y-6">
         {/* =========================================================================
             1. MERCADO PAGO INTEGRATION CARD
         ========================================================================== */}
-        <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-5">
+        <form onSubmit={handleSaveMp} className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--color-borde)]/60 pb-5">
             <div className="space-y-1">
               <div className="flex items-center gap-2.5">
@@ -262,7 +283,7 @@ export default function PagosForm({
                       type="number"
                       step="0.01"
                       min="0"
-                      max="100"
+                      max="15"
                       value={mpRecargo}
                       onChange={(e) => setMpRecargo(e.target.value)}
                       placeholder="0"
@@ -273,9 +294,73 @@ export default function PagosForm({
                     </span>
                   </div>
                   <p className="text-[11px] opacity-60 leading-relaxed">
-                    Opcional: Si deseas compensar el costo financiero de la plataforma, podés definir un porcentaje extra (ej: 10%). Si dejás 0%, el comprador pagará el precio regular del producto.
+                    Opcional: Si deseas compensar el costo financiero de la plataforma, podés definir un porcentaje extra (máximo 15%). Si dejás 0%, el comprador pagará el precio regular del producto.
                   </p>
                 </div>
+              </div>
+
+              {/* Tabla orientativa de comisiones de Mercado Pago */}
+              <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-[var(--color-borde)]/70 space-y-2.5">
+                <div className="flex items-center gap-2 text-xs font-bold opacity-80">
+                  <Info className="w-4 h-4 text-[#009EE3]" />
+                  <span>Referencia de comisiones habituales de Mercado Pago (Cobros online)</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                  <div className="p-2.5 rounded-xl bg-[var(--color-superficie)] border border-[var(--color-borde)]/50">
+                    <p className="font-bold text-[11px] opacity-60 uppercase">Dinero en cuenta / Débito</p>
+                    <p className="text-sm font-bold text-[var(--color-texto)] mt-0.5">~3,19% + IVA</p>
+                    <p className="text-[10px] opacity-55">Acreditación en el acto</p>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[var(--color-superficie)] border border-[var(--color-borde)]/50">
+                    <p className="font-bold text-[11px] opacity-60 uppercase">Tarjeta de Crédito en el acto</p>
+                    <p className="text-sm font-bold text-[var(--color-texto)] mt-0.5">~6,39% + IVA</p>
+                    <p className="text-[10px] opacity-55">Acreditación inmediata</p>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[var(--color-superficie)] border border-[var(--color-borde)]/50">
+                    <p className="font-bold text-[11px] opacity-60 uppercase">Comisión Portalmaker</p>
+                    <p className="text-sm font-bold text-[#009EE3] mt-0.5">2,00%</p>
+                    <p className="text-[10px] opacity-55">Retención por servicio de plataforma</p>
+                  </div>
+                </div>
+                <p className="text-[10px] opacity-50">
+                  * Las tasas exactas y plazos dependen de tu configuración en tu cuenta de Mercado Pago (tasas sujetas a cambios de Mercado Pago Argentina).
+                </p>
+              </div>
+
+              {/* Botón de Guardar Mercado Pago */}
+              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-[var(--color-borde)]/40">
+                <div>
+                  {successMpMsg && (
+                    <div className="p-2.5 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5 shrink-0" />
+                      <span>{successMpMsg}</span>
+                    </div>
+                  )}
+                  {errorMpMsg && (
+                    <div className="p-2.5 px-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{errorMpMsg}</span>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loadingMp}
+                  className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#009EE3] text-white font-bold text-xs sm:text-sm hover:bg-[#0089C7] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
+                >
+                  {loadingMp ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Guardando Mercado Pago...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>Guardar Cambios de Mercado Pago</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           ) : (
@@ -291,12 +376,12 @@ export default function PagosForm({
               </div>
             </div>
           )}
-        </div>
+        </form>
 
         {/* =========================================================================
             2. TRANSFERENCIA BANCARIA CARD
         ========================================================================== */}
-        <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-5">
+        <form onSubmit={handleSaveTransferencia} className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-5">
           <div className="flex items-center justify-between gap-4 border-b border-[var(--color-borde)]/60 pb-5">
             <div>
               <h2 className="text-base sm:text-lg font-bold flex items-center gap-2">
@@ -408,53 +493,44 @@ export default function PagosForm({
               />
             </div>
           </div>
-        </div>
 
-        {/* Botón Guardar y Feedback */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-2">
-          {successMsg && (
-            <div className="p-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-sm flex items-center gap-2">
-              <Check className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-              <span>{successMsg}</span>
+          {/* Botón de Guardar Transferencia y Feedback */}
+          <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-[var(--color-borde)]/40">
+            <div>
+              {successTransfMsg && (
+                <div className="p-2.5 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 shrink-0" />
+                  <span>{successTransfMsg}</span>
+                </div>
+              )}
+              {errorTransfMsg && (
+                <div className="p-2.5 px-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{errorTransfMsg}</span>
+                </div>
+              )}
             </div>
-          )}
-          {errorMsg && (
-            <div className="p-3 px-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="min-h-[48px] px-7 py-3 rounded-2xl bg-[#009EE3] text-white font-bold text-sm hover:bg-[#0089C7] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-50 shrink-0"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Guardando...</span>
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                <span>Guardar Configuración de Cobros</span>
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Barra de Guardado Flotante Estandarizada */}
-        <StickySaveBar
-          loading={loading}
-          saveText="Guardar Configuración de Cobros"
-          savingText="Guardando..."
-          successMsg={successMsg}
-          errorMsg={errorMsg}
-          message="Cobros, Mercado Pago y Transferencias"
-          hasChanges={true}
-        />
-      </form>
+            <button
+              type="submit"
+              disabled={loadingTransf}
+              className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-bold text-xs sm:text-sm hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
+            >
+              {loadingTransf ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
+                  <span>Guardando Transferencia...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 text-[#1F2937]" />
+                  <span>Guardar Datos de Transferencia</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

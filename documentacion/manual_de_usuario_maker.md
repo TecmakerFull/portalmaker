@@ -180,16 +180,27 @@ Portalmaker incorpora un sistema de **Carrito de Compras y Reservas** inteligent
 
 Acceso: Desde el menú lateral en **Mi tienda → Métodos de Pago y Cobro** (`/tienda/admin/pagos`).
 
-### A. Cobros Online con Mercado Pago (¡En 1 solo clic!)
-* **Vinculación Oficial**: Con un solo toque en **"Conectar con Mercado Pago"**, inicias sesión y tu tienda queda lista para recibir pagos.
-* **Medios Habilitados**: Tus compradores pueden pagar con tarjeta de crédito (en cuotas), débito o dinero en cuenta de Mercado Pago.
-* **Dinero Directo**: Los fondos de las ventas ingresan directamente a tu cuenta de Mercado Pago en el acto.
-* **Comisión de la Plataforma**: Portalmaker solo retiene una comisión mínima del 2% por venta (el 98% restante es todo tuyo).
-* **Recargo al Comprador (Opcional)**: Si prefieres no absorber el costo de la tarjeta, puedes fijar un recargo extra al cliente (ej: 10%). Si dejas 0%, el cliente paga el precio regular.
-* **Notificación de Venta Inmediata**: Apenas el comprador abona, recibes un correo electrónico automático con sus datos y un botón directo a WhatsApp para avisarle que su pedido está en preparación.
+### A. Cómo cobrar con Mercado Pago en tu tienda (¡Paso a paso muy fácil!)
+
+No necesitas saber nada de computación ni programar nada raro. Enlazar tu cuenta de Mercado Pago lleva menos de un minuto:
+
+1. **Entra a tu Panel**: Ve a la sección **"Métodos de Pago y Cobro"**.
+2. **Toca el botón azul**: Verás un botón grande que dice **"Conectar con Mercado Pago"**.
+3. **Inicia sesión**: Se abrirá la página oficial de Mercado Pago. Si ya tienes tu cuenta abierta en el teléfono o la computadora, solo te pedirá confirmar. Si no, pon tu correo y contraseña habituales de Mercado Pago.
+4. **Presiona "Permitir" o "Autorizar"**: Mercado Pago te preguntará si autorizas a Portalmaker a generar los cobros de tus productos. Aceptas y listo.
+5. **¡Ya estás cobrando!**: El sistema te devolverá a tu tienda y verás un cartel verde confirmando que tu cuenta está conectada.
+
+#### ¿Cómo funciona cuando alguien te compra?
+* **Tus clientes pueden pagarte como quieran**: Con tarjeta de crédito (en cuotas), tarjeta de débito o con el dinero que tengan en su cuenta de Mercado Pago.
+* **El dinero va directo a tu cuenta**: No pasa por intermediarios raros ni tienes que esperar días para pedir retiros. Cuando alguien paga, la plata entra al instante en tu Mercado Pago personal o de tu negocio.
+* **Aviso al instante por email**: Apenas entra el pago, recibes un correo con los datos del comprador y lo que pidió, para que puedas poner manos a la obra en tu taller.
+* **Comisión y Recargo**: 
+  * Por cada venta, Portalmaker solo deduce un 2% de comisión del portal por el servicio de la plataforma.
+  * Si tú no quieres absorber el costo de las comisiones de tarjeta, tienes una opción llamada **"Recargo al comprador"** (por ejemplo, poner 10%). Si la usas, el sistema le suma ese porcentaje automáticamente al total del cliente al momento de pagar con Mercado Pago. Si lo dejas en 0%, el cliente paga el precio normal de lista.
+* **¿Quieres desconectar tu cuenta algún día?**: En la misma pantalla tienes un botón para desvincularla en un solo toque cuando tú lo decidas.
 
 ### B. Cobro por Transferencia Bancaria Directa
-* **Interruptor de Transferencia**: Activa o desactiva la opción en el checkout.
+* **Interruptor de Transferencia**: Activa o desactiva la opción según prefieras.
 * **Alias**: Tu alias de banco o billetera virtual (ej: `tecmaker.3d.mp`). Tus clientes tendrán un botón de **"Copiar"** con 1 toque.
 * **CBU / CVU**: Clave bancaria uniforme de 22 dígitos.
 * **Banco / Billetera**: Nombre de la entidad (ej: *Mercado Pago*, *Banco Nación*, *Santander*).

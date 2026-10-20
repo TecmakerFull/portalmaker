@@ -37,9 +37,28 @@ export function middleware(request: NextRequest) {
     (base) => host === base || host === `www.${base}`
   )
 
+  // Headers de seguridad globales que deben aplicarse a todas las respuestas
+  const applySecurityHeaders = (res: NextResponse): NextResponse => {
+    res.headers.set('X-Content-Type-Options', 'nosniff')
+    res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    res.headers.set('Content-Security-Policy', "frame-ancestors 'self'")
+    res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+    return res
+  }
+
+  // Sanitizar headers entrantes para evitar que un atacante inyecte tenants falsos
+  const requestHeaders = new Headers(headers)
+  requestHeaders.delete('x-store-slug')
+  requestHeaders.delete('x-store-domain')
+  requestHeaders.delete('x-tenant-source')
+
   // Rutas de API deben ejecutarse limpiamente sin intercepciones ni reescrituras de auth
   if (nextUrl.pathname.startsWith('/api/')) {
-    return NextResponse.next()
+    return applySecurityHeaders(NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    }))
   }
 
   // Interceptar callbacks de OAuth de Supabase que lleguen a cualquier ruta con ?code=...
@@ -60,13 +79,15 @@ export function middleware(request: NextRequest) {
     nextUrl.searchParams.forEach((val, key) => {
       callbackUrl.searchParams.set(key, val)
     })
-    return NextResponse.redirect(callbackUrl)
+    return applySecurityHeaders(NextResponse.redirect(callbackUrl))
   }
 
   // 1. Simulación de tienda mediante query param (?tenant=slug)
-  // Permite probar cualquier tienda en localhost o en Vercel (ej: portalmaker.vercel.app?tenant=tecmaker)
+  // Permitido SOLO en entorno que no sea producción o en hosts de desarrollo (localhost o Vercel)
+  const isDevOrPreview = process.env.NODE_ENV !== 'production' || isLocalhost || isVercelDomain
   const tenantParam = nextUrl.searchParams.get('tenant')
-  if (tenantParam) {
+
+  if (tenantParam && isDevOrPreview) {
     const targetPath = nextUrl.pathname.startsWith('/tienda')
       ? nextUrl.pathname
       : `/tienda${nextUrl.pathname}`
@@ -74,20 +95,27 @@ export function middleware(request: NextRequest) {
     nextUrl.searchParams.forEach((val, key) => {
       rewriteUrl.searchParams.set(key, val)
     })
-    const response = NextResponse.rewrite(rewriteUrl)
+
+    requestHeaders.set('x-store-slug', tenantParam)
+    requestHeaders.set('x-tenant-source', 'query-param-dev')
+
+    const response = NextResponse.rewrite(rewriteUrl, {
+      request: {
+        headers: requestHeaders,
+      },
+    })
     response.headers.set('x-store-slug', tenantParam)
     response.headers.set('x-tenant-source', 'query-param-dev')
-    return response
+    return applySecurityHeaders(response)
   }
 
   // 2. Si el host es el portal principal (localhost, dominio de vercel, o el dominio base configurado)
   if (isLocalhost || isVercelDomain || isBasePortalDomain) {
-    // Si la ruta ya apunta explícitamente a /tienda
-    if (nextUrl.pathname.startsWith('/tienda')) {
-      return NextResponse.next()
-    }
-    // Dejar pasar al portal principal (app/(portal)/...)
-    return NextResponse.next()
+    return applySecurityHeaders(NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    }))
   }
 
   // 3. Detección de subdominio en producción (ej: tecmaker3d.portalmaker.ar o tecmaker.portalmaker.com.ar)
@@ -111,18 +139,30 @@ export function middleware(request: NextRequest) {
     rewriteUrl.searchParams.set(key, val)
   })
 
-  const response = NextResponse.rewrite(rewriteUrl)
+  if (subdomain) {
+    requestHeaders.set('x-store-slug', subdomain)
+    requestHeaders.set('x-tenant-source', 'subdomain')
+  } else {
+    // 4. Dominio propio del maker (ej: tecmaker3d.com.ar)
+    requestHeaders.set('x-store-domain', host)
+    requestHeaders.set('x-tenant-source', 'custom-domain')
+  }
+
+  const response = NextResponse.rewrite(rewriteUrl, {
+    request: {
+      headers: requestHeaders,
+    },
+  })
 
   if (subdomain) {
     response.headers.set('x-store-slug', subdomain)
     response.headers.set('x-tenant-source', 'subdomain')
   } else {
-    // 4. Dominio propio del maker (ej: tecmaker3d.com.ar)
     response.headers.set('x-store-domain', host)
     response.headers.set('x-tenant-source', 'custom-domain')
   }
 
-  return response
+  return applySecurityHeaders(response)
 }
 
 export const config = {

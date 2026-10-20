@@ -56,7 +56,14 @@ async function checkUpstashRate(
   const url = process.env.UPSTASH_REDIS_REST_URL
   const token = process.env.UPSTASH_REDIS_REST_TOKEN
 
-  if (!url || !token) return null
+  if (!url || !token) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error(
+        'ERROR CRITICO DE SEGURIDAD: Faltan UPSTASH_REDIS_REST_URL o UPSTASH_REDIS_REST_TOKEN en producción. Rate limiting distribuido inactivo.'
+      )
+    }
+    return null
+  }
 
   try {
     const cleanUrl = url.replace(/\/$/, '')
@@ -177,14 +184,38 @@ export async function checkRateLimit({
 }
 
 /**
- * X: Verifica token de Cloudflare Turnstile en el servidor
+ * AC: Comprueba si Cloudflare Turnstile está configurado completamente.
+ * Requiere tanto TURNSTILE_SECRET_KEY como NEXT_PUBLIC_TURNSTILE_SITE_KEY.
+ */
+export function isTurnstileConfigured(): boolean {
+  const secretKey = process.env.TURNSTILE_SECRET_KEY
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+
+  if (!secretKey && !siteKey) {
+    return false
+  }
+
+  if (!secretKey || !siteKey) {
+    console.warn(
+      'ADVERTENCIA TURNSTILE: Configuración incompleta. Se requieren ambas variables: TURNSTILE_SECRET_KEY y NEXT_PUBLIC_TURNSTILE_SITE_KEY.'
+    )
+    return false
+  }
+
+  return true
+}
+
+/**
+ * X, AC: Verifica token de Cloudflare Turnstile en el servidor.
+ * Solo activo si ambas variables de Turnstile están configuradas.
  */
 export async function verifyTurnstileToken(token: string, remoteip?: string): Promise<boolean> {
-  const secretKey = process.env.TURNSTILE_SECRET_KEY
-  if (!secretKey) {
-    // Si no está configurada la variable en el entorno, permitir paso sin bloqueo
+  if (!isTurnstileConfigured()) {
+    // Si no está configurada la pareja de variables, permitir paso sin bloqueo
     return true
   }
+
+  const secretKey = process.env.TURNSTILE_SECRET_KEY!
 
   if (!token) {
     return false

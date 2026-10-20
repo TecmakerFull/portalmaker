@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { getTenantStore } from '@/lib/tenant'
 import {
@@ -18,6 +19,7 @@ import {
 // PORTALMAKER — Pantalla de Confirmación de Pedido (Checkout Pro & Directo)
 // Valida el estado real del pedido desde la base de datos (nunca confía en query params).
 // Exige public_token en servidor para acceder a datos personales (P1, P2).
+// El token recibido por URL se traslada a una cookie httpOnly y se redirige para no exponerlo en analytics.
 // =============================================================================
 
 interface PageProps {
@@ -62,11 +64,37 @@ function maskAddress(addr: string): string {
 }
 
 export default async function PedidoConfirmadoPage({ searchParams }: PageProps) {
-  const { order_id, token } = await searchParams
+  const resolvedParams = await searchParams
+  const { order_id, token } = resolvedParams
 
   if (!order_id) {
     notFound()
   }
+
+  // Si el token llega en la URL (ej. back_url de MP o enlace inicial),
+  // guardarlo en cookie httpOnly y redirigir inmediatamente a la URL limpia
+  // para que scripts de analytics (GA, Meta Pixel) no registren el token.
+  if (token) {
+    const cookieStore = await cookies()
+    cookieStore.set(`order_token_${order_id}`, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 7 días
+    })
+
+    const cleanParams = new URLSearchParams()
+    Object.entries(resolvedParams).forEach(([k, v]) => {
+      if (k !== 'token' && v) cleanParams.set(k, v)
+    })
+    const queryString = cleanParams.toString()
+    redirect(`/tienda/pedido-confirmado${queryString ? `?${queryString}` : ''}`)
+  }
+
+  // Recuperar el token desde la cookie httpOnly
+  const cookieStore = await cookies()
+  const cookieToken = cookieStore.get(`order_token_${order_id}`)?.value
 
   const tenant = await getTenantStore()
   if (!tenant) {
@@ -91,7 +119,8 @@ export default async function PedidoConfirmadoPage({ searchParams }: PageProps) 
   }
 
   // P1: Validar token. Si no coincide o falta, no se muestran datos personales del comprador
-  const hasValidToken = Boolean(token && order.public_token && token === order.public_token)
+  const effectiveToken = cookieToken || token
+  const hasValidToken = Boolean(effectiveToken && order.public_token && effectiveToken === order.public_token)
 
   // Configuración visual según el estado real de pago registrado en la base de datos (P2)
   const estadoPago = order.estado_pago || 'pendiente'

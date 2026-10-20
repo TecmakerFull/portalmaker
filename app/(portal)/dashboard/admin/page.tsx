@@ -52,9 +52,18 @@ export default async function SuperadminDashboardPage() {
     .select('*, products:products(count)')
     .order('created_at', { ascending: false })
 
+  // Las notas internas viven en store_admin_notes (policy solo superadmin), no en stores
+  const { data: adminNotes } = await supabase
+    .from('store_admin_notes')
+    .select('store_id, notas')
+  const notesByStore = new Map<string, string | null>(
+    (adminNotes ?? []).map((n: any) => [n.store_id, n.notas])
+  )
+
   const rawStores = stores ?? []
   const allStores = rawStores.map((s: any) => ({
     ...s,
+    notas_admin: notesByStore.get(s.id) ?? null,
     product_count: s.products?.[0]?.count ?? 0,
   }))
 
