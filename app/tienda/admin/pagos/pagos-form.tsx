@@ -259,42 +259,49 @@ export default function PagosForm({
           {/* Información del Estado */}
           {mpConnected ? (
             <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/15 flex items-start gap-3">
-                <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                <div className="text-xs sm:text-sm space-y-1">
-                  <p className="font-semibold text-emerald-800 dark:text-emerald-300">
-                    Tu tienda está lista para cobrar con Mercado Pago
-                  </p>
-                  <p className="opacity-80 text-xs">
-                    Cuando un cliente compra en tu tienda, el dinero neto se acredita directamente en tu cuenta de Mercado Pago en el momento.
-                  </p>
-                </div>
-              </div>
-
-              {/* Recargo opcional por pagar con Mercado Pago */}
-              <div className="pt-2">
-                <div className="max-w-md space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider opacity-70 flex items-center gap-1.5">
-                    <Percent className="w-3.5 h-3.5 text-[#009EE3]" />
-                    <span>Recargo adicional al comprador (%)</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="15"
-                      value={mpRecargo}
-                      onChange={(e) => setMpRecargo(e.target.value)}
-                      placeholder="0"
-                      className="w-full min-h-[44px] pl-3.5 pr-10 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#009EE3]"
-                    />
-                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold opacity-50">
-                      %
-                    </span>
+              {/* Fila superior: Estado de conexión y selector de recargo en la misma línea en desktop */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+                {/* Banner de estado listo */}
+                <div className="lg:col-span-7 xl:col-span-8 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/15 flex items-start gap-3">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  <div className="text-xs sm:text-sm space-y-1">
+                    <p className="font-semibold text-emerald-800 dark:text-emerald-300">
+                      Tu tienda está lista para cobrar con Mercado Pago
+                    </p>
+                    <p className="opacity-80 text-xs leading-relaxed">
+                      Cuando un cliente compra en tu tienda, el dinero neto se acredita directamente en tu cuenta de Mercado Pago en el momento.
+                    </p>
                   </div>
-                  <p className="text-[11px] opacity-60 leading-relaxed">
-                    Opcional: Si deseas compensar el costo financiero de la plataforma, podés definir un porcentaje extra (máximo 15%). Si dejás 0%, el comprador pagará el precio regular del producto.
+                </div>
+
+                {/* Recargo opcional por pagar con Mercado Pago */}
+                <div className="lg:col-span-5 xl:col-span-4 p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-[var(--color-borde)]/70 flex flex-col justify-between space-y-2">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider opacity-75 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Percent className="w-3.5 h-3.5 text-[#009EE3]" />
+                        <span>Recargo adicional (%)</span>
+                      </span>
+                      <span className="text-[10px] font-normal lowercase opacity-60">máx 15%</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="15"
+                        value={mpRecargo}
+                        onChange={(e) => setMpRecargo(e.target.value)}
+                        placeholder="0"
+                        className="w-full min-h-[44px] pl-3.5 pr-10 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#009EE3]"
+                      />
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold opacity-50">
+                        %
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] opacity-60 leading-tight">
+                    Porcentaje extra que abona el comprador (0% = sin recargo).
                   </p>
                 </div>
               </div>

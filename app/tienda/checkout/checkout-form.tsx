@@ -98,9 +98,10 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
   // Recargo de Mercado Pago si la tienda lo tiene habilitado
   const mpRecargoPct = store.mp_connected ? Number(store.mp_recargo_porcentaje) || 0 : 0
 
-  // Opciones de pago: 'mercadopago' | 'transferencia' | 'efectivo' | 'acordar'
-  const [metodoPago, setMetodoPago] = useState<'mercadopago' | 'transferencia' | 'efectivo' | 'acordar'>(
-    store.mp_connected ? 'mercadopago' : 'transferencia'
+  // Opciones de pago: 'transferencia' | 'efectivo' | 'mercadopago' | 'acordar'
+  // Por defecto se preselecciona 'transferencia' para que no figure el recargo/interés de entrada
+  const [metodoPago, setMetodoPago] = useState<'transferencia' | 'efectivo' | 'mercadopago' | 'acordar'>(
+    'transferencia'
   )
 
   const mpRecargoMonto = metodoPago === 'mercadopago' && mpRecargoPct > 0 ? (totalAmount * mpRecargoPct) / 100 : 0
@@ -873,7 +874,41 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
           </h2>
 
           <div className={`grid grid-cols-1 ${store.mp_connected ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3'} gap-3 pt-1`}>
-            {/* Mercado Pago (si está habilitado por la tienda) */}
+            {/* 1. Transferencia */}
+            <button
+              type="button"
+              onClick={() => setMetodoPago('transferencia')}
+              className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                metodoPago === 'transferencia'
+                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 ring-2 ring-[var(--color-primario)]/30'
+                  : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] opacity-80 hover:opacity-100'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <CreditCard className="w-4 h-4 text-[var(--color-primario)]" />
+                <span className="font-bold text-xs">Transferencia</span>
+              </div>
+              <span className="text-[11px] opacity-60">Alias / CBU directo</span>
+            </button>
+
+            {/* 2. Efectivo */}
+            <button
+              type="button"
+              onClick={() => setMetodoPago('efectivo')}
+              className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                metodoPago === 'efectivo'
+                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 ring-2 ring-[var(--color-primario)]/30'
+                  : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] opacity-80 hover:opacity-100'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <Banknote className="w-4 h-4 text-[var(--color-primario)]" />
+                <span className="font-bold text-xs">Efectivo</span>
+              </div>
+              <span className="text-[11px] opacity-60">Al retirar / entrega</span>
+            </button>
+
+            {/* 3. Mercado Pago (si está habilitado por la tienda) */}
             {store.mp_connected && (
               <button
                 type="button"
@@ -899,41 +934,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
               </button>
             )}
 
-            {/* Transferencia */}
-            <button
-              type="button"
-              onClick={() => setMetodoPago('transferencia')}
-              className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                metodoPago === 'transferencia'
-                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 ring-2 ring-[var(--color-primario)]/30'
-                  : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] opacity-80 hover:opacity-100'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <CreditCard className="w-4 h-4 text-[var(--color-primario)]" />
-                <span className="font-bold text-xs">Transferencia</span>
-              </div>
-              <span className="text-[11px] opacity-60">Alias / CBU directo</span>
-            </button>
-
-            {/* Efectivo */}
-            <button
-              type="button"
-              onClick={() => setMetodoPago('efectivo')}
-              className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                metodoPago === 'efectivo'
-                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 ring-2 ring-[var(--color-primario)]/30'
-                  : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] opacity-80 hover:opacity-100'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <Banknote className="w-4 h-4 text-[var(--color-primario)]" />
-                <span className="font-bold text-xs">Efectivo</span>
-              </div>
-              <span className="text-[11px] opacity-60">Al retirar / entrega</span>
-            </button>
-
-            {/* A convenir */}
+            {/* 4. A convenir */}
             <button
               type="button"
               onClick={() => setMetodoPago('acordar')}
