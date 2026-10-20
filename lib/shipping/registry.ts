@@ -66,3 +66,52 @@ export async function getActiveStoreShippingProviders(
 
   return providers
 }
+
+/**
+ * Obtiene una instancia específica de CarrierProvider para una tienda y proveedor dado.
+ */
+export async function getStoreShippingProvider(
+  storeId: string,
+  providerName: ShippingProviderType
+): Promise<CarrierProvider | null> {
+  const supabase = createSupabaseAdminClient()
+
+  if (providerName === 'manual') {
+    const { data: zones } = await supabase
+      .from('shipping_zones')
+      .select('*')
+      .eq('store_id', storeId)
+      .eq('activo', true)
+
+    if (zones && zones.length > 0) {
+      return new ManualShippingProvider(zones as ShippingZone[])
+    }
+    return null
+  }
+
+  const { data: record } = await supabase
+    .from('store_shipping_providers')
+    .select('*')
+    .eq('store_id', storeId)
+    .eq('provider', providerName)
+    .eq('activo', true)
+    .maybeSingle()
+
+  if (!record) return null
+
+  if (record.provider === 'zipnova') {
+    let creds: ZipnovaCredentials = {}
+    if (record.credentials_enc) {
+      try {
+        const decryptedJson = decryptCarrierCredentials(record.credentials_enc)
+        creds = JSON.parse(decryptedJson)
+      } catch (err) {
+        console.error('Error al descifrar credenciales de Zipnova para store', storeId, err)
+      }
+    }
+    return new ZipnovaShippingProvider(creds)
+  }
+
+  return null
+}
+

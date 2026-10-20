@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import crypto from 'node:crypto'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { checkRateLimit, getClientIp, verifyTurnstileToken, isTurnstileConfigured } from '@/lib/rate-limit'
 
@@ -22,6 +23,11 @@ export async function POST(req: Request) {
       metodoPago,
       notas,
       turnstileToken,
+      quoteId,
+      optionId,
+      sucursal,
+      direccionEstructurada,
+      documentoComprador,
     } = body
 
     if (!storeId) {
@@ -70,7 +76,7 @@ export async function POST(req: Request) {
 
     // Ronda 7: Whitelist estricta de metodoPago y tipoEntrega
     const ALLOWED_METODOS_PAGO = ['mercadopago', 'transferencia', 'efectivo', 'acordar']
-    const ALLOWED_TIPOS_ENTREGA = ['retiro', 'envio']
+    const ALLOWED_TIPOS_ENTREGA = ['retiro', 'envio', 'acordar']
 
     if (!metodoPago || !ALLOWED_METODOS_PAGO.includes(metodoPago)) {
       return NextResponse.json({ error: `Método de pago no válido: ${metodoPago}` }, { status: 400 })
@@ -157,7 +163,7 @@ export async function POST(req: Request) {
     // 2. Validar que la tienda exista, esté activa, con checkout activo y métodos habilitados
     const { data: store, error: storeErr } = await supabaseAdmin
       .from('stores')
-      .select('id, nombre, suscripcion_activa, checkout_activo, modo_operacion, mp_connected, mp_recargo_porcentaje, comision_portalmaker, transferencia_activa')
+      .select('id, nombre, suscripcion_activa, checkout_activo, modo_operacion, mp_connected, mp_recargo_porcentaje, comision_portalmaker, transferencia_activa, envios_activo, envio_tarifa_fallback')
       .eq('id', storeId)
       .single()
 
@@ -271,20 +277,112 @@ export async function POST(req: Request) {
       })
     }
 
-    // 4. Calcular subtotales y recargo si aplica
-    const subtotalProductos = verifiedSnapshotItems.reduce((acc, it) => acc + it.subtotal, 0)
-    let totalPedido = subtotalProductos
+    // 4. Calcular costo de envío y validar cotización oficial si corresponde
+    let costoEnvio = 0
+    let envioProveedor: string | null = null
+    let envioServicio: string | null = null
+    let envioModalidad: string | null = null
+    let envioSucursal: any = null
+    let envioQuoteId: string | null = null
 
-    // Recargo por Mercado Pago si el comprador eligió ese medio
+    if (tipoEntrega === 'envio') {
+      if (quoteId && optionId) {
+        const { data: quoteRecord } = await supabaseAdmin
+          .from('shipping_quotes')
+          .select('*')
+          .eq('id', quoteId)
+          .eq('store_id', store.id)
+          .maybeSingle()
+
+        if (!quoteRecord) {
+          return NextResponse.json(
+            { error: 'La cotización de envío no fue encontrada. Por favor cotiza nuevamente.' },
+            { status: 400 }
+          )
+        }
+
+        // Verificar integridad del carrito (cart_hash)
+        const normalizedItemsForHash = Array.from(groupedItemsMap.values())
+          .map((it) => ({
+            productId: it.productId,
+            variantId: it.variantId,
+            quantity: it.quantity,
+          }))
+          .sort((a, b) => `${a.productId}_${a.variantId || ''}`.localeCompare(`${b.productId}_${b.variantId || ''}`))
+
+        const expectedHashSource =
+          JSON.stringify(normalizedItemsForHash) + '|' + String(quoteRecord.codigo_postal).toUpperCase()
+        const expectedCartHash = crypto.createHash('sha256').update(expectedHashSource).digest('hex')
+
+        if (quoteRecord.cart_hash !== expectedCartHash) {
+          return NextResponse.json(
+            { error: 'El carrito cambió desde la última cotización de envío. Por favor vuelve a cotizar.' },
+            { status: 400 }
+          )
+        }
+
+        const isExpired = new Date(quoteRecord.expires_at).getTime() < Date.now()
+        if (isExpired) {
+          return NextResponse.json(
+            { error: 'La cotización de envío expiró. Por favor vuelve a cotizar para obtener la tarifa vigente.' },
+            { status: 400 }
+          )
+        }
+
+        const optionsList = Array.isArray(quoteRecord.options) ? quoteRecord.options : []
+        const chosenOption = optionsList.find((opt: any) => opt.optionId === optionId)
+
+        if (!chosenOption) {
+          return NextResponse.json(
+            { error: 'La opción de envío seleccionada ya no es válida para este pedido.' },
+            { status: 400 }
+          )
+        }
+
+        costoEnvio = Number(chosenOption.precioFinal) || 0
+        envioProveedor = chosenOption.provider
+        envioServicio = chosenOption.serviceName
+        envioModalidad = chosenOption.serviceType || 'domicilio'
+        envioSucursal = sucursal || null
+        envioQuoteId = quoteRecord.id
+      } else if (Number(store.envio_tarifa_fallback) > 0) {
+        costoEnvio = Number(store.envio_tarifa_fallback)
+        envioProveedor = 'manual'
+        envioServicio = 'Envío estándar (tarifa fija)'
+        envioModalidad = 'domicilio'
+      }
+    } else if (tipoEntrega === 'retiro') {
+      costoEnvio = 0
+      envioProveedor = 'manual'
+      envioServicio = 'Retiro en el taller / local'
+      envioModalidad = 'retiro_local'
+    }
+
+    // 5. Calcular subtotales y recargo si aplica
+    const subtotalProductos = verifiedSnapshotItems.reduce((acc, it) => acc + it.subtotal, 0)
+    let totalPedido = subtotalProductos + costoEnvio
+
+    // Recargo por Mercado Pago si el comprador eligió ese medio (sobre subtotal productos)
     const mpRecargoPct = store.mp_connected ? Number(store.mp_recargo_porcentaje) || 0 : 0
+    let montoRecargo = 0
     if (metodoPago === 'mercadopago' && mpRecargoPct > 0) {
-      const montoRecargo = Number(((subtotalProductos * mpRecargoPct) / 100).toFixed(2))
+      montoRecargo = Number(((subtotalProductos * mpRecargoPct) / 100).toFixed(2))
       totalPedido += montoRecargo
     }
 
     const finalTotal = Number(totalPedido.toFixed(2))
 
-    // 5. Crear el pedido de forma atómica en Supabase (service_role)
+    // Formatear dirección legible combinada si no vino explícita
+    let resolvedDireccion = cleanDireccion
+    if (!resolvedDireccion && direccionEstructurada) {
+      const d = direccionEstructurada
+      const calleYAlt = `${d.calle || ''} ${d.altura || ''}`.trim()
+      const pDpto = d.pisoDepto ? ` (${d.pisoDepto})` : ''
+      resolvedDireccion = `${calleYAlt}${pDpto}, ${d.localidad || ''}, ${d.provincia || ''} (CP: ${d.codigoPostal || ''})`
+      if (d.referencias) resolvedDireccion += ` [Ref: ${d.referencias}]`
+    }
+
+    // 6. Crear el pedido de forma atómica en Supabase (service_role)
     const { data: createdOrder, error: insertError } = await supabaseAdmin
       .from('orders')
       .insert({
@@ -292,12 +390,12 @@ export async function POST(req: Request) {
         nombre_comprador: cleanNombre,
         email_comprador: cleanEmail,
         telefono_comprador: cleanTelefono || null,
-        direccion_entrega: cleanDireccion,
+        direccion_entrega: resolvedDireccion,
         tipo_entrega: tipoEntrega || 'acordar',
         metodo_pago: metodoPago || 'acordar',
         items: verifiedSnapshotItems,
         total: finalTotal,
-        costo_envio: 0,
+        costo_envio: Number(costoEnvio.toFixed(2)),
         estado_pedido: 'nuevo',
         estado_pago: 'pendiente', // Forzado estrictamente a pendiente
         stock_descontado: false, // Forzado estrictamente a false
@@ -310,6 +408,20 @@ export async function POST(req: Request) {
         mp_net_received: 0.00,
         comision_portalmaker_pct: Number(store.comision_portalmaker) || 0.00,
         mp_recargo_pct: mpRecargoPct,
+        // Metadatos estructurados de envío (Fase 4)
+        envio_calle: direccionEstructurada?.calle?.trim() || null,
+        envio_altura: direccionEstructurada?.altura?.trim() || null,
+        envio_piso_depto: direccionEstructurada?.pisoDepto?.trim() || null,
+        envio_localidad: direccionEstructurada?.localidad?.trim() || null,
+        envio_provincia: direccionEstructurada?.provincia?.trim() || null,
+        envio_codigo_postal: direccionEstructurada?.codigoPostal?.trim() || null,
+        envio_referencias: direccionEstructurada?.referencias?.trim() || null,
+        documento_comprador: documentoComprador ? String(documentoComprador).trim() : null,
+        envio_proveedor: envioProveedor,
+        envio_servicio: envioServicio,
+        envio_modalidad: envioModalidad,
+        envio_sucursal: envioSucursal,
+        envio_quote_id: envioQuoteId,
       })
       .select('id, public_token')
       .single()

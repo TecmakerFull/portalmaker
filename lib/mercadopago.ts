@@ -350,22 +350,22 @@ export const COMISION_BASE: 'total' | 'productos' = 'total'
  */
 export function calcularMarketplaceFee(
   items: Array<{ id: string; quantity: number; unit_price: number }>,
-  store: { comision_portalmaker?: number | null }
+  store: { comision_portalmaker?: number | null; envio_comision_incluye_envio?: boolean | null }
 ): number {
   const comisionPct = Number(store?.comision_portalmaker) || 0
   if (comisionPct <= 0 || !Array.isArray(items) || items.length === 0) return 0
 
-  let baseCalculo = 0
+  const incluyeEnvio = Boolean(store?.envio_comision_incluye_envio)
 
-  if (COMISION_BASE === 'total') {
-    // Comportamiento actual (default): Base total cobrada al comprador
-    baseCalculo = items.reduce((acc, it) => acc + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0)
-  } else {
-    // Alternativa: Solo productos, excluyendo recargo por cobro con MP y costo de envío
-    baseCalculo = items
-      .filter((it) => it.id !== 'recargo_mp' && it.id !== 'costo_envio')
-      .reduce((acc, it) => acc + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0)
-  }
+  // Recargo MP siempre se excluye de la comisión
+  // Costo de envío se excluye a menos que envio_comision_incluye_envio sea true
+  const baseCalculo = items
+    .filter((it) => {
+      if (it.id === 'recargo_mp') return false
+      if (it.id === 'costo_envio') return incluyeEnvio
+      return true
+    })
+    .reduce((acc, it) => acc + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0)
 
   const fee = Number(((baseCalculo * comisionPct) / 100).toFixed(2))
   return Math.max(0, fee)

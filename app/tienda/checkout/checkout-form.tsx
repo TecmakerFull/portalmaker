@@ -48,16 +48,32 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
   const [email, setEmail] = useState('')
   const [isAutoFilled, setIsAutoFilled] = useState(false)
 
-  // Opciones de entrega: 'acordar' | 'retiro' | 'envio'
-  const [tipoEntrega, setTipoEntrega] = useState<'acordar' | 'retiro' | 'envio'>('acordar')
+  // Opciones de entrega: 'envio' | 'retiro' | 'acordar'
+  const [tipoEntrega, setTipoEntrega] = useState<'acordar' | 'retiro' | 'envio'>(() => {
+    if (store.envios_activo) return 'envio'
+    return 'acordar'
+  })
 
-  // Campos separados para envío a domicilio (correo tradicional)
-  const [calleNumero, setCalleNumero] = useState('')
+  // Campos estructurados para entrega y despacho (Fase 4)
+  const [calle, setCalle] = useState('')
+  const [altura, setAltura] = useState('')
   const [pisoDpto, setPisoDpto] = useState('')
   const [ciudad, setCiudad] = useState('')
   const [provincia, setProvincia] = useState('')
   const [codigoPostal, setCodigoPostal] = useState('')
   const [aclaracionesEntrega, setAclaracionesEntrega] = useState('')
+  const [documentoComprador, setDocumentoComprador] = useState('')
+
+  // Cotización en tiempo real (Fase 4)
+  const [shippingQuoteId, setShippingQuoteId] = useState<string | null>(null)
+  const [shippingOptions, setShippingOptions] = useState<any[]>([])
+  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null)
+  const [selectedBranch, setSelectedBranch] = useState<any | null>(null)
+  const [branchesList, setBranchesList] = useState<any[]>([])
+  const [loadingQuote, setLoadingQuote] = useState(false)
+  const [loadingBranches, setLoadingBranches] = useState(false)
+  const [quoteError, setQuoteError] = useState<string | null>(null)
+  const [esEnvioGratis, setEsEnvioGratis] = useState(false)
 
   // Precargar datos del usuario logueado si tiene sesión activa
   useEffect(() => {
@@ -67,11 +83,25 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
         const meta = user.user_metadata || {}
         if (meta.nombre) setNombre(meta.nombre)
         if (meta.telefono) setTelefono(meta.telefono)
-        if (meta.direccion || meta.calleNumero) setCalleNumero(meta.direccion || meta.calleNumero)
+        if (meta.calle) setCalle(meta.calle)
+        if (meta.altura) setAltura(meta.altura)
         if (meta.pisoDpto) setPisoDpto(meta.pisoDpto)
         if (meta.ciudad) setCiudad(meta.ciudad)
         if (meta.provincia) setProvincia(meta.provincia)
         if (meta.codigoPostal) setCodigoPostal(meta.codigoPostal)
+        if (meta.documento) setDocumentoComprador(meta.documento)
+
+        // Split de seguridad si venía en formato antiguo
+        if (!meta.calle && (meta.direccion || meta.calleNumero)) {
+          const raw = String(meta.direccion || meta.calleNumero).trim()
+          const match = raw.match(/^(.*?)\s*(\d+)$/)
+          if (match) {
+            setCalle(match[1])
+            setAltura(match[2])
+          } else {
+            setCalle(raw)
+          }
+        }
 
         // Consultar también datos guardados en store_customers de esta tienda
         try {
@@ -106,8 +136,99 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
     return 'efectivo'
   })
 
+  // Opción de envío seleccionada y costo
+  const selectedOption = shippingOptions.find((o) => o.optionId === selectedOptionId)
+  const costoEnvio = tipoEntrega === 'envio' && selectedOption ? Number(selectedOption.precioFinal) || 0 : 0
   const mpRecargoMonto = metodoPago === 'mercadopago' && mpRecargoPct > 0 ? (totalAmount * mpRecargoPct) / 100 : 0
-  const finalTotal = totalAmount + mpRecargoMonto
+  const finalTotal = totalAmount + costoEnvio + mpRecargoMonto
+
+  // Cotizar envíos en tiempo real
+  const handleQuoteShipping = async (cpToQuote?: string) => {
+    const cp = (cpToQuote || codigoPostal).trim()
+    if (!cp || cp.length < 4) {
+      setQuoteError('Ingresa un código postal válido (4 dígitos o CPA)')
+      return
+    }
+
+    setLoadingQuote(true)
+    setQuoteError(null)
+
+    try {
+      const res = await fetch('/api/checkout/shipping/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId: store.id,
+          codigoPostal: cp,
+          provincia: provincia.trim() || undefined,
+          localidad: ciudad.trim() || undefined,
+          items: items.map((it) => ({
+            productId: it.productId,
+            variantId: it.variantId || null,
+            quantity: it.quantity,
+          })),
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        setQuoteError(data.error || 'No se pudo cotizar el envío para este código postal.')
+        setShippingOptions([])
+        setSelectedOptionId(null)
+        return
+      }
+
+      setShippingQuoteId(data.quoteId || null)
+      setEsEnvioGratis(Boolean(data.esEnvioGratis))
+      const opts = data.options || []
+      setShippingOptions(opts)
+
+      if (opts.length > 0) {
+        // Ordenar por precio ascendente para preseleccionar la más conveniente
+        const sorted = [...opts].sort((a: any, b: any) => a.precioFinal - b.precioFinal)
+        setSelectedOptionId(sorted[0].optionId)
+      } else {
+        setSelectedOptionId(null)
+      }
+    } catch (err: any) {
+      console.error('Error al cotizar envío:', err)
+      setQuoteError('Error al conectar con el cotizador de envíos.')
+    } finally {
+      setLoadingQuote(false)
+    }
+  }
+
+  // Cargar sucursales cuando se elige una opción de modalidad 'sucursal'
+  useEffect(() => {
+    if (!selectedOption || selectedOption.serviceType !== 'sucursal' || !codigoPostal) {
+      setBranchesList([])
+      setSelectedBranch(null)
+      return
+    }
+
+    let isMounted = true
+    setLoadingBranches(true)
+    fetch(
+      `/api/checkout/shipping/branches?storeId=${store.id}&provider=${selectedOption.provider}&codigoPostal=${encodeURIComponent(codigoPostal.trim())}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isMounted) return
+        const list = data.branches || []
+        setBranchesList(list)
+        if (list.length > 0) {
+          setSelectedBranch(list[0])
+        }
+      })
+      .catch((err) => console.error('Error cargando sucursales:', err))
+      .finally(() => {
+        if (isMounted) setLoadingBranches(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [selectedOptionId, codigoPostal, store.id])
 
   // Notas
   const [notas, setNotas] = useState('')
@@ -183,9 +304,38 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
     }
 
     if (tipoEntrega === 'envio') {
-      if (!calleNumero.trim() || !ciudad.trim() || !provincia.trim() || !codigoPostal.trim()) {
-        setErrorMsg('Por favor completá todos los datos obligatorios de envío: Calle y número, Ciudad, Provincia y Código Postal.')
-        return
+      if (store.envios_activo) {
+        if (!codigoPostal.trim()) {
+          setErrorMsg('Por favor ingresa tu código postal para cotizar el envío.')
+          return
+        }
+        if (!selectedOptionId) {
+          setErrorMsg('Por favor selecciona una de las opciones de envío disponibles.')
+          return
+        }
+        if (selectedOption?.serviceType === 'sucursal' && !selectedBranch) {
+          setErrorMsg('Por favor selecciona la sucursal de retiro del carrier.')
+          return
+        }
+        if (selectedOption?.serviceType !== 'retiro_local') {
+          if (!calle.trim() || !altura.trim()) {
+            setErrorMsg('Por favor completa la calle y altura de entrega.')
+            return
+          }
+          if (!ciudad.trim() || !provincia.trim()) {
+            setErrorMsg('Por favor completa la localidad y provincia.')
+            return
+          }
+          if (!documentoComprador.trim()) {
+            setErrorMsg('Por favor completa tu DNI / CUIT (requerido por el carrier de despacho).')
+            return
+          }
+        }
+      } else {
+        if (!calle.trim() || !ciudad.trim() || !provincia.trim() || !codigoPostal.trim()) {
+          setErrorMsg('Por favor completa los datos obligatorios de envío: Calle y número, Ciudad, Provincia y CP.')
+          return
+        }
       }
     }
 
@@ -194,9 +344,9 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
 
     const orderCode = `PM-${Math.floor(1000 + Math.random() * 9000)}`
 
-    // Dirección formateada para correo tradicional
+    // Dirección formateada para visualización
     const fullShippingAddress = tipoEntrega === 'envio'
-      ? `${calleNumero.trim()}${pisoDpto.trim() ? ` (${pisoDpto.trim()})` : ''}, ${ciudad.trim()}, ${provincia.trim()} (CP: ${codigoPostal.trim()})${aclaracionesEntrega.trim() ? ` [Ref: ${aclaracionesEntrega.trim()}]` : ''}`
+      ? `${calle.trim()} ${altura.trim()}${pisoDpto.trim() ? ` (${pisoDpto.trim()})` : ''}, ${ciudad.trim()}, ${provincia.trim()} (CP: ${codigoPostal.trim()})${aclaracionesEntrega.trim() ? ` [Ref: ${aclaracionesEntrega.trim()}]` : ''}`
       : null
 
     // Snapshot inmutable de items
@@ -211,24 +361,6 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
       gestiona_stock: it.gestionaStock,
       is_reserva: it.isReserva,
     }))
-
-    const orderPayload = {
-      store_id: store.id,
-      nombre_comprador: nombre.trim(),
-      email_comprador: email.trim(),
-      telefono_comprador: telefono.trim(),
-      direccion_entrega: fullShippingAddress,
-      tipo_entrega: tipoEntrega,
-      metodo_pago: metodoPago,
-      items: snapshotItems,
-      total: finalTotal,
-      costo_envio: 0,
-      estado_pedido: 'nuevo',
-      estado_pago: 'pendiente',
-      stock_descontado: false,
-      notas: notas.trim() || null,
-      observaciones_admin: `Pedido web (${orderCode})`,
-    }
 
     try {
       // 1. Guardar pedido en Supabase vía endpoint de servidor con service_role (H1)
@@ -249,6 +381,20 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
             variantId: it.variantId || null,
             quantity: it.quantity,
           })),
+          // Campos de envío Fase 4
+          quoteId: shippingQuoteId,
+          optionId: selectedOptionId,
+          sucursal: selectedBranch,
+          direccionEstructurada: {
+            calle: calle.trim(),
+            altura: altura.trim(),
+            pisoDepto: pisoDpto.trim() || undefined,
+            localidad: ciudad.trim(),
+            provincia: provincia.trim(),
+            codigoPostal: codigoPostal.trim(),
+            referencias: aclaracionesEntrega.trim() || undefined,
+          },
+          documentoComprador: documentoComprador.trim() || undefined,
         }),
       })
 
@@ -296,11 +442,13 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
             data: {
               nombre: nombre.trim(),
               telefono: telefono.trim(),
-              calleNumero: calleNumero.trim() || user.user_metadata?.calleNumero,
+              calle: calle.trim() || user.user_metadata?.calle,
+              altura: altura.trim() || user.user_metadata?.altura,
               pisoDpto: pisoDpto.trim() || user.user_metadata?.pisoDpto,
               ciudad: ciudad.trim() || user.user_metadata?.ciudad,
               provincia: provincia.trim() || user.user_metadata?.provincia,
               codigoPostal: codigoPostal.trim() || user.user_metadata?.codigoPostal,
+              documento: documentoComprador.trim() || user.user_metadata?.documento,
             },
           })
         }
@@ -336,7 +484,9 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
       if (tipoEntrega === 'retiro') {
         entregaLabel = `Retiro en local / taller${store.direccion ? ` (${store.direccion})` : ''}`
       } else if (tipoEntrega === 'envio') {
-        entregaLabel = `Envío a domicilio (${fullShippingAddress}) — [Costo de envío a cargo del cliente]`
+        const optionName = selectedOption?.serviceName || 'Envío a domicilio'
+        const costoText = costoEnvio > 0 ? `$${costoEnvio.toLocaleString('es-AR')}` : esEnvioGratis ? '¡Gratis!' : '$0'
+        entregaLabel = `${optionName} [Costo: ${costoText}] — ${fullShippingAddress}`
       }
 
       let pagoLabel = 'A convenir por WhatsApp'
@@ -762,106 +912,279 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
             </div>
           )}
 
-          {/* Formulario Detallado si seleccionó Envío a Domicilio */}
+          {/* Formulario Detallado si seleccionó Envío */}
           {tipoEntrega === 'envio' && (
             <div className="space-y-4 pt-2 animate-in fade-in duration-200">
-              {/* Aviso de Condiciones de Envío (Usa la paleta de la tienda) */}
-              <div className="p-4 rounded-2xl bg-[var(--color-primario)]/10 border border-[var(--color-primario)]/25 text-[var(--color-texto)] text-xs leading-relaxed flex items-start gap-3">
-                <Info className="w-4 h-4 shrink-0 mt-0.5 text-[var(--color-primario)]" />
-                <div>
-                  <strong className="block font-bold mb-0.5 text-[var(--color-primario)]">
-                    Condiciones de envío:
-                  </strong>
-                  <span className="opacity-90">
-                    El costo de envío es a cargo del cliente, una vez efectuada la compra nos contactaremos para coordinar el método de envío más conveniente.
-                  </span>
-                </div>
-              </div>
-
-              {/* Campos Separados para Correo Tradicional */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
-                    Calle y Número *
+              {/* Sección A: Código Postal y Cotizador en Tiempo Real */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/10 dark:border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase tracking-wider opacity-80 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-[var(--color-primario)]" />
+                    <span>Código Postal de Entrega *</span>
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={calleNumero}
-                    onChange={(e) => setCalleNumero(e.target.value)}
-                    placeholder="Ej: Av. Lamadrid 650"
-                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
-                  />
+                  {esEnvioGratis && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                      ¡Tu compra supera el mínimo para Envío Gratis!
+                    </span>
+                  )}
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
-                    Piso / Depto / Unidad (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    value={pisoDpto}
-                    onChange={(e) => setPisoDpto(e.target.value)}
-                    placeholder="Ej: Piso 3, Dpto B"
-                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
-                    Código Postal (CP) *
-                  </label>
+                <div className="flex gap-2">
                   <input
                     type="text"
                     required
                     value={codigoPostal}
-                    onChange={(e) => setCodigoPostal(e.target.value)}
-                    placeholder="Ej: 2000 o C1425"
-                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                    onChange={(e) => setCodigoPostal(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleQuoteShipping()
+                      }
+                    }}
+                    placeholder="Ej: 1414 o C1414AAA"
+                    className="flex-1 min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
                   />
+                  <button
+                    type="button"
+                    onClick={() => handleQuoteShipping()}
+                    disabled={loadingQuote || !codigoPostal.trim()}
+                    className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs font-bold hover:opacity-90 transition-all flex items-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-50"
+                  >
+                    {loadingQuote ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Cotizando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Truck className="w-3.5 h-3.5" />
+                        <span>Calcular</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
-                    Ciudad / Localidad *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={ciudad}
-                    onChange={(e) => setCiudad(e.target.value)}
-                    placeholder="Ej: Rosario"
-                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
-                    Provincia *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={provincia}
-                    onChange={(e) => setProvincia(e.target.value)}
-                    placeholder="Ej: Santa Fe"
-                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
-                  />
-                </div>
-
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
-                    Aclaraciones para la Entrega (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    value={aclaracionesEntrega}
-                    onChange={(e) => setAclaracionesEntrega(e.target.value)}
-                    placeholder="Ej: Entre calles Mitre y San Martín / Timbre azul"
-                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
-                  />
-                </div>
+                {quoteError && (
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{quoteError}</span>
+                  </div>
+                )}
               </div>
+
+              {/* Sección B: Opciones de Envío Disponibles */}
+              {shippingOptions.length > 0 && (
+                <div className="space-y-2.5 pt-1">
+                  <div className="text-xs font-bold uppercase tracking-wider opacity-75">
+                    Selecciona una opción de envío:
+                  </div>
+
+                  <div className="space-y-2">
+                    {shippingOptions.map((opt) => {
+                      const isSelected = selectedOptionId === opt.optionId
+                      const isGratis = opt.precioFinal === 0
+
+                      return (
+                        <label
+                          key={opt.optionId}
+                          onClick={() => setSelectedOptionId(opt.optionId)}
+                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                            isSelected
+                              ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 ring-2 ring-[var(--color-primario)]/30'
+                              : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] hover:border-black/20 dark:hover:border-white/20'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <input
+                              type="radio"
+                              name="shipping_option"
+                              checked={isSelected}
+                              onChange={() => setSelectedOptionId(opt.optionId)}
+                              className="accent-[var(--color-primario)] w-4 h-4 shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <div className="font-bold text-xs sm:text-sm flex items-center gap-1.5">
+                                {opt.serviceType === 'sucursal' ? (
+                                  <Building2 className="w-3.5 h-3.5 text-[var(--color-primario)] shrink-0" />
+                                ) : (
+                                  <Truck className="w-3.5 h-3.5 text-[var(--color-primario)] shrink-0" />
+                                )}
+                                <span className="truncate">{opt.serviceName}</span>
+                              </div>
+                              <div className="text-[11px] opacity-65 mt-0.5">
+                                {opt.plazoTexto || `${opt.plazoMinDias || 2} a ${opt.plazoMaxDias || 5} días hábiles`}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            {isGratis ? (
+                              <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                Gratis
+                              </span>
+                            ) : (
+                              <span className="font-bold text-xs sm:text-sm">
+                                ${opt.precioFinal.toLocaleString('es-AR')}
+                              </span>
+                            )}
+                          </div>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Sección C: Selector de Sucursal (si la opción es a sucursal) */}
+              {selectedOption?.serviceType === 'sucursal' && (
+                <div className="p-4 rounded-2xl bg-[var(--color-primario)]/5 border border-[var(--color-primario)]/20 space-y-2 animate-in fade-in duration-200">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-primario)] flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>Elegir Sucursal de Retiro del Carrier *</span>
+                  </label>
+
+                  {loadingBranches ? (
+                    <div className="py-2 text-xs flex items-center gap-2 opacity-70">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Buscando sucursales habilitadas cerca de tu código postal...</span>
+                    </div>
+                  ) : branchesList.length > 0 ? (
+                    <select
+                      value={selectedBranch?.branchId || ''}
+                      onChange={(e) => {
+                        const b = branchesList.find((x) => x.branchId === e.target.value)
+                        setSelectedBranch(b || null)
+                      }}
+                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                    >
+                      {branchesList.map((b) => (
+                        <option key={b.branchId} value={b.branchId}>
+                          {b.nombre} — {b.direccion} ({b.localidad})
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-xs opacity-70 italic">
+                      No se encontraron sucursales de retiro para este código postal. Te recomendamos elegir entrega a domicilio.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Sección D: Campos Estructurados de Dirección y Destinatario */}
+              {selectedOption?.serviceType !== 'retiro_local' && (
+                <div className="space-y-3.5 pt-1">
+                  <div className="text-xs font-bold uppercase tracking-wider opacity-75">
+                    Datos del Domicilio de Entrega:
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
+                    {/* Calle */}
+                    <div className="space-y-1 sm:col-span-8">
+                      <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
+                        Calle *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={calle}
+                        onChange={(e) => setCalle(e.target.value)}
+                        placeholder="Ej: Av. San Martín"
+                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                      />
+                    </div>
+
+                    {/* Altura / Número */}
+                    <div className="space-y-1 sm:col-span-4">
+                      <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
+                        Altura / Número *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={altura}
+                        onChange={(e) => setAltura(e.target.value)}
+                        placeholder="Ej: 1250"
+                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                      />
+                    </div>
+
+                    {/* Piso / Depto */}
+                    <div className="space-y-1 sm:col-span-6">
+                      <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
+                        Piso / Depto / Unidad (Opcional)
+                      </label>
+                      <input
+                        type="text"
+                        value={pisoDpto}
+                        onChange={(e) => setPisoDpto(e.target.value)}
+                        placeholder="Ej: Piso 3, Dpto B"
+                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                      />
+                    </div>
+
+                    {/* DNI / CUIT (requerido para despacho) */}
+                    <div className="space-y-1 sm:col-span-6">
+                      <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
+                        DNI / CUIT del Destinatario *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={documentoComprador}
+                        onChange={(e) => setDocumentoComprador(e.target.value)}
+                        placeholder="Ej: 38450123"
+                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                      />
+                      <span className="text-[10px] opacity-60 block">Exigido por el carrier para entrega y tracking.</span>
+                    </div>
+
+                    {/* Ciudad */}
+                    <div className="space-y-1 sm:col-span-6">
+                      <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
+                        Ciudad / Localidad *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={ciudad}
+                        onChange={(e) => setCiudad(e.target.value)}
+                        placeholder="Ej: Rosario"
+                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                      />
+                    </div>
+
+                    {/* Provincia */}
+                    <div className="space-y-1 sm:col-span-6">
+                      <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
+                        Provincia *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={provincia}
+                        onChange={(e) => setProvincia(e.target.value)}
+                        placeholder="Ej: Santa Fe"
+                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                      />
+                    </div>
+
+                    {/* Aclaraciones */}
+                    <div className="space-y-1 sm:col-span-12">
+                      <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
+                        Referencias para la Entrega (Opcional)
+                      </label>
+                      <input
+                        type="text"
+                        value={aclaracionesEntrega}
+                        onChange={(e) => setAclaracionesEntrega(e.target.value)}
+                        placeholder="Ej: Entre calles Mitre y San Martín / Timbre azul / Dejar con encargado"
+                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1072,21 +1395,43 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
 
           {/* Total */}
           <div className="pt-3 border-t border-black/10 dark:border-white/10 space-y-1">
+            <div className="flex justify-between items-center text-xs opacity-75">
+              <span>Subtotal productos:</span>
+              <span className="font-medium">${totalAmount.toLocaleString('es-AR')}</span>
+            </div>
+
+            {tipoEntrega === 'envio' && (
+              <div className="flex justify-between items-center text-xs">
+                <span className="opacity-75">Costo de envío:</span>
+                {costoEnvio > 0 ? (
+                  <span className="font-semibold text-xs">+${costoEnvio.toLocaleString('es-AR')}</span>
+                ) : esEnvioGratis ? (
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">¡Gratis!</span>
+                ) : (
+                  <span className="opacity-50 text-[11px]">A calcular con CP</span>
+                )}
+              </div>
+            )}
+
             {mpRecargoMonto > 0 && (
               <div className="flex justify-between items-center text-xs opacity-75">
                 <span>Recargo Mercado Pago (+{mpRecargoPct}%):</span>
                 <span className="font-medium">+${mpRecargoMonto.toLocaleString('es-AR')}</span>
               </div>
             )}
-            <div className="flex justify-between items-baseline pt-1">
-              <span className="text-sm font-semibold opacity-70">Total a pagar:</span>
+
+            <div className="flex justify-between items-baseline pt-2 border-t border-black/5 dark:border-white/5">
+              <span className="text-sm font-semibold opacity-80">Total a pagar:</span>
               <span className="text-2xl sm:text-3xl font-bold text-[var(--color-primario-legible)] font-[var(--font-heading)]">
                 ${finalTotal.toLocaleString('es-AR')}
               </span>
             </div>
-            <p className="text-[10px] opacity-50 text-right">
+
+            <p className="text-[10px] opacity-50 text-right pt-0.5">
               {tipoEntrega === 'envio'
-                ? 'El costo de envío es a cargo del comprador y se coordina con el vendedor.'
+                ? selectedOption
+                  ? `Incluye ${selectedOption.serviceName}`
+                  : 'Ingresa tu código postal para incluir el envío en el total.'
                 : 'No incluye costos de envío adicionales.'}
             </p>
           </div>
