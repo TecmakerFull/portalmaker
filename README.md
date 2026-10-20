@@ -11,7 +11,7 @@
 - **Base de Datos & Auth**: Supabase (PostgreSQL + Auth + Storage + RLS)
 - **Estilos**: Tailwind CSS + Variables CSS Dinámicas por Tenant + Modo Claro/Oscuro
 - **Iconografía**: `lucide-react` (exclusivo)
-- **Despliegue**: Cloudflare Pages / Workers
+- **Despliegue**: Vercel
 
 ---
 

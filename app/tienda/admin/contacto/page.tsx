@@ -5,6 +5,7 @@
 import { notFound } from 'next/navigation'
 import { getTenantStore, isStoreAdmin } from '@/lib/tenant'
 import ContactoForm from './contacto-form'
+import OrigenDespachoForm from './origen-despacho-form'
 
 export default async function ContactoAdminPage() {
   const tenant = await getTenantStore()
@@ -25,6 +26,8 @@ export default async function ContactoAdminPage() {
   return (
     <div className="w-full space-y-6">
       <ContactoForm store={store} tenantQuery={tenantQuery} />
+      {/* Envíos: invisible para tiendas existentes hasta que el superadmin active envios_activo */}
+      {store.envios_activo && <OrigenDespachoForm store={store} />}
     </div>
   )
 }

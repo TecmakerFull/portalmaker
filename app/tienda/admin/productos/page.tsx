@@ -22,7 +22,8 @@ export default async function AdminProductosPage() {
   // 1. Obtener productos de la tienda con variantes y categoría
   const { data: products } = await supabase
     .from('products')
-    .select('*, category:categories(nombre), variants:product_variants(*)')
+    // details: medidas del producto, para avisar cuáles no podrán cotizarse (envíos)
+    .select('*, category:categories(nombre), variants:product_variants(*), details:product_details(peso_kg,alto_cm,ancho_cm,profundidad_cm)')
     .eq('store_id', store.id)
     .order('created_at', { ascending: false })
 

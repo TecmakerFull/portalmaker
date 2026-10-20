@@ -1504,3 +1504,12 @@ grant all on mp_oauth_states to service_role;
 -- Próximo paso: ejecutar supabase/seed.sql
 -- =============================================================================
 
+
+-- =============================================================================
+-- ENVIOS FASE 1 (2026-10-20): columnas y tablas de envios (shipments, shipment_events,
+-- order_events, store_shipping_providers, shipping_quotes), columnas origen_*/envio_* en
+-- stores, medidas en product_variants, valor_declarado en product_details, envio_* en
+-- orders y vista stores_public ampliada. Fuente de verdad del DDL aplicado:
+--   supabase/migrations/20261020_envios_fase1.sql
+--   supabase/migrations/20261020_envios_fase1_revoke_anon.sql
+-- =============================================================================

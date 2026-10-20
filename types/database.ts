@@ -118,6 +118,24 @@ export interface Store {
 
   custom_domain_verified?: boolean;
 
+  // Envíos (migración 20261020_envios_fase1). envios_activo = flag maestro: false => nada de envíos visible.
+  envios_activo?: boolean;
+  origen_calle?: string | null;
+  origen_altura?: string | null;
+  origen_piso_depto?: string | null;
+  origen_localidad?: string | null;
+  origen_provincia?: string | null;
+  origen_codigo_postal?: string | null;
+  origen_cuit?: string | null;
+  origen_razon_social?: string | null;
+  origen_telefono?: string | null;
+  origen_email?: string | null;
+  envio_gratis_desde?: number | null;
+  envio_markup_porcentaje?: number;
+  envio_tarifa_fallback?: number | null;
+  envio_retiro_local_activo?: boolean;
+  envio_comision_incluye_envio?: boolean;
+
   // Integración Mercado Pago (Marketplace OAuth y Split de pagos)
   mp_connected?: boolean;
   mp_recargo_porcentaje?: number;
@@ -237,6 +255,11 @@ export interface ProductVariant {
   imagenes?: string[];        // galería completa de la variante (estilo Mercado Libre)
   activo: boolean;
   orden: number;
+  // Medidas propias de la variante. null = hereda el valor del producto (product_details).
+  peso_kg?: number | null;
+  alto_cm?: number | null;
+  ancho_cm?: number | null;
+  profundidad_cm?: number | null;
   created_at: Timestamp;
 }
 
@@ -255,6 +278,7 @@ export interface ProductDetails {
   alto_cm: number | null;
   ancho_cm: number | null;
   profundidad_cm: number | null;
+  valor_declarado?: number | null; // seguro del carrier; null = precio efectivo de venta
   garantia_texto: string | null;
   ficha_tecnica: TechnicalAttribute[];
   tags: string[] | null;
@@ -298,6 +322,20 @@ export interface Order {
   estado_pago: 'pendiente' | 'aprobado' | 'rechazado' | 'revision' | 'reembolsado' | 'contracargo';
   metodo_pago: string | null;
   zona_envio_id: UUID | null;
+  // Dirección estructurada de envío (la columna direccion_entrega se mantiene como texto legible)
+  envio_calle?: string | null;
+  envio_altura?: string | null;
+  envio_piso_depto?: string | null;
+  envio_localidad?: string | null;
+  envio_provincia?: string | null;
+  envio_codigo_postal?: string | null;
+  envio_referencias?: string | null;
+  documento_comprador?: string | null;
+  envio_proveedor?: string | null;
+  envio_servicio?: string | null;
+  envio_modalidad?: 'domicilio' | 'sucursal' | 'retiro_local' | 'manual' | null;
+  envio_sucursal?: Record<string, unknown> | null;
+  envio_quote_id?: UUID | null;
   notas: string | null;
 
   // Integración Mercado Pago
@@ -393,7 +431,11 @@ export interface ShippingZone {
   precio: number;   // 0 para retiro en local
   activo: boolean;
   orden: number;
+  codigos_postales?: string[]; // vacío = la zona aplica a cualquier CP
+  plazo_texto?: string | null;
+  peso_maximo_kg?: number | null;
   created_at: Timestamp;
+  updated_at?: Timestamp;
 }
 
 // =============================================================================
@@ -628,11 +670,54 @@ export interface NewsletterSubscriber {
 }
 
 // =============================================================================
-// MP_OAUTH_STATES — Estados temporales para autenticación OAuth con Mercado Pago
+// STORE_SHIPPING_PROVIDERS — Proveedores de envío configurados por tienda
 // =============================================================================
-export interface MPOAuthState {
+export interface StoreShippingProvider {
   id: UUID;
   store_id: UUID;
-  state: string;
+  provider: 'zipnova' | 'correo_argentino' | 'andreani' | 'manual';
+  activo: boolean;
+  credentials_enc?: string | null;
+  config: Record<string, unknown>;
+  status: 'sin_verificar' | 'ok' | 'credenciales_invalidas' | 'error';
+  last_verified_at?: Timestamp | null;
   created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+// =============================================================================
+// SHIPMENTS — Envíos y despachos de pedidos
+// =============================================================================
+export interface ShipmentRecord {
+  id: UUID;
+  order_id: UUID;
+  store_id: UUID;
+  provider: string;
+  provider_shipment_id?: string | null;
+  service_code?: string | null;
+  modalidad: string;
+  sucursal?: Record<string, unknown> | null;
+  costo_cotizado: number;
+  costo_real?: number | null;
+  tracking_number?: string | null;
+  tracking_url?: string | null;
+  label_path?: string | null;
+  estado:
+    | 'pendiente'
+    | 'creando'
+    | 'creado'
+    | 'etiquetado'
+    | 'despachado'
+    | 'en_camino'
+    | 'entregado'
+    | 'incidencia'
+    | 'cancelado'
+    | 'error';
+  error_message?: string | null;
+  attempts: number;
+  next_retry_at?: Timestamp | null;
+  idempotency_key: string;
+  raw?: Record<string, unknown> | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
 }

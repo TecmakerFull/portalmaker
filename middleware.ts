@@ -82,9 +82,10 @@ export function middleware(request: NextRequest) {
     return applySecurityHeaders(NextResponse.redirect(callbackUrl))
   }
 
-  // 1. Simulación de tienda mediante query param (?tenant=slug)
-  // Permitido SOLO en entorno que no sea producción o en hosts de desarrollo (localhost o Vercel)
-  const isDevOrPreview = process.env.NODE_ENV !== 'production' || isLocalhost || isVercelDomain
+  // 1. Simulación o acceso de tienda mediante query param (?tenant=slug)
+  // Permitido en desarrollo, previews de Vercel y también en el dominio principal del portal
+  // (por ejemplo desde el panel de control o enlaces directos).
+  const isDevOrPreview = process.env.NODE_ENV !== 'production' || isLocalhost || isVercelDomain || isBasePortalDomain
   const tenantParam = nextUrl.searchParams.get('tenant')
 
   if (tenantParam && isDevOrPreview) {

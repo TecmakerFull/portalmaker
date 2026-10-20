@@ -45,6 +45,12 @@ import {
 import { compressImageFile } from '@/lib/image-compression'
 import AiDescriptionModal from './ai-description-modal'
 import { StickySaveBar } from '../components/sticky-save-bar'
+import {
+  parseMeasureInput,
+  MAX_PESO_KG,
+  MAX_DIMENSION_CM,
+  MAX_VALOR_DECLARADO,
+} from '@/lib/shipping-validators'
 
 interface LocalVariant {
   id?: string
@@ -53,6 +59,11 @@ interface LocalVariant {
   stock: string
   imagen_url: string
   imagenes?: string[]
+  // Medidas propias de la variante (texto de input). Vacío = hereda del producto.
+  peso_kg?: string
+  alto_cm?: string
+  ancho_cm?: string
+  profundidad_cm?: string
 }
 
 interface ProductoFormProps {
@@ -129,6 +140,8 @@ export default function ProductoForm({
   const [altoCm, setAltoCm] = useState(initialDetails?.alto_cm?.toString() ?? '')
   const [anchoCm, setAnchoCm] = useState(initialDetails?.ancho_cm?.toString() ?? '')
   const [profundidadCm, setProfundidadCm] = useState(initialDetails?.profundidad_cm?.toString() ?? '')
+  // Valor declarado para el seguro del carrier (vacío = se usa el precio de venta)
+  const [valorDeclarado, setValorDeclarado] = useState(initialDetails?.valor_declarado?.toString() ?? '')
 
   // 8. Optimización SEO en Google (Meta tags & Tags)
   const [metaTitle, setMetaTitle] = useState(initialDetails?.meta_title ?? '')
@@ -165,6 +178,10 @@ export default function ProductoForm({
           stock: v.stock !== null && v.stock !== undefined ? v.stock.toString() : '',
           imagen_url: variantImgs[0] ?? (v.imagen_url ?? ''),
           imagenes: variantImgs,
+          peso_kg: v.peso_kg != null ? v.peso_kg.toString() : '',
+          alto_cm: v.alto_cm != null ? v.alto_cm.toString() : '',
+          ancho_cm: v.ancho_cm != null ? v.ancho_cm.toString() : '',
+          profundidad_cm: v.profundidad_cm != null ? v.profundidad_cm.toString() : '',
         }
       })
     }
@@ -780,10 +797,12 @@ export default function ProductoForm({
       if (!targetProductId) throw new Error('No se pudo resolver el ID del producto.')
 
       // 2. Guardar en tabla PRODUCT_DETAILS (Dimensiones, SEO y FAQ)
-      const numPeso = pesoKg ? parseFloat(pesoKg) : null
-      const numAlto = altoCm ? parseFloat(altoCm) : null
-      const numAncho = anchoCm ? parseFloat(anchoCm) : null
-      const numProfundidad = profundidadCm ? parseFloat(profundidadCm) : null
+      // Parseo con límite de columna (numeric(6,3) / numeric(6,2)) para dar un error claro
+      const numPeso = parseMeasureInput(pesoKg, 'Peso', MAX_PESO_KG)
+      const numAlto = parseMeasureInput(altoCm, 'Alto', MAX_DIMENSION_CM)
+      const numAncho = parseMeasureInput(anchoCm, 'Ancho', MAX_DIMENSION_CM)
+      const numProfundidad = parseMeasureInput(profundidadCm, 'Profundidad', MAX_DIMENSION_CM)
+      const numValorDeclarado = parseMeasureInput(valorDeclarado, 'Valor declarado', MAX_VALOR_DECLARADO)
 
       const tagsArray = tagsInput
         .split(',')
@@ -800,6 +819,7 @@ export default function ProductoForm({
         alto_cm: numAlto,
         ancho_cm: numAncho,
         profundidad_cm: numProfundidad,
+        valor_declarado: numValorDeclarado,
         meta_title: metaTitle.trim() || null,
         meta_description: metaDescription.trim() || null,
         tags: tagsArray.length > 0 ? tagsArray : null,
@@ -846,6 +866,11 @@ export default function ProductoForm({
               stock: v.stock && v.stock.trim() !== '' ? parseInt(v.stock) || 0 : null,
               imagen_url: variantImgs.length > 0 ? variantImgs[0] : null,
               imagenes: variantImgs,
+              // Medidas propias de la variante: null = hereda del producto
+              peso_kg: parseMeasureInput(v.peso_kg ?? '', `Peso de "${v.nombre.trim()}"`, MAX_PESO_KG),
+              alto_cm: parseMeasureInput(v.alto_cm ?? '', `Alto de "${v.nombre.trim()}"`, MAX_DIMENSION_CM),
+              ancho_cm: parseMeasureInput(v.ancho_cm ?? '', `Ancho de "${v.nombre.trim()}"`, MAX_DIMENSION_CM),
+              profundidad_cm: parseMeasureInput(v.profundidad_cm ?? '', `Profundidad de "${v.nombre.trim()}"`, MAX_DIMENSION_CM),
               orden: idx,
               activo: true,
             }
@@ -1524,6 +1549,30 @@ export default function ProductoForm({
               </div>
             </div>
           </div>
+
+          {/* Valor declarado: solo con envíos habilitados */}
+          {store.envios_activo && (
+            <div className="pt-2 border-t border-[var(--color-borde)]">
+              <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
+                Valor declarado para el seguro del envío
+              </label>
+              <div className="relative flex items-center max-w-xs">
+                <span className="absolute left-3.5 text-xs opacity-50 font-bold">$</span>
+                <input
+                  type="number"
+                  step="any"
+                  min="0"
+                  value={valorDeclarado}
+                  onChange={(e) => setValorDeclarado(e.target.value)}
+                  placeholder={precioBase ? `${precioBase} (precio de venta)` : 'Precio de venta'}
+                  className="w-full min-h-[44px] pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
+                />
+              </div>
+              <p className="text-[10px] opacity-50 mt-1">
+                Si lo dejás vacío se usa el precio de venta. Es el monto que cubre el correo si el paquete se pierde.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 6. Atributos y Variantes */}
@@ -1741,6 +1790,36 @@ export default function ProductoForm({
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
+
+                    {/* Medidas de la variante (solo con envíos habilitados). Vacío = hereda del producto */}
+                    {store.envios_activo && (
+                      <div className="sm:col-span-12 pt-2 border-t border-dashed border-[var(--color-borde)]">
+                        <p className="text-[11px] font-semibold opacity-60 mb-2">
+                          Peso y medidas de esta variante (vacío = igual al producto)
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {([
+                            ['peso_kg', 'Peso (kg)', pesoKg],
+                            ['alto_cm', 'Alto (cm)', altoCm],
+                            ['ancho_cm', 'Ancho (cm)', anchoCm],
+                            ['profundidad_cm', 'Prof. (cm)', profundidadCm],
+                          ] as const).map(([field, label, inherited]) => (
+                            <div key={field}>
+                              <label className="text-[10px] font-bold opacity-60 block mb-0.5">{label}</label>
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                value={variant[field] ?? ''}
+                                onChange={(e) => handleUpdateVariant(index, field, e.target.value)}
+                                placeholder={inherited ? `Hereda: ${inherited}` : 'Hereda'}
+                                className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )
               })}

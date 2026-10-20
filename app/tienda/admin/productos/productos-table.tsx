@@ -39,13 +39,35 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
+import { resolveMeasures, hasCompleteMeasures, type ShippingMeasures } from '@/lib/shipping-validators'
+
+// Select compartido: incluye las medidas del producto para poder avisar cuáles
+// no se pueden cotizar. Se reutiliza en los re-fetch para no perder `details`.
+const PRODUCTS_SELECT =
+  '*, category:categories(nombre), variants:product_variants(*), details:product_details(peso_kg,alto_cm,ancho_cm,profundidad_cm)'
 
 export interface ProductWithRelations extends Product {
   category?: {
     nombre: string
   } | null
   variants?: ProductVariant[]
+  // PostgREST devuelve objeto (relación 1:1) o array según la inferencia de la FK.
+  details?: ShippingMeasures | ShippingMeasures[] | null
 }
+
+/**
+ * Un producto no se puede cotizar si él (sin variantes) o alguna de sus variantes
+ * (con herencia campo a campo del producto) no tiene peso y las 3 medidas.
+ */
+function isNotQuotable(product: ProductWithRelations): boolean {
+  const base = Array.isArray(product.details) ? product.details[0] : product.details
+  if (product.variants && product.variants.length > 0) {
+    return product.variants.some((v) => !hasCompleteMeasures(resolveMeasures(base, v)))
+  }
+  return !hasCompleteMeasures(resolveMeasures(base))
+}
+
+const NOT_QUOTABLE_TEXT = 'No podrán cotizarse: falta peso o medidas'
 
 interface ProductosTableProps {
   store: Store
@@ -159,7 +181,7 @@ export default function ProductosTable({
     // Refrescar productos con variantes desde Supabase
     const { data: refreshedProds } = await supabase
       .from('products')
-      .select('*, category:categories(nombre), variants:product_variants(*)')
+      .select(PRODUCTS_SELECT)
       .eq('store_id', store.id)
       .order('created_at', { ascending: false })
 
@@ -209,7 +231,7 @@ export default function ProductosTable({
       // Revertir recargando los datos
       const { data: fallbackProds } = await supabase
         .from('products')
-        .select('*, category:categories(nombre), variants:product_variants(*)')
+        .select(PRODUCTS_SELECT)
         .eq('store_id', store.id)
         .order('created_at', { ascending: false })
       if (fallbackProds) {
@@ -259,7 +281,7 @@ export default function ProductosTable({
       // Revertir en caso de error
       const { data: refreshed } = await supabase
         .from('products')
-        .select('*, category:categories(nombre), variants:product_variants(*)')
+        .select(PRODUCTS_SELECT)
         .eq('store_id', store.id)
         .order('created_at', { ascending: false })
       if (refreshed) {
@@ -667,6 +689,17 @@ export default function ProductosTable({
                             >
                               {product.nombre}
                             </button>
+
+                            {/* Aviso de envío: texto visible (sin hover) y solo con envíos activos */}
+                            {store.envios_activo && isNotQuotable(product) && (
+                              <span
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-500/10 text-red-700 dark:text-red-300 shrink-0"
+                                title={NOT_QUOTABLE_TEXT}
+                              >
+                                <AlertTriangle className="w-3 h-3" />
+                                {NOT_QUOTABLE_TEXT}
+                              </span>
+                            )}
 
                             {/* Badge y botón para desplegar variantes */}
                             {hasVariants ? (
@@ -1186,6 +1219,12 @@ export default function ProductosTable({
                         {hasVariants && (
                           <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300 font-semibold">
                             {product.variants!.length} var. ({totalVariantStock} u.)
+                          </span>
+                        )}
+                        {store.envios_activo && isNotQuotable(product) && (
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-red-500/10 text-red-700 dark:text-red-300 font-medium">
+                            <AlertTriangle className="w-3 h-3 shrink-0" />
+                            {NOT_QUOTABLE_TEXT}
                           </span>
                         )}
                       </div>

@@ -34,6 +34,7 @@ import {
   Star,
   UserCheck,
   Mail,
+  Truck,
 } from 'lucide-react'
 import type { Store as StoreType } from '@/types/database'
 import ThemeToggle from '@/app/tienda/theme-toggle'
@@ -55,6 +56,7 @@ export default function AdminSidebar({
     pathname.includes('/tienda/admin/banners') ||
     pathname.includes('/tienda/admin/sobre-nosotros') ||
     pathname.includes('/tienda/admin/contacto') ||
+    pathname.includes('/tienda/admin/envios') ||
     pathname.includes('/tienda/admin/pagos') ||
     pathname.includes('/tienda/admin/dominio')
 
@@ -110,6 +112,7 @@ export default function AdminSidebar({
   const isBanners = pathname.includes('/tienda/admin/banners')
   const isSobreNosotros = pathname.includes('/tienda/admin/sobre-nosotros')
   const isContacto = pathname.includes('/tienda/admin/contacto')
+  const isEnvios = pathname.includes('/tienda/admin/envios')
   const isPagos = pathname.includes('/tienda/admin/pagos')
   const isDominio = pathname.includes('/tienda/admin/dominio')
   const isPerfil = pathname.includes('/tienda/admin/perfil')
@@ -299,6 +302,22 @@ export default function AdminSidebar({
               >
                 Contacto & Ubicación
               </Link>
+              {store.envios_activo && (
+                <Link
+                  href={`/tienda/admin/envios${tenantQuery}`}
+                  prefetch={true}
+                  className={`min-h-[40px] flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
+                    isEnvios
+                      ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
+                      : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Truck className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Envíos & Logística</span>
+                  </div>
+                </Link>
+              )}
               <Link
                 href={`/tienda/admin/pagos${tenantQuery}`}
                 prefetch={true}

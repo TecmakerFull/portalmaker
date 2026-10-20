@@ -13,7 +13,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 # Portalmaker — Reglas para agentes de IA
 
 > "El portal del Maker" | portalmaker.com.ar
-> Stack: Next.js 15 + Tailwind CSS + Supabase + Cloudflare Pages
+> Stack: Next.js 15 + Tailwind CSS + Supabase + Vercel
 
 ## Fuentes de verdad
 

@@ -61,6 +61,7 @@ export type SuperadminStoreItem = {
   logo_url: string | null
   modo_operacion?: string | null
   checkout_activo?: boolean | null
+  envios_activo?: boolean | null
   plan?: string | null
   precio_mensual?: number | null
   comision_portalmaker?: number | null
@@ -274,6 +275,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
       dias_gracia: selectedStore.dias_gracia ?? 3,
       modo_operacion: selectedStore.modo_operacion || 'vitrina',
       checkout_activo: Boolean(selectedStore.checkout_activo),
+      envios_activo: Boolean(selectedStore.envios_activo),
       suscripcion_activa: selectedStore.suscripcion_activa,
       notas_admin: selectedStore.notas_admin || '',
     })
@@ -546,6 +548,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
         dias_gracia: Number(subEditForm.dias_gracia) || 0,
         modo_operacion: subEditForm.modo_operacion || 'vitrina',
         checkout_activo: Boolean(subEditForm.checkout_activo),
+        envios_activo: Boolean(subEditForm.envios_activo),
         suscripcion_activa: Boolean(subEditForm.suscripcion_activa),
       }
 
@@ -1688,6 +1691,18 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                         >
                           <option value="true">Habilitado</option>
                           <option value="false">Deshabilitado (solo WhatsApp)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block font-medium mb-1.5 opacity-80">Envíos (cotización y etiquetas)</label>
+                        <select
+                          value={subEditForm.envios_activo ? 'true' : 'false'}
+                          onChange={(e) => setSubEditForm({ ...subEditForm, envios_activo: e.target.value === 'true' })}
+                          className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                        >
+                          <option value="true">Habilitado</option>
+                          <option value="false">Deshabilitado (funcionamiento actual)</option>
                         </select>
                       </div>
                     </div>
