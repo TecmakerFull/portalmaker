@@ -76,6 +76,24 @@ export default function AdminSidebar({
   const [tiendaEncendida, setTiendaEncendida] = useState(store.suscripcion_activa ?? true)
   const [updatingStatus, setUpdatingStatus] = useState(false)
 
+  // URL del portal para volver al dashboard de maker sin prefetch RSC erróneo en subdominio
+  const [portalMakerUrl, setPortalMakerUrl] = useState('/dashboard/maker')
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const host = window.location.host
+      const proto = window.location.protocol
+      if (host.includes('localhost') || host.includes('127.0.0.1')) {
+        setPortalMakerUrl(`${proto}//${host}/dashboard/maker`)
+      } else if (host.endsWith('portalmaker.ar')) {
+        setPortalMakerUrl(`${proto}//portalmaker.ar/dashboard/maker`)
+      } else if (host.endsWith('portalmaker.com.ar')) {
+        setPortalMakerUrl(`${proto}//portalmaker.com.ar/dashboard/maker`)
+      } else {
+        setPortalMakerUrl('https://portalmaker.ar/dashboard/maker')
+      }
+    }
+  }, [])
+
   const isInicio = pathname === '/tienda/admin'
   const isGuia = pathname.includes('/tienda/admin/guia')
   const isVentas = pathname.includes('/tienda/admin/ventas')
@@ -534,13 +552,13 @@ export default function AdminSidebar({
 
           <ThemeToggle className="!w-8 !h-8 !min-w-[32px] !min-h-[32px] rounded-lg" />
 
-          <Link
-            href="/dashboard/maker"
+          <a
+            href={portalMakerUrl}
             title="Volver al Portal"
             className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-          </Link>
+          </a>
         </div>
       </div>
 
@@ -604,13 +622,13 @@ export default function AdminSidebar({
 
           <div className="flex items-center gap-1.5">
             <ThemeToggle className="!w-8 !h-8 !min-w-[32px] !min-h-[32px] rounded-lg" />
-            <Link
-              href="/dashboard/maker"
+            <a
+              href={portalMakerUrl}
               title="Volver al Portal Maker"
               className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 opacity-70 hover:opacity-100 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-            </Link>
+            </a>
           </div>
         </div>
 

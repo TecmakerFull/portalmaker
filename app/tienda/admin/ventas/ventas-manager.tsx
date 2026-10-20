@@ -76,6 +76,23 @@ interface VentasManagerProps {
 type DateRangeFilter = 'todos' | 'hoy' | '7dias' | '30dias' | 'este_mes'
 type SortOrder = 'desc' | 'asc'
 
+// Helper determinista para formatear fechas sin desfasajes de hidratación entre SSR y Browser
+function formatOrderDate(dateStr: string) {
+  if (!dateStr) return ''
+  try {
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return dateStr
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const year = d.getFullYear()
+    const hours = String(d.getHours()).padStart(2, '0')
+    const minutes = String(d.getMinutes()).padStart(2, '0')
+    return `${day}/${month}/${year} ${hours}:${minutes}`
+  } catch {
+    return dateStr
+  }
+}
+
 export default function VentasManager({
   store,
   initialOrders = [],
@@ -735,7 +752,7 @@ export default function VentasManager({
             <DollarSign className="w-4 h-4 text-emerald-600" />
           </div>
           <div>
-            <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
+            <span suppressHydrationWarning className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
               ${metrics.totalFacturado.toLocaleString('es-AR')}
             </span>
             <span className="block text-[11px] opacity-60 mt-1 font-medium">
@@ -887,7 +904,7 @@ export default function VentasManager({
 
                   <div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--color-borde)]">
                     <span className="opacity-70 font-medium">
-                      {client.totalOrders} {client.totalOrders === 1 ? 'pedido' : 'pedidos'} · <strong className="font-mono text-emerald-600 dark:text-emerald-400">${client.totalSpent.toLocaleString('es-AR')}</strong>
+                      {client.totalOrders} {client.totalOrders === 1 ? 'pedido' : 'pedidos'} · <strong suppressHydrationWarning className="font-mono text-emerald-600 dark:text-emerald-400">${client.totalSpent.toLocaleString('es-AR')}</strong>
                     </span>
                     {client.telefono && (
                       <a
@@ -1162,8 +1179,8 @@ export default function VentasManager({
                             {itemsCount} {itemsCount === 1 ? 'producto' : 'productos'}
                           </span>
                           <span className="opacity-50">·</span>
-                          <span className="opacity-50 text-[11px]">
-                            {createdDate.toLocaleDateString('es-AR')} {createdDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                          <span suppressHydrationWarning className="opacity-50 text-[11px]">
+                            {formatOrderDate(order.created_at)}
                           </span>
                         </div>
                       </div>
@@ -1171,7 +1188,7 @@ export default function VentasManager({
 
                     {/* Lado Derecho: Monto y Botones Compactos */}
                     <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--color-borde)]/40">
-                      <span className="text-base sm:text-lg font-bold text-[#CA8A04] dark:text-[#FACC15] font-mono">
+                      <span suppressHydrationWarning className="text-base sm:text-lg font-bold text-[#CA8A04] dark:text-[#FACC15] font-mono">
                         ${Number(order.total).toLocaleString('es-AR')}
                       </span>
 
