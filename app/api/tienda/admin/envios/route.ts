@@ -65,6 +65,17 @@ export async function GET(req: NextRequest) {
           store.origen_provincia &&
           store.origen_codigo_postal
       ),
+      origen_calle: store.origen_calle ?? null,
+      origen_altura: store.origen_altura ?? null,
+      origen_piso_depto: store.origen_piso_depto ?? null,
+      origen_localidad: store.origen_localidad ?? null,
+      origen_provincia: store.origen_provincia ?? null,
+      origen_codigo_postal: store.origen_codigo_postal ?? null,
+      origen_cuit: store.origen_cuit ?? null,
+      origen_razon_social: store.origen_razon_social ?? null,
+      origen_telefono: store.origen_telefono ?? null,
+      origen_email: store.origen_email ?? null,
+      direccion: store.direccion ?? null,
     },
     providers: {
       zipnova: {

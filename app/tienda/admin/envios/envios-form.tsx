@@ -9,6 +9,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import type { Store } from '@/types/database'
 import {
   Truck,
@@ -20,6 +21,7 @@ import {
   MapPin,
   Building2,
   CircleCheck,
+  ExternalLink,
 } from 'lucide-react'
 import {
   isValidCodigoPostal,
@@ -120,6 +122,8 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
   const [origenRazonSocial, setOrigenRazonSocial] = useState(store.origen_razon_social ?? '')
   const [origenTelefono, setOrigenTelefono] = useState(store.origen_telefono ?? '')
   const [origenEmail, setOrigenEmail] = useState(store.origen_email ?? '')
+  // Por defecto, el origen de despacho es la ubicación del taller
+  const [origenEsElTaller, setOrigenEsElTaller] = useState(true)
 
   // Campos de formulario Zipnova
   const [zipnovaApiKey, setZipnovaApiKey] = useState('')
@@ -318,7 +322,47 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
   }
 
   const isZipnovaOk = settings?.providers.zipnova.status === 'ok'
-  const isOrigenOk = settings?.storeSettings.origen_completo
+
+  // Datos tomados del taller (Contacto & Ubicación)
+  const calleTaller = store.origen_calle || origenCalle || ''
+  const alturaTaller = store.origen_altura || origenAltura || ''
+  const cpTaller = store.origen_codigo_postal || origenCodigoPostal || ''
+  const localidadTaller = store.origen_localidad || origenLocalidad || ''
+  const provinciaTaller = store.origen_provincia || origenProvincia || ''
+
+  const faltantesTaller: string[] = []
+  if (!cpTaller.trim() || !isValidCodigoPostal(cpTaller)) {
+    faltantesTaller.push('Código Postal')
+  }
+  if (!calleTaller.trim() && !store.direccion) {
+    faltantesTaller.push('Calle y Número')
+  }
+  if (!localidadTaller.trim() && !store.direccion) {
+    faltantesTaller.push('Localidad')
+  }
+  if (!provinciaTaller.trim() && !store.direccion) {
+    faltantesTaller.push('Provincia')
+  }
+
+  const tallerTieneDatosCompletos = faltantesTaller.length === 0
+
+  // Dirección armada para mostrar
+  const direccionTallerVisible = [
+    [calleTaller, alturaTaller, store.origen_piso_depto || origenPisoDepto].filter(Boolean).join(' '),
+    localidadTaller,
+    provinciaTaller,
+    cpTaller ? `CP ${cpTaller}` : null,
+  ].filter(Boolean).join(', ') || store.direccion || ''
+
+  const isOrigenOk = origenEsElTaller
+    ? tallerTieneDatosCompletos
+    : Boolean(
+        origenCalle.trim() &&
+        origenAltura.trim() &&
+        origenLocalidad.trim() &&
+        origenProvincia.trim() &&
+        isValidCodigoPostal(origenCodigoPostal)
+      )
 
   return (
     <div className="space-y-6 max-w-4xl pb-12">
@@ -351,8 +395,8 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
         </div>
       )}
 
-      {/* SECCIÓN 1: Origen de Despacho (Taller / Showroom) */}
-      <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.02] p-6 space-y-6">
+      {/* SECCIÓN 1: Origen de Despacho (Taller / Showroom o Alternativo) */}
+      <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.02] p-6 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-white/5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center font-bold text-amber-600 dark:text-amber-400">
@@ -363,7 +407,7 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
                 Dirección de Origen de Despacho
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Lugar físico desde donde despachas los paquetes (indispensable para calcular tarifas y emitir guías).
+                Punto de partida físico desde donde despachas los pedidos para calcular tarifas de correo y generar guías.
               </p>
             </div>
           </div>
@@ -372,148 +416,221 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
             {isOrigenOk ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                 <CircleCheck className="w-3.5 h-3.5" />
-                Origen completo
+                Origen listo para cotizar
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
                 <AlertCircle className="w-3.5 h-3.5" />
-                Incompleto (falta CP o dirección)
+                Faltan datos de origen
               </span>
             )}
           </div>
         </div>
 
-        <form onSubmit={handleSaveOrigen} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="sm:col-span-2">
-              <label className={labelClass}>Calle</label>
-              <input
-                type="text"
-                value={origenCalle}
-                onChange={(e) => setOrigenCalle(e.target.value)}
-                placeholder="Ej: Lamadrid"
-                required
-                className={inputClass}
-              />
-            </div>
+        {/* Botón / Toggle por defecto: El origen es el taller */}
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10">
+          <label className="flex items-start gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={origenEsElTaller}
+              onChange={(e) => setOrigenEsElTaller(e.target.checked)}
+              className="mt-0.5 rounded border-slate-300 text-amber-500 focus:ring-amber-400 w-4 h-4 cursor-pointer"
+            />
             <div>
-              <label className={labelClass}>Altura / Número</label>
-              <input
-                type="text"
-                value={origenAltura}
-                onChange={(e) => setOrigenAltura(e.target.value)}
-                placeholder="Ej: 650"
-                required
-                className={inputClass}
-              />
+              <span className="font-semibold text-slate-900 dark:text-white block text-sm">
+                El origen de despacho es la ubicación del taller
+              </span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                Por defecto habilitado. Toma automáticamente la dirección de tu taller configurada en Contacto & Ubicación para no repetir datos.
+              </span>
             </div>
-          </div>
+          </label>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div>
-              <label className={labelClass}>Piso / Depto</label>
-              <input
-                type="text"
-                value={origenPisoDepto}
-                onChange={(e) => setOrigenPisoDepto(e.target.value)}
-                placeholder="Ej: 2B (opcional)"
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Código Postal *</label>
-              <input
-                type="text"
-                value={origenCodigoPostal}
-                onChange={(e) => setOrigenCodigoPostal(e.target.value)}
-                placeholder="Ej: 2000 o S2000ABC"
-                required
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Localidad / Ciudad</label>
-              <input
-                type="text"
-                value={origenLocalidad}
-                onChange={(e) => setOrigenLocalidad(e.target.value)}
-                placeholder="Ej: Rosario"
-                required
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Provincia</label>
-              <select
-                value={origenProvincia}
-                onChange={(e) => setOrigenProvincia(e.target.value)}
-                required
-                className={inputClass}
-              >
-                <option value="">Seleccionar...</option>
-                {PROVINCIAS.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+        {/* CASO A: Origen es el taller (por defecto) */}
+        {origenEsElTaller && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* Si falta algún dato del taller, alerta destacada */}
+            {!tallerTieneDatosCompletos ? (
+              <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-900 dark:text-amber-200 space-y-3">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold">
+                      Faltan datos en la ubicación del taller para calcular envíos
+                    </h3>
+                    <p className="text-xs leading-relaxed opacity-90">
+                      Los proveedores de paquetería (Zipnova, Correo Argentino, Andreani) exigen una dirección de origen normalizada con código postal para cotizar tarifas en el checkout.
+                    </p>
+                    {faltantesTaller.length > 0 && (
+                      <p className="text-xs font-semibold pt-1 text-amber-700 dark:text-amber-300">
+                        Campos requeridos pendientes: {faltantesTaller.join(', ')}.
+                      </p>
+                    )}
+                  </div>
+                </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-2 border-t border-slate-100 dark:border-white/5">
-            <div>
-              <label className={labelClass}>CUIT (Opcional)</label>
-              <input
-                type="text"
-                value={origenCuit}
-                onChange={(e) => setOrigenCuit(e.target.value)}
-                placeholder="20-xxxxxxxx-x"
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Razón Social / Nombre Taller</label>
-              <input
-                type="text"
-                value={origenRazonSocial}
-                onChange={(e) => setOrigenRazonSocial(e.target.value)}
-                placeholder={store.nombre || 'Nombre del taller'}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Teléfono de Despacho</label>
-              <input
-                type="text"
-                value={origenTelefono}
-                onChange={(e) => setOrigenTelefono(e.target.value)}
-                placeholder={store.whatsapp_numero || '11 2345-6789'}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Email de Despacho</label>
-              <input
-                type="email"
-                value={origenEmail}
-                onChange={(e) => setOrigenEmail(e.target.value)}
-                placeholder={store.admin_email || 'taller@tienda.com'}
-                className={inputClass}
-              />
-            </div>
-          </div>
+                <div className="pt-1">
+                  <Link
+                    href={`/tienda/admin/contacto${effectiveQuery}`}
+                    className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white text-xs font-semibold transition-all shadow-xs"
+                  >
+                    <span>Completar ubicación del taller en Contacto & Ubicación</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              /* Si el taller tiene todos los datos, confirmación limpia */
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.01] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block uppercase tracking-wider">
+                    Dirección de despacho tomada del taller
+                  </span>
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">
+                    {direccionTallerVisible}
+                  </p>
+                </div>
 
-          <div className="flex justify-end pt-2">
-            <button
-              type="submit"
-              disabled={savingOrigen}
-              className="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white font-semibold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
-            >
-              {savingOrigen ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              <span>Guardar Dirección de Origen</span>
-            </button>
+                <Link
+                  href={`/tienda/admin/contacto${effectiveQuery}`}
+                  className="min-h-[44px] inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-amber-500 transition-colors self-start sm:self-auto shrink-0"
+                >
+                  <span>Modificar en Contacto & Ubicación</span>
+                  <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+                </Link>
+              </div>
+            )}
           </div>
-        </form>
+        )}
+
+        {/* CASO B: Origen es otro lugar (se despliega el formulario para poner la ubicación de despacho) */}
+        {!origenEsElTaller && (
+          <div className="pt-2 border-t border-slate-100 dark:border-white/5 space-y-4 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Dirección de Despacho Alternativa (Depósito / Almacén)
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Ingresá el domicilio específico desde donde salen las cajas si es distinto a tu taller.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveOrigen} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>Calle</label>
+                  <input
+                    type="text"
+                    value={origenCalle}
+                    onChange={(e) => setOrigenCalle(e.target.value)}
+                    placeholder="Ej: Av. Córdoba"
+                    required
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Altura / Número</label>
+                  <input
+                    type="text"
+                    value={origenAltura}
+                    onChange={(e) => setOrigenAltura(e.target.value)}
+                    placeholder="Ej: 1450"
+                    required
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div>
+                  <label className={labelClass}>Piso / Depto</label>
+                  <input
+                    type="text"
+                    value={origenPisoDepto}
+                    onChange={(e) => setOrigenPisoDepto(e.target.value)}
+                    placeholder="Ej: Galpón 4 (opcional)"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Código Postal *</label>
+                  <input
+                    type="text"
+                    value={origenCodigoPostal}
+                    onChange={(e) => setOrigenCodigoPostal(e.target.value)}
+                    placeholder="Ej: 1414"
+                    required
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Localidad / Ciudad</label>
+                  <input
+                    type="text"
+                    value={origenLocalidad}
+                    onChange={(e) => setOrigenLocalidad(e.target.value)}
+                    placeholder="Ej: CABA"
+                    required
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Provincia</label>
+                  <select
+                    value={origenProvincia}
+                    onChange={(e) => setOrigenProvincia(e.target.value)}
+                    required
+                    className={inputClass}
+                  >
+                    <option value="">Seleccionar...</option>
+                    {PROVINCIAS.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-white/5">
+                <div>
+                  <label className={labelClass}>CUIT (Opcional)</label>
+                  <input
+                    type="text"
+                    value={origenCuit}
+                    onChange={(e) => setOrigenCuit(e.target.value)}
+                    placeholder="20-xxxxxxxx-x"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Razón Social / Remitente</label>
+                  <input
+                    type="text"
+                    value={origenRazonSocial}
+                    onChange={(e) => setOrigenRazonSocial(e.target.value)}
+                    placeholder="Nombre del depósito o empresa"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={savingOrigen}
+                  className="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white font-semibold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {savingOrigen ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  <span>Guardar Dirección Alternativa</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
 
       {/* SECCIÓN 2: Proveedor Zipnova Envíos */}
