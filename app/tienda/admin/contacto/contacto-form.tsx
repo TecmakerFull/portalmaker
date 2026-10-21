@@ -1,6 +1,6 @@
 // =============================================================================
-// PORTALMAKER — Formulario Unificado de Contacto, Ubicación del Taller,
-// Horarios de Atención Semanales y Redes
+// PORTALMAKER — Panel de Configuración: Contacto, Horarios, Ubicación y Redes
+// Cada tarjeta cuenta con su propio botón de guardado y feedback independiente.
 // =============================================================================
 
 'use client'
@@ -8,7 +8,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { Store } from '@/types/database'
 import {
   MapPin,
@@ -27,24 +26,19 @@ import {
   Copy,
   Sun,
   Moon,
-  Sparkles,
+  Save,
 } from 'lucide-react'
-import { StickySaveBar } from '../components/sticky-save-bar'
 import {
   isValidCuit,
-  formatCuit,
   isValidCodigoPostal,
-  normalizeCodigoPostal,
 } from '@/lib/shipping-validators'
 import {
   parseHorarios,
-  serializeHorarioPayload,
   generarTextoHorarios,
   getEstadoTienda,
   DIAS_SEMANA,
   type HorariosConfig,
   type DiaSemana,
-  type DiaHorario,
 } from '@/lib/horarios'
 
 // Provincias argentinas normalizadas según el estándar de carriers
@@ -82,14 +76,18 @@ interface ContactoFormProps {
 
 export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) {
   const router = useRouter()
-  const supabase = createSupabaseBrowserClient()
+  const effectiveQuery = tenantQuery || (store?.slug ? `?tenant=${store.slug}` : '')
 
   // 1. Canales de atención
   const [whatsapp, setWhatsapp] = useState(store.whatsapp_numero ?? '')
   const [emailContacto, setEmailContacto] = useState(store.email_contacto ?? '')
+  const [loadingCanales, setLoadingCanales] = useState(false)
+  const [feedbackCanales, setFeedbackCanales] = useState<{ type: 'ok' | 'error'; message: string } | null>(null)
 
-  // 2. Horarios de atención estructurados (Lunes a Domingo, hasta 2 turnos por día)
+  // 2. Horarios de atención estructurados
   const [horariosConfig, setHorariosConfig] = useState<HorariosConfig>(() => parseHorarios(store))
+  const [loadingHorarios, setLoadingHorarios] = useState(false)
+  const [feedbackHorarios, setFeedbackHorarios] = useState<{ type: 'ok' | 'error'; message: string } | null>(null)
 
   // 3. Ubicación estructurada del taller y origen logístico
   const [calle, setCalle] = useState(store.origen_calle ?? '')
@@ -100,22 +98,21 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
   const [codigoPostal, setCodigoPostal] = useState(store.origen_codigo_postal ?? '')
   const [googleMapsEmbedUrl, setGoogleMapsEmbedUrl] = useState(store.google_maps_embed_url ?? '')
 
-  // Datos fiscales de imposición de paquetes (opcionales)
+  // Datos fiscales opcionales
   const [showFiscal, setShowFiscal] = useState(Boolean(store.origen_cuit || store.origen_razon_social))
   const [cuit, setCuit] = useState(store.origen_cuit ?? '')
   const [razonSocial, setRazonSocial] = useState(store.origen_razon_social ?? '')
+  const [loadingUbicacion, setLoadingUbicacion] = useState(false)
+  const [feedbackUbicacion, setFeedbackUbicacion] = useState<{ type: 'ok' | 'error'; message: string } | null>(null)
 
   // 4. Redes sociales
   const [instagramUrl, setInstagramUrl] = useState(store.instagram_url ?? '')
   const [facebookUrl, setFacebookUrl] = useState(store.facebook_url ?? '')
   const [tiktokUrl, setTiktokUrl] = useState(store.tiktok_url ?? '')
+  const [loadingRedes, setLoadingRedes] = useState(false)
+  const [feedbackRedes, setFeedbackRedes] = useState<{ type: 'ok' | 'error'; message: string } | null>(null)
 
-  // Estados de carga y feedback
-  const [loading, setLoading] = useState(false)
-  const [successMsg, setSuccessMsg] = useState<string | null>(null)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-
-  // Modificadores de estado de horarios
+  // --- Handlers para horarios ---
   const toggleDiaActivo = (diaKey: DiaSemana) => {
     setHorariosConfig((prev) => ({
       ...prev,
@@ -174,7 +171,6 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
     }))
   }
 
-  // Atajos rápidos
   const copiarLunesALunVie = () => {
     const lunes = horariosConfig.dias.lunes
     setHorariosConfig((prev) => ({
@@ -208,99 +204,153 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
   const estadoEnVivoSimulado = getEstadoTienda(horariosConfig)
   const resumenTexto = generarTextoHorarios(horariosConfig)
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setErrorMsg(null)
-    setSuccessMsg(null)
+  // --- Funciones de Guardado Independientes por Tarjeta ---
 
-    // Validaciones preventivas de formato de código postal y CUIT si se completan
+  // 1. Guardar Canales de Atención
+  const handleSaveCanales = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoadingCanales(true)
+    setFeedbackCanales(null)
+
+    try {
+      const res = await fetch(`/api/tienda/admin/contacto${effectiveQuery}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          section: 'canales',
+          whatsapp,
+          emailContacto,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error al guardar canales de atención')
+
+      setFeedbackCanales({ type: 'ok', message: '¡Canales de atención guardados correctamente!' })
+      router.refresh()
+      setTimeout(() => setFeedbackCanales(null), 4000)
+    } catch (err: unknown) {
+      setFeedbackCanales({ type: 'error', message: (err as Error)?.message || 'Error al guardar.' })
+    } finally {
+      setLoadingCanales(false)
+    }
+  }
+
+  // 2. Guardar Horarios de Atención
+  const handleSaveHorarios = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoadingHorarios(true)
+    setFeedbackHorarios(null)
+
+    try {
+      const res = await fetch(`/api/tienda/admin/contacto${effectiveQuery}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          section: 'horarios',
+          horariosConfig,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error al guardar horarios')
+
+      setFeedbackHorarios({ type: 'ok', message: '¡Horarios de atención guardados correctamente!' })
+      router.refresh()
+      setTimeout(() => setFeedbackHorarios(null), 4000)
+    } catch (err: unknown) {
+      setFeedbackHorarios({ type: 'error', message: (err as Error)?.message || 'Error al guardar.' })
+    } finally {
+      setLoadingHorarios(false)
+    }
+  }
+
+  // 3. Guardar Ubicación del Taller
+  const handleSaveUbicacion = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoadingUbicacion(true)
+    setFeedbackUbicacion(null)
+
     if (codigoPostal.trim() && !isValidCodigoPostal(codigoPostal)) {
-      setLoading(false)
-      setErrorMsg('El código postal no es válido. Ingresá 4 dígitos (ej: 2000) o CPA (ej: S2000ABC).')
+      setLoadingUbicacion(false)
+      setFeedbackUbicacion({
+        type: 'error',
+        message: 'El código postal no es válido. Ingresá 4 dígitos (ej: 2000) o CPA (ej: S2000ABC).',
+      })
       return
     }
 
     if (cuit.trim() && !isValidCuit(cuit)) {
-      setLoading(false)
-      setErrorMsg('El CUIT ingresado no es válido. Revisá los 11 dígitos verificadores.')
+      setLoadingUbicacion(false)
+      setFeedbackUbicacion({
+        type: 'error',
+        message: 'El CUIT no es válido. Revisá los 11 dígitos verificadores.',
+      })
       return
     }
 
     try {
-      // Construir la dirección amigable para la vista pública a partir de los campos estructurados
-      const partesDireccion = [
-        [calle.trim(), altura.trim(), pisoDepto.trim()].filter(Boolean).join(' '),
-        localidad.trim(),
-        provincia.trim(),
-      ].filter(Boolean)
+      const res = await fetch(`/api/tienda/admin/contacto${effectiveQuery}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          section: 'ubicacion',
+          calle,
+          altura,
+          pisoDepto,
+          localidad,
+          provincia,
+          codigoPostal,
+          cuit,
+          razonSocial,
+          googleMapsEmbedUrl,
+        }),
+      })
 
-      const direccionPublicaGenerada = partesDireccion.length > 0 ? partesDireccion.join(', ') : null
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error al guardar ubicación')
 
-      const { payloadCompleto } = serializeHorarioPayload(horariosConfig)
-
-      const baseUpdate: Record<string, any> = {
-        // Canales de contacto
-        whatsapp_numero: whatsapp.trim() || null,
-        email_contacto: emailContacto.trim() || null,
-        horario_atencion: payloadCompleto,
-
-        // Ubicación física y mapa
-        direccion: direccionPublicaGenerada || store.direccion || null,
-        google_maps_embed_url: googleMapsEmbedUrl.trim() || null,
-
-        // Origen logístico unificado (utilizado por cotizadores de Zipnova y carriers)
-        origen_calle: calle.trim() || null,
-        origen_altura: altura.trim() || null,
-        origen_piso_depto: pisoDepto.trim() || null,
-        origen_localidad: localidad.trim() || null,
-        origen_provincia: provincia || null,
-        origen_codigo_postal: codigoPostal.trim() ? normalizeCodigoPostal(codigoPostal) : null,
-        origen_cuit: cuit.trim() ? formatCuit(cuit) : null,
-        origen_razon_social: razonSocial.trim() || null,
-
-        // Redes sociales
-        instagram_url: instagramUrl.trim() || null,
-        facebook_url: facebookUrl.trim() || null,
-        tiktok_url: tiktokUrl.trim() || null,
-        updated_at: new Date().toISOString(),
-      }
-
-      // Guardar intentando incluir las columnas dedicadas mostrar_horarios y horarios_semanales
-      try {
-        const { error: fullError } = await supabase
-          .from('stores')
-          .update({
-            ...baseUpdate,
-            mostrar_horarios: horariosConfig.mostrar,
-            horarios_semanales: horariosConfig.dias,
-          })
-          .eq('id', store.id)
-
-        if (fullError) {
-          // Si la columna aún no está en cache de Supabase, guardamos con baseUpdate (que contiene el payload estructurado embebido)
-          const { error: fallbackError } = await supabase
-            .from('stores')
-            .update(baseUpdate)
-            .eq('id', store.id)
-          if (fallbackError) throw fallbackError
-        }
-      } catch {
-        const { error: fallbackError } = await supabase
-          .from('stores')
-          .update(baseUpdate)
-          .eq('id', store.id)
-        if (fallbackError) throw fallbackError
-      }
-
-      setSuccessMsg('Datos de contacto, horarios y ubicación guardados correctamente.')
+      setFeedbackUbicacion({
+        type: 'ok',
+        message: '¡Ubicación del taller y origen de envíos guardados correctamente!',
+      })
       router.refresh()
-      setTimeout(() => setSuccessMsg(null), 4000)
+      setTimeout(() => setFeedbackUbicacion(null), 4000)
     } catch (err: unknown) {
-      console.error('Error al guardar contacto y horarios:', err)
-      setErrorMsg(err instanceof Error ? err.message : 'Error inesperado al guardar los cambios.')
+      setFeedbackUbicacion({ type: 'error', message: (err as Error)?.message || 'Error al guardar.' })
     } finally {
-      setLoading(false)
+      setLoadingUbicacion(false)
+    }
+  }
+
+  // 4. Guardar Redes Sociales
+  const handleSaveRedes = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoadingRedes(true)
+    setFeedbackRedes(null)
+
+    try {
+      const res = await fetch(`/api/tienda/admin/contacto${effectiveQuery}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          section: 'redes',
+          instagramUrl,
+          facebookUrl,
+          tiktokUrl,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error al guardar redes sociales')
+
+      setFeedbackRedes({ type: 'ok', message: '¡Redes sociales guardadas correctamente!' })
+      router.refresh()
+      setTimeout(() => setFeedbackRedes(null), 4000)
+    } catch (err: unknown) {
+      setFeedbackRedes({ type: 'error', message: (err as Error)?.message || 'Error al guardar.' })
+    } finally {
+      setLoadingRedes(false)
     }
   }
 
@@ -311,7 +361,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
   const labelClass = 'block text-xs font-semibold mb-1.5 opacity-80'
 
   return (
-    <form onSubmit={handleSave} className="space-y-6 w-full pb-24">
+    <div className="space-y-8 w-full max-w-4xl pb-12">
       {/* Encabezado */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -319,12 +369,12 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
             Contacto, Horarios & Ubicación
           </h1>
           <p className="text-xs sm:text-sm opacity-70 mt-1">
-            Configurá los canales de atención de tu taller, horarios semanales, redes y dirección física para retiros y cotización de envíos.
+            Configurá de forma independiente los canales de atención, horarios semanales, ubicación del taller y redes sociales.
           </p>
         </div>
 
         <Link
-          href={`/tienda/contacto${tenantQuery}`}
+          href={`/tienda/contacto${effectiveQuery}`}
           target="_blank"
           className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[var(--color-borde)] text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-colors self-start"
         >
@@ -333,23 +383,11 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
         </Link>
       </div>
 
-      {/* Alertas */}
-      {successMsg && (
-        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-sm flex items-center gap-3">
-          <Check className="w-5 h-5 shrink-0" />
-          <span>{successMsg}</span>
-        </div>
-      )}
-
-      {errorMsg && (
-        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-sm flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <span>{errorMsg}</span>
-        </div>
-      )}
-
-      {/* 1. Canales de Atención Directa */}
-      <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] space-y-4 shadow-xs">
+      {/* TARJETA 1: Canales de Atención Directa */}
+      <form
+        onSubmit={handleSaveCanales}
+        className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] space-y-5 shadow-xs"
+      >
         <div className="flex items-center gap-2 text-sm font-bold opacity-90 border-b border-[var(--color-borde)] pb-3">
           <Phone className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
           <span>Canales de Atención Directa</span>
@@ -386,10 +424,53 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
             </p>
           </div>
         </div>
-      </div>
 
-      {/* 2. Horarios de Atención del Taller (Lunes a Domingo con 2 franjas) */}
-      <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] space-y-5 shadow-xs">
+        {/* Feedback y Botón Guardar propio */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[var(--color-borde)]">
+          {feedbackCanales ? (
+            <div
+              className={`p-2.5 px-3.5 rounded-xl text-xs font-medium flex items-center gap-2 ${
+                feedbackCanales.type === 'ok'
+                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20'
+              }`}
+            >
+              {feedbackCanales.type === 'ok' ? (
+                <Check className="w-4 h-4 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 shrink-0" />
+              )}
+              <span>{feedbackCanales.message}</span>
+            </div>
+          ) : (
+            <div />
+          )}
+
+          <button
+            type="submit"
+            disabled={loadingCanales}
+            className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-xs font-semibold hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 self-end sm:self-auto shrink-0"
+          >
+            {loadingCanales ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
+                <span>Guardando...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 text-[#1F2937]" />
+                <span>Guardar Canales de Atención</span>
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+
+      {/* TARJETA 2: Horarios de Atención del Taller */}
+      <form
+        onSubmit={handleSaveHorarios}
+        className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] space-y-5 shadow-xs"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--color-borde)] pb-3">
           <div className="flex items-center gap-2 text-sm font-bold opacity-90">
             <Clock className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
@@ -413,7 +494,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
         </div>
 
         <p className="text-xs opacity-70">
-          Configurá los días y horarios en que atendés a tus clientes o realizás entregas en el taller. Podés definir dos franjas por día (por ejemplo, mañana y tarde).
+          Configurá los días y horarios en que atendés a tus clientes o realizás entregas en el taller. Podés definir hasta dos franjas por día (por ejemplo, turno mañana y turno tarde).
         </p>
 
         {/* Barra de atajos y vista previa */}
@@ -454,11 +535,6 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
               />
               <span>{estadoEnVivoSimulado.mensaje}</span>
             </span>
-            {estadoEnVivoSimulado.detalleTurno && (
-              <span className="text-[11px] opacity-60 hidden md:inline">
-                ({estadoEnVivoSimulado.detalleTurno})
-              </span>
-            )}
           </div>
         </div>
 
@@ -575,10 +651,53 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
           <span className="font-semibold text-[var(--color-texto)]">Resumen público: </span>
           <span>{resumenTexto}</span>
         </div>
-      </div>
 
-      {/* 3. Ubicación del Taller & Origen de Despacho Logístico (UNIFICADO) */}
-      <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] space-y-4 shadow-xs">
+        {/* Feedback y Botón Guardar propio */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[var(--color-borde)]">
+          {feedbackHorarios ? (
+            <div
+              className={`p-2.5 px-3.5 rounded-xl text-xs font-medium flex items-center gap-2 ${
+                feedbackHorarios.type === 'ok'
+                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20'
+              }`}
+            >
+              {feedbackHorarios.type === 'ok' ? (
+                <Check className="w-4 h-4 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 shrink-0" />
+              )}
+              <span>{feedbackHorarios.message}</span>
+            </div>
+          ) : (
+            <div />
+          )}
+
+          <button
+            type="submit"
+            disabled={loadingHorarios}
+            className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-xs font-semibold hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 self-end sm:self-auto shrink-0"
+          >
+            {loadingHorarios ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
+                <span>Guardando...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 text-[#1F2937]" />
+                <span>Guardar Horarios de Atención</span>
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+
+      {/* TARJETA 3: Ubicación del Taller / Showroom & Origen Logístico */}
+      <form
+        onSubmit={handleSaveUbicacion}
+        className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] space-y-5 shadow-xs"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--color-borde)] pb-3">
           <div className="flex items-center gap-2 text-sm font-bold opacity-90">
             <MapPin className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
@@ -605,6 +724,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
               placeholder="Ej: Lamadrid"
               className={inputClass}
               maxLength={120}
+              required
             />
           </div>
 
@@ -617,6 +737,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
               placeholder="Ej: 650"
               className={inputClass}
               maxLength={10}
+              required
             />
           </div>
 
@@ -641,6 +762,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
               placeholder="Ej: Rosario"
               className={inputClass}
               maxLength={80}
+              required
             />
           </div>
 
@@ -650,6 +772,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
               value={provincia}
               onChange={(e) => setProvincia(e.target.value)}
               className={inputClass}
+              required
             >
               <option value="">Seleccionar provincia...</option>
               {PROVINCIAS.map((p) => (
@@ -671,6 +794,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
               placeholder="Ej: 2000"
               className={inputClass}
               maxLength={8}
+              required
             />
           </div>
         </div>
@@ -738,17 +862,60 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
             </div>
           )}
         </div>
-      </div>
 
-      {/* 4. Redes Sociales */}
-      <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] space-y-4 shadow-xs">
+        {/* Feedback y Botón Guardar propio */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[var(--color-borde)]">
+          {feedbackUbicacion ? (
+            <div
+              className={`p-2.5 px-3.5 rounded-xl text-xs font-medium flex items-center gap-2 ${
+                feedbackUbicacion.type === 'ok'
+                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20'
+              }`}
+            >
+              {feedbackUbicacion.type === 'ok' ? (
+                <Check className="w-4 h-4 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 shrink-0" />
+              )}
+              <span>{feedbackUbicacion.message}</span>
+            </div>
+          ) : (
+            <div />
+          )}
+
+          <button
+            type="submit"
+            disabled={loadingUbicacion}
+            className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-xs font-semibold hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 self-end sm:self-auto shrink-0"
+          >
+            {loadingUbicacion ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
+                <span>Guardando...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 text-[#1F2937]" />
+                <span>Guardar Ubicación del Taller</span>
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+
+      {/* TARJETA 4: Redes Sociales */}
+      <form
+        onSubmit={handleSaveRedes}
+        className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] space-y-5 shadow-xs"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-sm font-bold opacity-90 border-b border-[var(--color-borde)] pb-3">
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
             <span>Redes Sociales de la Marca</span>
           </div>
           <span className="text-[11px] font-normal opacity-60">
-            Se mostrarán con sus respectivos íconos en el pie de página de tu tienda
+            Se mostrarán en el pie de página de tu tienda
           </span>
         </div>
 
@@ -786,52 +953,47 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
             />
           </div>
         </div>
-      </div>
 
-      {/* Botón Guardar y Feedback al lado */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4">
-        {successMsg && (
-          <div className="p-3 px-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-sm flex items-center gap-2">
-            <Check className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-            <span>{successMsg}</span>
-          </div>
-        )}
-        {errorMsg && (
-          <div className="p-3 px-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-sm flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="min-h-[44px] px-8 py-3 rounded-2xl bg-[#FACC15] text-[#1F2937] text-sm font-semibold hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
-              <span>Guardando...</span>
-            </>
+        {/* Feedback y Botón Guardar propio */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[var(--color-borde)]">
+          {feedbackRedes ? (
+            <div
+              className={`p-2.5 px-3.5 rounded-xl text-xs font-medium flex items-center gap-2 ${
+                feedbackRedes.type === 'ok'
+                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20'
+              }`}
+            >
+              {feedbackRedes.type === 'ok' ? (
+                <Check className="w-4 h-4 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 shrink-0" />
+              )}
+              <span>{feedbackRedes.message}</span>
+            </div>
           ) : (
-            <>
-              <Check className="w-4 h-4 text-[#1F2937]" />
-              <span>Guardar Configuración Completa</span>
-            </>
+            <div />
           )}
-        </button>
-      </div>
 
-      {/* Barra de Guardado Flotante Estandarizada */}
-      <StickySaveBar
-        loading={loading}
-        saveText="Guardar Configuración Completa"
-        savingText="Guardando..."
-        successMsg={successMsg}
-        errorMsg={errorMsg}
-        message="Canales de contacto, horarios, taller y logística"
-        hasChanges={true}
-      />
-    </form>
+          <button
+            type="submit"
+            disabled={loadingRedes}
+            className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-xs font-semibold hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 self-end sm:self-auto shrink-0"
+          >
+            {loadingRedes ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
+                <span>Guardando...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 text-[#1F2937]" />
+                <span>Guardar Redes Sociales</span>
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+    </div>
   )
 }
