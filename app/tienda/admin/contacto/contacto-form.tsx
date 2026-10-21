@@ -69,6 +69,52 @@ const PROVINCIAS = [
   'Tucumán',
 ]
 
+// Lista de horas en formato 24hs en intervalos de 30 minutos (00:00 a 23:30)
+const OPCIONES_HORAS_24H: string[] = []
+for (let h = 0; h < 24; h++) {
+  const hh = h.toString().padStart(2, '0')
+  OPCIONES_HORAS_24H.push(`${hh}:00`)
+  OPCIONES_HORAS_24H.push(`${hh}:30`)
+}
+
+// Devuelve las opciones garantizando que si el valor actual no está en múltiplos de 30m, igual esté seleccionable
+function getOpcionesHoras(valorActual: string): string[] {
+  if (valorActual && !OPCIONES_HORAS_24H.includes(valorActual)) {
+    return [...OPCIONES_HORAS_24H, valorActual].sort()
+  }
+  return OPCIONES_HORAS_24H
+}
+
+// Selector compacto en formato 24hs que no depende de la configuración regional del navegador
+function TimeSelect24h({
+  value,
+  onChange,
+  disabled = false,
+  ariaLabel,
+}: {
+  value: string
+  onChange: (val: string) => void
+  disabled?: boolean
+  ariaLabel?: string
+}) {
+  const opciones = getOpcionesHoras(value)
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className="h-9 w-[86px] px-2 text-xs font-mono font-medium rounded-lg border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-[#FACC15] shrink-0 text-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:border-black/30 dark:hover:border-white/30"
+    >
+      {opciones.map((h) => (
+        <option key={h} value={h}>
+          {h} hs
+        </option>
+      ))}
+    </select>
+  )
+}
+
 interface ContactoFormProps {
   store: Store
   tenantQuery: string
@@ -356,8 +402,6 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
 
   const inputClass =
     'w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#FACC15] transition-all'
-  const timeInputClass =
-    'min-h-[40px] px-2.5 py-1.5 rounded-lg border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs font-mono focus:outline-hidden focus:ring-2 focus:ring-[#FACC15]'
   const labelClass = 'block text-xs font-semibold mb-1.5 opacity-80'
 
   return (
@@ -539,21 +583,21 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
         </div>
 
         {/* Grilla de los 7 días de la semana */}
-        <div className="space-y-3 pt-1">
+        <div className="space-y-2.5 pt-1">
           {DIAS_SEMANA.map((dia) => {
             const configDia = horariosConfig.dias[dia.key]
             return (
               <div
                 key={dia.key}
-                className={`p-3 sm:p-4 rounded-2xl border transition-all ${
+                className={`p-3 sm:px-4 sm:py-3 rounded-2xl border transition-all ${
                   configDia.activo
                     ? 'border-[var(--color-borde)] bg-[var(--color-fondo)]'
                     : 'border-dashed border-black/10 dark:border-white/10 opacity-60 bg-transparent'
                 }`}
               >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                  {/* Selector Activo / Cerrado */}
-                  <div className="flex items-center gap-3 min-w-[130px]">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  {/* Selector Activo / Cerrado (Columna fija para que todos los días y badges queden alineados parejos) */}
+                  <div className="w-full sm:w-48 shrink-0 flex items-center justify-between sm:justify-start gap-3">
                     <label className="flex items-center gap-2.5 cursor-pointer select-none">
                       <input
                         type="checkbox"
@@ -561,12 +605,12 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
                         onChange={() => toggleDiaActivo(dia.key)}
                         className="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 cursor-pointer"
                       />
-                      <span className="text-sm font-semibold text-[var(--color-texto)]">
+                      <span className="text-sm font-semibold text-[var(--color-texto)] min-w-[76px]">
                         {dia.label}
                       </span>
                     </label>
                     <span
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full w-14 text-center ${
                         configDia.activo
                           ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
                           : 'bg-zinc-500/15 text-zinc-500'
@@ -578,31 +622,29 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
 
                   {/* Franjas Horarias si está abierto */}
                   {configDia.activo ? (
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1 justify-end">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-1 justify-start md:justify-end">
                       {/* Franja 1: Turno Mañana */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <Sun className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span className="text-xs opacity-70 text-[11px]">Turno 1:</span>
-                        <input
-                          type="time"
+                        <span className="text-xs opacity-70 text-[11px] font-medium mr-1">Turno 1:</span>
+                        <TimeSelect24h
                           value={configDia.turno1.desde}
-                          onChange={(e) => updateTurno1(dia.key, 'desde', e.target.value)}
-                          className={timeInputClass}
+                          onChange={(val) => updateTurno1(dia.key, 'desde', val)}
+                          ariaLabel={`Hora apertura turno 1 ${dia.label}`}
                         />
-                        <span className="text-xs opacity-50">a</span>
-                        <input
-                          type="time"
+                        <span className="text-xs opacity-50 px-0.5">a</span>
+                        <TimeSelect24h
                           value={configDia.turno1.hasta}
-                          onChange={(e) => updateTurno1(dia.key, 'hasta', e.target.value)}
-                          className={timeInputClass}
+                          onChange={(val) => updateTurno1(dia.key, 'hasta', val)}
+                          ariaLabel={`Hora cierre turno 1 ${dia.label}`}
                         />
                       </div>
 
                       {/* Separador sutil */}
-                      <div className="hidden sm:block w-px h-6 bg-[var(--color-borde)]" />
+                      <div className="hidden sm:block w-px h-5 bg-[var(--color-borde)] shrink-0" />
 
                       {/* Franja 2: Turno Tarde (Opcional) */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <label className="flex items-center gap-1.5 text-[11px] font-medium opacity-80 cursor-pointer select-none">
                           <input
                             type="checkbox"
@@ -616,28 +658,26 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
 
                         {configDia.dobleTurno ? (
                           <div className="flex items-center gap-1.5 animate-in fade-in duration-150">
-                            <input
-                              type="time"
+                            <TimeSelect24h
                               value={configDia.turno2.desde}
-                              onChange={(e) => updateTurno2(dia.key, 'desde', e.target.value)}
-                              className={timeInputClass}
+                              onChange={(val) => updateTurno2(dia.key, 'desde', val)}
+                              ariaLabel={`Hora apertura turno tarde ${dia.label}`}
                             />
-                            <span className="text-xs opacity-50">a</span>
-                            <input
-                              type="time"
+                            <span className="text-xs opacity-50 px-0.5">a</span>
+                            <TimeSelect24h
                               value={configDia.turno2.hasta}
-                              onChange={(e) => updateTurno2(dia.key, 'hasta', e.target.value)}
-                              className={timeInputClass}
+                              onChange={(val) => updateTurno2(dia.key, 'hasta', val)}
+                              ariaLabel={`Hora cierre turno tarde ${dia.label}`}
                             />
                           </div>
                         ) : (
-                          <span className="text-[11px] opacity-40 italic">Solo un turno</span>
+                          <span className="text-[11px] opacity-40 italic py-1 px-1.5">Sin turno tarde</span>
                         )}
                       </div>
                     </div>
                   ) : (
-                    <p className="text-xs opacity-50 italic">
-                      No hay atención al público ni retiros en este día.
+                    <p className="text-xs opacity-50 italic md:text-right py-1">
+                      Cerrado todo el día (sin atención ni retiros).
                     </p>
                   )}
                 </div>
