@@ -40,6 +40,7 @@ import {
   type HorariosConfig,
   type DiaSemana,
 } from '@/lib/horarios'
+import GeorefNormalizer from '@/components/georef-normalizer'
 
 // Provincias argentinas normalizadas según el estándar de carriers
 const PROVINCIAS = [
@@ -752,6 +753,26 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
         <p className="text-xs opacity-70">
           Ingresá la dirección física de tu taller o showroom. Se mostrará a tus compradores para retiros presenciales y se utilizará como punto de origen para calcular tarifas de paquetería (Correo Argentino, Andreani, etc.).
         </p>
+
+        {/* Asistente de normalización y prefiltro con Georef AR (IGN) */}
+        <div className="pt-0.5">
+          <GeorefNormalizer
+            calle={calle}
+            altura={altura}
+            localidad={localidad}
+            provincia={provincia}
+            label="Normalizar con Georef (IGN)"
+            onSelectAddress={(data) => {
+              setCalle(data.calle)
+              setAltura(data.altura)
+              setLocalidad(data.localidad)
+              setProvincia(data.provincia)
+              if (data.codigoPostal && !codigoPostal) {
+                setCodigoPostal(data.codigoPostal)
+              }
+            }}
+          />
+        </div>
 
         {/* Campos estructurados de dirección */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 pt-1">

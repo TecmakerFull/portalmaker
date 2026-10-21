@@ -17,6 +17,7 @@ import {
   isValidCodigoPostal,
   normalizeCodigoPostal,
 } from '@/lib/shipping-validators'
+import GeorefNormalizer from '@/components/georef-normalizer'
 
 // Provincias argentinas (nombres tal cual los esperan los carriers, sin abreviar)
 const PROVINCIAS = [
@@ -138,6 +139,24 @@ export default function OrigenDespachoForm({ store }: { store: Store }) {
           {origenCompleto ? 'Origen completo' : 'Origen incompleto'}
         </span>
       </div>
+
+      {/* Asistente Georef AR */}
+      <GeorefNormalizer
+        calle={calle}
+        altura={altura}
+        localidad={localidad}
+        provincia={provincia}
+        label="Normalizar con Georef (IGN)"
+        onSelectAddress={(data) => {
+          setCalle(data.calle)
+          setAltura(data.altura)
+          setLocalidad(data.localidad)
+          setProvincia(data.provincia)
+          if (data.codigoPostal && !codigoPostal) {
+            setCodigoPostal(data.codigoPostal)
+          }
+        }}
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
         <div className="sm:col-span-6">
