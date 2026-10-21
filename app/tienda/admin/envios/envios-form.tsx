@@ -22,6 +22,7 @@ import {
   Building2,
   CircleCheck,
   ExternalLink,
+  Key,
 } from 'lucide-react'
 import {
   isValidCodigoPostal,
@@ -641,9 +642,21 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
               Z
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                Zipnova Envíos
-              </h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  Zipnova Envíos
+                </h2>
+                <a
+                  href="https://zipnova.com.ar"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
+                  title="Abrir el sitio oficial de Zipnova"
+                >
+                  <span>zipnova.com.ar</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Acceso multicarrier a Correo Argentino, Andreani, OCA y envíos flex.
               </p>
@@ -667,6 +680,49 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
               </span>
             )}
           </div>
+        </div>
+
+        {/* Mini Resumen / Guía Rápida para obtener la API Key */}
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 space-y-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+              <Key className="w-3.5 h-3.5 text-amber-500" />
+              <span>Cómo obtener tus credenciales de Zipnova:</span>
+            </span>
+            <a
+              href="https://zipnova.com.ar"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 self-start sm:self-auto"
+            >
+              <span>Ingresar a Zipnova</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+
+          <ol className="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 list-decimal list-inside pl-1">
+            <li>
+              Iniciá sesión en{' '}
+              <a
+                href="https://zipnova.com.ar"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-emerald-600 dark:text-emerald-400 underline underline-offset-2"
+              >
+                zipnova.com.ar
+              </a>{' '}
+              (o creá tu cuenta comercial si aún no tenés una).
+            </li>
+            <li>
+              En el panel de Zipnova, andá a <strong>Configuración &gt; Integraciones</strong> o <strong>Desarrolladores / API</strong>.
+            </li>
+            <li>
+              Copiá la <strong>API Key</strong> y el <strong>API Secret</strong> generados y pegalos en los campos de abajo.
+            </li>
+            <li>
+              Hacé clic en <strong>Verificar y Vincular</strong>. Portalmaker validará la conexión en vivo contra los servidores de Zipnova.
+            </li>
+          </ol>
         </div>
 
         <form onSubmit={handleSaveZipnova} className="space-y-4">
