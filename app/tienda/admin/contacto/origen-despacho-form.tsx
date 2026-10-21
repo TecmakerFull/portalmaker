@@ -17,7 +17,7 @@ import {
   isValidCodigoPostal,
   normalizeCodigoPostal,
 } from '@/lib/shipping-validators'
-import GeorefNormalizer from '@/components/georef-normalizer'
+import GeorefAddressInput from '@/components/georef-address-input'
 
 // Provincias argentinas (nombres tal cual los esperan los carriers, sin abreviar)
 const PROVINCIAS = [
@@ -140,28 +140,30 @@ export default function OrigenDespachoForm({ store }: { store: Store }) {
         </span>
       </div>
 
-      {/* Asistente Georef AR */}
-      <GeorefNormalizer
-        calle={calle}
-        altura={altura}
-        localidad={localidad}
-        provincia={provincia}
-        label="Normalizar con Georef (IGN)"
-        onSelectAddress={(data) => {
-          setCalle(data.calle)
-          setAltura(data.altura)
-          setLocalidad(data.localidad)
-          setProvincia(data.provincia)
-          if (data.codigoPostal && !codigoPostal) {
-            setCodigoPostal(data.codigoPostal)
-          }
-        }}
-      />
-
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
         <div className="sm:col-span-6">
-          <label className={labelClass}>Calle</label>
-          <input className={inputClass} value={calle} onChange={(e) => setCalle(e.target.value)} placeholder="Ej: Av. Pellegrini" maxLength={120} />
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider opacity-75">Calle</label>
+            <span className="text-[10px] opacity-60 font-medium">Autocompletado oficial (IGN)</span>
+          </div>
+          <GeorefAddressInput
+            value={calle}
+            onChange={setCalle}
+            altura={altura}
+            localidad={localidad}
+            provincia={provincia}
+            className={inputClass}
+            placeholder="Ej: Av. Pellegrini"
+            onSelectAddress={(data) => {
+              setCalle(data.calle)
+              setAltura(data.altura)
+              setLocalidad(data.localidad)
+              setProvincia(data.provincia)
+              if (data.codigoPostal && !codigoPostal) {
+                setCodigoPostal(data.codigoPostal)
+              }
+            }}
+          />
         </div>
         <div className="sm:col-span-3">
           <label className={labelClass}>Altura</label>

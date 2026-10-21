@@ -40,7 +40,7 @@ import {
   type HorariosConfig,
   type DiaSemana,
 } from '@/lib/horarios'
-import GeorefNormalizer from '@/components/georef-normalizer'
+import GeorefAddressInput from '@/components/georef-address-input'
 
 // Provincias argentinas normalizadas según el estándar de carriers
 const PROVINCIAS = [
@@ -754,38 +754,31 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
           Ingresá la dirección física de tu taller o showroom. Se mostrará a tus compradores para retiros presenciales y se utilizará como punto de origen para calcular tarifas de paquetería (Correo Argentino, Andreani, etc.).
         </p>
 
-        {/* Asistente de normalización y prefiltro con Georef AR (IGN) */}
-        <div className="pt-0.5">
-          <GeorefNormalizer
-            calle={calle}
-            altura={altura}
-            localidad={localidad}
-            provincia={provincia}
-            label="Normalizar con Georef (IGN)"
-            onSelectAddress={(data) => {
-              setCalle(data.calle)
-              setAltura(data.altura)
-              setLocalidad(data.localidad)
-              setProvincia(data.provincia)
-              if (data.codigoPostal && !codigoPostal) {
-                setCodigoPostal(data.codigoPostal)
-              }
-            }}
-          />
-        </div>
-
-        {/* Campos estructurados de dirección */}
+        {/* Campos estructurados de dirección con autocompletado en tiempo real Georef */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 pt-1">
           <div className="sm:col-span-6">
-            <label className={labelClass}>Calle</label>
-            <input
-              type="text"
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold opacity-80">Calle</label>
+              <span className="text-[10px] opacity-60 font-medium">Autocompletado oficial (IGN)</span>
+            </div>
+            <GeorefAddressInput
               value={calle}
-              onChange={(e) => setCalle(e.target.value)}
-              placeholder="Ej: Lamadrid"
+              onChange={setCalle}
+              altura={altura}
+              localidad={localidad}
+              provincia={provincia}
               className={inputClass}
-              maxLength={120}
+              placeholder="Ej: Lamadrid"
               required
+              onSelectAddress={(data) => {
+                setCalle(data.calle)
+                setAltura(data.altura)
+                setLocalidad(data.localidad)
+                setProvincia(data.provincia)
+                if (data.codigoPostal && !codigoPostal) {
+                  setCodigoPostal(data.codigoPostal)
+                }
+              }}
             />
           </div>
 

@@ -32,7 +32,7 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import WhatsAppIcon from '../sections/whatsapp-icon'
-import GeorefNormalizer from '@/components/georef-normalizer'
+import GeorefAddressInput from '@/components/georef-address-input'
 
 interface CheckoutFormProps {
   store: Store
@@ -1079,38 +1079,33 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                     Datos del Domicilio de Entrega:
                   </div>
 
-                  {/* Asistente Georef para el comprador */}
-                  <GeorefNormalizer
-                    calle={calle}
-                    altura={altura}
-                    localidad={ciudad}
-                    provincia={provincia}
-                    label="Autocompletar / Normalizar con Georef"
-                    buttonClassName="min-h-[40px] px-3 py-1.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                    onSelectAddress={(data) => {
-                      setCalle(data.calle)
-                      setAltura(data.altura)
-                      setCiudad(data.localidad)
-                      setProvincia(data.provincia)
-                      if (data.codigoPostal && !codigoPostal) {
-                        setCodigoPostal(data.codigoPostal)
-                      }
-                    }}
-                  />
-
                   <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
-                    {/* Calle */}
+                    {/* Calle con autocompletado en tiempo real Georef */}
                     <div className="space-y-1 sm:col-span-8">
-                      <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
-                        Calle *
-                      </label>
-                      <input
-                        type="text"
-                        required
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
+                          Calle *
+                        </label>
+                        <span className="text-[10px] opacity-60 font-medium">Autocompletado oficial (IGN)</span>
+                      </div>
+                      <GeorefAddressInput
                         value={calle}
-                        onChange={(e) => setCalle(e.target.value)}
+                        onChange={setCalle}
+                        altura={altura}
+                        localidad={ciudad}
+                        provincia={provincia}
                         placeholder="Ej: Av. San Martín"
+                        required
                         className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                        onSelectAddress={(data) => {
+                          setCalle(data.calle)
+                          setAltura(data.altura)
+                          setCiudad(data.localidad)
+                          setProvincia(data.provincia)
+                          if (data.codigoPostal && !codigoPostal) {
+                            setCodigoPostal(data.codigoPostal)
+                          }
+                        }}
                       />
                     </div>
 
