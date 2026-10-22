@@ -8,6 +8,7 @@ import Image from 'next/image'
 import ThemeToggle from '@/app/tienda/theme-toggle'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 import { Sparkles, Store, Palette, MessageSquare, CreditCard, ArrowRight, ShieldCheck, Zap, Mail, HelpCircle, ArrowUpRight } from 'lucide-react'
+import ShippingFeaturesSection from './shipping-features-section'
 
 // Contacto oficial del portal
 const PORTAL_WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_PORTAL_WHATSAPP ?? '5493415866464'
@@ -184,6 +185,9 @@ export default function PortalHomePage() {
           </div>
         </div>
       </section>
+
+      {/* Envíos Automáticos con Zipnova (Multicourier Argentina) */}
+      <ShippingFeaturesSection />
 
       {/* Dominio Propio */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 py-12">

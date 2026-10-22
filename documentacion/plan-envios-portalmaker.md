@@ -321,3 +321,39 @@ FASE 6. (a) En ventas-manager.tsx mostrar estado de envío, tracking, botón de 
 - **Cron en Hobby**: solo diario y con imprecisión de hasta una hora. Los reintentos no dependen de él (se hacen en línea), pero un envío que falle los 3 intentos puede quedar horas sin reintento automático. Pro o un scheduler externo lo resuelve.
 - **Productos sin medidas**: sin peso no hay cotización; el fallback y los avisos en admin son parte del diseño, no opcionales.
 - **Cambio de precios del carrier entre cotización y creación**: guardar `costo_cotizado` y `costo_real` y mostrar la diferencia al dueño.
+
+---
+
+## 7. Contexto Operativo y Divulgación de Zipnova en el Sistema
+
+Para facilitar el onboarding rápido de futuros agentes, colaboradores y desarrolladores, se detalla la arquitectura de comunicación y divulgación implementada:
+
+### 7.1 Landing Page del Portal (`portalmaker.com.ar`)
+- **Archivo**: `app/(portal)/shipping-features-section.tsx` montado en `app/(portal)/page.tsx`.
+- **Propósito**: Generar confianza inmediata en nuevos makers y visitantes. Explica claramente que Zipnova es un **agregador multicourier inteligente** (no una flota propia pequeña), conectando directamente con transportadoras de máxima reputación nacional: **Andreani, Correo Argentino, OCA y servicios Flex Same Day**.
+- **Componentes**: Tarjetas con badge de los correos, desplegable interactivo (acordeón) con los 4 pilares:
+  1. ¿Qué es Zipnova y cómo trabaja como puente tecnológico?
+  2. Empresas líderes integradas (cobertura nacional y última milla).
+  3. Beneficios económicos (tarifas mayoristas sin volumen mínimo, cero burocracia, 1-click label).
+  4. Flujo operativo diario en 4 pasos (Drop-off y Pick-up).
+
+### 7.2 Guía Interactiva en el Panel de Cada Tienda
+- **Archivo**: `app/tienda/admin/guia/guia-view.tsx`.
+- **Paso 7**: *"Envíos a Todo el País con Zipnova (Multicourier)"*.
+- Detalla los 4 subpasos:
+  1. Concepto y tarifas corporativas.
+  2. Vinculación de API Key y API Secret en 3 minutos.
+  3. Paso a paso diario para despachar un pedido.
+  4. Preguntas frecuentes (quién paga el envío, tracking por email, retiro en taller).
+
+### 7.3 Configuración en el Menú de Envíos de la Tienda
+- **Archivo**: `app/tienda/admin/envios/envios-form.tsx`.
+- **Secciones**:
+  1. **Origen de Despacho (Taller)**: Por defecto toma los datos de la sección Ubicación. Admite origen alternativo con normalización y autocompletado en vivo de calles y códigos postales vía Georef AR (`api.gob.ar`).
+  2. **Zipnova Envíos**: Enlace directo a `zipnova.com.ar`, mini resumen paso a paso para extraer credenciales, validación en vivo contra la API y cifrado AES-256-GCM.
+  3. **Políticas**: Envío gratis desde `$X`, markup porcentual, tarifa de contingencia fallback y retiro en local.
+  4. **Acordeón FAQ**: Respuestas integradas a las 6 dudas más comunes de la operatoria diaria.
+
+### 7.4 Documentación de Usuario
+- **Archivo**: `documentacion/manual_de_usuario_maker.md` (Sección 17).
+- Proporciona el manual paso a paso completo para el cliente final y el maker.

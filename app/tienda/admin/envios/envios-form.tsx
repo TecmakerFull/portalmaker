@@ -23,6 +23,9 @@ import {
   CircleCheck,
   ExternalLink,
   Key,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import {
   isValidCodigoPostal,
@@ -139,6 +142,7 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
   const [envioFallback, setEnvioFallback] = useState<string>('')
   const [retiroLocalActivo, setRetiroLocalActivo] = useState<boolean>(true)
   const [comisionIncluyeEnvio, setComisionIncluyeEnvio] = useState<boolean>(false)
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   // Cargar estado inicial
   const loadData = async () => {
@@ -915,6 +919,78 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
           </button>
         </div>
       </form>
+
+      {/* SECCIÓN 4: Preguntas Frecuentes y Ayuda Logística */}
+      <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.02] p-6 space-y-4">
+        <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-white/5">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center font-bold text-amber-600 dark:text-amber-400">
+            <HelpCircle className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              Preguntas Frecuentes sobre Zipnova y Logística
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Respuestas rápidas a las consultas más habituales sobre cobros, etiquetas y despacho.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2 pt-1">
+          {[
+            {
+              q: '¿Cómo funciona Zipnova y por qué conviene usarlo?',
+              a: 'Zipnova es un agregador logístico inteligente (multicourier) que conecta Portalmaker directamente con Andreani, Correo Argentino, OCA y mensajerías urbanas. Al operar con grandes volúmenes nacionales, te permite acceder a tarifas corporativas mayoristas con descuento sin necesidad de abrir cuentas separadas en cada correo ni comprometer un volumen mínimo mensual de despachos.',
+            },
+            {
+              q: '¿Quién paga el costo del envío?',
+              a: 'El cliente comprador abona el costo del envío automáticamente durante el checkout al momento de pagar su pedido. El importe ingresa en tu cuenta de cobros junto con la compra para que puedas solventar el despacho.',
+            },
+            {
+              q: '¿Cómo es el paso a paso diario para despachar un pedido?',
+              a: '1) Cuando entra una compra con envío, vas a Ventas y hacés clic en "Imprimir Etiqueta PDF". 2) Embalás el producto y le pegás la etiqueta rotulada en el frente. 3) Despacho Drop-off: dejás el paquete en cualquier sucursal de Andreani o Correo Argentino sin hacer fila de cobro porque ya está pago y rotulado; o bien esperás el Pick-up si tu zona y volumen admiten retiro por tu taller.',
+            },
+            {
+              q: '¿Puedo ofrecer envíos y a la vez retiro gratis en mi taller?',
+              a: 'Sí. Podés mantener marcada la opción "Ofrecer opción de Retiro en Local". De este modo, los compradores cercanos pueden elegir retirar gratis por tu dirección y los del resto del país cotizan su envío por Andreani o Correo.',
+            },
+            {
+              q: '¿Qué es el margen sobre envío (%)?',
+              a: 'Es un porcentaje adicional opcional que se suma sobre la cotización del correo para compensar costos de cajas de cartón, cinta de embalar o insumos de empaque.',
+            },
+            {
+              q: '¿Cómo se definen los pesos y dimensiones de los paquetes?',
+              a: 'Desde el catálogo de productos podés definir el peso en gramos y las dimensiones (alto, ancho y largo) de cada producto. Si una orden incluye varios ítems, el sistema consolida el peso total para solicitar la cotización exacta.',
+            },
+          ].map((item, idx) => {
+            const isOpen = openFaq === idx
+            return (
+              <div
+                key={idx}
+                className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden bg-slate-50/50 dark:bg-white/[0.01]"
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenFaq(isOpen ? null : idx)}
+                  className="w-full min-h-[44px] px-4 py-3 text-left flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                >
+                  <span>{item.q}</span>
+                  {isOpen ? (
+                    <ChevronUp className="w-4 h-4 text-amber-500 shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                  )}
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-3.5 pt-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-200/60 dark:border-white/5">
+                    {item.a}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }

@@ -22,6 +22,7 @@ import {
   Copy,
   Check,
   ExternalLink,
+  Truck,
   ChevronDown,
   ChevronUp,
   Image as ImageIcon,
@@ -209,6 +210,35 @@ export default function GuiaView({
     {
       num: 7,
       category: 'tienda' as const,
+      title: 'Envíos a Todo el País con Zipnova (Multicourier)',
+      tag: 'Andreani, Correo Argentino y OCA',
+      icon: Truck,
+      color: 'from-emerald-500/20 to-emerald-500/5 text-emerald-600 dark:text-emerald-400 border-emerald-400/30',
+      href: `/tienda/admin/envios${tenantQuery}`,
+      buttonText: 'Configurar Envíos y Tarifas',
+      summary: 'Cotizaciones automáticas, etiquetas listas para imprimir en 1 clic y seguimiento unificado para el cliente.',
+      details: [
+        {
+          sub: '1. ¿Qué es Zipnova y cómo trabaja?',
+          desc: 'No es una empresa de fletes propia, sino un agregador logístico inteligente (puente tecnológico) que conecta Portalmaker con Andreani, Correo Argentino, OCA y mensajerías Flex. Al activarlo, accedes a tarifas corporativas mayoristas sin necesidad de abrir cuentas individuales en cada correo ni comprometer mínimos de envío mensuales.',
+        },
+        {
+          sub: '2. Vinculación en 3 minutos',
+          desc: 'Creá tu cuenta en zipnova.com.ar, andá a Configuración > Integraciones (o Desarrolladores / API), copiá tu API Key y API Secret, y pegalos en la sección Envíos de tu panel. Portalmaker verifica la conexión en el acto.',
+        },
+        {
+          sub: '3. El paso a paso diario para despachar un pedido',
+          desc: '1) Recepción: el cliente paga y la orden entra con la dirección cargada. 2) Imprimir etiqueta: desde el panel de Ventas tocás "Imprimir Etiqueta PDF". 3) Embalar: pegás la guía en el paquete. 4) Despacho: dejás el paquete en cualquier sucursal de Andreani o Correo Argentino (Drop-off) sin hacer fila porque ya está pago y rotulado, o solicitás retiro por tu taller (Pick-up) si tu zona lo habilita.',
+        },
+        {
+          sub: '4. Preguntas Frecuentes y Dudas Habituales',
+          desc: '¿Quién paga el envío? El comprador lo abona en el checkout al momento de pagar. ¿Cómo rastrea el cliente el paquete? Recibe un email con el número de guía y el link de seguimiento oficial. ¿Y si quieren retirar en mi taller? Podés mantener activa la opción "Retiro en local" sin costo adicional.',
+        },
+      ],
+    },
+    {
+      num: 8,
+      category: 'tienda' as const,
       title: '¡Encender la Tienda y Compartir!',
       tag: 'Abre tus puertas',
       icon: Power,
@@ -228,7 +258,7 @@ export default function GuiaView({
       ],
     },
     {
-      num: 8,
+      num: 9,
       category: 'avanzado' as const,
       title: 'Colaboradores y Trabajo en Equipo',
       tag: 'Gestión y accesos',
@@ -253,7 +283,7 @@ export default function GuiaView({
       ],
     },
     {
-      num: 9,
+      num: 10,
       category: 'avanzado' as const,
       title: 'Clientes & Historial CRM',
       tag: 'Tus compradores',
@@ -278,7 +308,7 @@ export default function GuiaView({
       ],
     },
     {
-      num: 10,
+      num: 11,
       category: 'avanzado' as const,
       title: 'Reseñas & Moderación de Opiniones',
       tag: 'Calificaciones y opiniones',
@@ -303,7 +333,7 @@ export default function GuiaView({
       ],
     },
     {
-      num: 11,
+      num: 12,
       category: 'avanzado' as const,
       title: 'Marketing & Suscriptores al Newsletter',
       tag: 'Audiencia y difusión',
@@ -328,7 +358,7 @@ export default function GuiaView({
       ],
     },
     {
-      num: 12,
+      num: 13,
       category: 'avanzado' as const,
       title: 'Vincular tu Dominio Propio (.com.ar / .ar)',
       tag: 'Identidad y presencia oficial',

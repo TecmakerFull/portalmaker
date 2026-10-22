@@ -20,7 +20,8 @@
 12. [Clientes & Historial CRM](#14-clientes--historial-crm)
 13. [Reseñas y Moderación de Opiniones](#15-reseñas-y-moderación-de-opiniones)
 14. [Marketing, Suscriptores y Campañas Publicitarias](#16-marketing-suscriptores-y-campañas-publicitarias)
-15. [Preguntas Frecuentes y Soporte](#17-preguntas-frecuentes-y-soporte)
+15. [Envíos y Logística Integrada con Zipnova (Multicourier)](#17-envíos-y-logística-integrada-con-zipnova-multicourier)
+16. [Preguntas Frecuentes y Soporte](#18-preguntas-frecuentes-y-soporte)
 
 ---
 
@@ -427,7 +428,65 @@ En el pie de página de tu tienda pública hay un bloque de suscripción para qu
 
 ---
 
-## 17. Preguntas Frecuentes y Soporte
+## 17. Envíos y Logística Integrada con Zipnova (Multicourier)
+
+<details open>
+<summary><b>Ver cómo funciona la integración de logística nacional, carriers y despacho</b></summary>
+
+Portalmaker cuenta con integración directa con **Zipnova**, la plataforma inteligente de logística multicourier de Argentina. Permite a los talleres makers despachar piezas impresas en 3D, grabados y productos personalizados a cualquier rincón del país con las transportadoras más reconocidas.
+
+### ¿Qué es Zipnova y cómo trabaja?
+Zipnova no es una empresa de camiones o motos propia que compite con los correos, sino un **agregador logístico inteligente (multicourier)** que actúa como conector central:
+* **Conector central**: Actúa como un puente tecnológico entre Portalmaker y las principales empresas de logística de Argentina.
+* **Cotización automática en tiempo real**: Cuando el comprador ingresa su código postal en el checkout, el sistema calcula al instante las opciones disponibles, tarifas y tiempos estimados de entrega.
+* **Generación de etiquetas en 1 clic**: Automatiza la creación de la guía de despacho y el código de seguimiento sin que el vendedor tenga que cargar datos manualmente en las páginas de cada correo.
+* **Seguimiento unificado**: Ofrece un link de tracking para que tanto el vendedor como el comprador sepan en todo momento por dónde va el paquete.
+
+### Empresas y transportadoras integradas
+Al activar Zipnova en tu tienda, accedes de forma inmediata a despachar con las transportadoras líderes sin abrir una cuenta comercial en cada una:
+* **Andreani**: Entregas a domicilio y retiro en sucursal con altísima confiabilidad.
+* **Correo Argentino**: Máxima cobertura territorial en todo el país y pueblos del interior.
+* **OCA**: Amplia red de sucursales y paquetería express.
+* **Urbano y servicios de última milla**: Para envíos regionales y distribución urbana.
+* **Redes de logística local / Same Day (Flex)**: Entregas en el día o en 24 horas dentro de grandes centros urbanos (CABA, Rosario, Córdoba, etc.).
+
+### Beneficios clave para los Makers
+* **Tarifas corporativas accesibles**: Al consolidar millones de envíos, accedes a tarifas mayoristas con descuento que no se consiguen en el mostrador particular del correo.
+* **Cero burocracia ni contratos**: No requieres presentar balances, firmar contratos comerciales ni comprometerte a un volumen mínimo mensual de despachos.
+* **Ahorro de tiempo diario**: Se terminan las filas para pagar en mano o llenar formularios repetitivos; el sistema emite la etiqueta lista para pegar.
+* **Cobertura a todo el país**: Cualquier taller local puede venderle a un cliente en su misma ciudad o en la otra punta de Argentina de manera inmediata.
+* **Profesionalismo y confianza**: El comprador reconoce marcas como Andreani o Correo Argentino en el checkout, lo que reduce drásticamente el abandono de carrito.
+
+### Cómo configurar los envíos en tu tienda (Paso a paso)
+1. **Configurar el origen de despacho (Taller)**:
+   - Ve a **Envíos** en el menú de administración.
+   - Por defecto, el sistema toma la dirección del taller cargada en la sección **Ubicación**. Si despachas desde otro punto, puedes desmarcar la casilla y cargar una dirección alternativa.
+   - El formulario cuenta con **normalización oficial con Georef AR**, sugiriendo calles y códigos postales validados de Argentina.
+2. **Obtener y vincular credenciales de Zipnova**:
+   - Ingresa en [zipnova.com.ar](https://zipnova.com.ar) y crea tu cuenta comercial gratuita (o inicia sesión).
+   - En el menú de Zipnova, dirígete a **Configuración > Integraciones** (o **Desarrolladores / API**).
+   - Copia tu **API Key** y **API Secret**.
+   - En tu panel de Portalmaker, pega las claves y presiona **"Guardar y verificar"**. El sistema validará la conexión en vivo. Tus credenciales se cifran con AES-256-GCM.
+3. **Ajustar políticas de la tienda**:
+   - **Envío gratis a partir de ($)**: Define el monto mínimo de compra a partir del cual absorbes el costo del envío para incentivar compras de ticket alto.
+   - **Margen sobre envío (%)**: Porcentaje extra sobre la cotización del correo para cubrir costos de embalaje (cajas, pluribol, cinta).
+   - **Tarifa de contingencia ($)**: Tarifa fija de respaldo en caso de interrupción temporal de los servidores del carrier.
+   - **Retiro en local**: Mantenlo activo para que los clientes de tu misma ciudad puedan elegir retirar gratis por tu taller.
+
+### El paso a paso diario para despachar un pedido (Operatoria en 4 pasos)
+Para el dueño del taller, despachar cada pedido se reduce a:
+1. **Recepción del pedido**: El cliente completa la compra en tu tienda y el pedido ingresa en **Ventas & Pedidos** con la dirección de entrega y el servicio seleccionado.
+2. **Generar e imprimir la etiqueta**: En la fila del pedido, pulsa **"Imprimir Etiqueta PDF"**. El archivo está listo para imprimir en hoja A4 común o impresora térmica.
+3. **Embalar**: Empaca el producto de forma segura y pega la etiqueta impresa en el frente de la caja o sobre.
+4. **Despacho**:
+   - **Opción A (Drop-off)**: Lleva el paquete a la sucursal o punto de recepción más cercano (Andreani, Correo Argentino, etc.) y déjalo en mostrador sin hacer fila de cobro porque ya está pago y rotulado.
+   - **Opción B (Pick-up)**: Si tu zona y volumen lo habilitan, solicita que el transporte pase a retirar los paquetes directamente por tu taller.
+
+</details>
+
+---
+
+## 18. Preguntas Frecuentes y Soporte
 
 <details>
 <summary><b>¿Inicié sesión con Google y ahora quiero entrar con correo y contraseña, se puede?</b></summary>
