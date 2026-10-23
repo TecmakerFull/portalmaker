@@ -299,8 +299,9 @@ export async function POST(req: Request) {
       }
     })
 
-    // 5. Retiro en el taller / local (si la tienda lo habilitó)
-    if (store.envio_retiro_local_activo) {
+    // 5. Retiro en el taller / local (solo si no se especificó entrega a domicilio explícita)
+    const soloEnvio = body.tipoEntrega === 'envio'
+    if (store.envio_retiro_local_activo && !soloEnvio) {
       processedOptions.push({
         optionId: 'retiro_local',
         provider: 'manual',
@@ -317,26 +318,45 @@ export async function POST(req: Request) {
       })
     }
 
-    // 6. Tarifa Fallback si no hubo opciones de carriers externos o si fallaron
-    const tieneOpcionDomicilio = processedOptions.some((o) => o.serviceType === 'domicilio')
+    // 6. Opciones de Envío a Domicilio garantizadas (si carriers no respondieron o no están activos)
+    const tieneOpcionDomicilio = processedOptions.some((o) => o.serviceType === 'domicilio' || o.serviceType === 'sucursal')
     const fallbackTarifa = Number(store.envio_tarifa_fallback) || 0
 
-    if (!tieneOpcionDomicilio && fallbackTarifa > 0) {
-      processedOptions.push({
-        optionId: 'fallback',
-        provider: 'manual',
-        serviceName: 'Envío estándar (tarifa fija de la tienda)',
-        serviceType: 'domicilio',
-        costoCarrier: fallbackTarifa,
-        precioFinal: esEnvioGratis ? 0 : fallbackTarifa,
-        plazoMinDias: 3,
-        plazoMaxDias: 6,
-        plazoTexto: '3 a 6 días hábiles',
-        carrierMetadata: {
-          isFallback: true,
-          envioGratis: esEnvioGratis,
-        },
-      })
+    if (!tieneOpcionDomicilio) {
+      if (fallbackTarifa > 0) {
+        processedOptions.push({
+          optionId: 'fallback',
+          provider: 'manual',
+          serviceName: 'Envío a domicilio (Tarifa fija de la tienda)',
+          serviceType: 'domicilio',
+          costoCarrier: fallbackTarifa,
+          precioFinal: esEnvioGratis ? 0 : fallbackTarifa,
+          plazoMinDias: 2,
+          plazoMaxDias: 5,
+          plazoTexto: '2 a 5 días hábiles',
+          carrierMetadata: {
+            isFallback: true,
+            envioGratis: esEnvioGratis,
+          },
+        })
+      } else {
+        // Si la tienda no fijó tarifa numérica aún, permitir envío a coordinar en lugar de forzar retiro en taller
+        processedOptions.push({
+          optionId: 'envio_acordar',
+          provider: 'manual',
+          serviceName: 'Envío a domicilio estándar',
+          serviceType: 'domicilio',
+          costoCarrier: 0,
+          precioFinal: 0,
+          plazoMinDias: 2,
+          plazoMaxDias: 6,
+          plazoTexto: 'Costo y despacho a coordinar tras la compra',
+          carrierMetadata: {
+            isFallback: true,
+            envioGratis: esEnvioGratis,
+          },
+        })
+      }
     }
 
     // 7. Generar cart_hash inmutable y persistir cotización en shipping_quotes

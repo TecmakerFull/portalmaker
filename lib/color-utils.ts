@@ -194,6 +194,20 @@ export function getAccessibleColorOnBg(colorHex: string, bgHex: string, targetRa
 }
 
 /**
+ * Calcula un color de superficie elevado (tarjetas, inputs, popovers)
+ * a partir del color de fondo oscuro de la tienda, preservando el mismo matiz/tinte
+ * (verde, azul, púrpura, etc.) en lugar de saltar a grises desentonados.
+ */
+export function getElevatedSurface(bgHex: string): string {
+  const { r, g, b } = hexToRgb(bgHex);
+  const hsl = rgbToHsl(r, g, b);
+  // Elevar la luminosidad ligeramente (ej: 6% a 8% más claro) manteniendo el mismo matiz del fondo de la tienda
+  const newL = Math.min(Math.max(hsl.l + 8, 14), 32);
+  const elevatedRgb = hslToRgb(hsl.h, Math.min(hsl.s, 65), newL);
+  return rgbToHex(elevatedRgb.r, elevatedRgb.g, elevatedRgb.b);
+}
+
+/**
  * Genera el objeto de variables CSS dinámicas para un tenant / tienda.
  * Utilizado tanto por el layout público como por el preview en tiempo real del admin.
  */
@@ -225,6 +239,10 @@ export function getTenantCSSVars(store: any): React.CSSProperties {
   const secundarioLegibleLight = getAccessibleColorOnBg(secundarioLight, fondoLight, 4.5);
   const secundarioLegibleDark = getAccessibleColorOnBg(secundarioDark, fondoDark, 4.5);
 
+  // 4. Superficies coherentes con el fondo de la tienda
+  const superficieLight = '#FFFFFF';
+  const superficieDark = getElevatedSurface(fondoDark);
+
   return {
     '--tenant-primario': primarioLight,
     '--tenant-primario-texto': primarioTextoLight,
@@ -233,6 +251,7 @@ export function getTenantCSSVars(store: any): React.CSSProperties {
     '--tenant-secundario-texto': secundarioTextoLight,
     '--tenant-secundario-legible': secundarioLegibleLight,
     '--tenant-fondo': fondoLight,
+    '--tenant-superficie': superficieLight,
     '--tenant-texto': store.color_texto || '#111827',
 
     '--tenant-primario-dark': primarioDark,
@@ -242,6 +261,7 @@ export function getTenantCSSVars(store: any): React.CSSProperties {
     '--tenant-secundario-dark-texto': secundarioTextoDark,
     '--tenant-secundario-dark-legible': secundarioLegibleDark,
     '--tenant-fondo-dark': fondoDark,
+    '--tenant-superficie-dark': superficieDark,
     '--tenant-texto-dark': store.color_texto_dark || '#F9FAFB',
 
     '--font-heading': `var(--font-${fontHeading}, var(--font-manrope))`,

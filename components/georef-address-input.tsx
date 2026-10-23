@@ -126,7 +126,7 @@ export default function GeorefAddressInput({
   }
 
   const defaultInputClass =
-    'w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#FACC15] transition-all'
+    'w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-sm focus:outline-hidden focus:ring-2 focus:ring-[var(--color-primario)] transition-all'
 
   return (
     <div ref={wrapperRef} className="relative w-full">
@@ -151,10 +151,10 @@ export default function GeorefAddressInput({
 
         {/* Indicador de carga o validación a la derecha del input */}
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
-          {loading && <Loader2 className="w-4 h-4 animate-spin text-amber-500 opacity-80" />}
+          {loading && <Loader2 className="w-4 h-4 animate-spin text-[var(--color-primario)] opacity-80" />}
           {hasSelected && !loading && (
             <span
-              className="text-emerald-600 dark:text-emerald-400"
+              className="text-[var(--color-primario-legible)]"
               title="Dirección normalizada por Georef AR (IGN)"
             >
               <Check className="w-4 h-4" />
@@ -165,10 +165,10 @@ export default function GeorefAddressInput({
 
       {/* Dropdown flotante de sugerencias en tiempo real */}
       {isOpen && sugerencias.length > 0 && (
-        <div className="absolute z-50 left-0 right-0 mt-1.5 p-1.5 rounded-2xl border border-[var(--color-borde)] bg-[var(--color-superficie)] shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-          <div className="px-3 py-1.5 text-[11px] font-semibold opacity-60 flex items-center justify-between border-b border-[var(--color-borde)] pb-1.5 mb-1">
+        <div className="absolute z-50 left-0 right-0 mt-1.5 p-1.5 rounded-2xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="px-3 py-1.5 text-[11px] font-semibold opacity-70 flex items-center justify-between border-b border-[var(--color-borde)] pb-1.5 mb-1">
             <span className="flex items-center gap-1.5">
-              <Sparkles className="w-3 h-3 text-amber-500" />
+              <Sparkles className="w-3 h-3 text-[var(--color-primario)]" />
               <span>Sugerencias oficiales (Georef AR):</span>
             </span>
             <button
@@ -187,14 +187,14 @@ export default function GeorefAddressInput({
                 key={`${sug.nomenclatura}-${idx}`}
                 type="button"
                 onClick={() => handleSelect(sug)}
-                className="w-full text-left p-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-start gap-2.5 cursor-pointer group"
+                className="w-full text-left p-2.5 rounded-xl hover:bg-[var(--color-primario)]/10 transition-colors flex items-start gap-2.5 cursor-pointer group"
               >
-                <MapPin className="w-4 h-4 text-amber-500 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                <MapPin className="w-4 h-4 text-[var(--color-primario)] shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
                 <div className="min-w-0 flex-1">
                   <div className="text-xs sm:text-sm font-semibold text-[var(--color-texto)] truncate">
                     {sug.calle} {sug.altura}
                   </div>
-                  <div className="text-[11px] opacity-70 flex items-center gap-1.5 flex-wrap mt-0.5">
+                  <div className="text-[11px] opacity-75 flex items-center gap-1.5 flex-wrap mt-0.5">
                     <span className="flex items-center gap-1">
                       <Building2 className="w-3 h-3 opacity-60" />
                       <span>{sug.localidad}</span>
@@ -204,7 +204,7 @@ export default function GeorefAddressInput({
                     {sug.codigoPostalAproximado && (
                       <>
                         <span>•</span>
-                        <span className="font-mono text-amber-600 dark:text-amber-400 font-semibold">
+                        <span className="font-mono text-[var(--color-primario-legible)] font-semibold">
                           CP: {sug.codigoPostalAproximado}
                         </span>
                       </>

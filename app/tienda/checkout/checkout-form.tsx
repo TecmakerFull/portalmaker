@@ -160,6 +160,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           storeId: store.id,
+          tipoEntrega: 'envio',
           codigoPostal: cp,
           provincia: provincia.trim() || undefined,
           localidad: ciudad.trim() || undefined,
@@ -181,16 +182,28 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
 
       setShippingQuoteId(data.quoteId || null)
       setEsEnvioGratis(Boolean(data.esEnvioGratis))
-      const opts = data.options || []
-      setShippingOptions(opts)
 
-      if (opts.length > 0) {
-        // Ordenar por precio ascendente para preseleccionar la más conveniente
-        const sorted = [...opts].sort((a: any, b: any) => a.precioFinal - b.precioFinal)
-        setSelectedOptionId(sorted[0].optionId)
-      } else {
-        setSelectedOptionId(null)
+      // En la pestaña Envío a Domicilio NUNCA debe figurar Retiro en el Taller
+      const rawOpts = data.options || []
+      const deliveryOpts = rawOpts.filter((o: any) => o.serviceType !== 'retiro_local')
+
+      if (deliveryOpts.length === 0) {
+        deliveryOpts.push({
+          optionId: 'envio_acordar',
+          provider: 'manual',
+          serviceName: 'Envío a domicilio estándar',
+          serviceType: 'domicilio',
+          costoCarrier: 0,
+          precioFinal: 0,
+          plazoTexto: 'Costo y despacho a coordinar tras la compra',
+        })
       }
+
+      setShippingOptions(deliveryOpts)
+
+      // Ordenar por precio ascendente para preseleccionar la más conveniente
+      const sorted = [...deliveryOpts].sort((a: any, b: any) => a.precioFinal - b.precioFinal)
+      setSelectedOptionId(sorted[0].optionId)
     } catch (err: any) {
       console.error('Error al cotizar envío:', err)
       setQuoteError('Error al conectar con el cotizador de envíos.')
@@ -754,7 +767,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
         )}
 
         {/* 1. Datos de Contacto */}
-        <div className="bg-black/[0.02] dark:bg-white/[0.03] rounded-3xl border border-black/10 dark:border-white/10 p-5 sm:p-7 space-y-4 shadow-xs">
+        <div className="bg-[var(--color-superficie)]/50 rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 space-y-4 shadow-xs">
           <h2 className="text-base font-bold font-[var(--font-heading)] flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs flex items-center justify-center">
               1
@@ -763,9 +776,9 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
           </h2>
 
           {isAutoFilled && (
-            <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs flex items-center justify-between">
+            <div className="p-3 rounded-2xl bg-[var(--color-primario)]/10 border border-[var(--color-primario)]/20 text-[var(--color-primario-legible)] text-xs flex items-center justify-between">
               <span className="flex items-center gap-1.5 font-medium">
-                <Check className="w-4 h-4 shrink-0 text-emerald-600" />
+                <Check className="w-4 h-4 shrink-0 text-[var(--color-primario-legible)]" />
                 <span>Sesión activa como <b>{email}</b> · Tus datos fueron precargados</span>
               </span>
             </div>
@@ -783,7 +796,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
                 placeholder="Ej: Juan Pérez"
-                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-[var(--color-primario)] transition-all"
               />
             </div>
 
@@ -798,7 +811,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                 value={telefono}
                 onChange={(e) => setTelefono(e.target.value)}
                 placeholder="Ej: 11 2345-6789"
-                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-[var(--color-primario)] transition-all"
               />
             </div>
 
@@ -813,7 +826,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="tu@email.com"
-                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-[var(--color-primario)] transition-all"
               />
               <span className="text-[10px] opacity-60 block">
                 Para recibir la confirmación y avisos de estado de tu compra.
@@ -823,7 +836,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
         </div>
 
         {/* 2. Forma de Entrega */}
-        <div className="bg-black/[0.02] dark:bg-white/[0.03] rounded-3xl border border-black/10 dark:border-white/10 p-5 sm:p-7 space-y-4 shadow-xs">
+        <div className="bg-[var(--color-superficie)]/50 rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 space-y-4 shadow-xs">
           <h2 className="text-base font-bold font-[var(--font-heading)] flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs flex items-center justify-center">
               2
@@ -838,8 +851,8 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
               onClick={() => setTipoEntrega('acordar')}
               className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                 tipoEntrega === 'acordar'
-                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 ring-2 ring-[var(--color-primario)]/30'
-                  : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] opacity-80 hover:opacity-100'
+                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/15 ring-2 ring-[var(--color-primario)]/30'
+                  : 'border-[var(--color-borde)] bg-[var(--color-superficie)] opacity-85 hover:opacity-100'
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -855,8 +868,8 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
               onClick={() => setTipoEntrega('retiro')}
               className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                 tipoEntrega === 'retiro'
-                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 ring-2 ring-[var(--color-primario)]/30'
-                  : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] opacity-80 hover:opacity-100'
+                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/15 ring-2 ring-[var(--color-primario)]/30'
+                  : 'border-[var(--color-borde)] bg-[var(--color-superficie)] opacity-85 hover:opacity-100'
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -874,8 +887,8 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
               onClick={() => setTipoEntrega('envio')}
               className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                 tipoEntrega === 'envio'
-                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 ring-2 ring-[var(--color-primario)]/30'
-                  : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] opacity-80 hover:opacity-100'
+                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/15 ring-2 ring-[var(--color-primario)]/30'
+                  : 'border-[var(--color-borde)] bg-[var(--color-superficie)] opacity-85 hover:opacity-100'
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -888,7 +901,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
 
           {/* Caja con Dirección de la Tienda si seleccionó Retiro */}
           {tipoEntrega === 'retiro' && (
-            <div className="p-4 rounded-2xl bg-[var(--color-fondo)] border border-black/10 dark:border-white/10 space-y-2 animate-in fade-in duration-200">
+            <div className="p-4 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)] space-y-2 animate-in fade-in duration-200">
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-[var(--color-primario)] shrink-0 mt-0.5" />
                 <div className="text-xs space-y-1">
@@ -917,14 +930,14 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
           {tipoEntrega === 'envio' && (
             <div className="space-y-4 pt-2 animate-in fade-in duration-200">
               {/* Sección A: Código Postal y Cotizador en Tiempo Real */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/10 dark:border-white/10 space-y-3">
+              <div className="p-4 sm:p-5 rounded-2xl bg-[var(--color-superficie)]/70 border border-[var(--color-borde)] space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold uppercase tracking-wider opacity-80 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-[var(--color-primario)]" />
                     <span>Código Postal de Entrega *</span>
                   </label>
                   {esEnvioGratis && (
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--color-primario)]/15 text-[var(--color-primario-legible)] border border-[var(--color-primario)]/30">
                       ¡Tu compra supera el mínimo para Envío Gratis!
                     </span>
                   )}
@@ -943,7 +956,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                       }
                     }}
                     placeholder="Ej: 1414 o C1414AAA"
-                    className="flex-1 min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                    className="flex-1 min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs sm:text-sm font-mono uppercase focus:outline-hidden focus:ring-2 focus:ring-[var(--color-primario)] transition-all"
                   />
                   <button
                     type="button"
@@ -974,64 +987,66 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
               </div>
 
               {/* Sección B: Opciones de Envío Disponibles */}
-              {shippingOptions.length > 0 && (
+              {shippingOptions.filter((opt) => opt.serviceType !== 'retiro_local').length > 0 && (
                 <div className="space-y-2.5 pt-1">
                   <div className="text-xs font-bold uppercase tracking-wider opacity-75">
                     Selecciona una opción de envío:
                   </div>
 
                   <div className="space-y-2">
-                    {shippingOptions.map((opt) => {
-                      const isSelected = selectedOptionId === opt.optionId
-                      const isGratis = opt.precioFinal === 0
+                    {shippingOptions
+                      .filter((opt) => opt.serviceType !== 'retiro_local')
+                      .map((opt) => {
+                        const isSelected = selectedOptionId === opt.optionId
+                        const isGratis = opt.precioFinal === 0
 
-                      return (
-                        <label
-                          key={opt.optionId}
-                          onClick={() => setSelectedOptionId(opt.optionId)}
-                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                            isSelected
-                              ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 ring-2 ring-[var(--color-primario)]/30'
-                              : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] hover:border-black/20 dark:hover:border-white/20'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <input
-                              type="radio"
-                              name="shipping_option"
-                              checked={isSelected}
-                              onChange={() => setSelectedOptionId(opt.optionId)}
-                              className="accent-[var(--color-primario)] w-4 h-4 shrink-0"
-                            />
-                            <div className="min-w-0">
-                              <div className="font-bold text-xs sm:text-sm flex items-center gap-1.5">
-                                {opt.serviceType === 'sucursal' ? (
-                                  <Building2 className="w-3.5 h-3.5 text-[var(--color-primario)] shrink-0" />
-                                ) : (
-                                  <Truck className="w-3.5 h-3.5 text-[var(--color-primario)] shrink-0" />
-                                )}
-                                <span className="truncate">{opt.serviceName}</span>
-                              </div>
-                              <div className="text-[11px] opacity-65 mt-0.5">
-                                {opt.plazoTexto || `${opt.plazoMinDias || 2} a ${opt.plazoMaxDias || 5} días hábiles`}
+                        return (
+                          <label
+                            key={opt.optionId}
+                            onClick={() => setSelectedOptionId(opt.optionId)}
+                            className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                              isSelected
+                                ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/15 ring-2 ring-[var(--color-primario)]/30'
+                                : 'border-[var(--color-borde)] bg-[var(--color-superficie)] hover:border-[var(--color-primario)]/50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <input
+                                type="radio"
+                                name="shipping_option"
+                                checked={isSelected}
+                                onChange={() => setSelectedOptionId(opt.optionId)}
+                                className="accent-[var(--color-primario)] w-4 h-4 shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <div className="font-bold text-xs sm:text-sm flex items-center gap-1.5">
+                                  {opt.serviceType === 'sucursal' ? (
+                                    <Building2 className="w-3.5 h-3.5 text-[var(--color-primario)] shrink-0" />
+                                  ) : (
+                                    <Truck className="w-3.5 h-3.5 text-[var(--color-primario)] shrink-0" />
+                                  )}
+                                  <span className="truncate">{opt.serviceName}</span>
+                                </div>
+                                <div className="text-[11px] opacity-65 mt-0.5">
+                                  {opt.plazoTexto || `${opt.plazoMinDias || 2} a ${opt.plazoMaxDias || 5} días hábiles`}
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="text-right shrink-0">
-                            {isGratis ? (
-                              <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                                Gratis
-                              </span>
-                            ) : (
-                              <span className="font-bold text-xs sm:text-sm">
-                                ${opt.precioFinal.toLocaleString('es-AR')}
-                              </span>
-                            )}
-                          </div>
-                        </label>
-                      )
-                    })}
+                            <div className="text-right shrink-0">
+                              {isGratis ? (
+                                <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[var(--color-primario)]/15 text-[var(--color-primario-legible)] border border-[var(--color-primario)]/30">
+                                  {opt.optionId === 'envio_acordar' ? 'A coordinar' : 'Gratis'}
+                                </span>
+                              ) : (
+                                <span className="font-bold text-xs sm:text-sm">
+                                  ${opt.precioFinal.toLocaleString('es-AR')}
+                                </span>
+                              )}
+                            </div>
+                          </label>
+                        )
+                      })}
                   </div>
                 </div>
               )}
@@ -1056,7 +1071,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                         const b = branchesList.find((x) => x.branchId === e.target.value)
                         setSelectedBranch(b || null)
                       }}
-                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-[var(--color-primario)]"
                     >
                       {branchesList.map((b) => (
                         <option key={b.branchId} value={b.branchId}>
@@ -1096,7 +1111,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                         provincia={provincia}
                         placeholder="Ej: Av. San Martín"
                         required
-                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-[var(--color-primario)]"
                         onSelectAddress={(data) => {
                           setCalle(data.calle)
                           setAltura(data.altura)
@@ -1120,7 +1135,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                         value={altura}
                         onChange={(e) => setAltura(e.target.value)}
                         placeholder="Ej: 1250"
-                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-[var(--color-primario)]"
                       />
                     </div>
 
@@ -1134,7 +1149,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                         value={pisoDpto}
                         onChange={(e) => setPisoDpto(e.target.value)}
                         placeholder="Ej: Piso 3, Dpto B"
-                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-[var(--color-primario)]"
                       />
                     </div>
 
@@ -1149,7 +1164,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                         value={documentoComprador}
                         onChange={(e) => setDocumentoComprador(e.target.value)}
                         placeholder="Ej: 38450123"
-                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-[var(--color-primario)]"
                       />
                       <span className="text-[10px] opacity-60 block">Exigido por el carrier para entrega y tracking.</span>
                     </div>
@@ -1165,7 +1180,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                         value={ciudad}
                         onChange={(e) => setCiudad(e.target.value)}
                         placeholder="Ej: Rosario"
-                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-[var(--color-primario)]"
                       />
                     </div>
 
@@ -1180,7 +1195,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                         value={provincia}
                         onChange={(e) => setProvincia(e.target.value)}
                         placeholder="Ej: Santa Fe"
-                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-[var(--color-primario)]"
                       />
                     </div>
 
@@ -1194,7 +1209,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                         value={aclaracionesEntrega}
                         onChange={(e) => setAclaracionesEntrega(e.target.value)}
                         placeholder="Ej: Entre calles Mitre y San Martín / Timbre azul / Dejar con encargado"
-                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
+                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-[var(--color-primario)]"
                       />
                     </div>
                   </div>
@@ -1205,7 +1220,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
         </div>
 
         {/* 3. Forma de Pago */}
-        <div className="bg-black/[0.02] dark:bg-white/[0.03] rounded-3xl border border-black/10 dark:border-white/10 p-5 sm:p-7 space-y-4 shadow-xs">
+        <div className="bg-[var(--color-superficie)]/50 rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 space-y-4 shadow-xs">
           <h2 className="text-base font-bold font-[var(--font-heading)] flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs flex items-center justify-center">
               3
@@ -1221,8 +1236,8 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                 onClick={() => setMetodoPago('transferencia')}
                 className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                   metodoPago === 'transferencia'
-                    ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 ring-2 ring-[var(--color-primario)]/30'
-                    : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] opacity-80 hover:opacity-100'
+                    ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/15 ring-2 ring-[var(--color-primario)]/30'
+                    : 'border-[var(--color-borde)] bg-[var(--color-superficie)] opacity-85 hover:opacity-100'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
@@ -1239,8 +1254,8 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
               onClick={() => setMetodoPago('efectivo')}
               className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                 metodoPago === 'efectivo'
-                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 ring-2 ring-[var(--color-primario)]/30'
-                  : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] opacity-80 hover:opacity-100'
+                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/15 ring-2 ring-[var(--color-primario)]/30'
+                  : 'border-[var(--color-borde)] bg-[var(--color-superficie)] opacity-85 hover:opacity-100'
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -1257,8 +1272,8 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                 onClick={() => setMetodoPago('mercadopago')}
                 className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                   metodoPago === 'mercadopago'
-                    ? 'border-[#009EE3] bg-[#009EE3]/10 ring-2 ring-[#009EE3]/30'
-                    : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] opacity-80 hover:opacity-100'
+                    ? 'border-[#009EE3] bg-[#009EE3]/15 ring-2 ring-[#009EE3]/30'
+                    : 'border-[var(--color-borde)] bg-[var(--color-superficie)] opacity-85 hover:opacity-100'
                 }`}
               >
                 <div className="flex items-center justify-between gap-1 mb-1">
@@ -1282,8 +1297,8 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
               onClick={() => setMetodoPago('acordar')}
               className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                 metodoPago === 'acordar'
-                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 ring-2 ring-[var(--color-primario)]/30'
-                  : 'border-black/10 dark:border-white/10 bg-[var(--color-fondo)] opacity-80 hover:opacity-100'
+                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/15 ring-2 ring-[var(--color-primario)]/30'
+                  : 'border-[var(--color-borde)] bg-[var(--color-superficie)] opacity-85 hover:opacity-100'
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -1335,7 +1350,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
         </div>
 
         {/* 4. Notas Adicionales */}
-        <div className="bg-black/[0.02] dark:bg-white/[0.03] rounded-3xl border border-black/10 dark:border-white/10 p-5 sm:p-7 space-y-2 shadow-xs">
+        <div className="bg-[var(--color-superficie)]/50 rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 space-y-2 shadow-xs">
           <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
             Notas adicionales para el taller / vendedor (Opcional)
           </label>
@@ -1344,15 +1359,15 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             placeholder="Detalles sobre personalización, colores, horarios preferidos de entrega o consulta adicional..."
-            className="w-full p-3.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)] leading-relaxed"
+            className="w-full p-3.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-[var(--color-primario)] leading-relaxed"
           />
         </div>
       </div>
 
       {/* Columna Derecha: Resumen del Pedido y Botón Final (5 Cols) */}
       <div className="lg:col-span-5 sticky top-24 space-y-4">
-        <div className="bg-black/[0.02] dark:bg-white/[0.03] rounded-3xl border border-black/10 dark:border-white/10 p-5 sm:p-7 space-y-5 shadow-xs">
-          <div className="flex items-center justify-between border-b border-black/10 dark:border-white/10 pb-4">
+        <div className="bg-[var(--color-superficie)]/50 rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 space-y-5 shadow-xs">
+          <div className="flex items-center justify-between border-b border-[var(--color-borde)] pb-4">
             <h2 className="text-base font-bold font-[var(--font-heading)]">
               Resumen del Pedido
             </h2>
@@ -1362,10 +1377,10 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
           </div>
 
           {/* Lista de Items */}
-          <div className="space-y-3 max-h-72 overflow-y-auto pr-1 divide-y divide-black/5 dark:divide-white/5">
+          <div className="space-y-3 max-h-72 overflow-y-auto pr-1 divide-y divide-[var(--color-borde)]">
             {items.map((item) => (
               <div key={item.id} className="pt-3 first:pt-0 flex gap-3 items-center">
-                <div className="w-12 h-12 rounded-xl bg-black/5 dark:bg-white/5 overflow-hidden border border-black/10 dark:border-white/10 shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-[var(--color-superficie)] overflow-hidden border border-[var(--color-borde)] shrink-0">
                   {item.imagenUrl ? (
                     <img
                       src={item.imagenUrl}
@@ -1409,7 +1424,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
           )}
 
           {/* Total */}
-          <div className="pt-3 border-t border-black/10 dark:border-white/10 space-y-1">
+          <div className="pt-3 border-t border-[var(--color-borde)] space-y-1">
             <div className="flex justify-between items-center text-xs opacity-75">
               <span>Subtotal productos:</span>
               <span className="font-medium">${totalAmount.toLocaleString('es-AR')}</span>
@@ -1421,7 +1436,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
                 {costoEnvio > 0 ? (
                   <span className="font-semibold text-xs">+${costoEnvio.toLocaleString('es-AR')}</span>
                 ) : esEnvioGratis ? (
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">¡Gratis!</span>
+                  <span className="font-bold text-[var(--color-primario-legible)]">¡Gratis!</span>
                 ) : (
                   <span className="opacity-50 text-[11px]">A calcular con CP</span>
                 )}
@@ -1435,7 +1450,7 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
               </div>
             )}
 
-            <div className="flex justify-between items-baseline pt-2 border-t border-black/5 dark:border-white/5">
+            <div className="flex justify-between items-baseline pt-2 border-t border-[var(--color-borde)]">
               <span className="text-sm font-semibold opacity-80">Total a pagar:</span>
               <span className="text-2xl sm:text-3xl font-bold text-[var(--color-primario-legible)] font-[var(--font-heading)]">
                 ${finalTotal.toLocaleString('es-AR')}
