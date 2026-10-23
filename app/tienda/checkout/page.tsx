@@ -6,6 +6,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getTenantStore } from '@/lib/tenant'
+import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import ThemeToggle from '@/app/tienda/theme-toggle'
 import CheckoutForm from './checkout-form'
 import StoreFooter from '../sections/store-footer'
@@ -20,6 +21,30 @@ export default async function TiendaCheckoutPage() {
 
   const { store, context } = tenant
   const tenantQuery = context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''
+
+  // Verificar si la tienda tiene tarifas de envío a domicilio configuradas y activas
+  let tieneTarifasEnvio = false
+  if (store.envios_activo) {
+    const fallbackVal = Number(store.envio_tarifa_fallback) || 0
+    if (fallbackVal > 0) {
+      tieneTarifasEnvio = true
+    } else {
+      const supabaseAdmin = createSupabaseAdminClient()
+      const [{ count: zonesCount }, { count: providersCount }] = await Promise.all([
+        supabaseAdmin
+          .from('shipping_zones')
+          .select('*', { count: 'exact', head: true })
+          .eq('store_id', store.id)
+          .eq('activo', true),
+        supabaseAdmin
+          .from('store_shipping_providers')
+          .select('*', { count: 'exact', head: true })
+          .eq('store_id', store.id)
+          .eq('activo', true),
+      ])
+      tieneTarifasEnvio = (zonesCount || 0) > 0 || (providersCount || 0) > 0
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] transition-colors duration-200 flex flex-col justify-between">
@@ -65,7 +90,7 @@ export default async function TiendaCheckoutPage() {
 
         {/* Formulario Principal de Checkout */}
         <main className="wrap py-8 sm:py-12">
-          <CheckoutForm store={store} tenantQuery={tenantQuery} />
+          <CheckoutForm store={store} tieneTarifasEnvio={tieneTarifasEnvio} tenantQuery={tenantQuery} />
         </main>
       </div>
 

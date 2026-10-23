@@ -36,10 +36,11 @@ import GeorefAddressInput from '@/components/georef-address-input'
 
 interface CheckoutFormProps {
   store: Store
+  tieneTarifasEnvio?: boolean
   tenantQuery: string
 }
 
-export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) {
+export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQuery }: CheckoutFormProps) {
   const { items, totalAmount, totalItems, hasReservas, clearCart } = useCart()
   const supabase = createSupabaseBrowserClient()
 
@@ -50,8 +51,10 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
   const [isAutoFilled, setIsAutoFilled] = useState(false)
 
   // Opciones de entrega: 'envio' | 'retiro' | 'acordar'
+  // Si la tienda no tiene tarifas de envío configuradas, no preseleccionar envío a domicilio
   const [tipoEntrega, setTipoEntrega] = useState<'acordar' | 'retiro' | 'envio'>(() => {
-    if (store.envios_activo) return 'envio'
+    if (tieneTarifasEnvio) return 'envio'
+    if (store.envio_retiro_local_activo || store.direccion) return 'retiro'
     return 'acordar'
   })
 
@@ -881,23 +884,53 @@ export default function CheckoutForm({ store, tenantQuery }: CheckoutFormProps) 
               </span>
             </button>
 
-            {/* Opción Envío a Domicilio */}
+            {/* Opción Envío a Domicilio (deshabilitada si la tienda no tiene tarifas configuradas) */}
             <button
               type="button"
-              onClick={() => setTipoEntrega('envio')}
-              className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                tipoEntrega === 'envio'
-                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/15 ring-2 ring-[var(--color-primario)]/30'
-                  : 'border-[var(--color-borde)] bg-[var(--color-superficie)] opacity-85 hover:opacity-100'
+              disabled={!tieneTarifasEnvio}
+              onClick={() => {
+                if (tieneTarifasEnvio) setTipoEntrega('envio')
+              }}
+              className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+                !tieneTarifasEnvio
+                  ? 'border-[var(--color-borde)] bg-[var(--color-superficie)] opacity-40 cursor-not-allowed'
+                  : tipoEntrega === 'envio'
+                  ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/15 ring-2 ring-[var(--color-primario)]/30 cursor-pointer'
+                  : 'border-[var(--color-borde)] bg-[var(--color-superficie)] opacity-85 hover:opacity-100 cursor-pointer'
               }`}
+              title={!tieneTarifasEnvio ? 'Esta tienda no tiene tarifas de envío a domicilio configuradas' : undefined}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <Truck className="w-4 h-4 text-[var(--color-primario)]" />
-                <span className="font-bold text-xs">Envío a domicilio</span>
+              <div className="flex items-center justify-between gap-1 mb-1">
+                <div className="flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-[var(--color-primario)]" />
+                  <span className="font-bold text-xs">Envío a domicilio</span>
+                </div>
+                {!tieneTarifasEnvio && (
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-black/10 dark:bg-white/10 opacity-70">
+                    No disp.
+                  </span>
+                )}
               </div>
-              <span className="text-[11px] opacity-60">Indicar dirección</span>
+              <span className="text-[11px] opacity-60">
+                {!tieneTarifasEnvio ? 'Sin tarifas configuradas' : 'Indicar dirección'}
+              </span>
             </button>
           </div>
+
+          {/* Caja explicativa si seleccionó A convenir */}
+          {tipoEntrega === 'acordar' && (
+            <div className="p-4 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)] space-y-2 animate-in fade-in duration-200">
+              <div className="flex items-start gap-2.5">
+                <MessageSquare className="w-4 h-4 text-[var(--color-primario)] shrink-0 mt-0.5" />
+                <div className="text-xs space-y-1">
+                  <div className="font-bold">Entrega y logística a convenir:</div>
+                  <p className="opacity-70 leading-relaxed text-xs">
+                    La entrega (retiro, cadetería o despacho particular) se coordinará directamente con <strong>{store.nombre}</strong> a través de WhatsApp una vez confirmado el pedido.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Caja con Dirección de la Tienda si seleccionó Retiro */}
           {tipoEntrega === 'retiro' && (

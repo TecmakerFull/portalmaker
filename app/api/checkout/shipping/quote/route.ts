@@ -318,45 +318,33 @@ export async function POST(req: Request) {
       })
     }
 
-    // 6. Opciones de Envío a Domicilio garantizadas (si carriers no respondieron o no están activos)
+    // 6. Tarifa Fallback de la tienda si no hubo opciones de carriers externos o si fallaron
     const tieneOpcionDomicilio = processedOptions.some((o) => o.serviceType === 'domicilio' || o.serviceType === 'sucursal')
     const fallbackTarifa = Number(store.envio_tarifa_fallback) || 0
 
-    if (!tieneOpcionDomicilio) {
-      if (fallbackTarifa > 0) {
-        processedOptions.push({
-          optionId: 'fallback',
-          provider: 'manual',
-          serviceName: 'Envío a domicilio (Tarifa fija de la tienda)',
-          serviceType: 'domicilio',
-          costoCarrier: fallbackTarifa,
-          precioFinal: esEnvioGratis ? 0 : fallbackTarifa,
-          plazoMinDias: 2,
-          plazoMaxDias: 5,
-          plazoTexto: '2 a 5 días hábiles',
-          carrierMetadata: {
-            isFallback: true,
-            envioGratis: esEnvioGratis,
-          },
-        })
-      } else {
-        // Si la tienda no fijó tarifa numérica aún, permitir envío a coordinar en lugar de forzar retiro en taller
-        processedOptions.push({
-          optionId: 'envio_acordar',
-          provider: 'manual',
-          serviceName: 'Envío a domicilio estándar',
-          serviceType: 'domicilio',
-          costoCarrier: 0,
-          precioFinal: 0,
-          plazoMinDias: 2,
-          plazoMaxDias: 6,
-          plazoTexto: 'Costo y despacho a coordinar tras la compra',
-          carrierMetadata: {
-            isFallback: true,
-            envioGratis: esEnvioGratis,
-          },
-        })
-      }
+    if (!tieneOpcionDomicilio && fallbackTarifa > 0) {
+      processedOptions.push({
+        optionId: 'fallback',
+        provider: 'manual',
+        serviceName: 'Envío a domicilio (Tarifa fija de la tienda)',
+        serviceType: 'domicilio',
+        costoCarrier: fallbackTarifa,
+        precioFinal: esEnvioGratis ? 0 : fallbackTarifa,
+        plazoMinDias: 2,
+        plazoMaxDias: 5,
+        plazoTexto: '2 a 5 días hábiles',
+        carrierMetadata: {
+          isFallback: true,
+          envioGratis: esEnvioGratis,
+        },
+      })
+    }
+
+    if (processedOptions.length === 0) {
+      return NextResponse.json(
+        { error: 'Esta tienda no tiene tarifas de envío a domicilio configuradas para este código postal.' },
+        { status: 400 }
+      )
     }
 
     // 7. Generar cart_hash inmutable y persistir cotización en shipping_quotes
