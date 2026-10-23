@@ -111,6 +111,7 @@ export default async function TiendaLayout({
         storeId={store.id}
         storeName={store.nombre}
         whatsappNumero={store.whatsapp_numero}
+        checkoutActivo={store.checkout_activo || store.modo_operacion === 'tienda'}
         tenantQuery={tenantQuery}
         showFloatingWhatsapp={showFloatingWhatsapp}
       >

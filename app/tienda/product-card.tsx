@@ -9,7 +9,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { Product, Store } from '@/types/database'
 import { useCart } from '@/lib/cart-context'
-import { Heart, Plus, Check, Star, ArrowUpRight, MessageSquare, ImageIcon, Layers, ChevronRight } from 'lucide-react'
+import { Heart, Plus, Check, Star, ArrowUpRight, MessageSquare, ImageIcon, Layers, ChevronRight, ShoppingBag } from 'lucide-react'
 
 interface ProductCardProps {
   product: Product & {
@@ -21,13 +21,14 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, store, tenantQuery }: ProductCardProps) {
-  const { addItem, favorites, toggleFavorite, isFavorite } = useCart()
+  const { addItem, openCart, favorites, toggleFavorite, isFavorite } = useCart()
   const [added, setAdded] = useState(false)
 
+  const isCheckoutActive = Boolean(store.checkout_activo || store.modo_operacion === 'tienda')
   const isFav = isFavorite(product.id)
   const firstImage = product.imagenes && product.imagenes.length > 0 ? product.imagenes[0] : null
   const hasPrice = typeof product.precio_base === 'number' && product.precio_base > 0
-  const isOutOfStock = product.gestiona_stock && (product.stock ?? 0) <= 0
+  const isOutOfStock = product.gestiona_stock && (product.stock === null || product.stock <= 0)
   const isOffer = product.oferta_activa && product.precio_oferta !== null && product.precio_oferta < product.precio_base
   const effectivePrice = isOffer && product.precio_oferta ? product.precio_oferta : product.precio_base
 
@@ -55,18 +56,32 @@ export default function ProductCard({ product, store, tenantQuery }: ProductCard
   } else if (product.destacado) {
     badgeText = 'Destacado'
   } else if (isOutOfStock) {
+    badgeText = 'Sin stock'
+  } else if (!product.gestiona_stock) {
     badgeText = 'A pedido'
   }
 
   // Teléfono limpio de WhatsApp
   const cleanPhone = store.whatsapp_numero ? store.whatsapp_numero.replace(/[^0-9]/g, '') : null
 
-  // Link WhatsApp de consulta
+  // Link WhatsApp general de consulta (Estado 1 de AGENTS.md: gestiona_stock = false)
+  const generalWhatsappUrl = cleanPhone
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hola ${store.nombre}! Me interesa consultar por el catálogo de tu tienda.`)}`
+    : null
+
+  // Link WhatsApp de compra o consulta con referencia al producto
   const whatsappUrl = cleanPhone
     ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
         hasPrice
-          ? `Hola ${store.nombre}! Me interesa consultar por el producto: "${product.nombre}" (${formatMoney(effectivePrice)})`
+          ? `Hola ${store.nombre}! Me interesa comprar el producto: "${product.nombre}" (${formatMoney(effectivePrice)})`
           : `Hola ${store.nombre}! Me interesa consultar precio y disponibilidad de: "${product.nombre}"`
+      )}`
+    : null
+
+  // Link WhatsApp de disponibilidad (Estado 3 de AGENTS.md: gestiona_stock = true, stock = 0)
+  const whatsappAvailabilityUrl = cleanPhone
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+        `Hola ${store.nombre}! Me interesa consultar disponibilidad de: "${product.nombre}"`
       )}`
     : null
 
@@ -78,7 +93,7 @@ export default function ProductCard({ product, store, tenantQuery }: ProductCard
   }
   const productUrl = withTenant(`/tienda/productos/${product.slug}`)
 
-  // Añadir al carrito
+  // Añadir al carrito y abrir drawer con feedback interactivo
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -102,6 +117,7 @@ export default function ProductCard({ product, store, tenantQuery }: ProductCard
 
     if (res.success) {
       setAdded(true)
+      openCart() // Despliega el carrito inmediatamente para dar acción visible al usuario
       setTimeout(() => setAdded(false), 1800)
     }
   }
@@ -226,7 +242,12 @@ export default function ProductCard({ product, store, tenantQuery }: ProductCard
           <div />
         )}
 
-        {/* Botón de Acción: Si tiene variantes, invita a elegir opción; sino compra directo */}
+        {/* Botón de Acción según especificación AGENTS.md:
+            1. Con variantes -> "Ver opciones" (lleva a la ficha de producto)
+            2. gestiona_stock = false -> "Consultar" (WhatsApp general)
+            3. gestiona_stock = true, stock = 0 -> "Consultar disponibilidad" (WhatsApp con ref. al producto)
+            4. gestiona_stock = true, stock > 0 -> "Comprar" (checkout cuando esté activo, o WhatsApp en vitrina)
+        */}
         {hasVariants ? (
           <Link
             href={productUrl}
@@ -235,11 +256,52 @@ export default function ProductCard({ product, store, tenantQuery }: ProductCard
             <span>Ver opciones</span>
             <ChevronRight className="w-3.5 h-3.5 opacity-70" />
           </Link>
-        ) : hasPrice && !isOutOfStock ? (
+        ) : !product.gestiona_stock ? (
+          /* Estado 1 de AGENTS.md: gestiona_stock = false -> "Consultar" (WhatsApp general) */
+          generalWhatsappUrl ? (
+            <a
+              href={generalWhatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="min-h-[32px] h-8 px-2.5 sm:px-3 rounded-lg text-[11px] font-semibold border border-black/10 dark:border-white/10 hover:bg-emerald-600 hover:text-white text-[var(--color-texto)] transition-all inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Consultar</span>
+            </a>
+          ) : (
+            <Link
+              href={productUrl}
+              className="min-h-[32px] h-8 px-2.5 sm:px-3 rounded-lg text-[11px] font-semibold border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] transition-all inline-flex items-center gap-1"
+            >
+              Ver más
+            </Link>
+          )
+        ) : isOutOfStock ? (
+          /* Estado 3 de AGENTS.md: gestiona_stock = true, stock = 0 -> "Consultar disponibilidad" (WhatsApp con ref. al producto) */
+          whatsappAvailabilityUrl ? (
+            <a
+              href={whatsappAvailabilityUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="min-h-[32px] h-8 px-2.5 sm:px-3 rounded-lg text-[11px] font-semibold border border-black/10 dark:border-white/10 hover:bg-emerald-600 hover:text-white text-[var(--color-texto)] transition-all inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Consultar disponibilidad</span>
+            </a>
+          ) : (
+            <Link
+              href={productUrl}
+              className="min-h-[32px] h-8 px-2.5 sm:px-3 rounded-lg text-[11px] font-semibold border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] transition-all inline-flex items-center gap-1"
+            >
+              Ver más
+            </Link>
+          )
+        ) : isCheckoutActive ? (
+          /* Estado 2 de AGENTS.md: gestiona_stock = true, stock > 0 -> "Comprar" (checkout, cuando esté activo) */
           <button
             type="button"
             onClick={handleAddToCart}
-            className={`min-h-[32px] h-8 px-2.5 sm:px-3 rounded-lg text-[11px] font-semibold transition-all inline-flex items-center gap-1 active:scale-95 cursor-pointer shadow-xs ${
+            className={`min-h-[32px] h-8 px-2.5 sm:px-3 rounded-lg text-[11px] font-semibold transition-all inline-flex items-center gap-1.5 active:scale-95 cursor-pointer shadow-xs ${
               added
                 ? 'bg-emerald-600 text-white'
                 : 'hover:bg-[var(--color-primario)] hover:text-[var(--color-primario-texto)] border border-black/10 dark:border-white/10 text-[var(--color-texto)] bg-black/[0.02] dark:bg-white/[0.03]'
@@ -252,12 +314,13 @@ export default function ProductCard({ product, store, tenantQuery }: ProductCard
               </>
             ) : (
               <>
-                <Plus className="w-3.5 h-3.5" />
-                <span>Añadir</span>
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>Comprar</span>
               </>
             )}
           </button>
         ) : whatsappUrl ? (
+          /* Estado 2 en modo vitrina (checkout inactivo): enlace directo para comprar por WhatsApp */
           <a
             href={whatsappUrl}
             target="_blank"
@@ -265,7 +328,7 @@ export default function ProductCard({ product, store, tenantQuery }: ProductCard
             className="min-h-[32px] h-8 px-2.5 sm:px-3 rounded-lg text-[11px] font-semibold border border-black/10 dark:border-white/10 hover:bg-emerald-600 hover:text-white text-[var(--color-texto)] transition-all inline-flex items-center gap-1.5 cursor-pointer"
           >
             <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Consultar</span>
+            <span>Comprar</span>
           </a>
         ) : (
           <Link

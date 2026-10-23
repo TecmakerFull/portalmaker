@@ -18,13 +18,18 @@ import {
   Truck,
   CreditCard,
   ImageIcon,
+  MessageSquare,
 } from 'lucide-react'
 
 export default function CartDrawer({
   storeName,
+  whatsappNumero,
+  checkoutActivo = true,
   tenantQuery,
 }: {
   storeName: string
+  whatsappNumero?: string | null
+  checkoutActivo?: boolean
   tenantQuery: string
 }) {
   const {
@@ -224,21 +229,47 @@ export default function CartDrawer({
             </div>
 
             <p className="mt-1 text-[11px] opacity-60">
-              Envío y opciones de pago seleccionables en el siguiente paso.
+              {checkoutActivo
+                ? 'Envío y opciones de pago seleccionables en el siguiente paso.'
+                : 'Esta tienda coordina pedidos y entregas directamente por WhatsApp.'}
             </p>
 
-            <Link
-              href={withTenant('/tienda/checkout')}
-              onClick={closeCart}
-              className="mt-5 w-full min-h-[48px] h-12 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-sm font-semibold flex items-center justify-center gap-2 shadow-md hover:opacity-95 active:scale-98 transition-all cursor-pointer"
-            >
-              <span>Finalizar compra</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            {checkoutActivo ? (
+              <Link
+                href={withTenant('/tienda/checkout')}
+                onClick={closeCart}
+                className="mt-5 w-full min-h-[48px] h-12 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-sm font-semibold flex items-center justify-center gap-2 shadow-md hover:opacity-95 active:scale-98 transition-all cursor-pointer"
+              >
+                <span>Finalizar compra</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  const cleanPhone = whatsappNumero ? whatsappNumero.replace(/[^0-9]/g, '') : null
+                  if (cleanPhone) {
+                    const lines = items.map(
+                      (item) =>
+                        `• ${item.quantity}x ${item.productName}${item.variantName ? ` (${item.variantName})` : ''} - $${(item.unitPrice * item.quantity).toLocaleString('es-AR')}`
+                    )
+                    const text = `Hola ${storeName}, quiero realizar el siguiente pedido:\n\n${lines.join('\n')}\n\nTotal estimado: $${totalAmount.toLocaleString('es-AR')}\n\n¿Cómo podemos coordinar el pago y la entrega?`
+                    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer')
+                  } else {
+                    window.location.href = withTenant('/tienda/checkout')
+                  }
+                  closeCart()
+                }}
+                className="mt-5 w-full min-h-[48px] h-12 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-sm font-semibold flex items-center justify-center gap-2 shadow-md hover:opacity-95 active:scale-98 transition-all cursor-pointer"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>Pedir por WhatsApp</span>
+              </button>
+            )}
 
             <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] opacity-60">
               <CreditCard className="w-3.5 h-3.5" />
-              <span>Pago 100% protegido y transparente</span>
+              <span>{checkoutActivo ? 'Pago 100% protegido y transparente' : 'Coordinación directa con el maker'}</span>
             </p>
           </footer>
         )}

@@ -35,9 +35,13 @@ import {
   UserCheck,
   Mail,
   Truck,
+  Lock,
+  Sparkles,
+  Info,
 } from 'lucide-react'
 import type { Store as StoreType } from '@/types/database'
 import ThemeToggle from '@/app/tienda/theme-toggle'
+import { isFeatureAllowed, FEATURE_REQUIREMENTS, getPlanConfig } from '@/lib/plans'
 
 export default function AdminSidebar({
   store,
@@ -116,6 +120,15 @@ export default function AdminSidebar({
   const isPagos = pathname.includes('/tienda/admin/pagos')
   const isDominio = pathname.includes('/tienda/admin/dominio')
   const isPerfil = pathname.includes('/tienda/admin/perfil')
+  const isSuscripcion = pathname.includes('/tienda/admin/suscripcion')
+
+  const currentPlan = getPlanConfig(store.plan)
+  const canEnvios = isFeatureAllowed(store, 'envios_zonas_fijas') || isFeatureAllowed(store, 'envios_couriers')
+  const canCheckout = isFeatureAllowed(store, 'checkout_online') || isFeatureAllowed(store, 'mercado_pago')
+  const canColaboradores = isFeatureAllowed(store, 'colaboradores')
+  const canClientes = isFeatureAllowed(store, 'crm_clientes')
+  const canResenas = isFeatureAllowed(store, 'resenas')
+  const canDominio = isFeatureAllowed(store, 'dominio_propio')
 
   // Alternar estado Encendida / Apagada
   const handleToggleTienda = async () => {
@@ -302,7 +315,9 @@ export default function AdminSidebar({
               >
                 Contacto & Ubicación
               </Link>
-              {store.envios_activo && (
+
+              {/* Envíos & Logística */}
+              {canEnvios ? (
                 <Link
                   href={`/tienda/admin/envios${tenantQuery}`}
                   prefetch={true}
@@ -317,7 +332,24 @@ export default function AdminSidebar({
                     <span>Envíos & Logística</span>
                   </div>
                 </Link>
+              ) : (
+                <Link
+                  href={`/tienda/admin/envios${tenantQuery}`}
+                  prefetch={true}
+                  className="min-h-[40px] flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium opacity-45 hover:opacity-75 text-zinc-400 dark:text-zinc-500 transition-all"
+                  title="Módulo de envíos configurables disponible a partir del plan Starter (Nivel 2)"
+                >
+                  <div className="flex items-center gap-2">
+                    <Truck className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>Envíos & Logística</span>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-200/70 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300/50 dark:border-zinc-700">
+                    <Lock className="w-2.5 h-2.5" />
+                    Starter
+                  </span>
+                </Link>
               )}
+
               <Link
                 href={`/tienda/admin/pagos${tenantQuery}`}
                 prefetch={true}
@@ -329,17 +361,37 @@ export default function AdminSidebar({
               >
                 Cobros & Transferencia
               </Link>
-              <Link
-                href={`/tienda/admin/dominio${tenantQuery}`}
-                prefetch={true}
-                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
-                  isDominio
-                    ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
-                    : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-                }`}
-              >
-                Dominio Propio
-              </Link>
+
+              {/* Dominio Propio */}
+              {canDominio ? (
+                <Link
+                  href={`/tienda/admin/dominio${tenantQuery}`}
+                  prefetch={true}
+                  className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
+                    isDominio
+                      ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
+                      : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+                  }`}
+                >
+                  Dominio Propio
+                </Link>
+              ) : (
+                <Link
+                  href={`/tienda/admin/dominio${tenantQuery}`}
+                  prefetch={true}
+                  className="min-h-[40px] flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium opacity-45 hover:opacity-75 text-zinc-400 dark:text-zinc-500 transition-all"
+                  title="Dominio propio disponible a partir del plan Maker Pro (Nivel 3)"
+                >
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>Dominio Propio</span>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-200/70 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300/50 dark:border-zinc-700">
+                    <Lock className="w-2.5 h-2.5" />
+                    Maker Pro
+                  </span>
+                </Link>
+              )}
             </div>
           )}
         </div>
@@ -403,67 +455,135 @@ export default function AdminSidebar({
 
         {/* 4. Luego lo demás: Gestión, métricas y operaciones */}
         {/* Ventas & Pedidos */}
-        <Link
-          href={`/tienda/admin/ventas${tenantQuery}`}
-          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            isVentas
-              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
-              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <ShoppingBag className="w-4 h-4" />
-            <span>Ventas & Pedidos</span>
-          </div>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
-            Nuevo
-          </span>
-        </Link>
+        {canCheckout ? (
+          <Link
+            href={`/tienda/admin/ventas${tenantQuery}`}
+            className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              isVentas
+                ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+                : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <ShoppingBag className="w-4 h-4" />
+              <span>Ventas & Pedidos</span>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+              Nuevo
+            </span>
+          </Link>
+        ) : (
+          <Link
+            href={`/tienda/admin/ventas${tenantQuery}`}
+            className="min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold opacity-45 hover:opacity-75 text-zinc-400 dark:text-zinc-500 transition-colors"
+            title="Gestión de ventas y checkout disponible a partir de Nivel 2 (Starter)"
+          >
+            <div className="flex items-center gap-2.5">
+              <ShoppingBag className="w-4 h-4 text-zinc-400" />
+              <span>Ventas & Pedidos</span>
+            </div>
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-200/70 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300/50 dark:border-zinc-700">
+              <Lock className="w-2.5 h-2.5" />
+              Starter
+            </span>
+          </Link>
+        )}
 
         {/* Clientes & CRM */}
-        <Link
-          href={`/tienda/admin/clientes${tenantQuery}`}
-          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            isClientes
-              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
-              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <Users className="w-4 h-4" />
-            <span>Clientes & CRM</span>
-          </div>
-        </Link>
+        {canClientes ? (
+          <Link
+            href={`/tienda/admin/clientes${tenantQuery}`}
+            className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              isClientes
+                ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+                : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <Users className="w-4 h-4" />
+              <span>Clientes & CRM</span>
+            </div>
+          </Link>
+        ) : (
+          <Link
+            href={`/tienda/admin/clientes${tenantQuery}`}
+            className="min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold opacity-45 hover:opacity-75 text-zinc-400 dark:text-zinc-500 transition-colors"
+            title="CRM de clientes disponible a partir de Nivel 2 (Starter)"
+          >
+            <div className="flex items-center gap-2.5">
+              <Users className="w-4 h-4 text-zinc-400" />
+              <span>Clientes & CRM</span>
+            </div>
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-200/70 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300/50 dark:border-zinc-700">
+              <Lock className="w-2.5 h-2.5" />
+              Starter
+            </span>
+          </Link>
+        )}
 
         {/* Reseñas */}
-        <Link
-          href={`/tienda/admin/resenas${tenantQuery}`}
-          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            isResenas
-              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
-              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <Star className="w-4 h-4" />
-            <span>Reseñas</span>
-          </div>
-        </Link>
+        {canResenas ? (
+          <Link
+            href={`/tienda/admin/resenas${tenantQuery}`}
+            className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              isResenas
+                ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+                : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <Star className="w-4 h-4" />
+              <span>Reseñas</span>
+            </div>
+          </Link>
+        ) : (
+          <Link
+            href={`/tienda/admin/resenas${tenantQuery}`}
+            className="min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold opacity-45 hover:opacity-75 text-zinc-400 dark:text-zinc-500 transition-colors"
+            title="Reseñas de clientes disponibles a partir de Nivel 2 (Starter)"
+          >
+            <div className="flex items-center gap-2.5">
+              <Star className="w-4 h-4 text-zinc-400" />
+              <span>Reseñas</span>
+            </div>
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-200/70 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300/50 dark:border-zinc-700">
+              <Lock className="w-2.5 h-2.5" />
+              Starter
+            </span>
+          </Link>
+        )}
 
         {/* Colaboradores */}
-        <Link
-          href={`/tienda/admin/colaboradores${tenantQuery}`}
-          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            isColaboradores
-              ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
-              : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <UserCheck className="w-4 h-4 text-amber-500" />
-            <span>Colaboradores</span>
-          </div>
-        </Link>
+        {canColaboradores ? (
+          <Link
+            href={`/tienda/admin/colaboradores${tenantQuery}`}
+            className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              isColaboradores
+                ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+                : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <UserCheck className="w-4 h-4 text-amber-500" />
+              <span>Colaboradores</span>
+            </div>
+          </Link>
+        ) : (
+          <Link
+            href={`/tienda/admin/colaboradores${tenantQuery}`}
+            className="min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold opacity-45 hover:opacity-75 text-zinc-400 dark:text-zinc-500 transition-colors"
+            title="Colaboradores de taller disponibles a partir de Nivel 2 (Starter)"
+          >
+            <div className="flex items-center gap-2.5">
+              <UserCheck className="w-4 h-4 text-zinc-400" />
+              <span>Colaboradores</span>
+            </div>
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-200/70 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300/50 dark:border-zinc-700">
+              <Lock className="w-2.5 h-2.5" />
+              Starter
+            </span>
+          </Link>
+        )}
 
         {/* Marketing & Suscriptores */}
         <Link
@@ -480,8 +600,28 @@ export default function AdminSidebar({
           </div>
         </Link>
 
-        {/* Mi Perfil / Cuenta */}
+        {/* Mi Suscripción / Plan */}
         <div className="pt-2">
+          <Link
+            href={`/tienda/admin/suscripcion${tenantQuery}`}
+            className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              isSuscripcion
+                ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+                : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span>Mi Suscripción</span>
+            </div>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-800 dark:text-amber-300 uppercase tracking-wider">
+              {currentPlan.nombre}
+            </span>
+          </Link>
+        </div>
+
+        {/* Mi Perfil / Cuenta */}
+        <div className="pt-1">
           <Link
             href={`/tienda/admin/perfil${tenantQuery}`}
             className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${

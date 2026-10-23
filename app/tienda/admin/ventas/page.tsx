@@ -6,6 +6,8 @@ import { notFound } from 'next/navigation'
 import { getTenantStore, isStoreAdmin } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import VentasManager from './ventas-manager'
+import LockedFeatureCard from '../components/locked-feature-card'
+import { isFeatureAllowed } from '@/lib/plans'
 
 export default async function VentasAdminPage() {
   const tenant = await getTenantStore()
@@ -22,6 +24,24 @@ export default async function VentasAdminPage() {
   }
 
   const tenantQuery = context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''
+
+  // En el plan Free / Vitrina no hay checkout online ni ventas registradas por pasarela
+  const canCheckout =
+    isFeatureAllowed(store, 'checkout_online') ||
+    isFeatureAllowed(store, 'mercado_pago')
+
+  if (!canCheckout) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+        <LockedFeatureCard
+          featureKey="checkout_online"
+          storePlan={store.plan}
+          tenantQuery={tenantQuery}
+        />
+      </div>
+    )
+  }
+
   const supabase = await createSupabaseServerClient()
 
   // Obtener pedidos de la tienda

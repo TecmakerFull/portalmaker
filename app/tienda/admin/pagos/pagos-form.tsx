@@ -22,6 +22,7 @@ import {
   Percent,
   ExternalLink,
   Info,
+  ShoppingBag,
 } from 'lucide-react'
 import { StickySaveBar } from '../components/sticky-save-bar'
 
@@ -53,6 +54,29 @@ export default function PagosForm({
   const [instrucciones, setInstrucciones] = useState(
     store.transferencia_instrucciones ?? 'Enviar comprobante de transferencia por WhatsApp indicando el número de pedido.'
   )
+
+  // Modalidad de Checkout / Vitrina
+  const [checkoutActivo, setCheckoutActivo] = useState(
+    Boolean(store.checkout_activo || store.modo_operacion === 'tienda')
+  )
+  const [loadingCheckout, setLoadingCheckout] = useState(false)
+  const [checkoutMsg, setCheckoutMsg] = useState<string | null>(null)
+
+  // Sincronizar estado cuando se actualiza la tienda desde el servidor
+  useEffect(() => {
+    setMpConnected(store.mp_connected ?? false)
+    setMpRecargo(store.mp_recargo_porcentaje ?? 0)
+    setTransferenciaActiva(store.transferencia_activa ?? false)
+    setAlias(store.transferencia_alias ?? '')
+    setCbuCvu(store.transferencia_cbu_cvu ?? '')
+    setBanco(store.transferencia_banco ?? '')
+    setTitular(store.transferencia_titular ?? '')
+    setCuit(store.transferencia_cuit ?? '')
+    if (store.transferencia_instrucciones) {
+      setInstrucciones(store.transferencia_instrucciones)
+    }
+    setCheckoutActivo(Boolean(store.checkout_activo || store.modo_operacion === 'tienda'))
+  }, [store])
 
   const [loadingMp, setLoadingMp] = useState(false)
   const [loadingTransf, setLoadingTransf] = useState(false)
@@ -183,6 +207,43 @@ export default function PagosForm({
     }
   }
 
+  // Alternar Checkout Online vs Modo Vitrina
+  const handleToggleCheckout = async () => {
+    if (loadingCheckout) return
+    const newVal = !checkoutActivo
+    setLoadingCheckout(true)
+    setCheckoutMsg(null)
+
+    try {
+      const res = await fetch('/api/store/payment-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId: store.id,
+          checkoutActivo: newVal,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'No se pudo actualizar la modalidad.')
+      }
+
+      setCheckoutActivo(newVal)
+      setCheckoutMsg(
+        newVal
+          ? 'Checkout online activado: los clientes pueden comprar con carrito y pasarelas directas.'
+          : 'Modo vitrina activado: las compras y consultas se coordinan vía WhatsApp.'
+      )
+      router.refresh()
+      setTimeout(() => setCheckoutMsg(null), 5000)
+    } catch (err: any) {
+      alert(err.message || 'Error al cambiar la modalidad.')
+    } finally {
+      setLoadingCheckout(false)
+    }
+  }
+
   return (
     <div className="space-y-6 pb-20">
       {/* Encabezado */}
@@ -197,6 +258,70 @@ export default function PagosForm({
       </div>
 
       <div className="space-y-6">
+        {/* =========================================================================
+            0. MODALIDAD DE VENTA Y CHECKOUT ONLINE
+        ========================================================================== */}
+        <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                <ShoppingBag className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-bold">Checkout Online de la Tienda</h2>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                      checkoutActivo
+                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
+                        : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20'
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        checkoutActivo ? 'bg-emerald-500' : 'bg-amber-500'
+                      }`}
+                    />
+                    {checkoutActivo ? 'Checkout Habilitado' : 'Modo Vitrina (WhatsApp)'}
+                  </span>
+                </div>
+                <p className="text-xs opacity-70 mt-1 max-w-2xl">
+                  {checkoutActivo
+                    ? 'Tus clientes pueden agregar productos al carrito, calcular envíos y pagar directamente con Mercado Pago o Transferencia Bancaria.'
+                    : 'La tienda opera como catálogo vidriera: el botón de comprar y consultar conecta directamente a los compradores a tu WhatsApp con el producto preseleccionado.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+              <button
+                type="button"
+                role="switch"
+                disabled={loadingCheckout}
+                aria-checked={checkoutActivo}
+                onClick={handleToggleCheckout}
+                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none min-h-[44px] min-w-[44px] items-center p-0.5 disabled:opacity-50 ${
+                  checkoutActivo ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                }`}
+                title={checkoutActivo ? 'Click para cambiar a Modo Vitrina' : 'Click para activar Checkout Online'}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                    checkoutActivo ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          {checkoutMsg && (
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+              <Check className="w-4 h-4 shrink-0" />
+              <span>{checkoutMsg}</span>
+            </div>
+          )}
+        </div>
+
         {/* =========================================================================
             1. MERCADO PAGO INTEGRATION CARD
         ========================================================================== */}

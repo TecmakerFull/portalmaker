@@ -13,6 +13,7 @@ export default function CartProviderClient({
   storeId,
   storeName,
   whatsappNumero,
+  checkoutActivo = true,
   tenantQuery,
   showFloatingWhatsapp = true,
   children,
@@ -20,6 +21,7 @@ export default function CartProviderClient({
   storeId: string
   storeName: string
   whatsappNumero?: string | null
+  checkoutActivo?: boolean
   tenantQuery: string
   showFloatingWhatsapp?: boolean
   children: React.ReactNode
@@ -30,7 +32,14 @@ export default function CartProviderClient({
   return (
     <CartProvider storeId={storeId}>
       {children}
-      {!isAdmin && <CartDrawer storeName={storeName} tenantQuery={tenantQuery} />}
+      {!isAdmin && (
+        <CartDrawer
+          storeName={storeName}
+          whatsappNumero={whatsappNumero}
+          checkoutActivo={checkoutActivo}
+          tenantQuery={tenantQuery}
+        />
+      )}
       {!isAdmin && showFloatingWhatsapp && (
         <FloatingWhatsApp phone={whatsappNumero} storeName={storeName} />
       )}

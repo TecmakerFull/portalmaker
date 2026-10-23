@@ -228,11 +228,13 @@ export default function ProductDetailView({
     }
   }
 
-  const handleAddToCart = (andOpenCart: boolean = false) => {
+  const isCheckoutActive = Boolean(store.checkout_activo || store.modo_operacion === 'tienda')
+
+  const handleAddToCart = (andOpenCart: boolean = true) => {
     // Si el producto tiene variantes, es obligatorio tener una seleccionada
     if (variants.length > 0 && !selectedVariant) {
       setCartFeedback('Por favor selecciona una de las opciones para continuar')
-      return
+      return false
     }
 
     const compositeName = selectedVariant
@@ -266,15 +268,28 @@ export default function ProductDetailView({
       if (andOpenCart) {
         openCart()
       }
+      return true
     } else {
       setCartFeedback(res.message || 'No se pudo agregar más cantidad.')
+      return false
     }
   }
 
   const handleBuyNow = () => {
-    handleAddToCart(false)
-    const sep = tenantQuery ? (tenantQuery.startsWith('?') ? `${tenantQuery}` : `?${tenantQuery}`) : ''
-    router.push(`/tienda/checkout${sep}`)
+    const success = handleAddToCart(false)
+    if (!success) return
+
+    if (isCheckoutActive) {
+      const sep = tenantQuery ? (tenantQuery.startsWith('?') ? `${tenantQuery}` : `?${tenantQuery}`) : ''
+      router.push(`/tienda/checkout${sep}`)
+    } else {
+      // Si la tienda opera en modo vitrina (checkout inactivo), abrir WhatsApp con la opción seleccionada
+      if (whatsappUrl) {
+        window.open(whatsappUrl, '_blank')
+      } else {
+        openCart()
+      }
+    }
   }
 
   const withTenant = (path: string) => {
@@ -577,20 +592,20 @@ export default function ProductDetailView({
               </button>
             </div>
 
-            {/* Botón Añadir al Carrito */}
+            {/* Botón Añadir al Carrito (abre el drawer al añadir) */}
             <button
               type="button"
-              onClick={() => handleAddToCart(false)}
-              className="flex-1 min-h-[44px] h-11 px-4 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-xs hover:opacity-95 active:scale-98 transition-all cursor-pointer"
+              onClick={() => handleAddToCart(true)}
+              className="flex-1 min-h-[44px] h-11 px-4 rounded-xl border border-black/15 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98"
             >
               {addedSuccess ? (
                 <>
-                  <Check className="w-4 h-4" />
+                  <Check className="w-4 h-4 text-emerald-600" />
                   <span>Añadido al carrito</span>
                 </>
               ) : (
                 <>
-                  <ShoppingBag className="w-4 h-4" />
+                  <ShoppingBag className="w-4 h-4 opacity-70" />
                   <span>Añadir al carrito</span>
                 </>
               )}
@@ -613,16 +628,71 @@ export default function ProductDetailView({
             </button>
           </div>
 
-          {/* Botón Comprar Directo */}
+          {/* Botón Principal de Acción (según los 3 estados de AGENTS.md) */}
           <div className="pt-1">
-            <button
-              type="button"
-              onClick={handleBuyNow}
-              className="w-full min-h-[44px] h-11 rounded-xl border border-black/15 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)] text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98"
-            >
-              <span>{isReserva ? 'Reservar esta opción' : 'Comprar ahora'}</span>
-              <ArrowRight className="w-4 h-4 opacity-70" />
-            </button>
+            {!product.gestiona_stock ? (
+              /* Estado 1: gestiona_stock = false -> "Consultar" (WhatsApp general) */
+              whatsappUrl ? (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full min-h-[46px] h-12 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-xs hover:opacity-95 active:scale-98 transition-all cursor-pointer"
+                >
+                  <WhatsAppIcon className="w-4 h-4" />
+                  <span>Consultar por WhatsApp</span>
+                </a>
+              ) : (
+                <Link
+                  href={withTenant('/tienda/contacto')}
+                  className="w-full min-h-[46px] h-12 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-xs hover:opacity-95 active:scale-98 transition-all"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Consultar</span>
+                </Link>
+              )
+            ) : (currentStock ?? 0) <= 0 ? (
+              /* Estado 3: gestiona_stock = true, stock = 0 -> "Consultar disponibilidad" */
+              whatsappUrl ? (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full min-h-[46px] h-12 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all cursor-pointer"
+                >
+                  <WhatsAppIcon className="w-4 h-4" />
+                  <span>Consultar disponibilidad</span>
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full min-h-[46px] h-12 rounded-xl border border-black/15 dark:border-white/15 opacity-50 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 cursor-not-allowed"
+                >
+                  <span>Sin stock disponible</span>
+                </button>
+              )
+            ) : isCheckoutActive ? (
+              /* Estado 2: gestiona_stock = true, stock > 0 -> "Comprar" (checkout, cuando esté activo) */
+              <button
+                type="button"
+                onClick={handleBuyNow}
+                className="w-full min-h-[46px] h-12 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-xs hover:opacity-95 active:scale-98 transition-all cursor-pointer"
+              >
+                <span>Comprar ahora</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            ) : (
+              /* Estado 2 en vitrina (checkout inactivo): comprar directo vía WhatsApp */
+              <button
+                type="button"
+                onClick={handleBuyNow}
+                className="w-full min-h-[46px] h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all cursor-pointer"
+              >
+                <WhatsAppIcon className="w-4 h-4" />
+                <span>Comprar por WhatsApp</span>
+              </button>
+            )}
           </div>
 
           {/* Feedback interactivo del carrito / validación */}

@@ -97,6 +97,11 @@ export async function POST(req: Request) {
       updatePayload.transferencia_instrucciones = cleanInstrucciones
     }
 
+    if (typeof body.checkoutActivo === 'boolean') {
+      updatePayload.checkout_activo = body.checkoutActivo
+      updatePayload.modo_operacion = body.checkoutActivo ? 'tienda' : 'vitrina'
+    }
+
     // 4. Guardar exclusivamente las columnas permitidas (NUNCA comision_portalmaker ni credenciales)
     const { error: updateErr } = await supabaseAdmin
       .from('stores')
@@ -112,6 +117,7 @@ export async function POST(req: Request) {
       success: true,
       message: 'Configuración de cobros guardada correctamente',
       recargo: cleanRecargo,
+      updated: updatePayload,
     })
   } catch (err: any) {
     console.error('Excepción en /api/store/payment-settings:', err)

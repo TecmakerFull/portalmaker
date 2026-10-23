@@ -97,6 +97,7 @@ export async function POST(req: Request) {
         nombre,
         suscripcion_activa,
         checkout_activo,
+        modo_operacion,
         envios_activo,
         origen_calle,
         origen_altura,
@@ -115,7 +116,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
     }
 
-    if (!store.suscripcion_activa || !store.checkout_activo) {
+    const isCheckoutActive = Boolean(store.checkout_activo || store.modo_operacion === 'tienda')
+    if (!store.suscripcion_activa || !isCheckoutActive) {
       return NextResponse.json({ error: 'El checkout no está habilitado para esta tienda' }, { status: 403 })
     }
 

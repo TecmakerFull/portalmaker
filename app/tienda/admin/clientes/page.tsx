@@ -8,6 +8,8 @@ import { notFound } from 'next/navigation'
 import { getTenantStore, isStoreAdmin } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import ClientesManager from './clientes-manager'
+import LockedFeatureCard from '../components/locked-feature-card'
+import { isFeatureAllowed } from '@/lib/plans'
 import type { StoreCustomer, StoreCollaborator, ProductReview } from '@/types/database'
 
 export default async function ClientesAdminPage() {
@@ -25,6 +27,20 @@ export default async function ClientesAdminPage() {
   }
 
   const tenantQuery = context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''
+
+  // Verificar si la tienda tiene habilitado el módulo de CRM según su plan
+  if (!isFeatureAllowed(store, 'crm_clientes')) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+        <LockedFeatureCard
+          featureKey="crm_clientes"
+          storePlan={store.plan}
+          tenantQuery={tenantQuery}
+        />
+      </div>
+    )
+  }
+
   const supabase = await createSupabaseServerClient()
 
   // 1. Clientes registrados

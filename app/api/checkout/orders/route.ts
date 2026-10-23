@@ -175,7 +175,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'La tienda se encuentra temporalmente inactiva' }, { status: 403 })
     }
 
-    if (!store.checkout_activo) {
+    const isCheckoutActive = Boolean(store.checkout_activo || store.modo_operacion === 'tienda')
+    if (!isCheckoutActive) {
       return NextResponse.json({ error: 'El checkout se encuentra deshabilitado para esta tienda' }, { status: 403 })
     }
 
