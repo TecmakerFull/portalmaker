@@ -26,6 +26,11 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronUp,
+  Plus,
+  Trash2,
+  Edit2,
+  Globe,
+  X,
 } from 'lucide-react'
 import {
   isValidCodigoPostal,
@@ -61,12 +66,25 @@ const PROVINCIAS = [
   'Tucumán',
 ]
 
+export interface ShippingZoneItem {
+  id: string
+  store_id: string
+  nombre: string
+  precio: number
+  plazo_texto?: string | null
+  codigos_postales?: string[]
+  activo: boolean
+  orden?: number
+  created_at?: string
+}
+
 interface EnviosFormProps {
   store: Store
   tenantQuery: string
 }
 
 interface ShippingSettings {
+  zones?: ShippingZoneItem[]
   storeSettings: {
     envios_activo: boolean
     envio_gratis_desde: number | null
@@ -144,6 +162,17 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
   const [comisionIncluyeEnvio, setComisionIncluyeEnvio] = useState<boolean>(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
+  // Zonas de envío manuales
+  const [zones, setZones] = useState<ShippingZoneItem[]>([])
+  const [isZoneFormOpen, setIsZoneFormOpen] = useState(false)
+  const [editingZoneId, setEditingZoneId] = useState<string | null>(null)
+  const [zoneNombre, setZoneNombre] = useState('')
+  const [zonePrecio, setZonePrecio] = useState('')
+  const [zonePlazo, setZonePlazo] = useState('')
+  const [zoneCps, setZoneCps] = useState('')
+  const [zoneActivo, setZoneActivo] = useState(true)
+  const [savingZone, setSavingZone] = useState(false)
+
   // Cargar estado inicial
   const loadData = async () => {
     try {
@@ -151,6 +180,7 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
       if (!res.ok) throw new Error('Error al consultar configuración')
       const data: ShippingSettings = await res.json()
       setSettings(data)
+      if (data.zones) setZones(data.zones)
 
       setEnviosActivoStore(data.storeSettings.envios_activo)
       setZipnovaActivo(data.providers.zipnova.activo)
@@ -180,6 +210,106 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
   useEffect(() => {
     loadData()
   }, [effectiveQuery])
+
+  // Handlers para Zonas de Envío
+  const handleOpenNewZone = () => {
+    setEditingZoneId(null)
+    setZoneNombre('')
+    setZonePrecio('')
+    setZonePlazo('')
+    setZoneCps('')
+    setZoneActivo(true)
+    setIsZoneFormOpen(true)
+  }
+
+  const handleEditZone = (zone: ShippingZoneItem) => {
+    setEditingZoneId(zone.id)
+    setZoneNombre(zone.nombre)
+    setZonePrecio(String(zone.precio))
+    setZonePlazo(zone.plazo_texto || '')
+    setZoneCps(zone.codigos_postales && zone.codigos_postales.length > 0 ? zone.codigos_postales.join(', ') : '')
+    setZoneActivo(zone.activo)
+    setIsZoneFormOpen(true)
+  }
+
+  const handleSaveZone = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!zoneNombre.trim() || zonePrecio === '') {
+      setFeedback({ type: 'error', message: 'Ingresá nombre y precio para la zona' })
+      return
+    }
+    setSavingZone(true)
+    try {
+      const res = await fetch(`/api/tienda/admin/envios${effectiveQuery}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: editingZoneId ? 'update_zone' : 'create_zone',
+          id: editingZoneId,
+          nombre: zoneNombre.trim(),
+          precio: Number(zonePrecio),
+          plazo_texto: zonePlazo.trim() || null,
+          codigos_postales: zoneCps,
+          activo: zoneActivo,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error al guardar zona')
+
+      setFeedback({
+        type: 'ok',
+        message: editingZoneId ? 'Zona de envío actualizada con éxito' : 'Zona de envío creada con éxito',
+      })
+      setIsZoneFormOpen(false)
+      loadData()
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Error al guardar zona de envío' })
+    } finally {
+      setSavingZone(false)
+    }
+  }
+
+  const handleDeleteZone = async (zoneId: string, zoneName: string) => {
+    if (!confirm(`¿Eliminar la zona de envío "${zoneName}"?`)) return
+    try {
+      const res = await fetch(`/api/tienda/admin/envios${effectiveQuery}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete_zone',
+          id: zoneId,
+        }),
+      })
+      if (!res.ok) throw new Error('Error al eliminar zona')
+      setFeedback({ type: 'ok', message: 'Zona de envío eliminada correctamente' })
+      setZones((prev) => prev.filter((z) => z.id !== zoneId))
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Error al eliminar zona de envío' })
+    }
+  }
+
+  const handleToggleZoneActivo = async (zone: ShippingZoneItem) => {
+    try {
+      const nextActivo = !zone.activo
+      const res = await fetch(`/api/tienda/admin/envios${effectiveQuery}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_zone',
+          id: zone.id,
+          nombre: zone.nombre,
+          precio: zone.precio,
+          plazo_texto: zone.plazo_texto,
+          codigos_postales: zone.codigos_postales,
+          activo: nextActivo,
+        }),
+      })
+      if (!res.ok) throw new Error('Error al actualizar estado de zona')
+      setZones((prev) => prev.map((z) => (z.id === zone.id ? { ...z, activo: nextActivo } : z)))
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Error al cambiar estado de la zona' })
+    }
+  }
 
   // Guardar Origen de Despacho
   const handleSaveOrigen = async (e: React.FormEvent) => {
@@ -801,7 +931,236 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
         </form>
       </div>
 
-      {/* SECCIÓN 3: Políticas Generales y Parámetros */}
+      {/* SECCIÓN 3: Zonas de Envío Manuales (Tarifas personalizadas por Región o CP) */}
+      <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.02] p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-white/5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center font-bold text-amber-600 dark:text-amber-400">
+              <MapPin className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                Zonas de Envío Manuales (Tarifas fijas por Región o CP)
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Configurá opciones de envío con precio fijo para tu ciudad, provincia o todo el país.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleOpenNewZone}
+            className="min-h-[44px] px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white font-semibold text-xs flex items-center gap-1.5 self-start sm:self-auto cursor-pointer shadow-xs transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Agregar Zona de Envío</span>
+          </button>
+        </div>
+
+        {/* Formulario Desplegable para Crear/Editar Zona */}
+        {isZoneFormOpen && (
+          <form
+            onSubmit={handleSaveZone}
+            className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20 space-y-4 animate-in fade-in zoom-in-95 duration-150"
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-amber-500/10">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                {editingZoneId ? 'Editar Zona de Envío' : 'Nueva Zona de Envío'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsZoneFormOpen(false)}
+                className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-slate-500"
+                aria-label="Cerrar formulario de zona"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-1">
+                <label className={labelClass}>Nombre de la Zona *</label>
+                <input
+                  type="text"
+                  required
+                  value={zoneNombre}
+                  onChange={(e) => setZoneNombre(e.target.value)}
+                  placeholder="Ej: Rosario y Alrededores"
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Precio de Envío ($) *</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  step="50"
+                  value={zonePrecio}
+                  onChange={(e) => setZonePrecio(e.target.value)}
+                  placeholder="Ej: 3500 (0 para gratis)"
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Plazo estimado de entrega</label>
+                <input
+                  type="text"
+                  value={zonePlazo}
+                  onChange={(e) => setZonePlazo(e.target.value)}
+                  placeholder="Ej: 24 a 48 hs / 2 a 5 días"
+                  className={inputClass}
+                />
+              </div>
+
+              <div className="sm:col-span-2 lg:col-span-3">
+                <label className={labelClass}>
+                  Códigos Postales aplicables (Opcional)
+                </label>
+                <input
+                  type="text"
+                  value={zoneCps}
+                  onChange={(e) => setZoneCps(e.target.value)}
+                  placeholder="Ej: 2000, 2001, 2121 (Dejá vacío si aplica a todo el país o provincia)"
+                  className={inputClass}
+                />
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+                  Separá múltiples códigos postales con comas. Si lo dejás en blanco, la tarifa estará disponible para cualquier código postal.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={zoneActivo}
+                  onChange={(e) => setZoneActivo(e.target.checked)}
+                  className="rounded border-slate-300 text-amber-500 focus:ring-amber-400 w-4 h-4 cursor-pointer"
+                />
+                <span>Zona activa en el checkout</span>
+              </label>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsZoneFormOpen(false)}
+                  className="min-h-[40px] px-3.5 py-2 rounded-xl border border-slate-300 dark:border-white/10 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingZone}
+                  className="min-h-[40px] px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition-all disabled:opacity-50"
+                >
+                  {savingZone ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>{editingZoneId ? 'Actualizar Zona' : 'Guardar Zona'}</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+
+        {/* Lista de Zonas Configuradas */}
+        {zones.length === 0 ? (
+          <div className="p-8 text-center border border-dashed border-slate-200 dark:border-white/10 rounded-2xl space-y-2">
+            <Truck className="w-8 h-8 mx-auto text-slate-400 opacity-60" />
+            <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+              No tenés zonas de envío manuales creadas
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+              Las zonas te permiten cobrar tarifas fijas según la ciudad o código postal del comprador (ej: Cadetería local, Correo regional, etc.).
+            </p>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleOpenNewZone}
+                className="min-h-[40px] px-4 py-2 rounded-xl border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 font-semibold text-xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Crear mi primera zona</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            {zones.map((zone) => (
+              <div
+                key={zone.id}
+                className={`p-4 rounded-2xl border transition-all flex flex-col justify-between gap-3 ${
+                  zone.activo
+                    ? 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.01]'
+                    : 'border-slate-200/50 dark:border-white/5 bg-slate-100/40 dark:bg-white/[0.005] opacity-60'
+                }`}
+              >
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <Truck className="w-4 h-4 text-amber-500 shrink-0" />
+                      <span>{zone.nombre}</span>
+                    </span>
+                    <span className="font-bold text-sm text-emerald-600 dark:text-emerald-400">
+                      {Number(zone.precio) === 0 ? 'Gratis' : `$${Number(zone.precio).toLocaleString('es-AR')}`}
+                    </span>
+                  </div>
+
+                  <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1 pt-1">
+                    {zone.plazo_texto && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium">Plazo:</span>
+                        <span>{zone.plazo_texto}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>
+                        {zone.codigos_postales && zone.codigos_postales.length > 0
+                          ? `CPs: ${zone.codigos_postales.join(', ')}`
+                          : 'Disponible para todo el país'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2.5 border-t border-slate-200/60 dark:border-white/5">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleZoneActivo(zone)}
+                    className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer min-h-[32px] px-2 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                  >
+                    {zone.activo ? 'Desactivar' : 'Activar'}
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleEditZone(zone)}
+                      className="p-1.5 text-slate-600 dark:text-slate-300 hover:text-amber-500 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
+                      title="Editar zona"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteZone(zone.id, zone.nombre)}
+                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
+                      title="Eliminar zona"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* SECCIÓN 4: Políticas Generales y Parámetros */}
       <form onSubmit={handleSaveSettings} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.02] p-6 space-y-6">
         <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-white/5">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center font-bold text-blue-600 dark:text-blue-400">
@@ -812,7 +1171,7 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
               Políticas de Envío de la Tienda
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Reglas comerciales, recargo sobre tarifa de carrier y alternativas de entrega.
+              Tarifa plana estándar, reglas comerciales y alternativas de entrega.
             </p>
           </div>
         </div>
@@ -852,18 +1211,18 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
           </div>
 
           <div>
-            <label className={labelClass}>Tarifa de contingencia ($)</label>
+            <label className={labelClass}>Tarifa Plana / Fija Estándar ($)</label>
             <input
               type="number"
               min="0"
               step="100"
               value={envioFallback}
               onChange={(e) => setEnvioFallback(e.target.value)}
-              placeholder="Ej: 4500 (opcional)"
+              placeholder="Ej: 4500 (tarifa plana general)"
               className={inputClass}
             />
             <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
-              Tarifa fija si el carrier no responde o no tiene cobertura para el CP.
+              Tarifa fija estándar para todo el país si no usás Zipnova ni zonas personalizadas.
             </span>
           </div>
         </div>

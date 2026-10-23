@@ -50,7 +50,16 @@ export async function GET(req: NextRequest) {
   const zipnova = providers?.find((p) => p.provider === 'zipnova')
   const manual = providers?.find((p) => p.provider === 'manual')
 
+  // Consultar zonas de envío manuales configuradas
+  const { data: zones } = await supabase
+    .from('shipping_zones')
+    .select('*')
+    .eq('store_id', store.id)
+    .order('orden', { ascending: true })
+    .order('created_at', { ascending: true })
+
   return NextResponse.json({
+    zones: zones || [],
     storeSettings: {
       envios_activo: store.envios_activo ?? false,
       envio_gratis_desde: store.envio_gratis_desde ?? null,
@@ -281,6 +290,86 @@ export async function POST(req: NextRequest) {
         .eq('id', store.id)
 
       if (error) throw error
+      return NextResponse.json({ ok: true })
+    }
+
+    // 6. Crear nueva zona de envío manual
+    if (action === 'create_zone') {
+      const { nombre, precio, plazo_texto, codigos_postales, activo } = body
+      if (!nombre || precio === undefined || precio === null) {
+        return NextResponse.json({ error: 'Nombre y precio son obligatorios' }, { status: 400 })
+      }
+
+      let cpList: string[] = []
+      if (Array.isArray(codigos_postales)) {
+        cpList = codigos_postales.map((c: string) => String(c).trim().toUpperCase()).filter(Boolean)
+      } else if (typeof codigos_postales === 'string' && codigos_postales.trim()) {
+        cpList = codigos_postales.split(',').map((c) => c.trim().toUpperCase()).filter(Boolean)
+      }
+
+      const { data: newZone, error: zoneError } = await supabase
+        .from('shipping_zones')
+        .insert({
+          store_id: store.id,
+          nombre: nombre.trim(),
+          precio: Number(precio) || 0,
+          plazo_texto: plazo_texto?.trim() || null,
+          codigos_postales: cpList,
+          activo: activo ?? true,
+        })
+        .select()
+        .single()
+
+      if (zoneError) throw zoneError
+      return NextResponse.json({ ok: true, zone: newZone })
+    }
+
+    // 7. Actualizar zona de envío manual
+    if (action === 'update_zone') {
+      const { id, nombre, precio, plazo_texto, codigos_postales, activo } = body
+      if (!id) {
+        return NextResponse.json({ error: 'ID de zona requerido' }, { status: 400 })
+      }
+
+      let cpList: string[] = []
+      if (Array.isArray(codigos_postales)) {
+        cpList = codigos_postales.map((c: string) => String(c).trim().toUpperCase()).filter(Boolean)
+      } else if (typeof codigos_postales === 'string' && codigos_postales.trim()) {
+        cpList = codigos_postales.split(',').map((c) => c.trim().toUpperCase()).filter(Boolean)
+      }
+
+      const { data: updatedZone, error: updateError } = await supabase
+        .from('shipping_zones')
+        .update({
+          nombre: nombre?.trim(),
+          precio: Number(precio) || 0,
+          plazo_texto: plazo_texto?.trim() || null,
+          codigos_postales: cpList,
+          activo: Boolean(activo),
+        })
+        .eq('id', id)
+        .eq('store_id', store.id)
+        .select()
+        .single()
+
+      if (updateError) throw updateError
+      return NextResponse.json({ ok: true, zone: updatedZone })
+    }
+
+    // 8. Eliminar zona de envío manual
+    if (action === 'delete_zone') {
+      const { id } = body
+      if (!id) {
+        return NextResponse.json({ error: 'ID de zona requerido' }, { status: 400 })
+      }
+
+      const { error: deleteError } = await supabase
+        .from('shipping_zones')
+        .delete()
+        .eq('id', id)
+        .eq('store_id', store.id)
+
+      if (deleteError) throw deleteError
       return NextResponse.json({ ok: true })
     }
 
