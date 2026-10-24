@@ -32,6 +32,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 6. **Todo código comentado** — explicar el "por qué", no el "qué"
 7. **GRANTs de Supabase obligatorios** en cada tabla nueva (ver patrón en `supabase/schema.sql`)
 8. **Tipografía y pesos sutiles (NO usar bold excesivo)**: Evitar `font-black` (900) o `font-extrabold` (800) generalizado en textos y títulos. Usar pesos elegantes y limpios: `font-semibold` (600), `font-medium` (500) y `font-bold` (700) solo con moderación para jerarquía principal sin engrosar innecesariamente la letra.
+9. **NO USAR EL NAVEGADOR DOM**: Queda estrictamente prohibido utilizar herramientas de subagente de navegador o interacción DOM (`browser_subagent`) para pruebas o navegación. Todas las validaciones deben realizarse mediante análisis estático de código, verificación de tipos TypeScript (`tsc`), tests o llamadas HTTP/API directas, sin abrir instancias de navegador web.
 
 ## Arquitectura multi-tenant
 
