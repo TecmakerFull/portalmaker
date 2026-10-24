@@ -1,0 +1,353 @@
+'use client';
+
+// =============================================================================
+// LIVE PREVIEW — Simulador en Tiempo Real de la Tienda
+// Componente compartido para los paneles de administración ("Diseño de Tienda"
+// y "Colores & Logo"). Visualiza los cambios instantáneamente en Desktop,
+// Tablet y Mobile con simulación de tema claro y oscuro, escalado dinámico
+// proporcional y flujo real de secciones (Top Bar, Header, Navbar, Hero, Catálogo).
+// =============================================================================
+
+import React, { useState } from 'react';
+import {
+  Monitor,
+  Tablet,
+  Smartphone,
+  Sun,
+  Moon,
+} from 'lucide-react';
+import type { Store, StoreSection } from '@/types/database';
+import type { ResolvedStoreSections } from '@/lib/store-sections';
+import StorefrontHeaderFlow from '@/app/tienda/sections/storefront-header-flow';
+import HeroBanners from '@/app/tienda/sections/hero-banners';
+import { PreviewDeviceContext } from '@/app/tienda/preview-context';
+import { getTenantCSSVars } from '@/lib/color-utils';
+
+export interface LivePreviewProps {
+  store: Store;
+  sections?: StoreSection[];
+}
+
+export function LivePreview({ store, sections = [] }: LivePreviewProps) {
+  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [previewTheme, setPreviewTheme] = useState<'light' | 'dark'>('light');
+
+  // Construir mapa de secciones para el simulador
+  const sectionsMap = new Map<string, StoreSection>();
+  sections.forEach((s) => sectionsMap.set(s.section_type, s));
+
+  const topBarSec = sectionsMap.get('top_bar') || {
+    id: 'preview-top-bar',
+    store_id: store.id,
+    section_type: 'top_bar',
+    enabled: true,
+    orden: 1,
+    settings: {
+      modo: 'rotativo',
+      intervalo_segundos: 4,
+      velocidad_ticker: 25,
+      pausar_hover: true,
+      fondo_color: 'primario',
+      mostrar_en_mobile: true,
+    },
+    content: [
+      {
+        id: 'msg-1',
+        texto: store.whatsapp_numero
+          ? `Envíos a todo el país • Consultas al WhatsApp ${store.whatsapp_numero}`
+          : 'Envíos a todo el país • ¡Comprá tus impresiones 3D online!',
+        activo: true,
+      },
+    ],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const headerSec = sectionsMap.get('header') || {
+    id: 'preview-header',
+    store_id: store.id,
+    section_type: 'header',
+    enabled: true,
+    orden: 2,
+    settings: {
+      mostrar_logo: true,
+      logo_tamano: store.logo_tamano || 'mediano',
+      mostrar_nombre: store.mostrar_nombre_header ?? true,
+      mostrar_slogan: true,
+      tamano_slogan: 'mediano',
+      mostrar_buscador: true,
+      mostrar_carrito: true,
+      mostrar_whatsapp: true,
+      mostrar_tema_toggle: true,
+      logo_posicion: 'centro',
+      sticky: false,
+    },
+    content: [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const navbarSec = sectionsMap.get('navbar') || {
+    id: 'preview-navbar',
+    store_id: store.id,
+    section_type: 'navbar',
+    enabled: true,
+    orden: 3,
+    settings: {
+      alineacion: 'centro',
+      estilo: 'linea',
+      sticky: false,
+    },
+    content: [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const heroSec = (sectionsMap.get('hero') || {
+    id: 'preview-hero',
+    store_id: store.id,
+    section_type: 'hero',
+    enabled: true,
+    orden: 4,
+    settings: {
+      modo: 'carrusel',
+      autoplay: true,
+      intervalo_segundos: 5,
+      mostrar_flechas: true,
+      mostrar_indicadores: true,
+      pausar_hover: true,
+      altura: 'adaptable',
+    },
+    content: [
+      {
+        id: 'slide-demo',
+        imagen_url:
+          'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=1200&auto=format&fit=crop&q=80',
+        titulo: 'Filamentos Premium & Modelos 3D',
+        subtitulo: 'Soluciones y piezas de ingeniería fabricadas en alta precisión.',
+        cta_texto: 'Ver Productos',
+        cta_url: '/tienda',
+        activo: true,
+      },
+    ],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }) as StoreSection<any, any>;
+
+  const resolvedSections: ResolvedStoreSections = {
+    top_bar: topBarSec as any,
+    header: headerSec as any,
+    navbar: navbarSec as any,
+    hero: heroSec as any,
+    sectionsList: sections.length > 0 ? sections : [topBarSec as any, headerSec as any, navbarSec as any, heroSec as any],
+  };
+
+  // Medición de ancho del contenedor para escalado proporcional dinámico
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(480);
+  const [contentHeight, setContentHeight] = useState(600);
+
+  React.useEffect(() => {
+    if (!containerRef.current) return;
+    const updateSize = () => {
+      if (containerRef.current) {
+        // Descontar padding lateral (aprox 32px)
+        const availableW = Math.max(300, containerRef.current.clientWidth - 32);
+        setContainerWidth(availableW);
+      }
+    };
+    updateSize();
+
+    const ro = new ResizeObserver(() => updateSize());
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!contentRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.height > 0) {
+          setContentHeight(Math.ceil(entry.contentRect.height));
+        }
+      }
+    });
+    ro.observe(contentRef.current);
+    return () => ro.disconnect();
+  }, [device, previewTheme, sections, store]);
+
+  // Dimensiones virtuales reales de cada dispositivo
+  const targetVirtualWidth =
+    device === 'desktop' ? 1024 : device === 'tablet' ? 768 : 375;
+
+  // Factor de escala calculado
+  const scale = Math.min(1, containerWidth / targetVirtualWidth);
+  const scaledWrapperWidth = Math.round(targetVirtualWidth * scale);
+  const scaledWrapperHeight = Math.round(contentHeight * scale);
+
+  return (
+    <div
+      ref={containerRef}
+      className="flex flex-col h-full bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] overflow-hidden shadow-xs text-[var(--color-texto)]"
+    >
+      {/* Barra de control del simulador */}
+      <div className="flex items-center justify-between px-4 py-3 bg-black/[0.02] dark:bg-white/[0.02] border-b border-[var(--color-borde)] shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Vista Previa</span>
+          </span>
+          <span className="text-[10px] font-mono opacity-50 hidden sm:inline">
+            ({targetVirtualWidth}px • {Math.round(scale * 100)}%)
+          </span>
+        </div>
+
+        {/* Selector de Dispositivos */}
+        <div className="flex items-center bg-black/[0.04] dark:bg-white/[0.06] p-0.5 rounded-xl border border-[var(--color-borde)]">
+          <button
+            type="button"
+            onClick={() => setDevice('desktop')}
+            title="Vista de Computadora (1024px)"
+            className={`p-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+              device === 'desktop'
+                ? 'bg-[var(--color-superficie)] text-[#CA8A04] dark:text-[#FACC15] shadow-xs'
+                : 'opacity-60 hover:opacity-100'
+            }`}
+          >
+            <Monitor className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setDevice('tablet')}
+            title="Vista Tablet (768px)"
+            className={`p-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+              device === 'tablet'
+                ? 'bg-[var(--color-superficie)] text-[#CA8A04] dark:text-[#FACC15] shadow-xs'
+                : 'opacity-60 hover:opacity-100'
+            }`}
+          >
+            <Tablet className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setDevice('mobile')}
+            title="Vista Móvil (375px)"
+            className={`p-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+              device === 'mobile'
+                ? 'bg-[var(--color-superficie)] text-[#CA8A04] dark:text-[#FACC15] shadow-xs'
+                : 'opacity-60 hover:opacity-100'
+            }`}
+          >
+            <Smartphone className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Selector de Tema de la Preview */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setPreviewTheme(previewTheme === 'light' ? 'dark' : 'light')}
+            className="p-1.5 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+            title="Cambiar tema de la vista previa"
+          >
+            {previewTheme === 'light' ? (
+              <Moon className="w-4 h-4 text-indigo-500" />
+            ) : (
+              <Sun className="w-4 h-4 text-amber-500" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Contenedor del marco simulado con escalado proporcional */}
+      <div className="flex-1 p-3 sm:p-4 overflow-y-auto overflow-x-hidden flex items-start justify-center">
+        {/* Wrapper que reserva el tamaño escalado exacto */}
+        <div
+          style={{
+            width: `${scaledWrapperWidth}px`,
+            height: `${scaledWrapperHeight}px`,
+            minHeight: '300px',
+          }}
+          className="relative transition-all duration-300 mx-auto"
+        >
+          {/* Elemento virtual con dimensiones reales escalado con CSS transform */}
+          {/* pointer-events-none y select-none evitan clics accidentales y navegación */}
+          <div
+            ref={contentRef}
+            style={{
+              width: `${targetVirtualWidth}px`,
+              transform: `scale(${scale})`,
+              transformOrigin: 'top left',
+              ...getTenantCSSVars(store),
+            }}
+            className={`tienda-root rounded-2xl shadow-xl overflow-hidden border border-zinc-300/80 dark:border-zinc-700/80 cursor-default select-none pointer-events-none [&_*]:pointer-events-none ${
+              previewTheme === 'dark' ? 'dark bg-zinc-950 text-zinc-100' : 'bg-white text-zinc-900'
+            }`}
+            onClickCapture={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            {/* Barra superior de navegador simulada */}
+            <div className="bg-zinc-200 dark:bg-zinc-800 px-4 py-2 border-b border-zinc-300 dark:border-zinc-700 flex items-center gap-2 select-none">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block" />
+              </div>
+              <div className="flex-1 max-w-xs mx-auto text-center bg-white/70 dark:bg-zinc-900/70 rounded-md py-0.5 text-[11px] font-mono text-zinc-500 dark:text-zinc-400 truncate">
+                {store.slug ? `${store.slug}.portalmaker.com.ar` : 'mi-tienda.portalmaker.com.ar'}
+              </div>
+            </div>
+
+            {/* Renderizado de Secciones de la Tienda */}
+            <PreviewDeviceContext.Provider value={device}>
+              <div className="relative min-h-[420px]">
+                {/* 1. Header Flow (Top Bar + Header + Navbar) */}
+                <StorefrontHeaderFlow
+                  store={store}
+                  resolvedSections={resolvedSections}
+                  tenantQuery=""
+                />
+
+                {/* 2. Hero Banners */}
+                {heroSec && heroSec.enabled && (
+                  <HeroBanners
+                    section={heroSec}
+                    tenantQuery=""
+                  />
+                )}
+
+                {/* 3. Simulación de contenido de catálogo */}
+                <div className="p-6">
+                  <div className="h-4 w-36 bg-zinc-200 dark:bg-zinc-800 rounded mb-4" />
+                  <div className={`grid gap-4 ${
+                    device === 'desktop'
+                      ? 'grid-cols-4'
+                      : device === 'tablet'
+                      ? 'grid-cols-3'
+                      : 'grid-cols-2'
+                  }`}>
+                    {[1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 bg-zinc-50 dark:bg-zinc-900/50 space-y-2"
+                      >
+                        <div className="aspect-square bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
+                        <div className="h-3 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                        <div className="h-3 w-1/2 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </PreviewDeviceContext.Provider>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default LivePreview;

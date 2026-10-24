@@ -41,6 +41,7 @@ import {
   type DiaSemana,
 } from '@/lib/horarios'
 import GeorefAddressInput from '@/components/georef-address-input'
+import { AdminPageHeader } from '../components/admin-page-header'
 
 // Provincias argentinas normalizadas según el estándar de carriers
 const PROVINCIAS = [
@@ -408,25 +409,21 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
   return (
     <div className="space-y-8 w-full max-w-4xl pb-12">
       {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)] font-[var(--font-heading)]">
-            Contacto, Horarios & Ubicación
-          </h1>
-          <p className="text-xs sm:text-sm opacity-70 mt-1">
-            Configurá de forma independiente los canales de atención, horarios semanales, ubicación del taller y redes sociales.
-          </p>
-        </div>
-
-        <Link
-          href={`/tienda/contacto${effectiveQuery}`}
-          target="_blank"
-          className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[var(--color-borde)] text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-colors self-start"
-        >
-          <ExternalLink className="w-4 h-4 opacity-70" />
-          <span>Ver Página Pública de Contacto</span>
-        </Link>
-      </div>
+      <AdminPageHeader
+        title="Contacto & Ubicación"
+        description="Configurá de forma independiente los canales de atención, horarios semanales, ubicación del taller y redes sociales."
+        icon={Phone}
+        actions={
+          <Link
+            href={`/tienda/contacto${effectiveQuery}`}
+            target="_blank"
+            className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[var(--color-borde)] text-xs sm:text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-colors self-start"
+          >
+            <ExternalLink className="w-4 h-4 opacity-70" />
+            <span>Ver Página Pública</span>
+          </Link>
+        }
+      />
 
       {/* TARJETA 1: Canales de Atención Directa */}
       <form

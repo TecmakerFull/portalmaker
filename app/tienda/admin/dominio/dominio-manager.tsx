@@ -27,6 +27,7 @@ import {
   Server,
   RefreshCw,
 } from 'lucide-react'
+import { AdminPageHeader } from '../components/admin-page-header'
 
 export default function DominioManager({
   store,
@@ -136,14 +137,11 @@ export default function DominioManager({
   return (
     <div className="space-y-6">
       {/* Encabezado */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)] font-[var(--font-heading)]">
-          Dominio Propio
-        </h1>
-        <p className="text-xs sm:text-sm opacity-70 mt-1">
-          Vincula tu propio dominio <code>.com.ar</code> directamente desde NIC Argentina en 2 pasos sin configuraciones complejas.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Dominio Propio"
+        description="Vincula tu propio dominio .com.ar directamente desde NIC Argentina en 2 pasos sin configuraciones complejas."
+        icon={Globe}
+      />
 
       {successMsg && (
         <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-sm flex items-center gap-2">

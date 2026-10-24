@@ -40,6 +40,7 @@ import {
 } from 'lucide-react'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 import { resolveMeasures, hasCompleteMeasures, type ShippingMeasures } from '@/lib/shipping-validators'
+import { AdminPageHeader } from '../components/admin-page-header'
 
 // Select compartido: incluye las medidas del producto para poder avisar cuáles
 // no se pueden cotizar. Se reutiliza en los re-fetch para no perder `details`.
@@ -430,12 +431,12 @@ export default function ProductosTable({
   return (
     <div className="space-y-6">
       {/* Barra de Estadísticas y Botón Principal */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight font-[var(--font-heading)]">
-              Productos
-            </h1>
+      <AdminPageHeader
+        title="Productos"
+        description="Control de stock, precios y visibilidad en tiempo real. Gestiona productos y variantes en árbol."
+        icon={Package}
+        badge={
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-400/15 text-amber-700 dark:text-amber-400 border border-amber-400/20">
               {products.length} {products.length === 1 ? 'producto' : 'productos'}
             </span>
@@ -445,29 +446,27 @@ export default function ProductosTable({
               </span>
             )}
           </div>
-          <p className="text-xs sm:text-sm opacity-70 mt-1">
-            Control de stock, precios y visibilidad en tiempo real. Gestiona productos y variantes en árbol.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleOpenCreateModal}
-          style={{ color: '#1F2937' }}
-          className={`min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold active:scale-98 transition-all shadow-xs cursor-pointer self-start sm:self-auto ${
-            isLimitReached
-              ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300'
-              : 'bg-[#FACC15] text-[#1F2937] hover:bg-[#eab308]'
-          }`}
-        >
-          {isLimitReached ? (
-            <Lock className="w-4 h-4" />
-          ) : (
-            <Plus className="w-4 h-4 text-[#1F2937]" />
-          )}
-          <span>{isLimitReached ? 'Límite Alcanzado (+)' : 'Nuevo Producto'}</span>
-        </button>
-      </div>
+        }
+        actions={
+          <button
+            type="button"
+            onClick={handleOpenCreateModal}
+            style={{ color: '#1F2937' }}
+            className={`min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold active:scale-98 transition-all shadow-xs cursor-pointer self-start sm:self-auto ${
+              isLimitReached
+                ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300'
+                : 'bg-[#FACC15] text-[#1F2937] hover:bg-[#eab308]'
+            }`}
+          >
+            {isLimitReached ? (
+              <Lock className="w-4 h-4" />
+            ) : (
+              <Plus className="w-4 h-4 text-[#1F2937]" />
+            )}
+            <span>{isLimitReached ? 'Límite Alcanzado (+)' : 'Nuevo Producto'}</span>
+          </button>
+        }
+      />
 
       {/* TARJETA DE CAPACIDAD Y BARRA DE PROGRESO */}
       <div className={`p-4 sm:p-5 rounded-2xl border transition-all ${

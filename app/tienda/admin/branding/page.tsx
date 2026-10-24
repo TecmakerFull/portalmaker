@@ -4,6 +4,10 @@
 
 import { notFound } from 'next/navigation'
 import { getTenantStore } from '@/lib/tenant'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getStoreSections } from '@/lib/store-sections'
+import { Palette } from 'lucide-react'
+import { AdminPageHeader } from '../components/admin-page-header'
 import BrandingForm from './branding-form'
 
 export default async function AdminBrandingPage() {
@@ -16,18 +20,27 @@ export default async function AdminBrandingPage() {
   const { store, context } = tenant
   const tenantQuery = context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''
 
+  const supabase = await createSupabaseServerClient()
+  const resolvedSections = await getStoreSections(
+    supabase,
+    store.id,
+    store,
+    false
+  )
+
   return (
     <div className="w-full space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)]">
-          Personalización & Marca
-        </h1>
-        <p className="text-sm opacity-70 mt-1">
-          Configura los colores, tipografía y datos de contacto que verán tus visitantes.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Personalización & Marca"
+        description="Configura los colores, tipografía y datos de contacto que verán tus visitantes en vivo."
+        icon={Palette}
+      />
 
-      <BrandingForm store={store} tenantQuery={tenantQuery} />
+      <BrandingForm
+        store={store}
+        tenantQuery={tenantQuery}
+        initialSections={resolvedSections.sectionsList}
+      />
     </div>
   )
 }

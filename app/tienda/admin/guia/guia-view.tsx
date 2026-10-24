@@ -34,7 +34,9 @@ import {
   Star,
   Mail,
   Filter,
+  BookOpen,
 } from 'lucide-react'
+import { AdminPageHeader } from '../components/admin-page-header'
 import type { Store } from '@/types/database'
 
 export default function GuiaView({
@@ -395,19 +397,18 @@ export default function GuiaView({
   return (
     <div className="w-full space-y-6 sm:space-y-8 pb-12">
       {/* Encabezado Principal */}
-      <div className="bg-[var(--color-superficie)] p-6 sm:p-8 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-4">
-        <div className="flex items-center gap-2.5 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-          <Sparkles className="w-4 h-4" />
-          <span>Manual de Usuario Interactivo</span>
+      <AdminPageHeader
+        title="Guía Paso a Paso"
+        description="Aprende a configurar tu vidriera, gestionar pedidos, invitar colaboradores, moderar reseñas y potenciar tu taller."
+        icon={BookOpen}
+      />
+
+      {/* Tarjeta de Acceso y Link de la Tienda con Botón de Copiar */}
+      <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3">
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <Globe className="w-4 h-4 text-amber-500" />
+          <span>Enlace público de tu tienda:</span>
         </div>
-
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight font-[var(--font-heading)]">
-          Guía Completa para Administrar tu Tienda
-        </h1>
-
-        <p className="text-xs sm:text-sm opacity-75 max-w-2xl leading-relaxed">
-          Aprende a configurar tu vidriera, gestionar pedidos, invitar colaboradores, moderar reseñas y enviar campañas publicitarias a tus suscriptores.
-        </p>
 
         {/* Link de la Tienda con Botón de Copiar */}
         <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-3">

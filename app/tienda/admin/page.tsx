@@ -21,6 +21,7 @@ import {
   BookOpen,
   ArrowRight,
 } from 'lucide-react'
+import { AdminPageHeader } from './components/admin-page-header'
 
 export default async function AdminHomePage() {
   const tenant = await getTenantStore()
@@ -52,27 +53,22 @@ export default async function AdminHomePage() {
   return (
     <div className="w-full space-y-6 sm:space-y-8">
       {/* Saludo Principal */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)]">
-            ¡Hola, {store.nombre}!
-          </h1>
-          <p className="text-sm opacity-70 mt-1 max-w-xl">
-            Te damos la bienvenida a tu panel de control. Este es tu espacio para administrar productos, personalizar tu marca y recibir pedidos directos.
-          </p>
-        </div>
-
-        {/* Acceso a Guía Paso a Paso */}
-        <Link
-          href={`/tienda/admin/guia${tenantQuery}`}
-          style={{ color: '#1F2937' }}
-          className="min-h-[44px] px-4 py-2.5 rounded-2xl bg-[#FACC15] text-[#1F2937] hover:bg-[#eab308] text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-xs transition-all shrink-0 cursor-pointer"
-        >
-          <BookOpen className="w-4 h-4 text-[#1F2937]" />
-          <span>Ver Guía Paso a Paso</span>
-          <ArrowRight className="w-3.5 h-3.5 text-[#1F2937]" />
-        </Link>
-      </div>
+      <AdminPageHeader
+        title={`¡Hola, ${store.nombre}!`}
+        description="Te damos la bienvenida a tu panel de control. Administra tus productos, personaliza tu marca y recibe pedidos directos."
+        icon={Store}
+        actions={
+          <Link
+            href={`/tienda/admin/guia${tenantQuery}`}
+            style={{ color: '#1F2937' }}
+            className="min-h-[44px] px-4 py-2.5 rounded-2xl bg-[#FACC15] text-[#1F2937] hover:bg-[#eab308] text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-xs transition-all shrink-0 cursor-pointer"
+          >
+            <BookOpen className="w-4 h-4 text-[#1F2937]" />
+            <span>Ver Guía Paso a Paso</span>
+            <ArrowRight className="w-3.5 h-3.5 text-[#1F2937]" />
+          </Link>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna Izquierda: Checklist de Pasos (2 columnas de ancho) */}

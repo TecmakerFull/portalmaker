@@ -24,6 +24,7 @@ import {
   Square,
   ExternalLink,
 } from 'lucide-react'
+import { AdminPageHeader } from '../components/admin-page-header'
 
 interface SuscriptoresManagerProps {
   store: Store
@@ -155,31 +156,22 @@ export default function SuscriptoresManager({
   return (
     <div className="w-full space-y-6 sm:space-y-8">
       {/* Cabecera */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-[var(--color-primario)] mb-1">
-            <Mail className="w-5 h-5" />
-            <span className="eyebrow text-[var(--color-primario)]">MARKETING Y AUDIENCIA</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-semibold font-[var(--font-heading)] text-[var(--color-texto)]">
-            Suscriptores & Campañas Publicitarias
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm opacity-70 text-[var(--color-texto)]">
-            Contactos registrados a través del formulario de suscripción de tu tienda para lanzamientos y promociones.
-          </p>
-        </div>
-
-        {/* Botón Exportar CSV */}
-        <button
-          type="button"
-          onClick={handleExportCsv}
-          disabled={subscribers.length === 0}
-          className="min-h-[44px] px-4 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-        >
-          <Download className="w-4 h-4" />
-          <span>Exportar a CSV</span>
-        </button>
-      </div>
+      <AdminPageHeader
+        title="Suscriptores"
+        description="Contactos registrados a través del formulario de tu tienda para lanzamientos y novedades."
+        icon={Mail}
+        actions={
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            disabled={subscribers.length === 0}
+            className="min-h-[44px] px-4 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <Download className="w-4 h-4 opacity-70" />
+            <span>Exportar CSV</span>
+          </button>
+        }
+      />
 
       {/* Métricas */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">

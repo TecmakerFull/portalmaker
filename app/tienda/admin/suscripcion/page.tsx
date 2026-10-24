@@ -28,6 +28,7 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
+import { AdminPageHeader } from '../components/admin-page-header'
 
 export default async function TiendaSuscripcionPage() {
   const tenant = await getTenantStore()
@@ -82,26 +83,20 @@ export default async function TiendaSuscripcionPage() {
   return (
     <div className="space-y-8 pb-12">
       {/* Cabecera */}
-      <div className="border-b border-[var(--color-borde)] pb-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-texto)] font-[var(--font-heading)]">
-              Planes y Niveles de Suscripción
-            </h1>
-            <p className="mt-1 text-xs sm:text-sm opacity-70">
-              Conoce las capacidades de tu tienda, límites de catálogo y opciones disponibles para escalar tu taller.
-            </p>
-          </div>
-
+      <AdminPageHeader
+        title="Suscripción & Plan"
+        description="Conoce las capacidades de tu tienda, límites de catálogo y opciones disponibles para escalar tu taller."
+        icon={Sparkles}
+        actions={
           <div className="flex items-center gap-2">
-            <span className="text-xs opacity-60">Tu plan vigente:</span>
+            <span className="text-xs opacity-60">Plan actual:</span>
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${currentPlan.badgeColor}`}>
               <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
               <span>{currentPlan.nombre}</span>
             </span>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Banner de Overrides Manuales del Superadmin (si existen) */}
       {manualOverrides.length > 0 && (

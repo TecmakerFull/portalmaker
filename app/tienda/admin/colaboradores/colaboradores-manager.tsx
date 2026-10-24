@@ -23,6 +23,7 @@ import {
   ShieldAlert,
   Send,
 } from 'lucide-react'
+import { AdminPageHeader } from '../components/admin-page-header'
 
 interface ColaboradoresManagerProps {
   store: Store
@@ -195,18 +196,11 @@ export default function ColaboradoresManager({
   return (
     <div className="w-full space-y-6 sm:space-y-8">
       {/* Cabecera */}
-      <div>
-        <div className="flex items-center gap-2.5 text-[var(--color-primario)] mb-2">
-          <Users className="w-5 h-5" />
-          <span className="eyebrow text-[var(--color-primario)]">TRABAJO EN EQUIPO</span>
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-semibold font-[var(--font-heading)] text-[var(--color-texto)]">
-          Colaboradores de la Tienda
-        </h1>
-        <p className="mt-1.5 text-xs sm:text-sm opacity-70 text-[var(--color-texto)]">
-          Autoriza a tus socios o ayudantes a acceder a este panel para crear productos, modificar precios y despachar pedidos.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Colaboradores"
+        description="Autoriza a tus socios o ayudantes a acceder a este panel para crear productos, modificar precios y despachar pedidos."
+        icon={UserPlus}
+      />
 
       {/* Enlace de invitación rápida */}
       <div className="p-4 sm:p-5 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-xs space-y-3">

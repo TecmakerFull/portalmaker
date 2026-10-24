@@ -46,6 +46,7 @@ import { HeaderEditor } from './header-editor';
 import { NavbarEditor } from './navbar-editor';
 import { HeroEditor } from './hero-editor';
 import { LivePreview } from './live-preview';
+import { AdminPageHeader } from '../components/admin-page-header';
 
 interface DisenoManagerProps {
   store: Store;
@@ -181,25 +182,11 @@ export function DisenoManager({
   return (
     <div className="space-y-6 pb-24">
       {/* Encabezado Principal de la Página */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs text-[var(--color-texto)]">
-        <div>
-          <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-              <Layers className="w-5 h-5" />
-            </span>
-            <div>
-              <h1 className="text-xl font-bold">
-                Diseño & Estructura de Tienda
-              </h1>
-              <p className="text-xs opacity-70 mt-0.5">
-                Personaliza la cabecera, barras y banners de tu tienda en vivo
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          {/* Botón para ver preview en mobile/tablet */}
+      <AdminPageHeader
+        title="Diseño & Estructura de Tienda"
+        description="Personaliza la cabecera, barras y banners de tu tienda en vivo"
+        icon={Layers}
+        actions={
           <button
             type="button"
             onClick={() => setShowMobilePreview(!showMobilePreview)}
@@ -208,8 +195,8 @@ export function DisenoManager({
             <Eye className="w-4 h-4" />
             {showMobilePreview ? 'Ocultar Previsualización' : 'Ver Previsualización'}
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Alertas de Guardado */}
       {saveSuccess && (

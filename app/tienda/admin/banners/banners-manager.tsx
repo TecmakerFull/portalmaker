@@ -32,6 +32,7 @@ import {
   Link2,
 } from 'lucide-react'
 import { compressImageFile } from '@/lib/image-compression'
+import { AdminPageHeader } from '../components/admin-page-header'
 
 interface ProductOption {
   id: string
@@ -336,35 +337,22 @@ export default function BannersManager({
   return (
     <div className="space-y-6">
       {/* Header del Módulo */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/10 dark:border-white/10 pb-6">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-              <Layers className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold font-[var(--font-heading)]">
-                Banners & Carrusel Promocional
-              </h1>
-              <p className="text-xs sm:text-sm opacity-70">
-                Mostrá hasta 3 anuncios o novedades debajo del header con botones de acceso directo.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
+      <AdminPageHeader
+        title="Banners & Carrusel Promocional"
+        description="Mostrá hasta 3 anuncios o novedades debajo del header con botones de acceso directo."
+        icon={ImageIcon}
+        actions={
           <Link
             href={`/tienda${tenantQuery}`}
             target="_blank"
-            className="min-h-[44px] px-4 py-2.5 rounded-xl border border-black/15 dark:border-white/15 text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-2"
+            className="min-h-[44px] px-4 py-2.5 rounded-xl border border-[var(--color-borde)] text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-2"
           >
             <Eye className="w-4 h-4 opacity-70" />
             <span>Ver mi tienda</span>
             <ExternalLink className="w-3.5 h-3.5 opacity-40" />
           </Link>
-        </div>
-      </div>
+        }
+      />
 
       {/* Alertas */}
       {msg && (

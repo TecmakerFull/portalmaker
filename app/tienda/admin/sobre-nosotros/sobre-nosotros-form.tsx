@@ -22,6 +22,7 @@ import {
   FileText,
 } from 'lucide-react'
 import { compressImageFile } from '@/lib/image-compression'
+import { AdminPageHeader } from '../components/admin-page-header'
 
 interface SobreNosotrosFormProps {
   store: Store
@@ -155,29 +156,24 @@ export default function SobreNosotrosForm({
   return (
     <div className="space-y-6">
       {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)] font-[var(--font-heading)] flex items-center gap-2.5">
-            <Users className="w-7 h-7 text-[#CA8A04] dark:text-[#FACC15]" />
-            <span>Sobre Nosotros</span>
-          </h1>
-          <p className="text-xs sm:text-sm opacity-70 mt-1">
-            Configura la sección informativa donde cuentas la historia de tu taller, equipo y proyectos.
-          </p>
-        </div>
-
-        {visible && (
-          <a
-            href={`/tienda/sobre-nosotros${tenantQuery}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--color-borde)] text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all flex items-center gap-2 w-fit"
-          >
-            <Eye className="w-4 h-4" />
-            <span>Ver página pública</span>
-          </a>
-        )}
-      </div>
+      <AdminPageHeader
+        title="Sobre Nosotros"
+        description="Configura la sección informativa donde cuentas la historia de tu taller, equipo y proyectos."
+        icon={Users}
+        actions={
+          visible ? (
+            <a
+              href={`/tienda/sobre-nosotros${tenantQuery}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--color-borde)] text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all flex items-center gap-2"
+            >
+              <Eye className="w-4 h-4 opacity-70" />
+              <span>Ver página pública</span>
+            </a>
+          ) : undefined
+        }
+      />
 
       <form onSubmit={handleSave} className="space-y-6 pb-12">
         {successMsg && (

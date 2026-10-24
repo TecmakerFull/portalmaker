@@ -21,6 +21,7 @@ import {
   AlertCircle,
   FolderPlus,
 } from 'lucide-react'
+import { AdminPageHeader } from '../components/admin-page-header'
 
 interface CategoriasManagerProps {
   store: Store
@@ -186,26 +187,22 @@ export default function CategoriasManager({
   return (
     <div className="space-y-6">
       {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)] font-[var(--font-heading)]">
-            Categorías
-          </h1>
-          <p className="text-xs sm:text-sm opacity-70 mt-1 max-w-2xl leading-relaxed">
-            En esta sección podrás agregar las categorías y subcategorías para luego organizar y subir los productos en tu tienda online.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleOpenNewRoot}
-          style={{ color: '#1F2937' }}
-          className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4 text-[#1F2937]" />
-          <span>Agregar Categoría</span>
-        </button>
-      </div>
+      <AdminPageHeader
+        title="Categorías"
+        description="Organiza tus productos y colecciones para facilitar la navegación y búsqueda en tu tienda online."
+        icon={FolderTree}
+        actions={
+          <button
+            type="button"
+            onClick={handleOpenNewRoot}
+            style={{ color: '#1F2937' }}
+            className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-semibold hover:bg-[#eab308] transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4 text-[#1F2937]" />
+            <span>Agregar Categoría</span>
+          </button>
+        }
+      />
 
       {/* Listado Jerárquico de Categorías */}
       {rootCategories.length > 0 ? (

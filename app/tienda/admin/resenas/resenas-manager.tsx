@@ -23,6 +23,7 @@ import {
   AlertCircle,
   Package,
 } from 'lucide-react'
+import { AdminPageHeader } from '../components/admin-page-header'
 
 interface ReviewWithProduct extends ProductReview {
   product?: {
@@ -139,18 +140,11 @@ export default function ResenasManager({
   return (
     <div className="w-full space-y-6 sm:space-y-8">
       {/* Cabecera */}
-      <div>
-        <div className="flex items-center gap-2 text-[var(--color-primario)] mb-1">
-          <Star className="w-5 h-5 fill-[var(--color-primario)]" />
-          <span className="eyebrow text-[var(--color-primario)]">MODERACIÓN DE CONTENIDO</span>
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-semibold font-[var(--font-heading)] text-[var(--color-texto)]">
-          Reseñas & Opiniones de Clientes
-        </h1>
-        <p className="mt-1 text-xs sm:text-sm opacity-70 text-[var(--color-texto)]">
-          Cualquier usuario registrado en tu tienda puede calificar productos. Puedes ocultar cualquier reseña no deseada con un solo clic.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Reseñas de Clientes"
+        description="Calificaciones y opiniones recibidas en tu tienda. Puedes moderar u ocultar cualquier reseña con un solo clic."
+        icon={Star}
+      />
 
       {/* Tarjetas de Métricas */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

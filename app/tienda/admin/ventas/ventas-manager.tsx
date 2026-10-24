@@ -40,6 +40,7 @@ import {
   ArrowUpDown,
   Check,
 } from 'lucide-react'
+import { AdminPageHeader } from '../components/admin-page-header'
 
 export interface ProductSummaryForSale {
   id: string
@@ -858,30 +859,25 @@ export default function VentasManager({
 
   return (
     <div className="w-full space-y-6 pb-20">
-      {/* Encabezado con Botón de Nueva Venta (sin doble '+') */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)] font-[var(--font-heading)] flex items-center gap-2.5">
-            <ShoppingBag className="w-7 h-7 text-[#CA8A04] dark:text-[#FACC15]" />
-            <span>Ventas & Pedidos</span>
-          </h1>
-          <p className="text-xs sm:text-sm opacity-70 mt-1">
-            Gestiona las compras online y ventas de mostrador de tu tienda en un solo lugar.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => {
-            setIsNewSaleOpen(true)
-            setSaleError(null)
-          }}
-          className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-bold text-xs sm:text-sm hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0 self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>Nueva Venta</span>
-        </button>
-      </div>
+      {/* Encabezado con Botón de Nueva Venta */}
+      <AdminPageHeader
+        title="Ventas & Pedidos"
+        description="Gestiona las compras online y ventas de mostrador de tu tienda en un solo lugar."
+        icon={ShoppingBag}
+        actions={
+          <button
+            type="button"
+            onClick={() => {
+              setIsNewSaleOpen(true)
+              setSaleError(null)
+            }}
+            className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-semibold text-xs sm:text-sm hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0 self-start sm:self-auto"
+          >
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span>Nueva Venta</span>
+          </button>
+        }
+      />
 
       {/* 1. Métricas de Ventas y Clientes (Tarjetas interactivas de filtro) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

@@ -28,6 +28,7 @@ import {
   Save,
   Check,
 } from 'lucide-react'
+import { AdminPageHeader } from '../components/admin-page-header'
 
 export default function PerfilManager({
   store,
@@ -153,14 +154,11 @@ export default function PerfilManager({
   return (
     <div className="space-y-6">
       {/* Encabezado */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)] font-[var(--font-heading)]">
-          Mi Cuenta & Perfil
-        </h1>
-        <p className="text-xs sm:text-sm opacity-70 mt-1">
-          Modifica el nombre de tu página, revisa el estado de tu suscripción y personaliza tu panel.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Perfil de Tienda"
+        description="Modifica el nombre de tu página, revisa el estado de tu cuenta y personaliza tus preferencias."
+        icon={User}
+      />
 
       {/* 1. Modificar Nombre de la Tienda y Datos Básicos */}
       <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">

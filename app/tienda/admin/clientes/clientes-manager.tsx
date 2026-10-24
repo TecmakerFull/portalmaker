@@ -29,6 +29,7 @@ import {
   ExternalLink,
   MessageCircle,
 } from 'lucide-react'
+import { AdminPageHeader } from '../components/admin-page-header'
 
 interface ClientesManagerProps {
   store: Store
@@ -216,38 +217,29 @@ export default function ClientesManager({
   return (
     <div className="w-full space-y-6 sm:space-y-8">
       {/* Cabecera */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-[var(--color-primario)] mb-1">
-            <Users className="w-5 h-5" />
-            <span className="eyebrow text-[var(--color-primario)]">GESTIÓN DE CLIENTES</span>
+      <AdminPageHeader
+        title="Clientes & CRM"
+        description="Usuarios registrados en tu tienda, historial de compras, reseñas y permisos de equipo."
+        icon={Users}
+        actions={
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 opacity-40" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={
+                activeTab === 'pedidos'
+                  ? 'Buscar orden, email o cliente...'
+                  : activeTab === 'resenas'
+                  ? 'Buscar en comentarios...'
+                  : 'Buscar email, nombre o teléfono...'
+              }
+              className="w-full h-11 pl-10 pr-4 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm outline-none focus:border-[var(--color-primario)] text-[var(--color-texto)]"
+            />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-semibold font-[var(--font-heading)] text-[var(--color-texto)]">
-            Clientes & Historial CRM
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm opacity-70 text-[var(--color-texto)]">
-            Usuarios registrados en tu tienda, historial de compras, reseñas dejadas y permisos de equipo.
-          </p>
-        </div>
-
-        {/* Buscador Contextual */}
-        <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 opacity-40" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={
-              activeTab === 'pedidos'
-                ? 'Buscar por orden, email o cliente...'
-                : activeTab === 'resenas'
-                ? 'Buscar en comentarios o autor...'
-                : 'Buscar por email, nombre o teléfono...'
-            }
-            className="w-full h-11 pl-10 pr-4 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm outline-none focus:border-[var(--color-primario)] text-[var(--color-texto)]"
-          />
-        </div>
-      </div>
+        }
+      />
 
       {/* Resumen de Métricas (Clickeables como pestañas interactivas) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

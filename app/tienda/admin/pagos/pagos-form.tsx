@@ -24,6 +24,7 @@ import {
   Info,
   ShoppingBag,
 } from 'lucide-react'
+import { AdminPageHeader } from '../components/admin-page-header'
 
 export default function PagosForm({
   store,
@@ -246,15 +247,11 @@ export default function PagosForm({
   return (
     <div className="space-y-6 pb-20">
       {/* Encabezado */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-texto)] font-[var(--font-heading)] flex items-center gap-2.5">
-          <CreditCard className="w-7 h-7 text-[#009EE3]" />
-          <span>Métodos de Pago y Cobro</span>
-        </h1>
-        <p className="text-xs sm:text-sm opacity-70 mt-1">
-          Configura cómo reciben el dinero de las ventas: vinculá tu cuenta de Mercado Pago para cobros automáticos o carga tus datos bancarios para transferencias directas.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Cobros & Transferencia"
+        description="Configura cómo reciben el dinero de las ventas: vinculá tu cuenta de Mercado Pago para cobros automáticos o carga tus datos bancarios para transferencias directas."
+        icon={CreditCard}
+      />
 
       <div className="space-y-6">
         {/* =========================================================================
