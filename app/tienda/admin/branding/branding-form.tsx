@@ -35,6 +35,12 @@ import {
   RefreshCw,
   Crop,
   Save,
+  Monitor,
+  Smartphone,
+  Star,
+  ShieldCheck,
+  Box,
+  Lock,
 } from 'lucide-react'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 import { compressImageFile } from '@/lib/image-compression'
@@ -84,6 +90,7 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
 
   // Estados de interfaz
   const [previewMode, setPreviewMode] = useState<'claro' | 'oscuro'>('claro')
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [customModeTab, setCustomModeTab] = useState<'claro' | 'oscuro'>('claro')
   const [loading, setLoading] = useState(false)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
@@ -249,9 +256,29 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
   }
 
   // Colores activos para el preview
-  const currentPrimario = previewMode === 'claro' ? colorPrimario : colorPrimarioDark
-  const currentFondo = previewMode === 'claro' ? colorFondo : colorFondoDark
-  const currentTexto = previewMode === 'claro' ? colorTexto : colorTextoDark
+  const isDark = previewMode === 'oscuro'
+  const currentPrimario = isDark ? colorPrimarioDark : colorPrimario
+  const currentSecundario = isDark ? colorSecundarioDark : colorSecundario
+  const currentFondo = isDark ? colorFondoDark : colorFondo
+  const currentTexto = isDark ? colorTextoDark : colorTexto
+
+  // Helper de tipografías seguras con variables CSS de Next.js
+  const getFontFamily = (fontName: string) => {
+    switch (fontName) {
+      case 'Inter':
+        return 'var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      case 'Outfit':
+        return 'var(--font-outfit), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      case 'Playfair Display':
+        return 'var(--font-playfair-display), Georgia, serif'
+      case 'Space Grotesk':
+        return 'var(--font-space-grotesk), monospace, sans-serif'
+      case 'DM Serif Display':
+        return 'var(--font-dm-serif-display), Georgia, serif'
+      default:
+        return 'sans-serif'
+    }
+  }
 
   return (
     <form onSubmit={handleSave} className="space-y-6 pb-12">
@@ -270,9 +297,9 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
       )}
 
       {/* Disposición Desktop: Columnas de Ajustes a la Izquierda y Vista Previa Sticky a la Derecha */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
         {/* Columna Izquierda: Tarjetas de Configuración */}
-        <div className="lg:col-span-7 xl:col-span-7 space-y-6">
+        <div className="xl:col-span-7 space-y-6">
           {/* 1. Información General y WhatsApp */}
           <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
             <h2 className="text-base font-bold flex items-center gap-2">
@@ -1289,243 +1316,396 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
     </div>
     {/* Fin Columna Izquierda */}
 
-    {/* Columna Derecha: Vista Previa en Tiempo Real (Sticky en Desktop, no scroleable fuera de vista) */}
-    <div className="lg:col-span-5 xl:col-span-5 lg:sticky lg:top-6 lg:self-start">
-      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-6 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    {/* Columna Derecha: Vista Previa en Tiempo Real (Sticky en Desktop, fiel reflejo y no cliqueable) */}
+    <div className="xl:col-span-5 2xl:col-span-5 xl:sticky xl:top-6 xl:self-start">
+      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-4 sm:p-5 shadow-xs space-y-3.5">
+        {/* Cabecera de controles del simulador */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--color-borde)]">
           <div>
-            <h2 className="text-base font-bold flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-              <span>Vista Previa en Tiempo Real</span>
-            </h2>
-            <p className="text-xs opacity-70 mt-0.5">
-              Así verán tus clientes tu catálogo en vivo según los ajustes elegidos.
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <h2 className="text-sm font-bold flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#CA8A04] dark:text-[#FACC15]" />
+                <span>Vista Previa en Tiempo Real</span>
+              </h2>
+            </div>
+            <p className="text-[11px] opacity-65 mt-0.5">
+              Fiel reflejo visual con micro-proporciones realistas.
             </p>
           </div>
 
-          {/* Toggle Claro / Oscuro para el preview */}
-          <div className="flex items-center rounded-xl bg-black/5 dark:bg-white/10 p-1 border border-[var(--color-borde)] text-xs self-start sm:self-auto shrink-0">
-            <button
-              type="button"
-              onClick={() => setPreviewMode('claro')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                previewMode === 'claro'
-                  ? 'bg-white shadow-xs text-black font-bold'
-                  : 'opacity-70 hover:opacity-100'
-              }`}
-            >
-              Modo Claro
-            </button>
-            <button
-              type="button"
-              onClick={() => setPreviewMode('oscuro')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                previewMode === 'oscuro'
-                  ? 'bg-black text-white shadow-xs font-bold'
-                  : 'opacity-70 hover:opacity-100'
-              }`}
-            >
-              Modo Oscuro
-            </button>
-          </div>
-        </div>
-
-        {/* Caja de Preview con los estilos dinámicos modernos (no cliqueable) */}
-        <div
-          className="rounded-3xl transition-colors duration-300 border border-slate-300 dark:border-slate-700 shadow-xl overflow-hidden relative cursor-default select-none pointer-events-none [&_*]:pointer-events-none"
-          onClickCapture={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          style={{
-            backgroundColor: currentFondo,
-            color: currentTexto,
-            fontFamily:
-              fontBody === 'Inter'
-                ? 'var(--font-inter), sans-serif'
-                : fontBody === 'Outfit'
-                ? 'var(--font-outfit), sans-serif'
-                : fontBody === 'Playfair Display'
-                ? 'var(--font-playfair-display), Georgia, serif'
-                : fontBody === 'Space Grotesk'
-                ? 'var(--font-space-grotesk), sans-serif'
-                : fontBody === 'DM Serif Display'
-                ? 'var(--font-dm-serif-display), Georgia, serif'
-                : 'sans-serif',
-          }}
-        >
-          {/* 1. Barra de Navegador simulada */}
-          <div className="bg-slate-200 dark:bg-slate-800 px-4 py-2 border-b border-slate-300 dark:border-slate-700 flex items-center gap-2 select-none">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" />
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block" />
-            </div>
-            <div className="flex-1 max-w-xs mx-auto text-center bg-white/70 dark:bg-slate-900/70 rounded-md py-0.5 text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
-              {store.slug ? `${store.slug}.portalmaker.com.ar` : 'mi-tienda.portalmaker.com.ar'}
-            </div>
-          </div>
-
-          {/* 2. Top Bar sutil con mensaje */}
-          <div
-            className="px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2 text-center text-white"
-            style={{ backgroundColor: currentPrimario }}
-          >
-            <Truck className="w-3.5 h-3.5" />
-            <span>Envíos a todo el país • Consultas por WhatsApp</span>
-          </div>
-
-          {/* 3. Header Principal Moderno */}
-          <div className="p-4 sm:p-5 flex items-center justify-between gap-4 border-b border-black/5 dark:border-white/5">
-            {/* Buscador Pill */}
-            <div className="p-2.5 rounded-2xl border border-black/10 dark:border-white/10 flex items-center justify-center opacity-70">
-              <Search className="w-4 h-4" />
-            </div>
-
-            {/* Logo y Nombre de Marca */}
-            <div className="flex flex-col items-center text-center">
-              {logoUrl && (
-                <img
-                  src={logoUrl}
-                  alt={nombre}
-                  className={`w-auto object-contain rounded-lg mb-1 shadow-2xs transition-all ${
-                    logoTamano === 'chico'
-                      ? 'h-7 max-w-[100px]'
-                      : logoTamano === 'grande'
-                      ? 'h-14 max-w-[160px]'
-                      : logoTamano === 'xl'
-                      ? 'h-18 max-w-[200px]'
-                      : 'h-10 max-w-[120px]'
-                  }`}
-                />
-              )}
-              {(!logoUrl || mostrarNombreHeader) && (
-                <h3
-                  className={`font-bold uppercase tracking-tight ${
-                    logoUrl ? 'text-xs mt-0.5 tracking-wider' : 'text-base sm:text-lg'
-                  }`}
-                  style={{
-                    color: currentPrimario,
-                    fontFamily:
-                      fontHeading === 'Inter'
-                        ? 'var(--font-inter), sans-serif'
-                        : fontHeading === 'Outfit'
-                        ? 'var(--font-outfit), sans-serif'
-                        : fontHeading === 'Playfair Display'
-                        ? 'var(--font-playfair-display), Georgia, serif'
-                        : fontHeading === 'Space Grotesk'
-                        ? 'var(--font-space-grotesk), sans-serif'
-                        : fontHeading === 'DM Serif Display'
-                        ? 'var(--font-dm-serif-display), Georgia, serif'
-                        : 'sans-serif',
-                  }}
-                >
-                  {nombre || 'Nombre de la Tienda'}
-                </h3>
-              )}
-              {slogan && <p className="text-[11px] opacity-70 mt-0.5">{slogan}</p>}
-            </div>
-
-            {/* Íconos Tema & Carrito */}
-            <div className="flex items-center gap-2">
-              <div className="p-2.5 rounded-2xl border border-black/10 dark:border-white/10 flex items-center justify-center opacity-70">
-                {previewMode === 'claro' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-              </div>
-              <div className="p-2.5 rounded-2xl border border-black/10 dark:border-white/10 flex items-center justify-center opacity-70">
-                <ShoppingBag className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
-
-          {/* 4. Navbar de Secciones */}
-          <div className="px-4 py-2.5 flex items-center justify-center gap-6 text-xs font-semibold border-b border-black/5 dark:border-white/5 opacity-80">
-            <span className="hover:opacity-100 cursor-pointer">Productos</span>
-            <span className="hover:opacity-100 cursor-pointer">Contacto & Ubicación</span>
-          </div>
-
-          {/* 5. Contenido & Catálogo Simulado */}
-          <div className="p-4 sm:p-5 space-y-4">
-            {/* Mini Banner Promocional */}
-            <div
-              className="p-4 rounded-2xl bg-gradient-to-r from-black/80 to-black/60 text-white flex flex-col items-start gap-2 shadow-sm"
-              style={{
-                borderColor: 'rgba(255,255,255,0.1)',
-              }}
-            >
-              <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400">
-                Lanzamiento Especial
-              </span>
-              <h4 className="text-sm sm:text-base font-bold">Piezas 3D & Insumos Maker</h4>
+          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
+            {/* Selector de Dispositivo (Desktop / Celular) */}
+            <div className="flex items-center rounded-xl bg-black/5 dark:bg-white/10 p-0.5 border border-[var(--color-borde)] text-[11px]">
               <button
                 type="button"
-                className="mt-0.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white shadow-xs transition-opacity hover:opacity-90"
-                style={{ backgroundColor: currentPrimario }}
+                onClick={() => setPreviewDevice('desktop')}
+                title="Vista de Computadora"
+                className={`min-h-[36px] px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                  previewDevice === 'desktop'
+                    ? 'bg-white dark:bg-zinc-800 text-black dark:text-white shadow-xs font-bold'
+                    : 'opacity-70 hover:opacity-100'
+                }`}
               >
-                Ver Producto
+                <Monitor className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Escritorio</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewDevice('mobile')}
+                title="Vista de Celular"
+                className={`min-h-[36px] px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                  previewDevice === 'mobile'
+                    ? 'bg-white dark:bg-zinc-800 text-black dark:text-white shadow-xs font-bold'
+                    : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Celular</span>
               </button>
             </div>
 
-            {/* Grilla de 2 Productos */}
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-              {/* Producto 1 */}
-              <div
-                className="rounded-2xl p-2.5 border space-y-2 shadow-2xs"
-                style={{
-                  backgroundColor: previewMode === 'oscuro' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                  borderColor: previewMode === 'oscuro' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                }}
+            {/* Toggle Claro / Oscuro para el preview */}
+            <div className="flex items-center rounded-xl bg-black/5 dark:bg-white/10 p-0.5 border border-[var(--color-borde)] text-[11px]">
+              <button
+                type="button"
+                onClick={() => setPreviewMode('claro')}
+                title="Modo Claro"
+                className={`min-h-[36px] px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                  previewMode === 'claro'
+                    ? 'bg-white text-black shadow-xs font-bold'
+                    : 'opacity-70 hover:opacity-100'
+                }`}
               >
-                <div className="aspect-square w-full rounded-xl bg-black/10 dark:bg-white/10 flex items-center justify-center text-[11px] opacity-60">
-                  Foto 3D
-                </div>
-                <div className="space-y-0.5">
-                  <h5 className="font-bold text-xs truncate">Filamento PLA 1kg</h5>
-                  <p className="text-xs font-bold" style={{ color: currentPrimario }}>
-                    $24.000
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="w-full py-1.5 rounded-xl text-[11px] font-bold text-white shadow-xs flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: currentPrimario }}
-                >
-                  <ShoppingBag className="w-3 h-3" />
-                  <span>Agregar</span>
-                </button>
-              </div>
-
-              {/* Producto 2 */}
-              <div
-                className="rounded-2xl p-2.5 border space-y-2 shadow-2xs"
-                style={{
-                  backgroundColor: previewMode === 'oscuro' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                  borderColor: previewMode === 'oscuro' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                }}
+                <Sun className="w-3.5 h-3.5 text-amber-500" />
+                <span>Claro</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewMode('oscuro')}
+                title="Modo Oscuro"
+                className={`min-h-[36px] px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                  previewMode === 'oscuro'
+                    ? 'bg-zinc-900 text-white shadow-xs font-bold'
+                    : 'opacity-70 hover:opacity-100'
+                }`}
               >
-                <div className="aspect-square w-full rounded-xl bg-black/10 dark:bg-white/10 flex items-center justify-center text-[11px] opacity-60">
-                  Foto 3D
-                </div>
-                <div className="space-y-0.5">
-                  <h5 className="font-bold text-xs truncate">Soporte Gamer RGB</h5>
-                  <p className="text-xs font-bold" style={{ color: currentPrimario }}>
-                    $18.500
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="w-full py-1.5 rounded-xl text-[11px] font-bold text-white shadow-xs flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: currentPrimario }}
-                >
-                  <ShoppingBag className="w-3 h-3" />
-                  <span>Agregar</span>
-                </button>
-              </div>
+                <Moon className="w-3.5 h-3.5 text-blue-400" />
+                <span>Oscuro</span>
+              </button>
             </div>
           </div>
+        </div>
 
-          {/* Botón Flotante de WhatsApp en la esquina */}
-          <div className="absolute bottom-4 right-4 z-10 w-10 h-10 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer">
-            <WhatsAppIcon className="w-5 h-5 text-white" />
+        {/* Marco de Simulación Proporcional y Realista (no cliqueable, solo visual) */}
+        <div
+          className={`transition-all duration-300 mx-auto select-none pointer-events-none cursor-default [&_*]:pointer-events-none ${
+            previewDevice === 'mobile'
+              ? 'max-w-[340px] rounded-[36px] border-[6px] border-slate-800 dark:border-slate-700 shadow-2xl p-0.5 bg-slate-900'
+              : 'w-full rounded-2xl border border-slate-300 dark:border-slate-700 shadow-xl'
+          } overflow-hidden`}
+        >
+          {/* Si es móvil: Notch y Barra de Estado superior de teléfono */}
+          {previewDevice === 'mobile' ? (
+            <div className="bg-slate-900 text-white text-[9px] px-5 py-1.5 flex items-center justify-between font-mono">
+              <span>9:41</span>
+              <div className="w-20 h-3 bg-black rounded-full mx-auto" />
+              <div className="flex items-center gap-1">
+                <span>5G</span>
+                <span className="w-2.5 h-2 rounded-xs border border-white inline-block relative after:absolute after:inset-0.5 after:bg-white" />
+              </div>
+            </div>
+          ) : (
+            /* Si es escritorio: Barra de navegador moderna con URL y botones */
+            <div className="bg-slate-200 dark:bg-slate-800 px-3.5 py-1.5 border-b border-slate-300 dark:border-slate-700 flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
+                <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+                <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
+              </div>
+              <div className="flex-1 max-w-[260px] mx-auto text-center bg-white/80 dark:bg-slate-900/80 rounded-md py-0.5 px-2 text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate flex items-center justify-center gap-1 shadow-2xs">
+                <Lock className="w-2.5 h-2.5 opacity-60 shrink-0" />
+                <span className="truncate">{store.slug ? `${store.slug}.portalmaker.com.ar` : 'mi-tienda.portalmaker.com.ar'}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Lienzo del Sitio Web (con los colores dinámicos exactos del store) */}
+          <div
+            className="transition-colors duration-300 overflow-hidden relative"
+            style={{
+              backgroundColor: currentFondo,
+              color: currentTexto,
+              fontFamily: getFontFamily(fontBody),
+            }}
+          >
+            {/* 1. Top Bar sutil de anuncios */}
+            <div
+              className="px-3 py-1 text-[9px] font-medium flex items-center justify-center gap-1.5 text-center text-white"
+              style={{ backgroundColor: currentPrimario }}
+            >
+              <Truck className="w-3 h-3 shrink-0" />
+              <span className="truncate">
+                Envíos a todo el país • {whatsapp ? `WhatsApp: ${whatsapp}` : 'Consultas por WhatsApp'}
+              </span>
+            </div>
+
+            {/* 2. Cabecera (Header Principal) */}
+            <div className="px-3 py-2 sm:px-4 sm:py-2.5 flex items-center justify-between gap-2 border-b border-black/5 dark:border-white/5">
+              {/* Logo y Nombre de Marca */}
+              <div className="flex items-center gap-2 min-w-0">
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt={nombre}
+                    className={`w-auto object-contain shrink-0 transition-all ${
+                      logoTamano === 'chico'
+                        ? 'h-5 max-w-[70px]'
+                        : logoTamano === 'grande'
+                        ? 'h-8 max-w-[110px]'
+                        : logoTamano === 'xl'
+                        ? 'h-10 max-w-[130px]'
+                        : 'h-6 max-w-[90px]'
+                    }`}
+                  />
+                ) : (
+                  <div
+                    className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-2xs"
+                    style={{ backgroundColor: currentPrimario }}
+                  >
+                    {(nombre || 'M').charAt(0).toUpperCase()}
+                  </div>
+                )}
+
+                {(!logoUrl || mostrarNombreHeader) && (
+                  <div className="min-w-0">
+                    <h3
+                      className="font-bold text-[11px] leading-tight truncate uppercase tracking-tight"
+                      style={{
+                        color: currentPrimario,
+                        fontFamily: getFontFamily(fontHeading),
+                      }}
+                    >
+                      {nombre || 'Mi Tienda Maker'}
+                    </h3>
+                    {slogan && (
+                      <p
+                        className="text-[8px] opacity-70 truncate max-w-[140px] leading-tight mt-0.5"
+                        style={{ fontFamily: getFontFamily(fontBody) }}
+                      >
+                        {slogan}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Acciones del Header: Buscador compacto + Íconos */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {previewDevice === 'desktop' && (
+                  <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[9px] text-slate-400 w-24">
+                    <Search className="w-2.5 h-2.5" />
+                    <span>Buscar...</span>
+                  </div>
+                )}
+                <div className="p-1 rounded-md border border-black/10 dark:border-white/10 opacity-70">
+                  {isDark ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
+                </div>
+                <div className="p-1 rounded-md border border-black/10 dark:border-white/10 opacity-70 relative">
+                  <ShoppingBag className="w-3 h-3" />
+                  <span
+                    className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full text-[7px] text-white font-bold flex items-center justify-center"
+                    style={{ backgroundColor: currentPrimario }}
+                  >
+                    0
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Navegación (StoreNavbar) */}
+            <div className="px-3 py-1 flex items-center justify-center gap-4 text-[9px] font-medium border-b border-black/5 dark:border-white/5 opacity-80">
+              <span
+                className="font-bold pb-0.5 border-b-2"
+                style={{
+                  color: currentPrimario,
+                  borderColor: currentPrimario,
+                }}
+              >
+                Productos
+              </span>
+              <span>Categorías</span>
+              <span>Sobre Nosotros</span>
+              <span>Contacto</span>
+            </div>
+
+            {/* 4. Mini Banner Hero Estilo Maker */}
+            <div className="p-2.5 sm:p-3">
+              <div
+                className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-r from-zinc-900 via-neutral-900 to-zinc-800 text-white flex flex-col items-start gap-1 shadow-sm relative overflow-hidden"
+              >
+                <div className="flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest text-amber-400">
+                  <Sparkles className="w-2.5 h-2.5" />
+                  <span>Catálogo Exclusivo</span>
+                </div>
+                <h4
+                  className="text-xs sm:text-sm font-bold leading-tight"
+                  style={{ fontFamily: getFontFamily(fontHeading) }}
+                >
+                  Piezas 3D & Soluciones Maker
+                </h4>
+                <p className="text-[8px] opacity-75 max-w-[220px] leading-tight">
+                  Diseño personalizado e insumos de máxima precisión.
+                </p>
+                <div
+                  className="mt-1 px-2.5 py-0.5 rounded-md text-[8px] font-bold text-white shadow-xs inline-flex items-center gap-1"
+                  style={{ backgroundColor: currentPrimario }}
+                >
+                  <span>Explorar Piezas</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 5. Catálogo de Productos */}
+            <div className="px-2.5 sm:px-3 pb-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span
+                  className="text-[10px] font-bold uppercase tracking-wider opacity-80"
+                  style={{ fontFamily: getFontFamily(fontHeading) }}
+                >
+                  Productos Destacados
+                </span>
+                <span className="text-[8px] opacity-50 font-medium">Ver todos (12)</span>
+              </div>
+
+              {/* Grilla de Productos proporcional */}
+              <div className={`grid gap-2 ${previewDevice === 'desktop' ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                {/* Producto 1 */}
+                <div
+                  className="rounded-xl p-2 border flex flex-col justify-between gap-1.5 shadow-2xs transition-all"
+                  style={{
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                  }}
+                >
+                  <div className="aspect-square w-full rounded-lg bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center relative overflow-hidden p-1">
+                    <span className="absolute top-1 left-1 text-[7px] font-bold px-1 rounded-xs bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                      PLA+
+                    </span>
+                    <Box className="w-5 h-5 opacity-40 text-slate-500" />
+                    <span className="text-[7px] opacity-50 font-mono mt-0.5">Filamento 1kg</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    <h5
+                      className="font-bold text-[9px] truncate"
+                      style={{ fontFamily: getFontFamily(fontHeading) }}
+                    >
+                      Filamento PLA Premium
+                    </h5>
+                    <p className="text-[10px] font-bold" style={{ color: currentPrimario }}>
+                      $24.500
+                    </p>
+                  </div>
+                  <div
+                    className="w-full py-1 rounded-md text-[8px] font-bold text-white shadow-2xs flex items-center justify-center gap-1"
+                    style={{ backgroundColor: currentPrimario }}
+                  >
+                    <ShoppingBag className="w-2.5 h-2.5" />
+                    <span>Comprar</span>
+                  </div>
+                </div>
+
+                {/* Producto 2 */}
+                <div
+                  className="rounded-xl p-2 border flex flex-col justify-between gap-1.5 shadow-2xs transition-all"
+                  style={{
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                  }}
+                >
+                  <div className="aspect-square w-full rounded-lg bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center relative overflow-hidden p-1">
+                    <span className="absolute top-1 left-1 text-[7px] font-bold px-1 rounded-xs bg-blue-500/20 text-blue-700 dark:text-blue-300">
+                      Gamer
+                    </span>
+                    <Box className="w-5 h-5 opacity-40 text-slate-500" />
+                    <span className="text-[7px] opacity-50 font-mono mt-0.5">Stand RGB</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    <h5
+                      className="font-bold text-[9px] truncate"
+                      style={{ fontFamily: getFontFamily(fontHeading) }}
+                    >
+                      Soporte Gamer Pro
+                    </h5>
+                    <p className="text-[10px] font-bold" style={{ color: currentPrimario }}>
+                      $18.900
+                    </p>
+                  </div>
+                  <div
+                    className="w-full py-1 rounded-md text-[8px] font-bold text-white shadow-2xs flex items-center justify-center gap-1"
+                    style={{ backgroundColor: currentPrimario }}
+                  >
+                    <ShoppingBag className="w-2.5 h-2.5" />
+                    <span>Comprar</span>
+                  </div>
+                </div>
+
+                {/* Producto 3 (visible en escritorio) */}
+                {previewDevice === 'desktop' && (
+                  <div
+                    className="rounded-xl p-2 border flex flex-col justify-between gap-1.5 shadow-2xs transition-all"
+                    style={{
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                    }}
+                  >
+                    <div className="aspect-square w-full rounded-lg bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center relative overflow-hidden p-1">
+                      <span className="absolute top-1 left-1 text-[7px] font-bold px-1 rounded-xs bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                        Nuevo
+                      </span>
+                      <Box className="w-5 h-5 opacity-40 text-slate-500" />
+                      <span className="text-[7px] opacity-50 font-mono mt-0.5">Organizador</span>
+                    </div>
+                    <div className="space-y-0.5">
+                      <h5
+                        className="font-bold text-[9px] truncate"
+                        style={{ fontFamily: getFontFamily(fontHeading) }}
+                      >
+                        Organizador Modular
+                      </h5>
+                      <p className="text-[10px] font-bold" style={{ color: currentPrimario }}>
+                        $12.300
+                      </p>
+                    </div>
+                    <div
+                      className="w-full py-1 rounded-md text-[8px] font-bold text-white shadow-2xs flex items-center justify-center gap-1"
+                      style={{ backgroundColor: currentPrimario }}
+                    >
+                      <ShoppingBag className="w-2.5 h-2.5" />
+                      <span>Comprar</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 6. Footer de Confianza */}
+            <div className="px-3 py-1.5 border-t border-black/5 dark:border-white/5 text-[7px] opacity-60 text-center flex items-center justify-center gap-3">
+              <span className="flex items-center gap-0.5">
+                <Truck className="w-2 h-2" />
+                <span>Envíos rápidos</span>
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-0.5">
+                <ShieldCheck className="w-2 h-2" />
+                <span>Garantía Maker</span>
+              </span>
+            </div>
+
+            {/* 7. Botón Flotante de WhatsApp */}
+            <div className="absolute bottom-2.5 right-2.5 z-10 w-7 h-7 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-md">
+              <WhatsAppIcon className="w-4 h-4 text-white" />
+            </div>
           </div>
         </div>
       </div>
