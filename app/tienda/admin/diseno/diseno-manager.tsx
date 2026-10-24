@@ -46,7 +46,6 @@ import { HeaderEditor } from './header-editor';
 import { NavbarEditor } from './navbar-editor';
 import { HeroEditor } from './hero-editor';
 import { LivePreview } from './live-preview';
-import { StickySaveBar } from '../components/sticky-save-bar';
 
 interface DisenoManagerProps {
   store: Store;
@@ -474,22 +473,6 @@ export function DisenoManager({
           </div>
         </div>
       </div>
-
-      {/* Barra de Guardado Flotante Estandarizada */}
-      <StickySaveBar
-        loading={saving}
-        hasChanges={true}
-        message={
-          activeEditorTab
-            ? `Editando: ${sectionMeta[activeEditorTab]?.label || activeEditorTab}`
-            : 'Estructura y secciones de tienda'
-        }
-        saveText="Guardar Cambios de Diseño"
-        savingText="Guardando diseño..."
-        successMsg={saveSuccess ? '¡Diseño guardado exitosamente!' : null}
-        errorMsg={saveError}
-        onSave={handleSaveChanges}
-      />
     </div>
   );
 }

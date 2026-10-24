@@ -24,7 +24,6 @@ import {
   Info,
   ShoppingBag,
 } from 'lucide-react'
-import { StickySaveBar } from '../components/sticky-save-bar'
 
 export default function PagosForm({
   store,

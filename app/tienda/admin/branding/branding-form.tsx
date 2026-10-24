@@ -34,11 +34,11 @@ import {
   Pipette,
   RefreshCw,
   Crop,
+  Save,
 } from 'lucide-react'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 import { compressImageFile } from '@/lib/image-compression'
 import LogoCropperModal from './logo-cropper-modal'
-import { StickySaveBar } from '../components/sticky-save-bar'
 
 interface BrandingFormProps {
   store: Store
@@ -254,7 +254,7 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
   const currentTexto = previewMode === 'claro' ? colorTexto : colorTextoDark
 
   return (
-    <form onSubmit={handleSave} className="space-y-6 pb-24">
+    <form onSubmit={handleSave} className="space-y-6 pb-12">
       {successMsg && (
         <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-sm flex items-center gap-2">
           <Check className="w-5 h-5 text-emerald-500 shrink-0" />
@@ -269,54 +269,94 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
         </div>
       )}
 
-      {/* 1. Información General y WhatsApp */}
-      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
-        <h2 className="text-base font-bold flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-          <span>Información de la Tienda</span>
-        </h2>
+      {/* Disposición Desktop: Columnas de Ajustes a la Izquierda y Vista Previa Sticky a la Derecha */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Columna Izquierda: Tarjetas de Configuración */}
+        <div className="lg:col-span-7 xl:col-span-7 space-y-6">
+          {/* 1. Información General y WhatsApp */}
+          <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
+            <h2 className="text-base font-bold flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+              <span>Información de la Tienda</span>
+            </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
-              Nombre de la Tienda *
-            </label>
-            <input
-              type="text"
-              required
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
-            />
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
+                  Nombre de la Tienda *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                />
+              </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
-              Número de WhatsApp para pedidos
-            </label>
-            <input
-              type="tel"
-              value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
-              placeholder="Ej: 5491112345678"
-              className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
-            />
-          </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
+                  Número de WhatsApp para pedidos
+                </label>
+                <input
+                  type="tel"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(e.target.value)}
+                  placeholder="Ej: 5491112345678"
+                  className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                />
+              </div>
 
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
-              Slogan o Frase Destacada
-            </label>
-            <input
-              type="text"
-              value={slogan}
-              onChange={(e) => setSlogan(e.target.value)}
-              placeholder="Ej: Impresiones 3D personalizadas y de alta precisión"
-              className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
-            />
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
+                  Slogan o Frase Destacada
+                </label>
+                <input
+                  type="text"
+                  value={slogan}
+                  onChange={(e) => setSlogan(e.target.value)}
+                  placeholder="Ej: Impresiones 3D personalizadas y de alta precisión"
+                  className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                />
+              </div>
+            </div>
+
+            {/* Pie de tarjeta con feedback y botón de guardar */}
+            <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-[var(--color-borde)]">
+              <div className="min-h-[20px]">
+                {successMsg && (
+                  <div className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-1.5 animate-in fade-in">
+                    <Check className="w-3.5 h-3.5 shrink-0" />
+                    <span>{successMsg}</span>
+                  </div>
+                )}
+                {errorMsg && (
+                  <div className="text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-1.5 animate-in fade-in">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-bold text-xs sm:text-sm hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
+                    <span>Guardando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 text-[#1F2937]" />
+                    <span>Guardar Información</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
 
       {/* 2. Logo de la Marca / Taller (Subir Archivo, Ctrl+V o URL) */}
       <div
@@ -431,6 +471,39 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
           />
         </div>
 
+        {/* Tamaño del Logo en Cabecera y Nombre */}
+        {logoUrl && (
+          <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
+                Tamaño del Logo en Cabecera
+              </label>
+              <select
+                value={logoTamano}
+                onChange={(e) => setLogoTamano(e.target.value as any)}
+                className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#FACC15] cursor-pointer"
+              >
+                <option value="chico">Chico (compacto, 28px)</option>
+                <option value="mediano">Mediano (estándar, 40px)</option>
+                <option value="grande">Grande (destacado, 56px)</option>
+                <option value="xl">Extra Grande (máximo, 72px)</option>
+              </select>
+            </div>
+
+            <div className="flex items-center pt-2 sm:pt-6">
+              <label className="flex items-center gap-2.5 text-xs font-semibold cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={mostrarNombreHeader}
+                  onChange={(e) => setMostrarNombreHeader(e.target.checked)}
+                  className="rounded border-[var(--color-borde)] text-[#CA8A04] focus:ring-[#FACC15] w-4 h-4 cursor-pointer"
+                />
+                <span>Mostrar nombre de la tienda junto al logo</span>
+              </label>
+            </div>
+          </div>
+        )}
+
         {/* Modal de Recorte / Ajuste Canvas */}
         {cropModalSrc && (
           <LogoCropperModal
@@ -439,6 +512,42 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
             onCropComplete={handleCropComplete}
           />
         )}
+
+        {/* Pie de tarjeta con feedback y botón de guardar */}
+        <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-[var(--color-borde)]">
+          <div className="min-h-[20px]">
+            {successMsg && (
+              <div className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-1.5 animate-in fade-in">
+                <Check className="w-3.5 h-3.5 shrink-0" />
+                <span>{successMsg}</span>
+              </div>
+            )}
+            {errorMsg && (
+              <div className="text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-1.5 animate-in fade-in">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || uploadingLogo}
+            className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-bold text-xs sm:text-sm hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
+          >
+            {loading || uploadingLogo ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
+                <span>{uploadingLogo ? 'Subiendo logo...' : 'Guardando...'}</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 text-[#1F2937]" />
+                <span>Guardar Logo</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* 2. Modo por Defecto de la Tienda */}
@@ -539,6 +648,42 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
                 Se ajusta automáticamente según la preferencia del dispositivo del visitante.
               </p>
             </div>
+          </button>
+        </div>
+
+        {/* Pie de tarjeta con feedback y botón de guardar */}
+        <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-[var(--color-borde)]">
+          <div className="min-h-[20px]">
+            {successMsg && (
+              <div className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-1.5 animate-in fade-in">
+                <Check className="w-3.5 h-3.5 shrink-0" />
+                <span>{successMsg}</span>
+              </div>
+            )}
+            {errorMsg && (
+              <div className="text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-1.5 animate-in fade-in">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-bold text-xs sm:text-sm hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
+                <span>Guardando...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 text-[#1F2937]" />
+                <span>Guardar Tema</span>
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -912,6 +1057,42 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
             )
           })()}
         </div>
+
+        {/* Pie de tarjeta con feedback y botón de guardar */}
+        <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-[var(--color-borde)]">
+          <div className="min-h-[20px]">
+            {successMsg && (
+              <div className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-1.5 animate-in fade-in">
+                <Check className="w-3.5 h-3.5 shrink-0" />
+                <span>{successMsg}</span>
+              </div>
+            )}
+            {errorMsg && (
+              <div className="text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-1.5 animate-in fade-in">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-bold text-xs sm:text-sm hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
+                <span>Guardando...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 text-[#1F2937]" />
+                <span>Guardar Paleta de Colores</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* 4. Selector de Tipografías */}
@@ -1068,10 +1249,49 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
             </div>
           </div>
         </div>
-      </div>
 
-      {/* 5. Previsualización en Vivo */}
-      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
+        {/* Pie de tarjeta con feedback y botón de guardar */}
+        <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-[var(--color-borde)]">
+          <div className="min-h-[20px]">
+            {successMsg && (
+              <div className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-1.5 animate-in fade-in">
+                <Check className="w-3.5 h-3.5 shrink-0" />
+                <span>{successMsg}</span>
+              </div>
+            )}
+            {errorMsg && (
+              <div className="text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-1.5 animate-in fade-in">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-bold text-xs sm:text-sm hover:bg-[#eab308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
+                <span>Guardando...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 text-[#1F2937]" />
+                <span>Guardar Tipografías</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+    {/* Fin Columna Izquierda */}
+
+    {/* Columna Derecha: Vista Previa en Tiempo Real (Sticky en Desktop, no scroleable fuera de vista) */}
+    <div className="lg:col-span-5 xl:col-span-5 lg:sticky lg:top-6 lg:self-start">
+      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-bold flex items-center gap-2">
@@ -1079,18 +1299,18 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
               <span>Vista Previa en Tiempo Real</span>
             </h2>
             <p className="text-xs opacity-70 mt-0.5">
-              Así lucirá la cabecera y una tarjeta de producto en tu tienda para tus visitantes.
+              Así verán tus clientes tu catálogo en vivo según los ajustes elegidos.
             </p>
           </div>
 
           {/* Toggle Claro / Oscuro para el preview */}
-          <div className="flex items-center rounded-xl bg-black/5 dark:bg-white/10 p-1 border border-[var(--color-borde)] text-xs self-start sm:self-auto">
+          <div className="flex items-center rounded-xl bg-black/5 dark:bg-white/10 p-1 border border-[var(--color-borde)] text-xs self-start sm:self-auto shrink-0">
             <button
               type="button"
               onClick={() => setPreviewMode('claro')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
                 previewMode === 'claro'
-                  ? 'bg-white shadow-xs text-black'
+                  ? 'bg-white shadow-xs text-black font-bold'
                   : 'opacity-70 hover:opacity-100'
               }`}
             >
@@ -1099,9 +1319,9 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
             <button
               type="button"
               onClick={() => setPreviewMode('oscuro')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
                 previewMode === 'oscuro'
-                  ? 'bg-black text-white shadow-xs'
+                  ? 'bg-black text-white shadow-xs font-bold'
                   : 'opacity-70 hover:opacity-100'
               }`}
             >
@@ -1224,10 +1444,10 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
           </div>
 
           {/* 5. Contenido & Catálogo Simulado */}
-          <div className="p-4 sm:p-6 space-y-5">
+          <div className="p-4 sm:p-5 space-y-4">
             {/* Mini Banner Promocional */}
             <div
-              className="p-5 rounded-2xl bg-gradient-to-r from-black/80 to-black/60 text-white flex flex-col items-start gap-2 shadow-sm"
+              className="p-4 rounded-2xl bg-gradient-to-r from-black/80 to-black/60 text-white flex flex-col items-start gap-2 shadow-sm"
               style={{
                 borderColor: 'rgba(255,255,255,0.1)',
               }}
@@ -1235,10 +1455,10 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
               <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400">
                 Lanzamiento Especial
               </span>
-              <h4 className="text-base sm:text-lg font-bold">Piezas 3D & Insumos Maker</h4>
+              <h4 className="text-sm sm:text-base font-bold">Piezas 3D & Insumos Maker</h4>
               <button
                 type="button"
-                className="mt-1 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xs transition-opacity hover:opacity-90"
+                className="mt-0.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white shadow-xs transition-opacity hover:opacity-90"
                 style={{ backgroundColor: currentPrimario }}
               >
                 Ver Producto
@@ -1246,10 +1466,10 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
             </div>
 
             {/* Grilla de 2 Productos */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
               {/* Producto 1 */}
               <div
-                className="rounded-2xl p-3 border space-y-2 shadow-2xs"
+                className="rounded-2xl p-2.5 border space-y-2 shadow-2xs"
                 style={{
                   backgroundColor: previewMode === 'oscuro' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                   borderColor: previewMode === 'oscuro' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
@@ -1258,25 +1478,25 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
                 <div className="aspect-square w-full rounded-xl bg-black/10 dark:bg-white/10 flex items-center justify-center text-[11px] opacity-60">
                   Foto 3D
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   <h5 className="font-bold text-xs truncate">Filamento PLA 1kg</h5>
-                  <p className="text-sm font-bold" style={{ color: currentPrimario }}>
+                  <p className="text-xs font-bold" style={{ color: currentPrimario }}>
                     $24.000
                   </p>
                 </div>
                 <button
                   type="button"
-                  className="w-full py-2 rounded-xl text-xs font-bold text-white shadow-xs flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90"
+                  className="w-full py-1.5 rounded-xl text-[11px] font-bold text-white shadow-xs flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90"
                   style={{ backgroundColor: currentPrimario }}
                 >
-                  <ShoppingBag className="w-3.5 h-3.5" />
+                  <ShoppingBag className="w-3 h-3" />
                   <span>Agregar</span>
                 </button>
               </div>
 
               {/* Producto 2 */}
               <div
-                className="rounded-2xl p-3 border space-y-2 shadow-2xs"
+                className="rounded-2xl p-2.5 border space-y-2 shadow-2xs"
                 style={{
                   backgroundColor: previewMode === 'oscuro' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                   borderColor: previewMode === 'oscuro' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
@@ -1285,18 +1505,18 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
                 <div className="aspect-square w-full rounded-xl bg-black/10 dark:bg-white/10 flex items-center justify-center text-[11px] opacity-60">
                   Foto 3D
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   <h5 className="font-bold text-xs truncate">Soporte Gamer RGB</h5>
-                  <p className="text-sm font-bold" style={{ color: currentPrimario }}>
+                  <p className="text-xs font-bold" style={{ color: currentPrimario }}>
                     $18.500
                   </p>
                 </div>
                 <button
                   type="button"
-                  className="w-full py-2 rounded-xl text-xs font-bold text-white shadow-xs flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90"
+                  className="w-full py-1.5 rounded-xl text-[11px] font-bold text-white shadow-xs flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90"
                   style={{ backgroundColor: currentPrimario }}
                 >
-                  <ShoppingBag className="w-3.5 h-3.5" />
+                  <ShoppingBag className="w-3 h-3" />
                   <span>Agregar</span>
                 </button>
               </div>
@@ -1304,53 +1524,15 @@ export default function BrandingForm({ store, tenantQuery }: BrandingFormProps) 
           </div>
 
           {/* Botón Flotante de WhatsApp en la esquina */}
-          <div className="absolute bottom-4 right-4 z-10 w-11 h-11 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer">
-            <WhatsAppIcon className="w-6 h-6 text-white" />
+          <div className="absolute bottom-4 right-4 z-10 w-10 h-10 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer">
+            <WhatsAppIcon className="w-5 h-5 text-white" />
           </div>
         </div>
       </div>
-
-      {/* Botón de Guardar y Feedback */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-2">
-        {successMsg && (
-          <div className="p-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-sm flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-            <Check className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-            <span>{successMsg}</span>
-          </div>
-        )}
-        {errorMsg && (
-          <div className="p-3 px-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-sm flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="min-h-[48px] px-8 py-3 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-xs cursor-pointer shrink-0"
-        >
-          {loading ? (
-            <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
-          ) : (
-            <>
-              <Check className="w-4 h-4 text-[#1F2937]" />
-              <span>Guardar Configuración de Marca</span>
-            </>
-          )}
-        </button>
-      </div>
-
-      {/* Barra de Guardado Flotante Estandarizada */}
-      <StickySaveBar
-        loading={loading}
-        saveText="Guardar Configuración de Marca"
-        savingText="Guardando marca..."
-        successMsg={successMsg}
-        errorMsg={errorMsg}
-        message="Configuración de marca y colores"
-        hasChanges={true}
-      />
-    </form>
+    </div>
+    {/* Fin Columna Derecha */}
+  </div>
+  {/* Fin Grid */}
+</form>
   )
 }

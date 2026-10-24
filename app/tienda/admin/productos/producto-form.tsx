@@ -44,7 +44,6 @@ import {
 
 import { compressImageFile } from '@/lib/image-compression'
 import AiDescriptionModal from './ai-description-modal'
-import { StickySaveBar } from '../components/sticky-save-bar'
 import {
   parseMeasureInput,
   MAX_PESO_KG,
@@ -2126,16 +2125,6 @@ export default function ProductoForm({
             )}
           </button>
         </div>
-
-        {/* Barra de Guardado Flotante Estandarizada */}
-        <StickySaveBar
-          loading={loading}
-          saveText={isEditing ? 'Guardar Cambios' : 'Agregar Producto'}
-          savingText="Guardando producto..."
-          errorMsg={errorMsg}
-          message={isEditing ? `Editando: ${nombre || 'Producto'}` : 'Nuevo producto'}
-          hasChanges={true}
-        />
       </form>
 
       {/* Modal Seleccionar / Subir Foto para Variante */}
