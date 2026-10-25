@@ -9,7 +9,15 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
-import { getPlanConfig } from '@/lib/plans'
+import {
+  getPlanConfig,
+  getFeatureStatus,
+  getStoreEffectiveLimit,
+  isFeatureAllowed,
+  PLANS_CONFIG,
+  FEATURE_REQUIREMENTS,
+  type PlanFeatureKey,
+} from '@/lib/plans'
 import type { SubscriptionPayment } from '@/types/database'
 import type { SuperadminStoreItem } from './tiendas-list'
 import {
@@ -43,6 +51,16 @@ import {
   Truck,
   Globe,
   Settings,
+  RotateCcw,
+  ToggleLeft,
+  ToggleRight,
+  ShoppingCart,
+  BarChart3,
+  Sparkles,
+  Star,
+  AlertCircle,
+  Banknote,
+  Info,
 } from 'lucide-react'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 
@@ -104,7 +122,7 @@ export default function SuperadminTiendaDetailFullpage({
   const supabase = createSupabaseBrowserClient()
 
   // Pestaña activa en la página completa
-  const [activeTab, setActiveTab] = useState<'suscripcion' | 'pagos' | 'metricas' | 'contacto' | 'notas'>('suscripcion')
+  const [activeTab, setActiveTab] = useState<'suscripcion' | 'opciones' | 'pagos' | 'metricas' | 'contacto' | 'notas'>('suscripcion')
 
   // Estado del formulario de edición de suscripción y datos de la tienda
   const [subEditForm, setSubEditForm] = useState<Partial<SuperadminStoreItem>>({})
@@ -236,6 +254,9 @@ export default function SuperadminTiendaDetailFullpage({
       modo_operacion: store.modo_operacion || 'vitrina',
       checkout_activo: Boolean(store.checkout_activo),
       envios_activo: Boolean(store.envios_activo),
+      banners_activo: Boolean(store.banners_activo),
+      transferencia_activa: Boolean(store.transferencia_activa),
+      features_override: store.features_override || {},
       suscripcion_activa: store.suscripcion_activa,
       notas_admin: store.notas_admin || '',
     })
@@ -419,15 +440,28 @@ export default function SuperadminTiendaDetailFullpage({
         modo_operacion: subEditForm.modo_operacion || 'vitrina',
         checkout_activo: Boolean(subEditForm.checkout_activo),
         envios_activo: Boolean(subEditForm.envios_activo),
+        banners_activo: Boolean(subEditForm.banners_activo),
+        transferencia_activa: Boolean(subEditForm.transferencia_activa),
+        features_override: subEditForm.features_override || {},
         suscripcion_activa: Boolean(subEditForm.suscripcion_activa),
       }
 
-      const { error } = await supabase
+      let { error } = await supabase
         .from('stores')
         .update(updateData)
         .eq('id', store.id)
 
-      if (error) throw error
+      if (error && error.message?.includes('features_override')) {
+        // En caso de que la columna aún no haya sido aplicada en Postgres
+        const { features_override, ...fallbackData } = updateData
+        const retryRes = await supabase
+          .from('stores')
+          .update(fallbackData)
+          .eq('id', store.id)
+        if (retryRes.error) throw retryRes.error
+      } else if (error) {
+        throw error
+      }
 
       // Guardar notas internas en tabla protegida
       const notasLimpias = subEditForm.notas_admin?.trim() || null
@@ -447,6 +481,145 @@ export default function SuperadminTiendaDetailFullpage({
     } finally {
       setSavingSubEdit(false)
     }
+  }
+
+  // Configuración del plan actual seleccionado en el formulario
+  const currentFormPlan = getPlanConfig(subEditForm.plan || store.plan)
+
+  // Obtener si una feature está activa en el estado actual del formulario
+  const getFormFeatureValue = (featureKey: PlanFeatureKey): boolean => {
+    if (
+      subEditForm.features_override &&
+      typeof subEditForm.features_override[featureKey] === 'boolean'
+    ) {
+      return subEditForm.features_override[featureKey]
+    }
+
+    if (featureKey === 'checkout_online') {
+      if (subEditForm.checkout_activo !== undefined) return Boolean(subEditForm.checkout_activo)
+    }
+    if (featureKey === 'envios_zonas_fijas' || featureKey === 'envios_couriers') {
+      if (subEditForm.envios_activo === false) return false
+    }
+    if (featureKey === 'banners') {
+      if (subEditForm.banners_activo !== undefined) return Boolean(subEditForm.banners_activo)
+    }
+    if (featureKey === 'transferencia_bancaria') {
+      if (subEditForm.transferencia_activa !== undefined) return Boolean(subEditForm.transferencia_activa)
+    }
+
+    switch (featureKey) {
+      case 'checkout_online':
+        return currentFormPlan.checkoutActivo
+      case 'mercado_pago':
+        return currentFormPlan.mercadoPagoHabilitado
+      case 'transferencia_bancaria':
+        return currentFormPlan.transferenciaBancaria
+      case 'envios_zonas_fijas':
+        return currentFormPlan.enviosZonasFijas
+      case 'envios_couriers':
+        return currentFormPlan.enviosCouriersEnVivo
+      case 'trazabilidad_stock':
+        return currentFormPlan.trazabilidadStock
+      case 'crm_clientes':
+        return currentFormPlan.crmClientes
+      case 'resenas':
+        return currentFormPlan.resenasProductos
+      case 'colaboradores':
+        return currentFormPlan.maxColaboradoresExtra > 0
+      case 'dominio_propio':
+        return currentFormPlan.dominioPropio
+      case 'banners':
+        return currentFormPlan.bannersMaxSlides > 0
+      case 'analytics':
+        return currentFormPlan.analyticsTracking
+      default:
+        return false
+    }
+  }
+
+  // Alternar on/off una feature en el formulario
+  const handleToggleFeature = (featureKey: PlanFeatureKey) => {
+    const currentVal = getFormFeatureValue(featureKey)
+    const newVal = !currentVal
+    const nextOverrides = {
+      ...(subEditForm.features_override || {}),
+      [featureKey]: newVal,
+    }
+
+    const patch: Partial<SuperadminStoreItem> = {
+      features_override: nextOverrides,
+    }
+
+    if (featureKey === 'checkout_online') {
+      patch.checkout_activo = newVal
+    }
+    if (featureKey === 'banners') {
+      patch.banners_activo = newVal
+    }
+    if (featureKey === 'transferencia_bancaria') {
+      patch.transferencia_activa = newVal
+    }
+    if (featureKey === 'envios_zonas_fijas' || featureKey === 'envios_couriers') {
+      if (newVal) {
+        patch.envios_activo = true
+      } else {
+        const otherKey = featureKey === 'envios_zonas_fijas' ? 'envios_couriers' : 'envios_zonas_fijas'
+        const otherVal = nextOverrides[otherKey] ?? getFormFeatureValue(otherKey)
+        if (!otherVal) {
+          patch.envios_activo = false
+        }
+      }
+    }
+
+    setSubEditForm((prev) => ({
+      ...prev,
+      ...patch,
+    }))
+  }
+
+  // Comprueba si una feature difiere del valor oficial del plan
+  const isFeatureModified = (featureKey: PlanFeatureKey): boolean => {
+    if (
+      subEditForm.features_override &&
+      typeof subEditForm.features_override[featureKey] === 'boolean'
+    ) {
+      return true
+    }
+    return false
+  }
+
+  // Restablecer todas las opciones y límites a los valores oficiales del plan asignado
+  const handleResetToPlanDefaults = () => {
+    const pConfig = getPlanConfig(subEditForm.plan || store.plan)
+    setSubEditForm((prev) => ({
+      ...prev,
+      limite_productos: pConfig.limiteProductos,
+      comision_portalmaker: pConfig.comisionPortalmakerPct,
+      dias_gracia: pConfig.diasGraciaDefault,
+      modo_operacion: pConfig.modoOperacionDefault,
+      checkout_activo: pConfig.checkoutActivo,
+      envios_activo: pConfig.enviosZonasFijas || pConfig.enviosCouriersEnVivo,
+      transferencia_activa: pConfig.transferenciaBancaria,
+      banners_activo: pConfig.bannersMaxSlides > 0,
+      features_override: {
+        checkout_online: pConfig.checkoutActivo,
+        mercado_pago: pConfig.mercadoPagoHabilitado,
+        transferencia_bancaria: pConfig.transferenciaBancaria,
+        envios_zonas_fijas: pConfig.enviosZonasFijas,
+        envios_couriers: pConfig.enviosCouriersEnVivo,
+        trazabilidad_stock: pConfig.trazabilidadStock,
+        crm_clientes: pConfig.crmClientes,
+        resenas: pConfig.resenasProductos,
+        colaboradores: pConfig.maxColaboradoresExtra > 0,
+        dominio_propio: pConfig.dominioPropio,
+        banners: pConfig.bannersMaxSlides > 0,
+        analytics: pConfig.analyticsTracking,
+        max_colaboradores: pConfig.maxColaboradoresExtra,
+        banners_max_slides: pConfig.bannersMaxSlides,
+      },
+    }))
+    showToast(`Opciones y límites restablecidos al estándar del plan ${pConfig.nombre}. Guarda para aplicar.`)
   }
 
   // Registrar un cobro / pago de suscripción
@@ -723,8 +896,24 @@ export default function SuperadminTiendaDetailFullpage({
                   : 'border-transparent opacity-60 hover:opacity-100'
               }`}
             >
-              <Sliders className="w-4 h-4" />
+              <Store className="w-4 h-4" />
               <span>Configuración & Plan</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('opciones')}
+              className={`min-h-[44px] pb-3 px-2 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+                activeTab === 'opciones'
+                  ? 'border-[#CA8A04] text-[#CA8A04] dark:border-[#FACC15] dark:text-[#FACC15]'
+                  : 'border-transparent opacity-60 hover:opacity-100'
+              }`}
+            >
+              <Sliders className="w-4 h-4" />
+              <span>Opciones & Límites</span>
+              {Object.keys(subEditForm.features_override || {}).length > 0 && (
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+              )}
             </button>
 
             <button
@@ -1178,7 +1367,788 @@ export default function SuperadminTiendaDetailFullpage({
         )}
 
         {/* ===================================================================
-            PESTAÑA 2: PAGOS Y HISTORIAL DE COBROS
+            PESTAÑA: OPCIONES, LÍMITES Y FUNCIONALIDADES (SUPERADMIN)
+            Permite habilitar o inhabilitar módulos individuales y ajustar cuotas.
+            Por defecto, se adoptan las reglas del plan activo de la tienda.
+            =================================================================== */}
+        {activeTab === 'opciones' && (
+          <form onSubmit={handleSaveSubEdit} className="space-y-6">
+            {/* Header Informativo del Plan y Sincronización */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-2xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--color-borde)]">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs uppercase font-semibold opacity-60">Plan Activo de la Tienda:</span>
+                    <span
+                      className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
+                        PLAN_LABELS[subEditForm.plan || store.plan || 'maker_pro']?.color ||
+                        'bg-amber-50 text-amber-700 border-amber-200'
+                      }`}
+                    >
+                      {PLAN_LABELS[subEditForm.plan || store.plan || 'maker_pro']?.label || currentFormPlan.nombre}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                    {currentFormPlan.descripcion}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleResetToPlanDefaults}
+                  className="min-h-[44px] px-4 py-2 rounded-xl border border-amber-500/40 hover:bg-amber-500/10 text-xs font-semibold text-[#CA8A04] dark:text-[#FACC15] transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 self-start sm:self-center"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Sincronizar con Plan {currentFormPlan.nombre}</span>
+                </button>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-amber-400/[0.06] border border-amber-400/20 text-xs text-zinc-700 dark:text-zinc-300 space-y-1">
+                <span className="font-semibold block text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                  <Info className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <span>Prioridad de configuraciones de tienda:</span>
+                </span>
+                <p className="opacity-90 leading-relaxed text-[11px] sm:text-xs">
+                  Cualquier opción o límite que modifiques manualmente en este panel tendrá prioridad absoluta sobre las reglas por defecto del plan. La tienda pública y el panel del maker responderán de inmediato a estos cambios al guardar.
+                </p>
+              </div>
+            </div>
+
+            {/* SECCIÓN 1: LÍMITES NUMÉRICOS Y CAPACIDADES */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-2xs space-y-5">
+              <div className="flex items-center gap-2.5 pb-2 border-b border-[var(--color-borde)]">
+                <Sliders className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                <h3 className="font-semibold text-sm sm:text-base">
+                  Límites de Capacidad y Parámetros Operativos
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                {/* Límite de Productos */}
+                <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold opacity-90">Límite de Productos Activos</label>
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 font-medium">
+                      Plan: {currentFormPlan.limiteProductos}
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    value={subEditForm.limite_productos ?? currentFormPlan.limiteProductos}
+                    onChange={(e) =>
+                      setSubEditForm({ ...subEditForm, limite_productos: Number(e.target.value) })
+                    }
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                  />
+                  <p className="text-[11px] opacity-60">
+                    Máximo de productos simultáneos permitidos en el catálogo del taller.
+                  </p>
+                </div>
+
+                {/* Límite de Colaboradores */}
+                <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold opacity-90">Colaboradores Extra</label>
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 font-medium">
+                      Plan: {currentFormPlan.maxColaboradoresExtra}
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    min="0"
+                    value={
+                      typeof subEditForm.features_override?.max_colaboradores === 'number'
+                        ? subEditForm.features_override.max_colaboradores
+                        : currentFormPlan.maxColaboradoresExtra
+                    }
+                    onChange={(e) => {
+                      const val = Number(e.target.value)
+                      setSubEditForm((prev) => ({
+                        ...prev,
+                        features_override: {
+                          ...(prev.features_override || {}),
+                          max_colaboradores: val,
+                          colaboradores: val > 0,
+                        },
+                      }))
+                    }}
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                  />
+                  <p className="text-[11px] opacity-60">
+                    Cuentas secundarias permitidas para ayudantes o socios (0 = solo dueño).
+                  </p>
+                </div>
+
+                {/* Slides de Banners */}
+                <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold opacity-90">Banners en Carrusel</label>
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 font-medium">
+                      Plan: {currentFormPlan.bannersMaxSlides}
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    min="0"
+                    value={
+                      typeof subEditForm.features_override?.banners_max_slides === 'number'
+                        ? subEditForm.features_override.banners_max_slides
+                        : currentFormPlan.bannersMaxSlides
+                    }
+                    onChange={(e) => {
+                      const val = Number(e.target.value)
+                      setSubEditForm((prev) => ({
+                        ...prev,
+                        banners_activo: val > 0,
+                        features_override: {
+                          ...(prev.features_override || {}),
+                          banners_max_slides: val,
+                          banners: val > 0,
+                        },
+                      }))
+                    }}
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                  />
+                  <p className="text-[11px] opacity-60">
+                    Cantidad máxima de slides publicitarios en la cabecera de la tienda.
+                  </p>
+                </div>
+
+                {/* Comisión Portalmaker */}
+                <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold opacity-90">Comisión Portalmaker (%)</label>
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 font-medium">
+                      Plan: {currentFormPlan.comisionPortalmakerPct}%
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="99.99"
+                    value={subEditForm.comision_portalmaker ?? currentFormPlan.comisionPortalmakerPct}
+                    onChange={(e) =>
+                      setSubEditForm({ ...subEditForm, comision_portalmaker: Number(e.target.value) })
+                    }
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                  />
+                  <p className="text-[11px] opacity-60">
+                    Porcentaje retenido en cobros automáticos hacia la plataforma.
+                  </p>
+                </div>
+
+                {/* Días de Gracia */}
+                <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold opacity-90">Días de Gracia / Tolerancia</label>
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 font-medium">
+                      Plan: {currentFormPlan.diasGraciaDefault}d
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    min="0"
+                    value={subEditForm.dias_gracia ?? currentFormPlan.diasGraciaDefault}
+                    onChange={(e) =>
+                      setSubEditForm({ ...subEditForm, dias_gracia: Number(e.target.value) })
+                    }
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                  />
+                  <p className="text-[11px] opacity-60">
+                    Días adicionales de servicio activo tras vencer el ciclo mensual antes del bloqueo.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* SECCIÓN 2: MÓDULOS Y FUNCIONALIDADES (SWITCHES ON / OFF) */}
+            <div className="space-y-6">
+              {/* Grupo A: Ventas & Cobros */}
+              <div className="p-5 sm:p-6 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-2xs space-y-4">
+                <div className="flex items-center gap-2.5 pb-2 border-b border-[var(--color-borde)]">
+                  <CreditCard className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                  <h3 className="font-semibold text-sm sm:text-base">
+                    Ventas, Carrito y Pasarelas de Cobro
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {/* Switch Checkout Online */}
+                  <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs sm:text-sm">Carrito y Checkout Online</span>
+                        {isFeatureModified('checkout_online') && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">
+                            Personalizado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] opacity-65 leading-snug">
+                        Permite agregar al carrito y finalizar la compra en la web. Si se desactiva, pasa a modo vitrina/WhatsApp.
+                      </p>
+                      <span className="text-[10px] opacity-50 block">
+                        Por defecto en {currentFormPlan.nombre}: {currentFormPlan.checkoutActivo ? 'Habilitado' : 'Inactivo'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFeature('checkout_online')}
+                      className={`min-h-[44px] min-w-[76px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+                        getFormFeatureValue('checkout_online')
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      {getFormFeatureValue('checkout_online') ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Activo</span>
+                        </>
+                      ) : (
+                        <span>Inactivo</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Switch Mercado Pago */}
+                  <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs sm:text-sm">Mercado Pago (Tarjetas / Cuotas)</span>
+                        {isFeatureModified('mercado_pago') && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">
+                            Personalizado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] opacity-65 leading-snug">
+                        Habilita la integración con Mercado Pago en el checkout web para cobrar con tarjetas y saldo.
+                      </p>
+                      <span className="text-[10px] opacity-50 block">
+                        Por defecto en {currentFormPlan.nombre}: {currentFormPlan.mercadoPagoHabilitado ? 'Habilitado' : 'Inactivo'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFeature('mercado_pago')}
+                      className={`min-h-[44px] min-w-[76px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+                        getFormFeatureValue('mercado_pago')
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      {getFormFeatureValue('mercado_pago') ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Activo</span>
+                        </>
+                      ) : (
+                        <span>Inactivo</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Switch Transferencia Bancaria */}
+                  <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs sm:text-sm">Transferencia Bancaria Directa</span>
+                        {isFeatureModified('transferencia_bancaria') && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">
+                            Personalizado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] opacity-65 leading-snug">
+                        Muestra opción de CBU/CVU o Alias propio en el checkout sin comisión de pasarela.
+                      </p>
+                      <span className="text-[10px] opacity-50 block">
+                        Por defecto en {currentFormPlan.nombre}: {currentFormPlan.transferenciaBancaria ? 'Habilitado' : 'Inactivo'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFeature('transferencia_bancaria')}
+                      className={`min-h-[44px] min-w-[76px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+                        getFormFeatureValue('transferencia_bancaria')
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      {getFormFeatureValue('transferencia_bancaria') ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Activo</span>
+                        </>
+                      ) : (
+                        <span>Inactivo</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grupo B: Logística y Envíos */}
+              <div className="p-5 sm:p-6 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-2xs space-y-4">
+                <div className="flex items-center gap-2.5 pb-2 border-b border-[var(--color-borde)]">
+                  <Truck className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                  <h3 className="font-semibold text-sm sm:text-base">
+                    Logística, Envíos y Couriers
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {/* Switch Maestro de Envíos */}
+                  <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs sm:text-sm">Módulo Maestro de Envíos</span>
+                      </div>
+                      <p className="text-[11px] opacity-65 leading-snug">
+                        Control general de envíos. Si está apagado, se oculta la logística en la tienda y en el admin.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSubEditForm((prev) => ({
+                          ...prev,
+                          envios_activo: !prev.envios_activo,
+                        }))
+                      }
+                      className={`min-h-[44px] min-w-[76px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+                        subEditForm.envios_activo
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      {subEditForm.envios_activo ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Activo</span>
+                        </>
+                      ) : (
+                        <span>Inactivo</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Switch Tarifas Fijas / Manuales */}
+                  <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs sm:text-sm">Tarifas de Envío Fijas por Zona</span>
+                        {isFeatureModified('envios_zonas_fijas') && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">
+                            Personalizado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] opacity-65 leading-snug">
+                        Permite al maker configurar precios de flete fijos por región geográfica o código postal.
+                      </p>
+                      <span className="text-[10px] opacity-50 block">
+                        Por defecto en {currentFormPlan.nombre}: {currentFormPlan.enviosZonasFijas ? 'Habilitado' : 'Inactivo'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFeature('envios_zonas_fijas')}
+                      className={`min-h-[44px] min-w-[76px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+                        getFormFeatureValue('envios_zonas_fijas')
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      {getFormFeatureValue('envios_zonas_fijas') ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Activo</span>
+                        </>
+                      ) : (
+                        <span>Inactivo</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Switch Couriers en Vivo */}
+                  <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs sm:text-sm">Couriers Automatizados en Vivo</span>
+                        {isFeatureModified('envios_couriers') && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">
+                            Personalizado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] opacity-65 leading-snug">
+                        Cotización en tiempo real por peso/volumen y emisión de etiquetas (Zipnova, Correo Arg, Andreani).
+                      </p>
+                      <span className="text-[10px] opacity-50 block">
+                        Por defecto en {currentFormPlan.nombre}: {currentFormPlan.enviosCouriersEnVivo ? 'Habilitado' : 'Inactivo'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFeature('envios_couriers')}
+                      className={`min-h-[44px] min-w-[76px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+                        getFormFeatureValue('envios_couriers')
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      {getFormFeatureValue('envios_couriers') ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Activo</span>
+                        </>
+                      ) : (
+                        <span>Inactivo</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grupo C: Catálogo, Stock & Reputación */}
+              <div className="p-5 sm:p-6 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-2xs space-y-4">
+                <div className="flex items-center gap-2.5 pb-2 border-b border-[var(--color-borde)]">
+                  <Package className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                  <h3 className="font-semibold text-sm sm:text-base">
+                    Catálogo, Control de Stock y Reputación
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {/* Switch Trazabilidad de Stock */}
+                  <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs sm:text-sm">Historial y Trazabilidad de Stock</span>
+                        {isFeatureModified('trazabilidad_stock') && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">
+                            Personalizado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] opacity-65 leading-snug">
+                        Habilita el registro de entradas, salidas, mermas y auditoría de movimientos de stock.
+                      </p>
+                      <span className="text-[10px] opacity-50 block">
+                        Por defecto en {currentFormPlan.nombre}: {currentFormPlan.trazabilidadStock ? 'Habilitado' : 'Inactivo'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFeature('trazabilidad_stock')}
+                      className={`min-h-[44px] min-w-[76px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+                        getFormFeatureValue('trazabilidad_stock')
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      {getFormFeatureValue('trazabilidad_stock') ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Activo</span>
+                        </>
+                      ) : (
+                        <span>Inactivo</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Switch Reseñas Públicas */}
+                  <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs sm:text-sm">Reseñas y Calificaciones Públicas</span>
+                        {isFeatureModified('resenas') && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">
+                            Personalizado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] opacity-65 leading-snug">
+                        Permite a los compradores dejar opiniones de 1 a 5 estrellas visibles en fichas de producto.
+                      </p>
+                      <span className="text-[10px] opacity-50 block">
+                        Por defecto en {currentFormPlan.nombre}: {currentFormPlan.resenasProductos ? 'Habilitado' : 'Inactivo'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFeature('resenas')}
+                      className={`min-h-[44px] min-w-[76px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+                        getFormFeatureValue('resenas')
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      {getFormFeatureValue('resenas') ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Activo</span>
+                        </>
+                      ) : (
+                        <span>Inactivo</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grupo D: Branding, Dominio y Analítica */}
+              <div className="p-5 sm:p-6 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-2xs space-y-4">
+                <div className="flex items-center gap-2.5 pb-2 border-b border-[var(--color-borde)]">
+                  <Globe className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                  <h3 className="font-semibold text-sm sm:text-base">
+                    Branding, Dominio Propio y Analítica Web
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {/* Switch Dominio Propio */}
+                  <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs sm:text-sm">Dominio Propio (.com.ar)</span>
+                        {isFeatureModified('dominio_propio') && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">
+                            Personalizado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] opacity-65 leading-snug">
+                        Permite configurar una dirección web propia (ej. mitienda.com.ar) con SSL automático.
+                      </p>
+                      <span className="text-[10px] opacity-50 block">
+                        Por defecto en {currentFormPlan.nombre}: {currentFormPlan.dominioPropio ? 'Habilitado' : 'Inactivo'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFeature('dominio_propio')}
+                      className={`min-h-[44px] min-w-[76px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+                        getFormFeatureValue('dominio_propio')
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      {getFormFeatureValue('dominio_propio') ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Activo</span>
+                        </>
+                      ) : (
+                        <span>Inactivo</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Switch Banners Promocionales */}
+                  <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs sm:text-sm">Carrusel de Banners Promocionales</span>
+                        {isFeatureModified('banners') && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">
+                            Personalizado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] opacity-65 leading-snug">
+                        Muestra la sección de carrusel promocional animado en la cabecera de la tienda.
+                      </p>
+                      <span className="text-[10px] opacity-50 block">
+                        Por defecto en {currentFormPlan.nombre}: {currentFormPlan.bannersMaxSlides > 0 ? 'Habilitado' : 'Inactivo'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFeature('banners')}
+                      className={`min-h-[44px] min-w-[76px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+                        getFormFeatureValue('banners')
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      {getFormFeatureValue('banners') ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Activo</span>
+                        </>
+                      ) : (
+                        <span>Inactivo</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Switch Google Analytics y Meta Pixel */}
+                  <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs sm:text-sm">Google Analytics & Meta Pixel</span>
+                        {isFeatureModified('analytics') && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">
+                            Personalizado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] opacity-65 leading-snug">
+                        Permite a la tienda inyectar scripts de analítica y pixeles de conversión publicitaria.
+                      </p>
+                      <span className="text-[10px] opacity-50 block">
+                        Por defecto en {currentFormPlan.nombre}: {currentFormPlan.analyticsTracking ? 'Habilitado' : 'Inactivo'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFeature('analytics')}
+                      className={`min-h-[44px] min-w-[76px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+                        getFormFeatureValue('analytics')
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      {getFormFeatureValue('analytics') ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Activo</span>
+                        </>
+                      ) : (
+                        <span>Inactivo</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grupo E: Gestión y Equipo */}
+              <div className="p-5 sm:p-6 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-2xs space-y-4">
+                <div className="flex items-center gap-2.5 pb-2 border-b border-[var(--color-borde)]">
+                  <Users className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                  <h3 className="font-semibold text-sm sm:text-base">
+                    Gestión de Clientes y Equipo del Taller
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {/* Switch CRM de Clientes */}
+                  <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs sm:text-sm">CRM de Clientes Registrados</span>
+                        {isFeatureModified('crm_clientes') && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">
+                            Personalizado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] opacity-65 leading-snug">
+                        Acceso a la base de compradores con historial de pedidos e información de contacto.
+                      </p>
+                      <span className="text-[10px] opacity-50 block">
+                        Por defecto en {currentFormPlan.nombre}: {currentFormPlan.crmClientes ? 'Habilitado' : 'Inactivo'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFeature('crm_clientes')}
+                      className={`min-h-[44px] min-w-[76px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+                        getFormFeatureValue('crm_clientes')
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      {getFormFeatureValue('crm_clientes') ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Activo</span>
+                        </>
+                      ) : (
+                        <span>Inactivo</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Switch Colaboradores */}
+                  <div className="p-4 rounded-xl border border-[var(--color-borde)] bg-black/[0.01] dark:bg-white/[0.01] flex items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs sm:text-sm">Módulo de Colaboradores de Taller</span>
+                        {isFeatureModified('colaboradores') && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">
+                            Personalizado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] opacity-65 leading-snug">
+                        Permite al dueño enviar invitaciones y asignar permisos a miembros de su equipo.
+                      </p>
+                      <span className="text-[10px] opacity-50 block">
+                        Por defecto en {currentFormPlan.nombre}: {currentFormPlan.maxColaboradoresExtra > 0 ? 'Habilitado' : 'Inactivo'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFeature('colaboradores')}
+                      className={`min-h-[44px] min-w-[76px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+                        getFormFeatureValue('colaboradores')
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700'
+                      }`}
+                    >
+                      {getFormFeatureValue('colaboradores') ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Activo</span>
+                        </>
+                      ) : (
+                        <span>Inactivo</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Botón Inferior de Guardado de Opciones */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)] flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+              <span className="text-xs opacity-70 text-center sm:text-left">
+                Las opciones y límites guardados se sincronizan de inmediato con la tienda online y el panel del maker.
+              </span>
+              <button
+                type="submit"
+                disabled={savingSubEdit}
+                className="min-h-[44px] px-6 rounded-xl bg-[#CA8A04] hover:bg-[#A16207] text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 shrink-0 w-full sm:w-auto"
+              >
+                {savingSubEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                <span>Guardar Opciones & Límites</span>
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* ===================================================================
+            PESTAÑA: PAGOS Y HISTORIAL DE COBROS
             =================================================================== */}
         {activeTab === 'pagos' && (
           <div className="space-y-6">

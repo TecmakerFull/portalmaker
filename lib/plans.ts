@@ -234,6 +234,7 @@ export const PLANS_CONFIG: Record<PlanKey, PlanLimits> = {
 export type PlanFeatureKey =
   | 'checkout_online'
   | 'mercado_pago'
+  | 'transferencia_bancaria'
   | 'envios_zonas_fijas'
   | 'envios_couriers'
   | 'trazabilidad_stock'
@@ -241,6 +242,7 @@ export type PlanFeatureKey =
   | 'resenas'
   | 'colaboradores'
   | 'dominio_propio'
+  | 'banners'
   | 'analytics'
 
 export interface FeatureRequirement {
@@ -259,7 +261,7 @@ export const FEATURE_REQUIREMENTS: Record<PlanFeatureKey, FeatureRequirement> = 
     categoria: 'ventas',
     minPlan: 'starter',
     minPlanNombre: 'Plan Starter',
-    descripcion: 'Permite a tus clientes comprar piezas directamente con carrito y pasarela.',
+    descripcion: 'Permite a tus clientes comprar piezas directamente con carrito y pasarela web.',
   },
   mercado_pago: {
     id: 'mercado_pago',
@@ -268,6 +270,14 @@ export const FEATURE_REQUIREMENTS: Record<PlanFeatureKey, FeatureRequirement> = 
     minPlan: 'starter',
     minPlanNombre: 'Plan Starter',
     descripcion: 'Cobro automatizado con tarjetas de crédito, débito y dinero en cuenta.',
+  },
+  transferencia_bancaria: {
+    id: 'transferencia_bancaria',
+    nombre: 'Transferencia Bancaria Directa',
+    categoria: 'ventas',
+    minPlan: 'starter',
+    minPlanNombre: 'Plan Starter',
+    descripcion: 'Cobro mediante transferencia directa a CBU/CVU o Alias sin comisión de pasarelas.',
   },
   envios_zonas_fijas: {
     id: 'envios_zonas_fijas',
@@ -315,7 +325,7 @@ export const FEATURE_REQUIREMENTS: Record<PlanFeatureKey, FeatureRequirement> = 
     categoria: 'gestion',
     minPlan: 'starter',
     minPlanNombre: 'Plan Starter',
-    descripcion: 'Cuentas secundarias para socios o ayudantes con acceso al panel.',
+    descripcion: 'Cuentas secundarias para socios o ayudantes con acceso al panel de tienda.',
   },
   dominio_propio: {
     id: 'dominio_propio',
@@ -324,6 +334,14 @@ export const FEATURE_REQUIREMENTS: Record<PlanFeatureKey, FeatureRequirement> = 
     minPlan: 'maker_pro',
     minPlanNombre: 'Plan Maker Pro',
     descripcion: 'Conecta tu propio dominio web personalizado con certificado SSL incluido.',
+  },
+  banners: {
+    id: 'banners',
+    nombre: 'Carrusel de Banners Promocionales',
+    categoria: 'branding',
+    minPlan: 'free',
+    minPlanNombre: 'Plan Free',
+    descripcion: 'Banners destacados en la cabecera del home para promociones y lanzamientos.',
   },
   analytics: {
     id: 'analytics',
@@ -343,47 +361,98 @@ export function getPlanConfig(planKey?: string | null): PlanLimits {
   return PLANS_CONFIG[normalized] || PLANS_CONFIG.free
 }
 
-/**
- * Verifica si una tienda tiene habilitada una funcionalidad específica.
- * IMPORTANTE: Si el superadmin otorgó un override explícito en la base de datos
- * (ej: store.envios_activo === true o store.checkout_activo === true),
- * el override manual del superadmin prevalece sobre el plan base.
- */
-export function isFeatureAllowed(
-  store: Store | null | undefined,
-  feature: PlanFeatureKey
-): {
+export interface FeatureStatusResult {
   allowed: boolean
   isManualOverride: boolean
   minPlanNombre: string
   reason?: string
-} {
-  if (!store) {
-    return { allowed: false, isManualOverride: false, minPlanNombre: 'Plan Starter' }
-  }
+}
 
-  const plan = getPlanConfig(store.plan)
+/**
+ * Inspecciona el estado detallado de una funcionalidad para una tienda (incluye metadatos)
+ */
+export function getFeatureStatus(
+  store: Store | null | undefined,
+  feature: PlanFeatureKey
+): FeatureStatusResult {
   const req = FEATURE_REQUIREMENTS[feature]
   const minPlanNombre = req?.minPlanNombre || 'Plan Starter'
 
-  // 1. Overrides manuales del superadmin (prevalecen sobre cualquier plan)
+  if (!store) {
+    return { allowed: false, isManualOverride: false, minPlanNombre }
+  }
+
+  const plan = getPlanConfig(store.plan)
+
+  // 1. Overrides explícitos definidos por el Superadmin en features_override (JSONB)
+  if (
+    store.features_override &&
+    typeof store.features_override[feature] === 'boolean'
+  ) {
+    const isAllowed = store.features_override[feature]
+    return {
+      allowed: isAllowed,
+      isManualOverride: true,
+      minPlanNombre,
+      reason: isAllowed
+        ? 'Habilitado manualmente por el Superadmin'
+        : 'Deshabilitado manualmente por el Superadmin',
+    }
+  }
+
+  // 2. Overrides y restricciones en columnas directas de retrocompatibilidad
   switch (feature) {
     case 'checkout_online':
-      if (store.checkout_activo === true || store.modo_operacion === 'tienda') {
+      if (store.modo_operacion === 'vitrina' || store.checkout_activo === false) {
+        return {
+          allowed: false,
+          isManualOverride: plan.key !== 'free',
+          minPlanNombre,
+          reason: 'Checkout deshabilitado para esta tienda',
+        }
+      }
+      if (store.checkout_activo === true) {
         return { allowed: true, isManualOverride: plan.key === 'free', minPlanNombre }
       }
       break
 
     case 'mercado_pago':
+      // Si el plan lo permite y la tienda conectó su cuenta, o si está explícito
       if (store.mp_connected) {
+        return { allowed: true, isManualOverride: plan.key === 'free', minPlanNombre }
+      }
+      break
+
+    case 'transferencia_bancaria':
+      if (store.transferencia_activa === false) {
+        return { allowed: false, isManualOverride: plan.key !== 'free', minPlanNombre }
+      }
+      if (store.transferencia_activa === true) {
         return { allowed: true, isManualOverride: plan.key === 'free', minPlanNombre }
       }
       break
 
     case 'envios_zonas_fijas':
     case 'envios_couriers':
-      if (store.envios_activo === true) {
+      if (store.envios_activo === false) {
+        return {
+          allowed: false,
+          isManualOverride: plan.key !== 'free',
+          minPlanNombre,
+          reason: 'Módulo de envíos apagado para esta tienda',
+        }
+      }
+      if (store.envios_activo === true && feature === 'envios_zonas_fijas') {
         return { allowed: true, isManualOverride: plan.key === 'free', minPlanNombre }
+      }
+      break
+
+    case 'banners':
+      if (store.banners_activo === false) {
+        return { allowed: false, isManualOverride: true, minPlanNombre }
+      }
+      if (store.banners_activo === true) {
+        return { allowed: true, isManualOverride: false, minPlanNombre }
       }
       break
 
@@ -400,15 +469,105 @@ export function isFeatureAllowed(
       break
   }
 
-  // 2. Evaluación por nivel de plan base
-  const planReq = PLANS_CONFIG[req.minPlan]
-  const allowed = plan.nivel >= planReq.nivel
+  // 3. Regla por defecto según el plan activo de la tienda
+  let planDefaultAllowed = false
+  switch (feature) {
+    case 'checkout_online':
+      planDefaultAllowed = plan.checkoutActivo
+      break
+    case 'mercado_pago':
+      planDefaultAllowed = plan.mercadoPagoHabilitado
+      break
+    case 'transferencia_bancaria':
+      planDefaultAllowed = plan.transferenciaBancaria
+      break
+    case 'envios_zonas_fijas':
+      planDefaultAllowed = plan.enviosZonasFijas
+      break
+    case 'envios_couriers':
+      planDefaultAllowed = plan.enviosCouriersEnVivo
+      break
+    case 'trazabilidad_stock':
+      planDefaultAllowed = plan.trazabilidadStock
+      break
+    case 'crm_clientes':
+      planDefaultAllowed = plan.crmClientes
+      break
+    case 'resenas':
+      planDefaultAllowed = plan.resenasProductos
+      break
+    case 'colaboradores':
+      planDefaultAllowed = plan.maxColaboradoresExtra > 0
+      break
+    case 'dominio_propio':
+      planDefaultAllowed = plan.dominioPropio
+      break
+    case 'banners':
+      planDefaultAllowed = plan.bannersMaxSlides > 0
+      break
+    case 'analytics':
+      planDefaultAllowed = plan.analyticsTracking
+      break
+  }
 
   return {
-    allowed,
+    allowed: planDefaultAllowed,
     isManualOverride: false,
     minPlanNombre,
   }
+}
+
+/**
+ * Verifica si una tienda tiene habilitada una funcionalidad específica.
+ * Retorna boolean directo (compatible con guards y vistas).
+ */
+export function isFeatureAllowed(
+  store: Store | null | undefined,
+  feature: PlanFeatureKey
+): boolean {
+  return getFeatureStatus(store, feature).allowed
+}
+
+/**
+ * Obtiene el límite numérico efectivo de una tienda (considerando overrides manuales y el plan base)
+ */
+export function getStoreEffectiveLimit(
+  store: Store | null | undefined,
+  limitKey: 'limite_productos' | 'max_colaboradores' | 'banners_max_slides' | 'comision_portalmaker' | 'dias_gracia'
+): number {
+  if (!store) return 0
+  const plan = getPlanConfig(store.plan)
+
+  switch (limitKey) {
+    case 'limite_productos':
+      return store.limite_productos ?? plan.limiteProductos
+    case 'max_colaboradores': {
+      const overrideVal = store.features_override?.max_colaboradores
+      return typeof overrideVal === 'number' ? overrideVal : plan.maxColaboradoresExtra
+    }
+    case 'banners_max_slides': {
+      const overrideVal = store.features_override?.banners_max_slides
+      return typeof overrideVal === 'number' ? overrideVal : plan.bannersMaxSlides
+    }
+    case 'comision_portalmaker': {
+      return store.comision_portalmaker ?? plan.comisionPortalmakerPct
+    }
+    case 'dias_gracia': {
+      return store.dias_gracia ?? plan.diasGraciaDefault
+    }
+    default:
+      return 0
+  }
+}
+
+/**
+ * Determina si el carrito y checkout online transaccional están verdaderamente activos en la tienda
+ */
+export function isStoreCheckoutActive(store: Store | null | undefined): boolean {
+  if (!store) return false
+  if (store.modo_operacion === 'vitrina') return false
+  if (store.checkout_activo === false) return false
+  return isFeatureAllowed(store, 'checkout_online')
 }
 
 /**

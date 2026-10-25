@@ -13,6 +13,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import ProductGallery from './product-gallery'
 import ProductCard from '../../product-card'
 import { useCart } from '@/lib/cart-context'
+import { isStoreCheckoutActive } from '@/lib/plans'
 import { renderMarkdown } from '@/lib/markdown'
 import {
   MessageSquare,
@@ -228,7 +229,7 @@ export default function ProductDetailView({
     }
   }
 
-  const isCheckoutActive = Boolean(store.checkout_activo || store.modo_operacion === 'tienda')
+  const isCheckoutActive = isStoreCheckoutActive(store)
 
   const handleAddToCart = (andOpenCart: boolean = true) => {
     // Si el producto tiene variantes, es obligatorio tener una seleccionada

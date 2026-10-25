@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { useCart } from '@/lib/cart-context'
+import { isFeatureAllowed } from '@/lib/plans'
 import type { Store } from '@/types/database'
 import {
   ShoppingBag,
@@ -1262,8 +1263,8 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-            {/* 1. Transferencia (solo si la tienda la tiene activa) */}
-            {store.transferencia_activa && (
+            {/* 1. Transferencia (solo si la tienda la tiene activa y permitida) */}
+            {isFeatureAllowed(store, 'transferencia_bancaria') && store.transferencia_activa && (
               <button
                 type="button"
                 onClick={() => setMetodoPago('transferencia')}
@@ -1298,8 +1299,8 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
               <span className="text-[11px] opacity-60">Al retirar / entrega</span>
             </button>
 
-            {/* 3. Mercado Pago (si está habilitado por la tienda) */}
-            {store.mp_connected && (
+            {/* 3. Mercado Pago (si está habilitado por la tienda y el plan/superadmin) */}
+            {isFeatureAllowed(store, 'mercado_pago') && store.mp_connected && (
               <button
                 type="button"
                 onClick={() => setMetodoPago('mercadopago')}

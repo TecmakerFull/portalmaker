@@ -9,6 +9,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { Product, Store } from '@/types/database'
 import { useCart } from '@/lib/cart-context'
+import { isStoreCheckoutActive } from '@/lib/plans'
 import { Heart, Plus, Check, Star, ArrowUpRight, MessageSquare, ImageIcon, Layers, ChevronRight, ShoppingBag } from 'lucide-react'
 
 interface ProductCardProps {
@@ -24,7 +25,7 @@ export default function ProductCard({ product, store, tenantQuery }: ProductCard
   const { addItem, openCart, favorites, toggleFavorite, isFavorite } = useCart()
   const [added, setAdded] = useState(false)
 
-  const isCheckoutActive = Boolean(store.checkout_activo || store.modo_operacion === 'tienda')
+  const isCheckoutActive = isStoreCheckoutActive(store)
   const isFav = isFavorite(product.id)
   const firstImage = product.imagenes && product.imagenes.length > 0 ? product.imagenes[0] : null
   const hasPrice = typeof product.precio_base === 'number' && product.precio_base > 0

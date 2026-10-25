@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import StoreThemeSync from "./theme-sync";
 import CartProviderClient from "./cart-provider-client";
 import { getTenantCSSVars } from "@/lib/color-utils";
+import { isStoreCheckoutActive, isFeatureAllowed } from "@/lib/plans";
 
 export async function generateMetadata(): Promise<Metadata> {
   const tenant = await getTenantStore();
@@ -68,7 +69,7 @@ export default async function TiendaLayout({
       />
 
       {/* Google Analytics */}
-      {store.ga_measurement_id && (
+      {store.ga_measurement_id && isFeatureAllowed(store, 'analytics') && (
         <>
           <script
             async
@@ -88,7 +89,7 @@ export default async function TiendaLayout({
       )}
 
       {/* Meta Pixel */}
-      {store.meta_pixel_id && (
+      {store.meta_pixel_id && isFeatureAllowed(store, 'analytics') && (
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -111,7 +112,7 @@ export default async function TiendaLayout({
         storeId={store.id}
         storeName={store.nombre}
         whatsappNumero={store.whatsapp_numero}
-        checkoutActivo={store.checkout_activo || store.modo_operacion === 'tienda'}
+        checkoutActivo={isStoreCheckoutActive(store)}
         tenantQuery={tenantQuery}
         showFloatingWhatsapp={showFloatingWhatsapp}
       >

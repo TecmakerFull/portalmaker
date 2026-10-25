@@ -62,7 +62,7 @@ export const getTenantStore = cache(async function getTenantStore(): Promise<Ten
     'transferencia_alias', 'transferencia_cbu_cvu', 'transferencia_banco',
     'transferencia_titular', 'transferencia_cuit', 'transferencia_instrucciones',
     'plan', 'precio_mensual', 'comision_portalmaker', 'mp_connected',
-    'mp_recargo_porcentaje', 'estado_pago', 'limite_productos',
+    'mp_recargo_porcentaje', 'estado_pago', 'limite_productos', 'features_override',
     'suscripcion_activa', 'fecha_inicio_suscripcion', 'fecha_proximo_vencimiento',
     'dias_gracia', 'created_at', 'updated_at',
     // Envíos (solo ruta de dueño/superadmin; la vista pública expone únicamente flags no sensibles)

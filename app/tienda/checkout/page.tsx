@@ -3,10 +3,11 @@
 // "El portal del Maker" | portalmaker.com.ar
 // =============================================================================
 
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
+import { isStoreCheckoutActive } from '@/lib/plans'
 import ThemeToggle from '@/app/tienda/theme-toggle'
 import CheckoutForm from './checkout-form'
 import StoreFooter from '../sections/store-footer'
@@ -21,6 +22,11 @@ export default async function TiendaCheckoutPage() {
 
   const { store, context } = tenant
   const tenantQuery = context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''
+
+  // Si el Superadmin o el plan deshabilitó el checkout online, no permitir acceso
+  if (!isStoreCheckoutActive(store)) {
+    redirect(`/${tenantQuery}`)
+  }
 
   // Verificar si la tienda tiene tarifas de envío a domicilio configuradas y activas
   let tieneTarifasEnvio = false

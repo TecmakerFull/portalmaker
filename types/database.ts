@@ -57,6 +57,7 @@ export interface Store {
   precio_mensual?: number;
   estado_pago?: 'al_dia' | 'pendiente' | 'bonificado' | 'gracia' | 'vencido';
   limite_productos?: number;
+  features_override?: Record<string, any> | null;
   notas_admin?: string | null;
   suscripcion_activa: boolean;
   fecha_inicio_suscripcion: DateString | null;

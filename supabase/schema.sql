@@ -106,6 +106,7 @@ create table stores (
   precio_mensual              numeric(10,2) default 0,    -- valor mensual pactado
   estado_pago                 text    default 'al_dia',    -- 'al_dia' | 'pendiente' | 'bonificado' | 'gracia' | 'vencido'
   limite_productos            int     default 50,          -- límite máximo de productos según el plan
+  features_override           jsonb   default '{}'::jsonb, -- personalización explícita de módulos y límites del superadmin
   notas_admin                 text,                        -- notas internas del superadmin
   suscripcion_activa          boolean default true,
   fecha_inicio_suscripcion    date    default current_date,
@@ -265,8 +266,12 @@ select
   mp_recargo_porcentaje,
   created_at,
   updated_at,
+  envios_activo,
+  envio_retiro_local_activo,
+  envio_gratis_desde,
   mostrar_horarios,
-  horarios_semanales
+  horarios_semanales,
+  features_override
 from stores;
 
 grant select on stores_public to anon, authenticated, service_role;

@@ -70,6 +70,9 @@ export type SuperadminStoreItem = {
   estado_pago?: string | null
   notas_admin?: string | null
   limite_productos?: number | null
+  features_override?: Record<string, any> | null
+  transferencia_activa?: boolean | null
+  banners_activo?: boolean | null
   suscripcion_activa: boolean
   fecha_inicio_suscripcion: string | null
   fecha_proximo_vencimiento: string | null
