@@ -51,9 +51,9 @@ export class ZipnovaShippingProvider implements CarrierProvider {
     }
 
     try {
-      // Consultamos el endpoint de ubicaciones/búsqueda o cotización ping
+      // Consultamos el endpoint oficial de cuentas para validar la autenticacion HTTP Basic
       const res = await carrierFetch<{ data?: unknown; error?: string }>(
-        `${this.baseUrl}/locations?limit=1`,
+        `${this.baseUrl}/accounts`,
         {
           method: 'GET',
           headers: {
@@ -62,7 +62,7 @@ export class ZipnovaShippingProvider implements CarrierProvider {
           },
           timeoutMs: 8000,
           maxRetries: 1,
-          sanitizedUrlForLogs: 'GET /v2/locations',
+          sanitizedUrlForLogs: 'GET /v2/accounts',
         }
       )
 
@@ -72,6 +72,10 @@ export class ZipnovaShippingProvider implements CarrierProvider {
 
       return { ok: false, error: 'Credenciales rechazadas por Zipnova' }
     } catch (err: unknown) {
+      if (err instanceof ShippingError && (err.statusCode === 401 || err.statusCode === 403)) {
+        return { ok: false, error: 'Credenciales de Zipnova inválidas (API Token o API Secret incorrectos).' }
+      }
+
       const errorMsg =
         err instanceof ShippingError
           ? err.message
