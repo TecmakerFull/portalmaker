@@ -93,8 +93,15 @@ export class ZipnovaShippingProvider implements CarrierProvider {
     }
 
     try {
-      // Estructuramos el payload oficial de Zipnova v2
-      const payload = {
+      const pesoGramos = Math.max(100, Number((input.pesoTotalKg * 1000).toFixed(0)))
+      const altoMax = Math.max(1, ...input.items.map((i) => i.alto_cm || 10))
+      const anchoMax = Math.max(1, ...input.items.map((i) => i.ancho_cm || 10))
+      const profMax = Math.max(1, ...input.items.map((i) => i.profundidad_cm || 10))
+      const declaredVal = Math.max(1, Number(input.valorDeclaradoTotal.toFixed(2)))
+
+      // Payload oficial Zipnova v2
+      const payload: Record<string, any> = {
+        declared_value: declaredVal,
         origin: {
           postal_code: input.origen.codigoPostal,
           street_name: input.origen.calle || '',
@@ -104,6 +111,7 @@ export class ZipnovaShippingProvider implements CarrierProvider {
         },
         destination: {
           postal_code: input.destino.codigoPostal,
+          zipcode: input.destino.codigoPostal,
           street_name: input.destino.calle || '',
           street_number: input.destino.altura || '',
           city: input.destino.localidad || '',
@@ -111,36 +119,39 @@ export class ZipnovaShippingProvider implements CarrierProvider {
         },
         packages: [
           {
-            weight: Number((input.pesoTotalKg * 1000).toFixed(0)), // Zipnova suele pedir gramos
-            dimensions: {
-              height: Math.max(1, ...input.items.map((i) => i.alto_cm || 10)),
-              width: Math.max(1, ...input.items.map((i) => i.ancho_cm || 10)),
-              length: Math.max(1, ...input.items.map((i) => i.profundidad_cm || 10)),
-            },
-            declared_value: input.valorDeclaradoTotal,
+            weight: pesoGramos,
+            height: altoMax,
+            width: anchoMax,
+            length: profMax,
+            classification_id: 1, // Mercadería general
+            declared_value: declaredVal,
           },
         ],
       }
 
+      if (this.credentials.accountId) {
+        payload.account_id = this.credentials.accountId.trim()
+      }
+
       const res = await carrierFetch<{
-        rates?: Array<{
-          id: string
+        data?: Array<{
+          id?: string | number
+          selectable?: boolean
+          carrier?: { id?: number; name?: string; logo?: string }
+          service_type?: { id?: number; code?: string; name?: string }
+          delivery_time?: { min?: number; max?: number; estimated_delivery?: string }
+          amounts?: {
+            price?: number
+            price_incl_tax?: number
+            seller_price?: number
+            seller_price_incl_tax?: number
+          }
+          rate?: { id?: number; tariff_id?: number }
           carrier_name?: string
           service_name?: string
-          logistic_type?: string
-          price: number
-          delivery_estimate?: {
-            min_days?: number
-            max_days?: number
-            text?: string
-          }
+          price?: number
         }>
-        data?: Array<{
-          id: string
-          name: string
-          cost: number
-          days?: number
-        }>
+        rates?: Array<any>
       }>(`${this.baseUrl}/shipments/quote`, {
         method: 'POST',
         headers: {
@@ -154,25 +165,50 @@ export class ZipnovaShippingProvider implements CarrierProvider {
         sanitizedUrlForLogs: 'POST /v2/shipments/quote',
       })
 
-      const rawRates = res.data.rates || res.data.data || []
+      const rawRates = Array.isArray(res.data?.data)
+        ? res.data.data
+        : Array.isArray(res.data?.rates)
+        ? res.data.rates
+        : []
+
       const quoteOptions: QuoteOption[] = []
 
       for (const rate of rawRates) {
-        const cost = Number('price' in rate ? rate.price : (rate as { cost?: number }).cost || 0)
-        const name =
-          ('service_name' in rate ? rate.service_name : (rate as { name?: string }).name) ||
-          'Envío estándar'
-        const carrier = ('carrier_name' in rate ? rate.carrier_name : '') || 'Zipnova'
+        const amounts = rate.amounts || {}
+        const cost = Number(
+          amounts.price_incl_tax ??
+          amounts.price ??
+          amounts.seller_price_incl_tax ??
+          rate.price ??
+          0
+        )
+        if (!cost || cost <= 0) continue
+
+        const carrierName = rate.carrier?.name || rate.carrier_name || 'Zipnova'
+        const serviceName = rate.service_type?.name || rate.service_name || 'Envío estándar'
+        const isPickUp = rate.service_type?.code === 'pick_up' || rate.service_type?.code === 'drop_off'
+        const serviceType = isPickUp ? 'sucursal' : 'domicilio'
+
+        const minDias = rate.delivery_time?.min ?? 2
+        const maxDias = rate.delivery_time?.max ?? 5
+        const plazoTexto = `${minDias} a ${maxDias} días hábiles`
+
+        const rateId = rate.rate?.id || rate.id || Math.random().toString(36).substring(7)
 
         quoteOptions.push({
-          optionId: `zipnova_${rate.id}`,
+          optionId: `zipnova_${rateId}`,
           provider: 'zipnova',
-          serviceName: `${carrier} - ${name}`,
-          serviceType: 'domicilio',
+          serviceName: `${carrierName} - ${serviceName}`,
+          serviceType,
           costoCarrier: cost,
           precioFinal: cost,
+          plazoMinDias: minDias,
+          plazoMaxDias: maxDias,
+          plazoTexto,
           carrierMetadata: {
-            rateId: rate.id,
+            rateId,
+            carrierName,
+            serviceName,
             rawRate: rate,
           },
         })
