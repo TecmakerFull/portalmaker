@@ -845,10 +845,13 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
               (o creá tu cuenta comercial si aún no tenés una).
             </li>
             <li>
-              En el panel de Zipnova, andá a <strong>Configuración &gt; Integraciones</strong> o <strong>Desarrolladores / API</strong>.
+              En el panel de Zipnova, andá a <strong>Configuración &gt; Integraciones</strong>.
             </li>
             <li>
-              Copiá la <strong>API Key</strong> y el <strong>API Secret</strong> generados y pegalos en los campos de abajo.
+              En la sección <em>API: Integraciones personalizadas</em>, hacé clic en el botón <strong>Gestionar Credenciales y Webhooks</strong>.
+            </li>
+            <li>
+              Copiá tu <strong>API Key</strong> y tu <strong>API Secret</strong> generados y pegalos en los campos de abajo.
             </li>
             <li>
               Hacé clic en <strong>Verificar y Vincular</strong>. Portalmaker validará la conexión en vivo contra los servidores de Zipnova.

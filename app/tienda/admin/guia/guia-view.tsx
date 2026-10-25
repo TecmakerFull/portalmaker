@@ -226,7 +226,7 @@ export default function GuiaView({
         },
         {
           sub: '2. Vinculación en 3 minutos',
-          desc: 'Creá tu cuenta en zipnova.com.ar, andá a Configuración > Integraciones (o Desarrolladores / API), copiá tu API Key y API Secret, y pegalos en la sección Envíos de tu panel. Portalmaker verifica la conexión en el acto.',
+          desc: 'Creá tu cuenta en zipnova.com.ar, andá a Configuración > Integraciones, hacé clic en "Gestionar Credenciales y Webhooks" dentro de API personalizadas, copiá tu API Key y API Secret, y pegalos en la sección Envíos de tu panel. Portalmaker verifica la conexión en el acto.',
         },
         {
           sub: '3. El paso a paso diario para despachar un pedido',

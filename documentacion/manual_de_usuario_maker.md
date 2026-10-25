@@ -464,9 +464,10 @@ Al activar Zipnova en tu tienda, accedes de forma inmediata a despachar con las 
    - El formulario cuenta con **normalización oficial con Georef AR**, sugiriendo calles y códigos postales validados de Argentina.
 2. **Obtener y vincular credenciales de Zipnova**:
    - Ingresa en [zipnova.com.ar](https://zipnova.com.ar) y crea tu cuenta comercial gratuita (o inicia sesión).
-   - En el menú de Zipnova, dirígete a **Configuración > Integraciones** (o **Desarrolladores / API**).
+   - En el menú de Zipnova, dirígete a **Configuración > Integraciones**.
+   - En la sección **API: Integraciones personalizadas**, haz clic en **Gestionar Credenciales y Webhooks**.
    - Copia tu **API Key** y **API Secret**.
-   - En tu panel de Portalmaker, pega las claves y presiona **"Guardar y verificar"**. El sistema validará la conexión en vivo. Tus credenciales se cifran con AES-256-GCM.
+   - En tu panel de Portalmaker, pega las claves y presiona **"Verificar y Vincular"**. El sistema validará la conexión en vivo. Tus credenciales se cifran con AES-256-GCM.
 3. **Ajustar políticas de la tienda**:
    - **Envío gratis a partir de ($)**: Define el monto mínimo de compra a partir del cual absorbes el costo del envío para incentivar compras de ticket alto.
    - **Margen sobre envío (%)**: Porcentaje extra sobre la cotización del correo para cubrir costos de embalaje (cajas, pluribol, cinta).
