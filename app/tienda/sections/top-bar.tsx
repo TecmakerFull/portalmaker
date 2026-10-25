@@ -11,6 +11,7 @@ import type { StoreSection, TopBarSettings, TopBarMessageItem } from '@/types/da
 import SectionIcon from './section-icon'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { usePreviewDevice } from '../preview-context'
+import { resolveStoreUrl } from '@/lib/store-url'
 
 interface TopBarProps {
   section: StoreSection<TopBarSettings, TopBarMessageItem[]>
@@ -74,12 +75,7 @@ export default function TopBar({ section, tenantQuery }: TopBarProps) {
   // Formatear Link con tenant query
   const formatUrl = (url?: string | null) => {
     if (!url) return null
-    if (url.startsWith('http')) return url
-    if (tenantQuery) {
-      const sep = url.includes('?') ? '&' : '?'
-      return `${url}${sep}${tenantQuery.replace('?', '')}`
-    }
-    return url
+    return resolveStoreUrl(url, tenantQuery)
   }
 
   // Renderizar un mensaje individual

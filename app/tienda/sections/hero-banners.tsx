@@ -10,6 +10,7 @@ import Link from 'next/link'
 import type { StoreSection, HeroBannerSettings, HeroBannerSlide } from '@/types/database'
 import { ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, Star } from 'lucide-react'
 import { usePreviewDevice } from '../preview-context'
+import { resolveStoreUrl } from '@/lib/store-url'
 
 interface HeroBannersProps {
   section?: StoreSection<HeroBannerSettings, HeroBannerSlide[]> | null
@@ -104,13 +105,7 @@ export default function HeroBanners({
   }
 
   const formatUrl = (url?: string | null) => {
-    if (!url) return '/tienda'
-    if (url.startsWith('http')) return url
-    if (tenantQuery) {
-      const sep = url.includes('?') ? '&' : '?'
-      return `${url}${sep}${tenantQuery.replace('?', '')}`
-    }
-    return url
+    return resolveStoreUrl(url, tenantQuery)
   }
 
   const previewDevice = usePreviewDevice()

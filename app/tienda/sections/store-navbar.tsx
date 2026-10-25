@@ -11,6 +11,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import type { StoreSection, NavbarSettings, NavbarItem } from '@/types/database'
 import { ChevronDown } from 'lucide-react'
 import { usePreviewDevice } from '../preview-context'
+import { resolveStoreUrl } from '@/lib/store-url'
 
 interface StoreNavbarProps {
   section: StoreSection<NavbarSettings, NavbarItem[]>
@@ -47,13 +48,7 @@ function StoreNavbarInner({ section, tenantQuery }: StoreNavbarProps) {
 
   // Helper para armar URL con tenant query
   const formatUrl = (url: string) => {
-    if (!url) return '/tienda'
-    if (url.startsWith('http')) return url
-    if (tenantQuery) {
-      const sep = url.includes('?') ? '&' : '?'
-      return `${url}${sep}${tenantQuery.replace('?', '')}`
-    }
-    return url
+    return resolveStoreUrl(url, tenantQuery)
   }
 
   // Verificar si ya existe un link explícito a Inicio

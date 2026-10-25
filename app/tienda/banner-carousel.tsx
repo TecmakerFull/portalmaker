@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import type { Banner } from '@/types/database'
 import { ChevronLeft, ChevronRight, ArrowRight, Sparkles } from 'lucide-react'
+import { resolveStoreUrl } from '@/lib/store-url'
 
 interface BannerCarouselProps {
   banners: Banner[]
@@ -72,22 +73,7 @@ export default function BannerCarousel({ banners, tenantQuery }: BannerCarouselP
   // Construir URL con tenant si es interna
   const formatCtaUrl = (url: string | null) => {
     if (!url) return null
-    const trimmed = url.trim()
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      return trimmed
-    }
-    // Si no empieza con slash ni protocolo ni ancla, tratarlo como producto de la tienda
-    let formattedUrl = trimmed
-    if (!formattedUrl.startsWith('/') && !formattedUrl.startsWith('#')) {
-      formattedUrl = `/tienda/productos/${formattedUrl}`
-    }
-    // Agregar tenant query a URLs internas
-    if (tenantQuery) {
-      const separator = formattedUrl.includes('?') ? '&' : '?'
-      const cleanTenant = tenantQuery.replace('?', '')
-      return `${formattedUrl}${separator}${cleanTenant}`
-    }
-    return formattedUrl
+    return resolveStoreUrl(url, tenantQuery)
   }
 
   return (
