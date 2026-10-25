@@ -195,7 +195,6 @@ export class ZipnovaShippingProvider implements CarrierProvider {
         if (!cost || cost <= 0) continue
 
         const carrierName = rate.carrier?.name || rate.carrier_name || 'Transporte'
-        const serviceName = rate.service_type?.name || rate.service_name || 'Envío estándar'
         const isPickUp =
           rate.service_type?.code === 'pickup_point' ||
           rate.service_type?.code === 'pick_up' ||
@@ -203,16 +202,34 @@ export class ZipnovaShippingProvider implements CarrierProvider {
           String(rate.logistic_type || '').includes('pickup')
         const serviceType = isPickUp ? 'sucursal' : 'domicilio'
 
+        // Título claro e inequívoco
+        const formattedTitle = isPickUp
+          ? `${carrierName} — Retiro en sucursal`
+          : `${carrierName} — Entrega a domicilio`
+
         const minDias = Number(rate.delivery_time?.min ?? 2)
         const maxDias = Number(rate.delivery_time?.max ?? 5)
         const plazoTexto = `${minDias} a ${maxDias} días hábiles`
 
         const rateId = String(rate.rate?.tariff_id || rate.rate?.id || rate.id || Math.random().toString(36).substring(7))
 
+        const rawPoints = Array.isArray(rate.pickup_points) ? rate.pickup_points : []
+        const pickupPoints = rawPoints.map((pt: any) => ({
+          branchId: String(pt.point_id || pt.id),
+          provider: 'zipnova',
+          nombre: pt.description || `${carrierName} — Sucursal`,
+          direccion: `${pt.location?.street || ''} ${pt.location?.street_number || ''}`.trim() || 'Dirección de sucursal',
+          localidad: pt.location?.city || '',
+          provincia: pt.location?.state || '',
+          codigoPostal: pt.location?.zipcode || '',
+          horarios: pt.open_hours || null,
+          telefono: pt.phone || null,
+        }))
+
         quoteOptions.push({
           optionId: `zipnova_${rateId}`,
           provider: 'zipnova',
-          serviceName: `${carrierName} - ${serviceName}`,
+          serviceName: formattedTitle,
           serviceType,
           costoCarrier: cost,
           precioFinal: cost,
@@ -222,7 +239,9 @@ export class ZipnovaShippingProvider implements CarrierProvider {
           carrierMetadata: {
             rateId,
             carrierName,
-            serviceName,
+            serviceName: formattedTitle,
+            isPickUp,
+            pickupPoints,
             rawRate: rate,
           },
         })

@@ -227,6 +227,14 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
       return
     }
 
+    // Si la opción ya trajo sus sucursales precargadas desde la cotización de Zipnova
+    const precachedPoints = selectedOption.carrierMetadata?.pickupPoints
+    if (Array.isArray(precachedPoints) && precachedPoints.length > 0) {
+      setBranchesList(precachedPoints)
+      setSelectedBranch(precachedPoints[0])
+      return
+    }
+
     let isMounted = true
     setLoadingBranches(true)
     fetch(
@@ -1064,17 +1072,26 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
                                 onChange={() => setSelectedOptionId(opt.optionId)}
                                 className="accent-[var(--color-primario)] w-4 h-4 shrink-0"
                               />
-                              <div className="min-w-0">
-                                <div className="font-bold text-xs sm:text-sm flex items-center gap-1.5">
+                              <div className="min-w-0 space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-bold text-xs sm:text-sm text-[var(--color-texto)]">
+                                    {opt.serviceName}
+                                  </span>
                                   {opt.serviceType === 'sucursal' ? (
-                                    <Building2 className="w-3.5 h-3.5 text-[var(--color-primario)] shrink-0" />
+                                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1 shrink-0">
+                                      <Building2 className="w-3 h-3" />
+                                      <span>Sucursal</span>
+                                    </span>
                                   ) : (
-                                    <Truck className="w-3.5 h-3.5 text-[var(--color-primario)] shrink-0" />
+                                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 flex items-center gap-1 shrink-0">
+                                      <Truck className="w-3 h-3" />
+                                      <span>A domicilio</span>
+                                    </span>
                                   )}
-                                  <span className="truncate">{opt.serviceName}</span>
                                 </div>
-                                <div className="text-[11px] opacity-65 mt-0.5">
-                                  {opt.plazoTexto || `${opt.plazoMinDias || 2} a ${opt.plazoMaxDias || 5} días hábiles`}
+                                <div className="text-[11px] opacity-65 flex items-center gap-1.5">
+                                  <Clock className="w-3 h-3" />
+                                  <span>{opt.plazoTexto || `${opt.plazoMinDias || 2} a ${opt.plazoMaxDias || 5} días hábiles`}</span>
                                 </div>
                               </div>
                             </div>

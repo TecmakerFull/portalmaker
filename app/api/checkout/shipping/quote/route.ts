@@ -327,29 +327,23 @@ export async function POST(req: Request) {
       })
     }
 
-    // 6. Tarifa Fallback de la tienda si no hubo opciones de carriers externos o si fallaron
-    const tieneOpcionDomicilio = processedOptions.some((o) => o.serviceType === 'domicilio' || o.serviceType === 'sucursal')
-    const fallbackTarifa = Number(store.envio_tarifa_fallback) || 0
+    // Separar opciones de transportistas externos vs retiro en local
+    const carrierOptions = processedOptions.filter((o) => o.serviceType === 'domicilio' || o.serviceType === 'sucursal')
+    const localOptions = processedOptions.filter((o) => o.serviceType === 'retiro_local')
 
-    if (!tieneOpcionDomicilio && fallbackTarifa > 0) {
-      processedOptions.push({
-        optionId: 'fallback',
-        provider: 'manual',
-        serviceName: 'Envío a domicilio (Tarifa fija de la tienda)',
-        serviceType: 'domicilio',
-        costoCarrier: fallbackTarifa,
-        precioFinal: esEnvioGratis ? 0 : fallbackTarifa,
-        plazoMinDias: 2,
-        plazoMaxDias: 5,
-        plazoTexto: '2 a 5 días hábiles',
-        carrierMetadata: {
-          isFallback: true,
-          envioGratis: esEnvioGratis,
-        },
-      })
-    }
+    // Ordenar de menor a mayor precio (y por menor plazo si empatan)
+    carrierOptions.sort((a, b) => {
+      if (a.precioFinal !== b.precioFinal) return a.precioFinal - b.precioFinal
+      return (a.plazoMaxDias || 5) - (b.plazoMaxDias || 5)
+    })
 
-    if (processedOptions.length === 0) {
+    // Mantener únicamente las 5 opciones más económicas para no abrumar al comprador
+    const topCarrierOptions = carrierOptions.slice(0, 5)
+
+    // Opciones finales consolidadas
+    const finalOptions: QuoteOption[] = [...localOptions, ...topCarrierOptions]
+
+    if (finalOptions.length === 0) {
       return NextResponse.json(
         { error: 'Esta tienda no tiene tarifas de envío a domicilio configuradas para este código postal.' },
         { status: 400 }
@@ -371,7 +365,7 @@ export async function POST(req: Request) {
         store_id: store.id,
         codigo_postal: cleanCp,
         cart_hash: cartHash,
-        options: processedOptions,
+        options: finalOptions,
         expires_at: expiresAt,
       })
       .select('id')
@@ -390,7 +384,7 @@ export async function POST(req: Request) {
       expiresAt,
       subtotalProductos: Number(subtotalProductos.toFixed(2)),
       esEnvioGratis,
-      options: processedOptions,
+      options: finalOptions,
     })
   } catch (err: any) {
     console.error('Excepción en /api/checkout/shipping/quote:', err)
