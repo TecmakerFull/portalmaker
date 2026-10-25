@@ -7,7 +7,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import type { Store, HeaderSettings } from '@/types/database'
 import ThemeToggle from '../theme-toggle'
 import { useCart } from '@/lib/cart-context'
@@ -148,6 +148,12 @@ function MainHeaderInner({
     return `${path}${sep}${tenantQuery.replace('?', '')}`
   }
 
+  // Enlace a mi cuenta recordando la página donde estaba parado el usuario
+  const pathname = usePathname()
+  const accountHref = (pathname && !pathname.includes('/tienda/cuenta'))
+    ? withTenant(`/tienda/cuenta?next=${encodeURIComponent(pathname)}`)
+    : withTenant('/tienda/cuenta')
+
   // Componente reutilizable del Logo y Nombre
   const renderLogoAndBrand = (centered: boolean = false) => (
     <Link
@@ -269,7 +275,7 @@ function MainHeaderInner({
             {!isMobile && (
               <>
                 <Link
-                  href={withTenant('/tienda/cuenta')}
+                  href={accountHref}
                   title={
                     activeCustomer
                       ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email}) - Conectado`
@@ -358,7 +364,7 @@ function MainHeaderInner({
             {!isMobile && (
               <>
                 <Link
-                  href={withTenant('/tienda/cuenta')}
+                  href={accountHref}
                   title={
                     activeCustomer
                       ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email}) - Conectado`
@@ -501,7 +507,7 @@ function MainHeaderInner({
               <ArrowRight className="w-3.5 h-3.5 opacity-40" />
             </Link>
             <Link
-              href={withTenant('/tienda/cuenta')}
+              href={accountHref}
               className={`py-2.5 px-3 rounded-lg flex items-center justify-between ${
                 activeCustomer
                   ? 'bg-[var(--color-primario)]/10 text-[var(--color-primario)] font-semibold'

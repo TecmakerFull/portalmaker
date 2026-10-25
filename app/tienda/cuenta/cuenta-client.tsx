@@ -63,6 +63,7 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
   const [loadingAuth, setLoadingAuth] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
   const [authSuccess, setAuthSuccess] = useState<string | null>(null)
+  const [returnTo, setReturnTo] = useState<string | null>(null)
 
   // Datos del cliente logueado
   const [orders, setOrders] = useState<any[]>([])
@@ -185,9 +186,35 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
   // Comprobar sesión de Supabase al montar y escuchar cambios de auth
   useEffect(() => {
     const cacheKey = `pm_device_cust_${store.id}`
-    const isResetMode =
-      typeof window !== 'undefined' &&
-      new URLSearchParams(window.location.search).get('mode') === 'reset'
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+    const isResetMode = urlParams?.get('mode') === 'reset'
+    const nextParam = urlParams?.get('next')
+
+    // Detectar página previa donde estaba parado el comprador para retorno automático
+    if (typeof window !== 'undefined') {
+      if (nextParam && !nextParam.includes('/tienda/cuenta')) {
+        setReturnTo(nextParam)
+        try {
+          sessionStorage.setItem(`pm_return_to_${store.id}`, nextParam)
+        } catch {}
+      } else {
+        try {
+          const savedReturn = sessionStorage.getItem(`pm_return_to_${store.id}`)
+          if (savedReturn && !savedReturn.includes('/tienda/cuenta')) {
+            setReturnTo(savedReturn)
+          } else if (document.referrer) {
+            try {
+              const refUrl = new URL(document.referrer)
+              if (refUrl.origin === window.location.origin && !refUrl.pathname.includes('/tienda/cuenta')) {
+                const fullRef = `${refUrl.pathname}${refUrl.search}`
+                setReturnTo(fullRef)
+                sessionStorage.setItem(`pm_return_to_${store.id}`, fullRef)
+              }
+            } catch {}
+          }
+        } catch {}
+      }
+    }
 
     if (isResetMode) {
       setAuthMode('reset')
@@ -293,8 +320,9 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
       !origin.includes('portalmaker.vercel.app')
     const portalBase = 'https://portalmaker.ar'
 
-    // Ruta destino dentro de la tienda
-    const storePath = `/tienda/cuenta${tenantQuery ? (tenantQuery.startsWith('?') ? `${tenantQuery}` : `?${tenantQuery}`) : ''}`
+    // Ruta destino dentro de la tienda recordando dónde estaba parado el comprador
+    const targetDestination = returnTo || '/tienda/cuenta'
+    const storePath = withTenant(targetDestination)
     // Si estamos en un dominio propio del maker (ej: armoniashop.com.ar), pasamos por el puente de portalmaker.ar
     // para garantizar que la whitelist de Supabase nunca rechace la redirección
     const redirectUrl = isCustomDomain
@@ -332,6 +360,13 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
             await syncCustomerCrm(cleanEmail, name)
             await loadCustomerData(cleanEmail)
             setAuthSuccess('Cuenta creada con éxito.')
+
+            if (returnTo && !returnTo.includes('/tienda/cuenta')) {
+              try {
+                sessionStorage.removeItem(`pm_return_to_${store.id}`)
+              } catch {}
+              router.push(withTenant(returnTo))
+            }
           }
         }
       } else if (authMode === 'login') {
@@ -350,24 +385,64 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
           await populateProfileData(data.user)
           await syncCustomerCrm(cleanEmail, name, data.user.user_metadata?.telefono)
           await loadCustomerData(cleanEmail)
+
+          // Si el comprador venía de un producto o checkout, redirigirlo inmediatamente
+          if (returnTo && !returnTo.includes('/tienda/cuenta')) {
+            try {
+              sessionStorage.removeItem(`pm_return_to_${store.id}`)
+            } catch {}
+            router.push(withTenant(returnTo))
+          }
         }
       } else if (authMode === 'magic-link') {
-        // Acceso seguro mediante Magic Link sin necesidad de recordar contraseña
-        const { error } = await supabase.auth.signInWithOtp({
-          email: cleanEmail,
-          options: {
-            emailRedirectTo: redirectUrl,
-            data: {
-              store_name: store.nombre,
-              store_slug: store.slug,
-            },
-          },
-        })
+        // Acceso seguro mediante Magic Link personalizado con nombre y diseño de la tienda
+        try {
+          const res = await fetch('/api/auth/store-magic-link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: cleanEmail,
+              storeName: store.nombre,
+              storeSlug: store.slug,
+              storeLogoUrl: store.logo_url,
+              colorPrimario: store.color_primario,
+              redirectTo: redirectUrl,
+            }),
+          })
 
-        if (error) throw error
+          const data = await res.json()
+
+          if (!res.ok || data?.useFallbackOtp) {
+            // Fallback a Supabase OTP nativo
+            const { error: otpErr } = await supabase.auth.signInWithOtp({
+              email: cleanEmail,
+              options: {
+                emailRedirectTo: redirectUrl,
+                data: {
+                  store_name: store.nombre,
+                  store_slug: store.slug,
+                },
+              },
+            })
+            if (otpErr) throw otpErr
+          }
+        } catch {
+          // Segundo nivel de resguardo en caso de excepción de red
+          const { error: otpErr } = await supabase.auth.signInWithOtp({
+            email: cleanEmail,
+            options: {
+              emailRedirectTo: redirectUrl,
+              data: {
+                store_name: store.nombre,
+                store_slug: store.slug,
+              },
+            },
+          })
+          if (otpErr) throw otpErr
+        }
 
         setAuthSuccess(
-          `Solicitud enviada para ${store.nombre}. Te enviamos un enlace de acceso seguro a ${cleanEmail}. Ábrelo para ingresar sin contraseña.`
+          `Te enviamos un enlace de acceso seguro a ${cleanEmail} a nombre de ${store.nombre}. Ábrelo para ingresar de inmediato sin contraseña.`
         )
       } else if (authMode === 'recover') {
         // Solicitud de recuperación de contraseña con callback explícito y contexto de tienda
@@ -549,6 +624,27 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
           </button>
         )}
       </div>
+
+      {/* Botón y aviso de retorno hacia la página previa de la tienda */}
+      {returnTo && !returnTo.includes('/tienda/cuenta') && (
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-[var(--color-primario)]/10 border border-[var(--color-primario)]/25 flex items-center justify-between gap-3 text-xs sm:text-sm">
+          <div className="flex items-center gap-2 min-w-0">
+            <RotateCcw className="w-4 h-4 text-[var(--color-primario)] shrink-0" />
+            <span className="truncate opacity-85">
+              {isLoggedIn
+                ? '¿Listo? Vuelve a donde estabas navegando en la tienda.'
+                : 'Al iniciar sesión continuarás automáticamente donde estabas.'}
+            </span>
+          </div>
+          <Link
+            href={withTenant(returnTo)}
+            className="font-bold text-[var(--color-primario)] hover:underline inline-flex items-center gap-1 shrink-0 text-xs sm:text-sm cursor-pointer"
+          >
+            <span>Volver</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      )}
 
       {isLoggedIn ? (
         /* VISTA DE USUARIO AUTENTICADO */

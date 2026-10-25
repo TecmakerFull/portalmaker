@@ -963,7 +963,7 @@ export default function ProductDetailView({
                       Para poder dejar una reseña sobre este producto debes ser un usuario de la tienda. Puedes ingresar o registrarte en pocos segundos.
                     </p>
                     <Link
-                      href={tenantQuery ? `/tienda/cuenta?${tenantQuery.replace('?', '')}` : '/tienda/cuenta'}
+                      href={withTenant(`/tienda/cuenta?next=${encodeURIComponent(`/tienda/productos/${product.slug}`)}`)}
                       className="min-h-[44px] px-4 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-xs font-semibold inline-flex items-center gap-2 shadow-xs hover:opacity-95 cursor-pointer"
                     >
                       <User className="w-4 h-4" />
