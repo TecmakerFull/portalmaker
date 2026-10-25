@@ -27,6 +27,8 @@ export async function POST(req: Request) {
       codigoPostal,
       provincia,
       localidad,
+      calle,
+      altura,
       turnstileToken,
     } = body
 
@@ -256,6 +258,8 @@ export async function POST(req: Request) {
         codigoPostal: cleanCp,
         provincia: effectiveDestProvincia,
         localidad: effectiveDestLocalidad,
+        calle: calle && String(calle).trim() ? String(calle).trim() : '',
+        altura: altura && String(altura).trim() ? String(altura).trim() : '',
       },
       items: packageItems,
       pesoTotalKg: Number(pesoTotalKg.toFixed(3)),

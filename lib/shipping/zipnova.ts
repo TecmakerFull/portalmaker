@@ -123,18 +123,18 @@ export class ZipnovaShippingProvider implements CarrierProvider {
         declared_value: declaredVal,
         origin: {
           postal_code: input.origen.codigoPostal,
-          street_name: input.origen.calle || '',
-          street_number: input.origen.altura || '',
           city: origCiudad,
           state: origProvincia,
+          ...(input.origen.calle && input.origen.calle.trim() ? { street_name: input.origen.calle.trim() } : {}),
+          ...(input.origen.altura && String(input.origen.altura).trim() ? { street_number: String(input.origen.altura).trim() } : {}),
         },
         destination: {
           postal_code: input.destino.codigoPostal,
           zipcode: input.destino.codigoPostal,
-          street_name: input.destino.calle || '',
-          street_number: input.destino.altura || '',
           city: destCiudad,
           state: destProvincia,
+          ...(input.destino.calle && input.destino.calle.trim() ? { street_name: input.destino.calle.trim() } : {}),
+          ...(input.destino.altura && String(input.destino.altura).trim() ? { street_number: String(input.destino.altura).trim() } : {}),
         },
         packages: [
           {

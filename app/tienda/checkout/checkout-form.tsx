@@ -34,6 +34,7 @@ import {
 } from 'lucide-react'
 import WhatsAppIcon from '../sections/whatsapp-icon'
 import GeorefAddressInput from '@/components/georef-address-input'
+import { inferirProvinciaYCiudadDesdeCP } from '@/lib/shipping-validators'
 
 interface CheckoutFormProps {
   store: Store
@@ -168,6 +169,8 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
           codigoPostal: cp,
           provincia: provincia.trim() || undefined,
           localidad: ciudad.trim() || undefined,
+          calle: calle.trim() || undefined,
+          altura: altura.trim() || undefined,
           items: items.map((it) => ({
             productId: it.productId,
             variantId: it.variantId || null,
@@ -982,7 +985,16 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
                     type="text"
                     required
                     value={codigoPostal}
-                    onChange={(e) => setCodigoPostal(e.target.value.toUpperCase())}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase()
+                      setCodigoPostal(val)
+                      const cleanDigits = val.replace(/\D/g, '')
+                      if (cleanDigits.length >= 4) {
+                        const inf = inferirProvinciaYCiudadDesdeCP(val)
+                        if (!ciudad || ciudad === 'Buenos Aires') setCiudad(inf.localidad)
+                        if (!provincia || provincia === 'Buenos Aires') setProvincia(inf.provincia)
+                      }
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault()
