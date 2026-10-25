@@ -103,3 +103,42 @@ export function parseMeasureInput(raw: string, label: string, max: number): numb
 export const MAX_PESO_KG = 999.999
 export const MAX_DIMENSION_CM = 9999.99
 export const MAX_VALOR_DECLARADO = 9999999999.99
+
+/**
+ * Infiere provincia y ciudad/localidad cabecera a partir del código postal argentino.
+ * Esencial para carriers como Zipnova que exigen destination.city y destination.state obligatorios
+ * incluso cuando el comprador solo ingresó su código postal numérico en el cotizador del checkout.
+ */
+export function inferirProvinciaYCiudadDesdeCP(cpRaw: string): { provincia: string; localidad: string } {
+  const digits = (cpRaw || '').replace(/\D/g, '').slice(0, 4)
+  const num = parseInt(digits, 10)
+  if (isNaN(num)) return { provincia: 'Buenos Aires', localidad: 'Buenos Aires' }
+
+  if (num >= 1000 && num <= 1499) return { provincia: 'Ciudad Autónoma de Buenos Aires', localidad: 'CABA' }
+  if (num >= 2000 && num <= 2999) return { provincia: 'Santa Fe', localidad: num === 2000 ? 'Rosario' : 'Santa Fe' }
+  if (num >= 3000 && num <= 3099) return { provincia: 'Santa Fe', localidad: 'Santa Fe' }
+  if (num >= 3100 && num <= 3299) return { provincia: 'Entre Ríos', localidad: 'Paraná' }
+  if (num >= 3300 && num <= 3399) return { provincia: 'Misiones', localidad: 'Posadas' }
+  if (num >= 3400 && num <= 3499) return { provincia: 'Corrientes', localidad: 'Corrientes' }
+  if (num >= 3500 && num <= 3599) return { provincia: 'Chaco', localidad: 'Resistencia' }
+  if (num >= 3600 && num <= 3699) return { provincia: 'Formosa', localidad: 'Formosa' }
+  if (num >= 4000 && num <= 4199) return { provincia: 'Tucumán', localidad: 'San Miguel de Tucumán' }
+  if (num >= 4200 && num <= 4399) return { provincia: 'Santiago del Estero', localidad: 'Santiago del Estero' }
+  if (num >= 4400 && num <= 4599) return { provincia: 'Salta', localidad: 'Salta' }
+  if (num >= 4600 && num <= 4699) return { provincia: 'Jujuy', localidad: 'San Salvador de Jujuy' }
+  if (num >= 4700 && num <= 4799) return { provincia: 'Catamarca', localidad: 'San Fernando del Valle de Catamarca' }
+  if (num >= 5000 && num <= 5299) return { provincia: 'Córdoba', localidad: 'Córdoba' }
+  if (num >= 5300 && num <= 5399) return { provincia: 'La Rioja', localidad: 'La Rioja' }
+  if (num >= 5400 && num <= 5499) return { provincia: 'San Juan', localidad: 'San Juan' }
+  if (num >= 5500 && num <= 5699) return { provincia: 'Mendoza', localidad: 'Mendoza' }
+  if (num >= 5700 && num <= 5899) return { provincia: 'San Luis', localidad: 'San Luis' }
+  if (num >= 6300 && num <= 6399) return { provincia: 'La Pampa', localidad: 'Santa Rosa' }
+  if (num >= 8300 && num <= 8399) return { provincia: 'Neuquén', localidad: 'Neuquén' }
+  if (num >= 8400 && num <= 8599) return { provincia: 'Río Negro', localidad: 'Viedma' }
+  if (num >= 9000 && num <= 9299) return { provincia: 'Chubut', localidad: 'Rawson' }
+  if (num >= 9300 && num <= 9409) return { provincia: 'Santa Cruz', localidad: 'Río Gallegos' }
+  if (num >= 9410 && num <= 9499) return { provincia: 'Tierra del Fuego', localidad: 'Ushuaia' }
+
+  return { provincia: 'Buenos Aires', localidad: 'Buenos Aires' }
+}
+

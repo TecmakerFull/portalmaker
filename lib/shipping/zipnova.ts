@@ -16,6 +16,7 @@ import type {
 } from './types'
 import { ShippingError } from './errors'
 import { carrierFetch } from './http'
+import { inferirProvinciaYCiudadDesdeCP } from '@/lib/shipping-validators'
 
 export interface ZipnovaCredentials {
   apiKey?: string
@@ -99,6 +100,24 @@ export class ZipnovaShippingProvider implements CarrierProvider {
       const profMax = Math.max(1, ...input.items.map((i) => i.profundidad_cm || 10))
       const declaredVal = Math.max(1, Number(input.valorDeclaradoTotal.toFixed(2)))
 
+      // Asegurar ciudad y provincia de origen
+      let origProvincia = input.origen.provincia || ''
+      let origCiudad = input.origen.localidad || ''
+      if (!origProvincia || !origCiudad) {
+        const infOrig = inferirProvinciaYCiudadDesdeCP(input.origen.codigoPostal)
+        if (!origProvincia) origProvincia = infOrig.provincia
+        if (!origCiudad) origCiudad = infOrig.localidad
+      }
+
+      // Asegurar ciudad y provincia de destino (Zipnova exige obligatoriamente ambos)
+      let destProvincia = input.destino.provincia || ''
+      let destCiudad = input.destino.localidad || ''
+      if (!destProvincia || !destCiudad) {
+        const infDest = inferirProvinciaYCiudadDesdeCP(input.destino.codigoPostal)
+        if (!destProvincia) destProvincia = infDest.provincia
+        if (!destCiudad) destCiudad = infDest.localidad
+      }
+
       // Payload oficial Zipnova v2
       const payload: Record<string, any> = {
         declared_value: declaredVal,
@@ -106,16 +125,16 @@ export class ZipnovaShippingProvider implements CarrierProvider {
           postal_code: input.origen.codigoPostal,
           street_name: input.origen.calle || '',
           street_number: input.origen.altura || '',
-          city: input.origen.localidad || '',
-          state: input.origen.provincia || '',
+          city: origCiudad,
+          state: origProvincia,
         },
         destination: {
           postal_code: input.destino.codigoPostal,
           zipcode: input.destino.codigoPostal,
           street_name: input.destino.calle || '',
           street_number: input.destino.altura || '',
-          city: input.destino.localidad || '',
-          state: input.destino.provincia || '',
+          city: destCiudad,
+          state: destProvincia,
         },
         packages: [
           {
@@ -123,7 +142,7 @@ export class ZipnovaShippingProvider implements CarrierProvider {
             height: altoMax,
             width: anchoMax,
             length: profMax,
-            classification_id: 1, // Mercadería general
+            classification_id: 1, // Mercadería general estándar
             declared_value: declaredVal,
           },
         ],
@@ -133,26 +152,7 @@ export class ZipnovaShippingProvider implements CarrierProvider {
         payload.account_id = this.credentials.accountId.trim()
       }
 
-      const res = await carrierFetch<{
-        data?: Array<{
-          id?: string | number
-          selectable?: boolean
-          carrier?: { id?: number; name?: string; logo?: string }
-          service_type?: { id?: number; code?: string; name?: string }
-          delivery_time?: { min?: number; max?: number; estimated_delivery?: string }
-          amounts?: {
-            price?: number
-            price_incl_tax?: number
-            seller_price?: number
-            seller_price_incl_tax?: number
-          }
-          rate?: { id?: number; tariff_id?: number }
-          carrier_name?: string
-          service_name?: string
-          price?: number
-        }>
-        rates?: Array<any>
-      }>(`${this.baseUrl}/shipments/quote`, {
+      const res = await carrierFetch<Record<string, any>>(`${this.baseUrl}/shipments/quote`, {
         method: 'POST',
         headers: {
           Authorization: this.getAuthHeader(),
@@ -165,15 +165,25 @@ export class ZipnovaShippingProvider implements CarrierProvider {
         sanitizedUrlForLogs: 'POST /v2/shipments/quote',
       })
 
-      const rawRates = Array.isArray(res.data?.data)
-        ? res.data.data
-        : Array.isArray(res.data?.rates)
-        ? res.data.rates
-        : []
+      // Zipnova v2 retorna las opciones en all_results (array) o agrupadas en results (objeto)
+      const rawData = res.data || {}
+      let rawRates: any[] = []
+      if (Array.isArray(rawData.all_results)) {
+        rawRates = rawData.all_results
+      } else if (rawData.results && typeof rawData.results === 'object') {
+        rawRates = Object.values(rawData.results)
+      } else if (Array.isArray(rawData.data)) {
+        rawRates = rawData.data
+      } else if (Array.isArray(rawData.rates)) {
+        rawRates = rawData.rates
+      }
 
       const quoteOptions: QuoteOption[] = []
 
       for (const rate of rawRates) {
+        if (!rate || typeof rate !== 'object') continue
+        if (rate.selectable === false) continue
+
         const amounts = rate.amounts || {}
         const cost = Number(
           amounts.price_incl_tax ??
@@ -184,16 +194,20 @@ export class ZipnovaShippingProvider implements CarrierProvider {
         )
         if (!cost || cost <= 0) continue
 
-        const carrierName = rate.carrier?.name || rate.carrier_name || 'Zipnova'
+        const carrierName = rate.carrier?.name || rate.carrier_name || 'Transporte'
         const serviceName = rate.service_type?.name || rate.service_name || 'Envío estándar'
-        const isPickUp = rate.service_type?.code === 'pick_up' || rate.service_type?.code === 'drop_off'
+        const isPickUp =
+          rate.service_type?.code === 'pickup_point' ||
+          rate.service_type?.code === 'pick_up' ||
+          rate.service_type?.code === 'drop_off' ||
+          String(rate.logistic_type || '').includes('pickup')
         const serviceType = isPickUp ? 'sucursal' : 'domicilio'
 
-        const minDias = rate.delivery_time?.min ?? 2
-        const maxDias = rate.delivery_time?.max ?? 5
+        const minDias = Number(rate.delivery_time?.min ?? 2)
+        const maxDias = Number(rate.delivery_time?.max ?? 5)
         const plazoTexto = `${minDias} a ${maxDias} días hábiles`
 
-        const rateId = rate.rate?.id || rate.id || Math.random().toString(36).substring(7)
+        const rateId = String(rate.rate?.tariff_id || rate.rate?.id || rate.id || Math.random().toString(36).substring(7))
 
         quoteOptions.push({
           optionId: `zipnova_${rateId}`,

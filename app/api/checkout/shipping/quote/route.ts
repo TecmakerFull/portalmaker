@@ -12,7 +12,7 @@ import crypto from 'node:crypto'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { checkRateLimit, getClientIp, verifyTurnstileToken, isTurnstileConfigured } from '@/lib/rate-limit'
 import { getActiveStoreShippingProviders } from '@/lib/shipping/registry'
-import { isValidCodigoPostal, normalizeCodigoPostal } from '@/lib/shipping-validators'
+import { isValidCodigoPostal, normalizeCodigoPostal, inferirProvinciaYCiudadDesdeCP } from '@/lib/shipping-validators'
 import type { QuoteOption, ShippingPackageItem } from '@/lib/shipping/types'
 
 export const maxDuration = 60
@@ -238,6 +238,11 @@ export async function POST(req: Request) {
     const providers = await getActiveStoreShippingProviders(store.id)
     const quoteOptions: QuoteOption[] = []
 
+    // Inferencia de provincia y localidad de destino si el comprador solo ingresó el código postal
+    const destInferred = inferirProvinciaYCiudadDesdeCP(cleanCp)
+    const effectiveDestProvincia = provincia && String(provincia).trim() ? String(provincia).trim() : destInferred.provincia
+    const effectiveDestLocalidad = localidad && String(localidad).trim() ? String(localidad).trim() : destInferred.localidad
+
     const quoteInput = {
       storeId: store.id,
       origen: {
@@ -249,8 +254,8 @@ export async function POST(req: Request) {
       },
       destino: {
         codigoPostal: cleanCp,
-        provincia: provincia || '',
-        localidad: localidad || '',
+        provincia: effectiveDestProvincia,
+        localidad: effectiveDestLocalidad,
       },
       items: packageItems,
       pesoTotalKg: Number(pesoTotalKg.toFixed(3)),
