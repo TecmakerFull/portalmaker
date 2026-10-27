@@ -7,8 +7,10 @@ import Link from 'next/link'
 import Image from 'next/image'
 import ThemeToggle from '@/app/tienda/theme-toggle'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
-import { Sparkles, Store, Palette, MessageSquare, CreditCard, ArrowRight, ShieldCheck, Zap, Mail, HelpCircle, ArrowUpRight } from 'lucide-react'
+import { Sparkles, Store, Palette, MessageSquare, CreditCard, ArrowRight, ShieldCheck, Zap, Mail, HelpCircle, ArrowUpRight, CheckCircle2 } from 'lucide-react'
 import ShippingFeaturesSection from './shipping-features-section'
+import HeroQuickRegister from './hero-quick-register'
+import StickyBottomCta from './sticky-bottom-cta'
 
 // Contacto oficial del portal
 const PORTAL_WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_PORTAL_WHATSAPP ?? '5493415866464'
@@ -26,59 +28,68 @@ const mailtoUrl = `mailto:${PORTAL_EMAIL}?subject=${encodeURIComponent(
 
 export default function PortalHomePage() {
   return (
-    <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-portal-body)] transition-colors duration-200">
-      {/* Header */}
+    <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-portal-body)] transition-colors duration-200 pb-16 sm:pb-0">
+      {/* Header Responsivo */}
       <header className="border-b border-[var(--color-borde)] sticky top-0 bg-[var(--color-fondo)]/90 backdrop-blur-md z-30 transition-colors duration-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 sm:h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <Image
               src="/logo.png"
               alt="Portalmaker"
               width={38}
               height={38}
-              className="w-9 h-9 rounded-xl object-contain shadow-xs"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-xs shrink-0"
             />
-            <span className="text-2xl font-bold tracking-tight font-[var(--font-portal-heading)]">
+            <span className="text-xl sm:text-2xl font-bold tracking-tight font-[var(--font-portal-heading)]">
               Portalmaker
             </span>
           </Link>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Link a Contacto */}
+          {/* Menú Desktop: Espacioso y completo */}
+          <div className="hidden sm:flex items-center gap-2 sm:gap-3">
             <a
               href="#contacto"
-              className="min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5"
+              className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5"
             >
               <MessageSquare className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-              <span className="hidden sm:inline">Contacto</span>
+              <span>Contacto</span>
             </a>
 
-            {/* Link secundario de ingreso */}
             <Link
               href="/login"
-              className="min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center"
+              className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center"
             >
               <span>Acceso Maker</span>
             </Link>
 
-            {/* Toggle Claro / Oscuro */}
             <ThemeToggle />
 
-            {/* Botón Comienza gratis */}
             <Link
               href="/login?mode=register"
               style={{ color: '#1F2937' }}
-              className="min-h-[44px] px-4 sm:px-5 py-2.5 rounded-full bg-[#FACC15] text-[#1F2937] text-xs sm:text-sm font-bold hover:bg-[#eab308] active:scale-95 transition-all shadow-xs flex items-center justify-center"
+              className="min-h-[44px] px-5 py-2.5 rounded-full bg-[#FACC15] text-[#1F2937] text-xs sm:text-sm font-bold hover:bg-[#eab308] active:scale-95 transition-all shadow-xs flex items-center justify-center cursor-pointer"
             >
               <span>Comienza gratis</span>
+            </Link>
+          </div>
+
+          {/* Menú Mobile: Limpio, sin amontonamientos y con excelente espacio táctil */}
+          <div className="flex sm:hidden items-center gap-2">
+            <ThemeToggle />
+
+            <Link
+              href="/login"
+              className="min-h-[44px] px-3.5 py-1.5 rounded-xl border border-[var(--color-borde)] text-xs font-semibold opacity-90 hover:opacity-100 flex items-center justify-center"
+            >
+              <span>Acceso</span>
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero Section con Banner de Fondo a Pantalla Completa (Full-Width) */}
+      {/* Hero Section con Banner de Fondo y Formulario Rápido estilo Tiendanube */}
       <section className="relative w-full overflow-hidden min-h-[540px] sm:min-h-[600px] lg:min-h-[660px] flex items-center border-b border-[var(--color-borde)]">
-        {/* Imagen de Fondo Banner a todo el ancho detrás de título y botones */}
+        {/* Imagen de Fondo Banner a todo el ancho detrás de título y formulario */}
         <div className="absolute inset-0 w-full h-full pointer-events-none">
           <Image
             src="/banner.png"
@@ -87,51 +98,56 @@ export default function PortalHomePage() {
             className="object-cover object-right sm:object-center opacity-85 dark:opacity-35"
             priority
           />
-          {/* Degradado horizontal suave para legibilidad nítida del texto a la izquierda sin tapar los objetos de la derecha */}
+          {/* Degradado horizontal suave para legibilidad nítida */}
           <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-fondo)] via-[var(--color-fondo)]/85 sm:via-[var(--color-fondo)]/60 to-[var(--color-fondo)]/30 dark:from-[var(--color-fondo)] dark:via-[var(--color-fondo)]/80 dark:to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-fondo)]/60 via-transparent to-transparent sm:hidden" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-fondo)]/70 via-transparent to-transparent sm:hidden" />
         </div>
 
-        {/* Contenido sobre el fondo de pantalla completa: Título y Botones */}
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 w-full">
+        {/* Contenido Hero */}
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 w-full">
           <div className="max-w-2xl text-left">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FACC15]/20 border border-[#FACC15]/40 text-[var(--color-texto)] text-xs font-semibold uppercase tracking-wider mb-6 shadow-xs backdrop-blur-xs">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FACC15]/20 border border-[#FACC15]/40 text-[var(--color-texto)] text-xs font-semibold uppercase tracking-wider mb-5 shadow-xs backdrop-blur-xs">
               <Zap className="w-3.5 h-3.5 text-[#EAB308]" />
-              <span>El portal de los makers</span>
+              <span>Plataforma e-commerce para talleres y creadores</span>
             </div>
 
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.15] font-[var(--font-portal-heading)] text-[var(--color-texto)]">
-              Comienza una tienda online para tu negocio gratis
+              ¡Creá tu tienda online gratis y en minutos!
             </h1>
 
-            <p className="mt-5 text-sm sm:text-lg opacity-85 leading-relaxed font-normal text-[var(--color-texto)] max-w-xl">
-              Portalmaker es la plataforma todo en uno para crear, administrar y hacer crecer tu tienda online. Diseñada para makers, talleres y creadores de todo tipo de productos.
+            <p className="mt-4 sm:mt-5 text-sm sm:text-lg opacity-85 leading-relaxed font-normal text-[var(--color-texto)] max-w-xl">
+              Configuración simple y rápida. Vendé por WhatsApp, Mercado Pago o transferencias con envíos a todo el país. Diseñada para talleres, emprendedores y todo tipo de tiendas.
             </p>
 
-            <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 max-w-md">
+            {/* Formulario rápido estilo Tiendanube con precarga de email */}
+            <div className="mt-7">
+              <HeroQuickRegister />
+            </div>
+
+            {/* Accesos secundarios */}
+            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs sm:text-sm font-semibold">
               <Link
                 href="/login"
-                style={{ color: '#1F2937' }}
-                className="min-h-[48px] px-8 py-3.5 rounded-2xl bg-[#FACC15] text-[#1F2937] text-sm sm:text-base font-bold hover:bg-[#eab308] active:scale-98 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                className="opacity-80 hover:opacity-100 hover:underline flex items-center gap-1.5"
               >
-                <span>Ir a mi tienda</span>
-                <ArrowRight className="w-4 h-4 text-[#1F2937]" />
+                <span>¿Ya tenés una tienda? Accedé a tu panel</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
-
+              <span className="opacity-40 hidden sm:inline">•</span>
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="min-h-[48px] px-6 py-3.5 rounded-2xl border border-[var(--color-borde)] bg-[var(--color-superficie)]/90 backdrop-blur-md text-xs sm:text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-[var(--color-texto)] shadow-xs cursor-pointer"
+                className="opacity-80 hover:opacity-100 hover:underline flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400"
               >
-                <MessageSquare className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                <WhatsAppIcon className="w-3.5 h-3.5" />
                 <span>Solicitar asesoría</span>
               </a>
             </div>
 
             {/* Social Proof sutil */}
             <p className="mt-6 text-xs sm:text-sm opacity-70 font-medium text-[var(--color-texto)]">
-              Impulsamos a tiendas, talleres y creadores independientes
+              Impulsamos a tiendas independientes, talleres y creadores en toda la Argentina
             </p>
           </div>
         </div>
@@ -280,6 +296,72 @@ export default function PortalHomePage() {
         </div>
       </section>
 
+      {/* Sección: Armá tu tienda en 4 pasos (Inspirada en el flujo directo de Tiendanube) */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20 border-t border-[var(--color-borde)]">
+        <div className="text-center max-w-2xl mx-auto space-y-3 mb-12">
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#CA8A04] dark:text-[#FACC15]">
+            <Sparkles className="w-4 h-4" />
+            <span>Rápido, simple y sin vueltas</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-bold font-[var(--font-portal-heading)]">
+            Armá tu tienda en solo 4 pasos
+          </h2>
+          <p className="text-sm sm:text-base opacity-75">
+            Vendé las 24 horas y despachá a cualquier rincón de la Argentina.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {/* Paso 1 */}
+          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
+            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">01</span>
+            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Registrate y elegí tu link</h3>
+            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
+              Creá tu cuenta gratis en 30 segundos y obtené tu dirección web exclusiva (<code>tutienda.portalmaker.ar</code>).
+            </p>
+          </div>
+
+          {/* Paso 2 */}
+          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
+            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">02</span>
+            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Subí tus productos</h3>
+            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
+              Cargá fotos en alta calidad, variantes de colores o talles y tiempos de fabricación si producís bajo demanda.
+            </p>
+          </div>
+
+          {/* Paso 3 */}
+          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
+            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">03</span>
+            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Conectá cobros y envíos</h3>
+            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
+              Enlazá tu Mercado Pago o alias bancario y activá cotizaciones automáticas con Andreani y Correo Argentino vía Zipnova.
+            </p>
+          </div>
+
+          {/* Paso 4 */}
+          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
+            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">04</span>
+            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Compartí y vendé</h3>
+            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
+              Pegá tu link en tu biografía de Instagram, TikTok o WhatsApp y recibí pedidos organizados con aviso inmediato.
+            </p>
+          </div>
+        </div>
+
+        {/* CTA Intermedio */}
+        <div className="mt-10 text-center">
+          <Link
+            href="/login?mode=register"
+            style={{ color: '#1F2937' }}
+            className="inline-flex min-h-[48px] px-8 py-3.5 rounded-2xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] active:scale-98 transition-all shadow-md items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Crear tienda gratis</span>
+            <ArrowRight className="w-4 h-4 text-[#1F2937]" />
+          </Link>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="mt-16 border-t border-[var(--color-borde)] py-10 text-center text-xs opacity-70 space-y-3">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 font-medium">
@@ -305,6 +387,9 @@ export default function PortalHomePage() {
         </div>
         <p className="opacity-60">© {new Date().getFullYear()} Portalmaker — El portal del Maker</p>
       </footer>
+
+      {/* Barra fija inferior móvil ("Sticky Bottom Bar") */}
+      <StickyBottomCta />
     </div>
   )
 }

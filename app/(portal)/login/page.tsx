@@ -34,6 +34,9 @@ function LoginFormContent() {
   const initialMode = searchParams.get('mode') === 'register' || searchParams.get('modo') === 'registro' ? 'register' : 'login'
   const [mode, setMode] = useState<AuthMode>(initialMode)
 
+  const initialEmail = searchParams.get('email') ?? ''
+  const [email, setEmail] = useState(initialEmail)
+
   useEffect(() => {
     const urlMode = searchParams.get('mode')
     if (urlMode === 'register' || searchParams.get('modo') === 'registro') {
@@ -41,8 +44,11 @@ function LoginFormContent() {
     } else if (urlMode === 'login') {
       setMode('login')
     }
+    const urlEmail = searchParams.get('email')
+    if (urlEmail) {
+      setEmail(urlEmail)
+    }
   }, [searchParams])
-  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
