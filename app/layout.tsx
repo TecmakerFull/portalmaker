@@ -14,8 +14,16 @@
 
 import type { Metadata } from "next";
 import { Inter, Outfit, Playfair_Display, Space_Grotesk, DM_Serif_Display, DM_Sans, Manrope } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import NavigationProgress from "./components/navigation-progress";
+
+// Tipografía local de marca para títulos y logo
+const goodTiming = localFont({
+  src: "./fonts/good-timing-bd.otf",
+  variable: "--font-good-timing",
+  display: "swap",
+});
 
 // ============================================================
 // FUENTES DE GOOGLE FONTS
@@ -156,6 +164,7 @@ export default function RootLayout({
           ${dmSerifDisplay.variable}
           ${dmSans.variable}
           ${manrope.variable}
+          ${goodTiming.variable}
           antialiased
         `}
       >

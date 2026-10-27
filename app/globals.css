@@ -15,8 +15,18 @@
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
 
+@font-face {
+  font-family: 'Good Timing';
+  src: url('/fonts/good-timing-bd.otf') format('opentype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Tipografía del PORTAL */
+  --font-good-timing: 'Good Timing', sans-serif;
+  --font-portal-brand: 'Good Timing', sans-serif;
   --font-portal-heading: var(--font-outfit);
   --font-portal-body: var(--font-inter);
 
@@ -39,46 +49,50 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
-/* Modo claro (Paleta 06 Yellow & Gray) */
+/* Modo claro (Paleta Naranja Fuego Maker & Gris Hielo) */
 :root,
 [data-theme="light"] {
-  --color-primario:   #FACC15;  /* Amarillo dorado */
-  --color-secundario: #4B5563;  /* Gris medio */
-  --color-acento:     #FEF08A;  /* Amarillo suave */
-  --color-fondo:      #F3F4F6;  /* Fondo gris claro */
+  --color-primario:   #FF5500;  /* Naranja Fuego Maker */
+  --color-primario-hover: #E04B00;
+  --color-primario-texto: #FFFFFF;
+  --color-secundario: #475569;  /* Gris medio */
+  --color-acento:     #FFEDD5;  /* Naranja suave */
+  --color-fondo:      #F4F6F9;  /* Fondo gris hielo suave */
   --color-superficie: #FFFFFF;  /* Tarjetas blanco puro */
-  --color-texto:      #111827;  /* Carbón oscuro nítido */
-  --color-texto-muted:#4B5563;  /* Texto secundario de alta legibilidad */
-  --color-borde:      #E5E7EB;  /* Bordes suaves */
+  --color-texto:      #0F172A;  /* Carbón oscuro nítido */
+  --color-texto-muted:#475569;  /* Texto secundario de alta legibilidad */
+  --color-borde:      #E2E8F0;  /* Bordes suaves */
 
   /* Inputs de formulario */
   --color-input-bg:          #FFFFFF;
-  --color-input-bg-muted:    #F9FAFB;
-  --color-input-borde:       #D1D5DB;
-  --color-input-texto:       #111827;
-  --color-input-placeholder: #9CA3AF;
+  --color-input-bg-muted:    #F8FAFC;
+  --color-input-borde:       #CBD5E1;
+  --color-input-texto:       #0F172A;
+  --color-input-placeholder: #94A3B8;
 
   --font-heading: var(--font-outfit);
   --font-body:    var(--font-inter);
 }
 
-/* Modo oscuro (Paleta 06 Dark) */
+/* Modo oscuro (Paleta Naranja Fuego Maker & Carbón Profundo) */
 [data-theme="dark"] {
-  --color-primario:   #FACC15;  /* Amarillo dorado */
-  --color-secundario: #9CA3AF;  /* Gris claro */
-  --color-acento:     #FDE68A;
-  --color-fondo:      #111827;  /* Carbón profundo */
-  --color-superficie: #1F2937;  /* Gris oscuro */
-  --color-texto:      #F9FAFB;  /* Blanco tiza */
-  --color-texto-muted:#9CA3AF;  /* Texto secundario legible */
-  --color-borde:      #374151;  /* Bordes */
+  --color-primario:   #FF5500;  /* Naranja Fuego Maker */
+  --color-primario-hover: #FF6A1A;
+  --color-primario-texto: #FFFFFF;
+  --color-secundario: #94A3B8;  /* Gris claro */
+  --color-acento:     #C2410C;
+  --color-fondo:      #0A0C10;  /* Carbón técnico profundo */
+  --color-superficie: #13161D;  /* Grafito oscuro tarjetas */
+  --color-texto:      #FFFFFF;  /* Blanco puro */
+  --color-texto-muted:#94A3B8;  /* Texto secundario legible */
+  --color-borde:      #242A38;  /* Bordes oscuros */
 
   /* Inputs de formulario */
-  --color-input-bg:          #111827;
-  --color-input-bg-muted:    #1F2937;
-  --color-input-borde:       #374151;
-  --color-input-texto:       #F9FAFB;
-  --color-input-placeholder: #6B7280;
+  --color-input-bg:          #0A0C10;
+  --color-input-bg-muted:    #13161D;
+  --color-input-borde:       #242A38;
+  --color-input-texto:       #FFFFFF;
+  --color-input-placeholder: #64748B;
 }
 
 html {
@@ -458,6 +472,14 @@ a,
 .animation-paused {
   animation-play-state: paused !important;
 }
+
+/* =============================================================================
+ * TIPOGRAFÍA DE MARCA — Good Timing Display
+ * ============================================================================= */
+.font-brand {
+  font-family: 'Good Timing', var(--font-good-timing), sans-serif !important;
+}
+
 
 
 

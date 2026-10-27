@@ -33,16 +33,17 @@ export default function PortalHomePage() {
       {/* Header Responsivo */}
       <header className="border-b border-[var(--color-borde)] sticky top-0 bg-[var(--color-fondo)]/90 backdrop-blur-md z-30 transition-colors duration-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 sm:h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
+          <Link href="/" className="flex items-center gap-2.5 group">
             <Image
               src="/logo.png"
               alt="Portalmaker"
               width={38}
               height={38}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-xs shrink-0"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-xs shrink-0 group-hover:scale-105 transition-transform"
             />
-            <span className="text-xl sm:text-2xl font-bold tracking-tight font-[var(--font-portal-heading)]">
-              Portalmaker
+            <span className="text-xl sm:text-2xl font-normal tracking-wider font-brand uppercase select-none">
+              <span className="text-[var(--color-texto)] dark:text-white transition-colors">PORTAL</span>
+              <span className="text-[#FF5500]">MAKER</span>
             </span>
           </Link>
 
@@ -57,9 +58,8 @@ export default function PortalHomePage() {
 
             <a
               href="#contacto"
-              className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5"
+              className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-center"
             >
-              <MessageSquare className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
               <span>Contacto</span>
             </a>
 
@@ -69,8 +69,8 @@ export default function PortalHomePage() {
             {/* Botón Acceso Maker */}
             <Link
               href="/login"
-              style={{ color: '#1F2937' }}
-              className="min-h-[42px] px-5 py-2 rounded-full bg-[#FACC15] text-[#1F2937] text-xs sm:text-sm font-bold hover:bg-[#eab308] active:scale-95 transition-all shadow-xs flex items-center justify-center cursor-pointer"
+              style={{ color: '#FFFFFF' }}
+              className="min-h-[42px] px-5 py-2 rounded-full bg-[#FF5500] text-white text-xs sm:text-sm font-bold hover:bg-[#E04B00] active:scale-95 transition-all shadow-xs flex items-center justify-center cursor-pointer"
             >
               <span>Acceso Maker</span>
             </Link>
@@ -111,8 +111,8 @@ export default function PortalHomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Columna Izquierda: Título y Formulario */}
             <div className="lg:col-span-7 text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FACC15]/20 border border-[#FACC15]/40 text-[var(--color-texto)] text-xs font-semibold uppercase tracking-wider mb-5 shadow-xs backdrop-blur-xs">
-                <Zap className="w-3.5 h-3.5 text-[#EAB308]" />
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FF5500]/15 border border-[#FF5500]/30 text-[var(--color-texto)] text-xs font-semibold uppercase tracking-wider mb-5 shadow-xs backdrop-blur-xs">
+                <Zap className="w-3.5 h-3.5 text-[#FF5500]" />
                 <span>Plataforma e-commerce para talleres y creadores</span>
               </div>
 
@@ -169,7 +169,7 @@ export default function PortalHomePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Card 1 */}
           <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-6 shadow-xs space-y-3 transition-colors duration-200">
-            <div className="w-11 h-11 rounded-xl bg-[#FACC15]/20 text-[#CA8A04] flex items-center justify-center">
+            <div className="w-11 h-11 rounded-xl bg-[#FF5500]/15 text-[#FF5500] flex items-center justify-center">
               <Store className="w-5 h-5" />
             </div>
             <h3 className="text-lg font-bold font-[var(--font-portal-heading)]">Catálogo con Fotos</h3>
@@ -180,7 +180,7 @@ export default function PortalHomePage() {
 
           {/* Card 2 */}
           <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-6 shadow-xs space-y-3 transition-colors duration-200">
-            <div className="w-11 h-11 rounded-xl bg-[#FACC15]/20 text-[#CA8A04] flex items-center justify-center">
+            <div className="w-11 h-11 rounded-xl bg-[#FF5500]/15 text-[#FF5500] flex items-center justify-center">
               <CreditCard className="w-5 h-5" />
             </div>
             <h3 className="text-lg font-bold font-[var(--font-portal-heading)]">Cobros con Mercado Pago</h3>
@@ -191,7 +191,7 @@ export default function PortalHomePage() {
 
           {/* Card 3 */}
           <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-6 shadow-xs space-y-3 transition-colors duration-200">
-            <div className="w-11 h-11 rounded-xl bg-[#FACC15]/20 text-[#CA8A04] flex items-center justify-center">
+            <div className="w-11 h-11 rounded-xl bg-[#FF5500]/15 text-[#FF5500] flex items-center justify-center">
               <Palette className="w-5 h-5" />
             </div>
             <h3 className="text-lg font-bold font-[var(--font-portal-heading)]">10 Paletas de Color</h3>
@@ -202,7 +202,7 @@ export default function PortalHomePage() {
 
           {/* Card 4 */}
           <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-6 shadow-xs space-y-3 transition-colors duration-200">
-            <div className="w-11 h-11 rounded-xl bg-[#FACC15]/20 text-[#CA8A04] flex items-center justify-center">
+            <div className="w-11 h-11 rounded-xl bg-[#FF5500]/15 text-[#FF5500] flex items-center justify-center">
               <MessageSquare className="w-5 h-5" />
             </div>
             <h3 className="text-lg font-bold font-[var(--font-portal-heading)]">Ventas por WhatsApp</h3>
@@ -216,7 +216,7 @@ export default function PortalHomePage() {
       {/* Sección: Armá tu tienda en 4 pasos con Mockup 3D Real */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20 border-t border-[var(--color-borde)]">
         <div className="text-center max-w-2xl mx-auto space-y-3 mb-12">
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#CA8A04] dark:text-[#FACC15]">
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#FF5500]">
             <Sparkles className="w-4 h-4" />
             <span>Rápido, simple y sin vueltas</span>
           </div>
@@ -233,7 +233,7 @@ export default function PortalHomePage() {
           <div className="lg:col-span-7 space-y-4">
             {/* Paso 1 */}
             <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs flex items-start gap-4">
-              <span className="text-2xl sm:text-3xl font-black font-mono text-[#FACC15] shrink-0 mt-0.5">01</span>
+              <span className="text-2xl sm:text-3xl font-normal font-brand text-[#FF5500] shrink-0 mt-0.5">01</span>
               <div className="space-y-1">
                 <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Registrate y elegí tu link</h3>
                 <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
@@ -244,7 +244,7 @@ export default function PortalHomePage() {
 
             {/* Paso 2 */}
             <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs flex items-start gap-4">
-              <span className="text-2xl sm:text-3xl font-black font-mono text-[#FACC15] shrink-0 mt-0.5">02</span>
+              <span className="text-2xl sm:text-3xl font-normal font-brand text-[#FF5500] shrink-0 mt-0.5">02</span>
               <div className="space-y-1">
                 <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Subí tus productos</h3>
                 <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
@@ -255,7 +255,7 @@ export default function PortalHomePage() {
 
             {/* Paso 3 */}
             <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs flex items-start gap-4">
-              <span className="text-2xl sm:text-3xl font-black font-mono text-[#FACC15] shrink-0 mt-0.5">03</span>
+              <span className="text-2xl sm:text-3xl font-normal font-brand text-[#FF5500] shrink-0 mt-0.5">03</span>
               <div className="space-y-1">
                 <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Conectá cobros y envíos</h3>
                 <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
@@ -266,7 +266,7 @@ export default function PortalHomePage() {
 
             {/* Paso 4 */}
             <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs flex items-start gap-4">
-              <span className="text-2xl sm:text-3xl font-black font-mono text-[#FACC15] shrink-0 mt-0.5">04</span>
+              <span className="text-2xl sm:text-3xl font-normal font-brand text-[#FF5500] shrink-0 mt-0.5">04</span>
               <div className="space-y-1">
                 <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Compartí y vendé</h3>
                 <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
@@ -295,11 +295,11 @@ export default function PortalHomePage() {
         <div className="mt-10 text-center">
           <Link
             href="/login?mode=register"
-            style={{ color: '#1F2937' }}
-            className="inline-flex min-h-[48px] px-8 py-3.5 rounded-2xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] active:scale-98 transition-all shadow-md items-center justify-center gap-2 cursor-pointer"
+            style={{ color: '#FFFFFF' }}
+            className="inline-flex min-h-[48px] px-8 py-3.5 rounded-2xl bg-[#FF5500] text-white text-sm font-bold hover:bg-[#E04B00] active:scale-98 transition-all shadow-md items-center justify-center gap-2 cursor-pointer"
           >
             <span>Crear tienda gratis</span>
-            <ArrowRight className="w-4 h-4 text-[#1F2937]" />
+            <ArrowRight className="w-4 h-4 text-white" />
           </Link>
         </div>
       </section>
@@ -314,7 +314,7 @@ export default function PortalHomePage() {
       <section className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
         <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-8 sm:p-12 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-8 transition-colors duration-200">
           <div className="space-y-3 text-center sm:text-left">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#CA8A04]">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#FF5500]">
               <ShieldCheck className="w-4 h-4" />
               <span>Escalabilidad Total</span>
             </div>
@@ -328,11 +328,11 @@ export default function PortalHomePage() {
 
           <Link
             href="/login?mode=register"
-            style={{ color: '#1F2937' }}
-            className="shrink-0 min-h-[48px] px-7 py-3.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-extrabold hover:bg-[#eab308] transition-all flex items-center gap-2 shadow-sm cursor-pointer"
+            style={{ color: '#FFFFFF' }}
+            className="shrink-0 min-h-[48px] px-7 py-3.5 rounded-xl bg-[#FF5500] text-white text-sm font-extrabold hover:bg-[#E04B00] transition-all flex items-center gap-2 shadow-sm cursor-pointer"
           >
             <span>Empezar Ahora</span>
-            <ArrowRight className="w-4 h-4 text-[#1F2937]" />
+            <ArrowRight className="w-4 h-4 text-white" />
           </Link>
         </div>
       </section>
@@ -341,7 +341,7 @@ export default function PortalHomePage() {
       <section id="contacto" className="max-w-5xl mx-auto px-4 sm:px-6 py-16 scroll-mt-24">
         <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-8 sm:p-12 shadow-sm space-y-8 transition-colors duration-200">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#CA8A04]">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#FF5500]">
               <HelpCircle className="w-4 h-4" />
               <span>Atención Personalizada</span>
             </div>
@@ -371,7 +371,7 @@ export default function PortalHomePage() {
                 </p>
               </div>
 
-              <div className="pt-2 flex items-center gap-1.5 text-xs font-bold text-[#CA8A04] dark:text-[#FACC15] group-hover:underline">
+              <div className="pt-2 flex items-center gap-1.5 text-xs font-bold text-[#FF5500] group-hover:underline">
                 <span>Escribir por WhatsApp</span>
                 <ArrowUpRight className="w-4 h-4" />
               </div>
@@ -380,10 +380,10 @@ export default function PortalHomePage() {
             {/* Opción 2: Correo Electrónico */}
             <a
               href={mailtoUrl}
-              className="p-6 rounded-2xl border border-[var(--color-borde)] bg-black/[0.02] dark:bg-white/[0.02] hover:border-[#FACC15] hover:shadow-md transition-all flex flex-col justify-between gap-4 group"
+              className="p-6 rounded-2xl border border-[var(--color-borde)] bg-black/[0.02] dark:bg-white/[0.02] hover:border-[#FF5500] hover:shadow-md transition-all flex flex-col justify-between gap-4 group"
             >
               <div className="space-y-2">
-                <div className="w-10 h-10 rounded-xl bg-[#FACC15]/20 text-[#CA8A04] dark:text-[#FACC15] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-[#FF5500]/15 text-[#FF5500] flex items-center justify-center">
                   <Mail className="w-5 h-5" />
                 </div>
                 <h3 className="font-bold text-base">Correo Electrónico</h3>
@@ -392,7 +392,7 @@ export default function PortalHomePage() {
                 </p>
               </div>
 
-              <div className="pt-2 flex items-center gap-1.5 text-xs font-bold text-[#CA8A04] dark:text-[#FACC15] group-hover:underline">
+              <div className="pt-2 flex items-center gap-1.5 text-xs font-bold text-[#FF5500] group-hover:underline">
                 <span>Enviar un email</span>
                 <ArrowUpRight className="w-4 h-4" />
               </div>

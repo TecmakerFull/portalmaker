@@ -73,7 +73,7 @@ export default function PricingSection() {
       ],
       ctaText: 'Elegir Maker Pro',
       ctaHref: '/login?mode=register&plan=maker_pro',
-      buttonStyle: 'bg-[#FACC15] text-[#1F2937] hover:bg-[#eab308] font-bold shadow-sm',
+      buttonStyle: 'bg-[#FF5500] text-white hover:bg-[#E04B00] font-bold shadow-sm',
     },
     {
       id: 'enterprise',
@@ -108,11 +108,11 @@ export default function PricingSection() {
     <section id="planes" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24 border-t border-[var(--color-borde)]">
       {/* Título de Sección */}
       <div className="text-center max-w-3xl mx-auto space-y-3 mb-10">
-        <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#CA8A04] dark:text-[#FACC15]">
+        <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#FF5500]">
           <Zap className="w-4 h-4" />
           <span>Planes transparentes y sin sorpresas</span>
         </div>
-        <h2 className="text-3xl sm:text-5xl font-bold tracking-tight font-[var(--font-portal-heading)]">
+        <h2 className="text-3xl sm:text-5xl font-normal tracking-wide font-brand">
           Una solución a medida de cada negocio
         </h2>
         <p className="text-sm sm:text-base opacity-75 max-w-2xl mx-auto leading-relaxed">
@@ -143,7 +143,7 @@ export default function PricingSection() {
               }`}
             >
               <span>Anual</span>
-              <span className="px-2 py-0.5 rounded-full bg-[#FACC15]/20 text-[#CA8A04] dark:text-[#FACC15] text-[10px] font-bold">
+              <span className="px-2 py-0.5 rounded-full bg-[#FF5500]/15 text-[#FF5500] text-[10px] font-bold">
                 -25%
               </span>
             </button>
@@ -162,14 +162,14 @@ export default function PricingSection() {
               key={plan.id}
               className={`rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all relative ${
                 plan.popular
-                  ? 'bg-[var(--color-superficie)] border-2 border-[#FACC15] shadow-md ring-4 ring-[#FACC15]/10'
+                  ? 'bg-[var(--color-superficie)] border-2 border-[#FF5500] shadow-md ring-4 ring-[#FF5500]/15'
                   : 'bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-xs'
               }`}
             >
               {/* Badge Más Popular */}
               {plan.popular && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#FACC15] text-[#1F2937] text-[11px] font-bold uppercase tracking-wider shadow-xs flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-[#1F2937]" />
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#FF5500] text-white text-[11px] font-bold uppercase tracking-wider shadow-xs flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-white" />
                   <span>{plan.badge}</span>
                 </div>
               )}
@@ -253,7 +253,7 @@ export default function PricingSection() {
 
       {/* Aclaraciones y Letra Chica Transparente */}
       <div className="mt-12 p-6 rounded-3xl bg-[var(--color-superficie)] border border-[var(--color-borde)] max-w-4xl mx-auto space-y-3">
-        <div className="flex items-center gap-2 text-xs font-bold text-[#CA8A04] dark:text-[#FACC15]">
+        <div className="flex items-center gap-2 text-xs font-bold text-[#FF5500]">
           <ShieldCheck className="w-4 h-4" />
           <span>Aclaraciones importantes y flexibilidad</span>
         </div>

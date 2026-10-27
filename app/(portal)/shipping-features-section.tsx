@@ -163,7 +163,7 @@ export default function ShippingFeaturesSection() {
       <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-6 sm:p-10 lg:p-12 shadow-sm transition-colors duration-200 space-y-8">
         {/* Encabezado de la sección */}
         <div className="max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FACC15]/20 border border-[#FACC15]/40 text-xs font-semibold uppercase tracking-wider text-[#92400E] dark:text-[#FACC15]">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF5500]/15 border border-[#FF5500]/30 text-xs font-semibold uppercase tracking-wider text-[#FF5500]">
             <Truck className="w-3.5 h-3.5" />
             <span>Logística Integrada a Todo el País</span>
           </div>
@@ -231,7 +231,7 @@ export default function ShippingFeaturesSection() {
                 key={item.id}
                 className={`rounded-2xl border transition-all overflow-hidden ${
                   isOpen
-                    ? 'border-[#FACC15]/60 bg-black/[0.015] dark:bg-white/[0.02]'
+                    ? 'border-[#FF5500]/60 bg-black/[0.015] dark:bg-white/[0.02]'
                     : 'border-[var(--color-borde)] bg-[var(--color-superficie)] hover:border-black/20 dark:hover:border-white/20'
                 }`}
               >
@@ -246,7 +246,7 @@ export default function ShippingFeaturesSection() {
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                         isOpen
-                          ? 'bg-[#FACC15] text-[#1F2937]'
+                          ? 'bg-[#FF5500] text-white'
                           : 'bg-black/5 dark:bg-white/5 text-[var(--color-texto)]'
                       }`}
                     >
@@ -262,7 +262,7 @@ export default function ShippingFeaturesSection() {
 
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform duration-200 ${
-                      isOpen ? 'rotate-180 bg-[#FACC15]/20 text-[#CA8A04]' : 'opacity-60'
+                      isOpen ? 'rotate-180 bg-[#FF5500]/15 text-[#FF5500]' : 'opacity-60'
                     }`}
                   >
                     <ChevronDown className="w-4 h-4" />
@@ -309,11 +309,11 @@ export default function ShippingFeaturesSection() {
 
           <Link
             href="/login"
-            style={{ color: '#1F2937' }}
-            className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-xs sm:text-sm font-bold hover:bg-[#eab308] active:scale-98 transition-all flex items-center gap-2 shadow-xs"
+            style={{ color: '#FFFFFF' }}
+            className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#FF5500] text-white text-xs sm:text-sm font-bold hover:bg-[#E04B00] active:scale-98 transition-all flex items-center gap-2 shadow-xs"
           >
             <span>Crear mi tienda y activar envíos</span>
-            <ArrowRight className="w-4 h-4 text-[#1F2937]" />
+            <ArrowRight className="w-4 h-4 text-white" />
           </Link>
         </div>
       </div>

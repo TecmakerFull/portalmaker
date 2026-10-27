@@ -13,12 +13,12 @@ export default function StickyBottomCta() {
     <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden bg-[var(--color-superficie)]/95 backdrop-blur-md border-t border-[var(--color-borde)] p-2.5 px-4 shadow-lg pb-[max(0.625rem,env(safe-area-inset-bottom))] transition-colors duration-200">
       <Link
         href="/login?mode=register"
-        style={{ color: '#1F2937' }}
-        className="w-full min-h-[44px] h-11 px-4 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] active:scale-98 transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+        style={{ color: '#FFFFFF' }}
+        className="w-full min-h-[44px] h-11 px-4 rounded-xl bg-[#FF5500] text-white text-sm font-bold hover:bg-[#E04B00] active:scale-98 transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
       >
-        <Sparkles className="w-4 h-4 text-[#1F2937]" />
+        <Sparkles className="w-4 h-4 text-white" />
         <span>Crear tienda gratis</span>
-        <ArrowRight className="w-4 h-4 text-[#1F2937]" />
+        <ArrowRight className="w-4 h-4 text-white" />
       </Link>
     </div>
   )

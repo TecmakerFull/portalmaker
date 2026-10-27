@@ -48,7 +48,7 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
   // Prevenir desajuste visual antes del montaje
   if (!mounted) {
     return (
-      <div className={`min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] opacity-50 ${className}`} />
+      <div className={`min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl opacity-50 ${className}`} />
     )
   }
 
@@ -58,7 +58,7 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
       onClick={toggleTheme}
       title={theme === 'light' ? 'Activar modo oscuro' : 'Activar modo claro'}
       aria-label="Alternar tema de color"
-      className={`min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] text-[var(--color-texto)] hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center transition-all cursor-pointer active:scale-95 ${className}`}
+      className={`min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl text-[var(--color-texto)] hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center transition-all cursor-pointer active:scale-95 ${className}`}
     >
       {theme === 'light' ? (
         <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-texto)] opacity-80" />

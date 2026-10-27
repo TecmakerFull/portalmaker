@@ -215,16 +215,17 @@ function LoginFormContent() {
     <div className="min-h-screen flex flex-col justify-between p-4 sm:p-6 bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-portal-body)] transition-colors duration-200">
       {/* Barra superior con logo y ThemeToggle */}
       <div className="max-w-md w-full mx-auto flex items-center justify-between pt-2">
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link href="/" className="flex items-center gap-2.5 group">
           <Image
             src="/logo.png"
             alt="Portalmaker"
             width={34}
             height={34}
-            className="w-8 h-8 rounded-xl object-contain shadow-2xs"
+            className="w-8 h-8 rounded-xl object-contain shadow-2xs group-hover:scale-105 transition-transform"
           />
-          <span className="text-xl font-bold tracking-tight font-[var(--font-portal-heading)]">
-            Portalmaker
+          <span className="text-xl font-normal tracking-wider font-brand uppercase select-none">
+            <span className="text-[var(--color-texto)] dark:text-white transition-colors">PORTAL</span>
+            <span className="text-[#FF5500]">MAKER</span>
           </span>
         </Link>
         <ThemeToggle />

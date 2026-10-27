@@ -31,15 +31,14 @@ export default function HeroQuickRegister() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="nombre@ejemplo.com"
-          className="flex-1 min-h-[48px] px-4 py-3 rounded-2xl bg-[var(--color-superficie)]/90 backdrop-blur-md border border-[var(--color-borde)] text-sm text-[var(--color-texto)] placeholder:opacity-50 focus:outline-hidden focus:ring-2 focus:ring-[#FACC15] focus:border-transparent transition-all shadow-xs"
+          className="flex-1 min-h-[48px] px-4 py-3 rounded-2xl bg-[var(--color-superficie)]/90 backdrop-blur-md border border-[var(--color-borde)] text-sm text-[var(--color-texto)] placeholder:opacity-50 focus:outline-hidden focus:ring-2 focus:ring-[#FF5500] focus:border-transparent transition-all shadow-xs"
         />
         <button
           type="submit"
-          style={{ color: '#1F2937' }}
-          className="min-h-[48px] px-6 py-3 rounded-2xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] active:scale-98 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer shrink-0"
+          className="min-h-[48px] px-6 py-3 rounded-2xl bg-[#FF5500] text-white text-sm font-bold hover:bg-[#E04B00] active:scale-98 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer shrink-0"
         >
           <span>Crear tienda gratis</span>
-          <ArrowRight className="w-4 h-4 text-[#1F2937]" />
+          <ArrowRight className="w-4 h-4 text-white" />
         </button>
       </form>
 
