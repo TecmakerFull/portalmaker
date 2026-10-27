@@ -112,51 +112,79 @@ export default function PortalHomePage() {
         </div>
 
         {/* Contenido Hero */}
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 w-full">
-          <div className="max-w-2xl text-left">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FACC15]/20 border border-[#FACC15]/40 text-[var(--color-texto)] text-xs font-semibold uppercase tracking-wider mb-5 shadow-xs backdrop-blur-xs">
-              <Zap className="w-3.5 h-3.5 text-[#EAB308]" />
-              <span>Plataforma e-commerce para talleres y creadores</span>
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            {/* Columna Izquierda: Título y Formulario */}
+            <div className="lg:col-span-7 text-left">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FACC15]/20 border border-[#FACC15]/40 text-[var(--color-texto)] text-xs font-semibold uppercase tracking-wider mb-5 shadow-xs backdrop-blur-xs">
+                <Zap className="w-3.5 h-3.5 text-[#EAB308]" />
+                <span>Plataforma e-commerce para talleres y creadores</span>
+              </div>
+
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.15] font-[var(--font-portal-heading)] text-[var(--color-texto)]">
+                ¡Creá tu tienda online gratis y en minutos!
+              </h1>
+
+              <p className="mt-4 sm:mt-5 text-sm sm:text-lg opacity-85 leading-relaxed font-normal text-[var(--color-texto)] max-w-xl">
+                Configuración simple y rápida. Vendé por WhatsApp, Mercado Pago o transferencias con envíos a todo el país. Diseñada para talleres, emprendedores y todo tipo de tiendas.
+              </p>
+
+              {/* Formulario rápido estilo Tiendanube con precarga de email */}
+              <div className="mt-7">
+                <HeroQuickRegister />
+              </div>
+
+              {/* Accesos secundarios */}
+              <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs sm:text-sm font-semibold">
+                <Link
+                  href="/login"
+                  className="opacity-80 hover:opacity-100 hover:underline flex items-center gap-1.5"
+                >
+                  <span>¿Ya tenés una tienda? Accedé a tu panel</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <span className="opacity-40 hidden sm:inline">•</span>
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="opacity-80 hover:opacity-100 hover:underline flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400"
+                >
+                  <WhatsAppIcon className="w-3.5 h-3.5" />
+                  <span>Solicitar asesoría</span>
+                </a>
+              </div>
+
+              {/* Social Proof sutil */}
+              <p className="mt-6 text-xs sm:text-sm opacity-70 font-medium text-[var(--color-texto)]">
+                Impulsamos a tiendas independientes, talleres y creadores en toda la Argentina
+              </p>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.15] font-[var(--font-portal-heading)] text-[var(--color-texto)]">
-              ¡Creá tu tienda online gratis y en minutos!
-            </h1>
+            {/* Columna Derecha: Foto de la Creadora / Maker en su Taller */}
+            <div className="lg:col-span-5 relative mt-4 lg:mt-0">
+              <div className="relative mx-auto max-w-md lg:max-w-none rounded-3xl overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl bg-[var(--color-superficie)] aspect-[4/3] sm:aspect-[4/3] lg:aspect-[5/4]">
+                <Image
+                  src="/images/creadora-taller.jpg"
+                  alt="Creadora y emprendedora mostrando su tienda online en Portalmaker"
+                  fill
+                  className="object-cover object-center"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
 
-            <p className="mt-4 sm:mt-5 text-sm sm:text-lg opacity-85 leading-relaxed font-normal text-[var(--color-texto)] max-w-xl">
-              Configuración simple y rápida. Vendé por WhatsApp, Mercado Pago o transferencias con envíos a todo el país. Diseñada para talleres, emprendedores y todo tipo de tiendas.
-            </p>
-
-            {/* Formulario rápido estilo Tiendanube con precarga de email */}
-            <div className="mt-7">
-              <HeroQuickRegister />
+                {/* Badge Flotante "100% Gratis" */}
+                <div className="absolute bottom-4 left-4 right-4 px-4 py-3 rounded-2xl bg-[var(--color-superficie)]/95 backdrop-blur-md border border-[var(--color-borde)] shadow-xl flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#FACC15]/20 text-[#CA8A04] dark:text-[#FACC15] flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div className="text-left leading-tight">
+                    <p className="text-xs font-bold text-[var(--color-texto)]">Tu taller abierto al mundo</p>
+                    <p className="text-[11px] opacity-70">Sin costos mensuales iniciales</p>
+                  </div>
+                </div>
+              </div>
             </div>
-
-            {/* Accesos secundarios */}
-            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs sm:text-sm font-semibold">
-              <Link
-                href="/login"
-                className="opacity-80 hover:opacity-100 hover:underline flex items-center gap-1.5"
-              >
-                <span>¿Ya tenés una tienda? Accedé a tu panel</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-              <span className="opacity-40 hidden sm:inline">•</span>
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="opacity-80 hover:opacity-100 hover:underline flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400"
-              >
-                <WhatsAppIcon className="w-3.5 h-3.5" />
-                <span>Solicitar asesoría</span>
-              </a>
-            </div>
-
-            {/* Social Proof sutil */}
-            <p className="mt-6 text-xs sm:text-sm opacity-70 font-medium text-[var(--color-texto)]">
-              Impulsamos a tiendas independientes, talleres y creadores en toda la Argentina
-            </p>
           </div>
         </div>
       </section>
@@ -210,7 +238,7 @@ export default function PortalHomePage() {
         </div>
       </section>
 
-      {/* Sección: Armá tu tienda en 4 pasos (Inspirada en el flujo directo de Tiendanube) */}
+      {/* Sección: Armá tu tienda en 4 pasos con Mockup 3D Real */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20 border-t border-[var(--color-borde)]">
         <div className="text-center max-w-2xl mx-auto space-y-3 mb-12">
           <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#CA8A04] dark:text-[#FACC15]">
@@ -225,41 +253,66 @@ export default function PortalHomePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {/* Paso 1 */}
-          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
-            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">01</span>
-            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Registrate y elegí tu link</h3>
-            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
-              Creá tu cuenta gratis en 30 segundos y obtené tu dirección web exclusiva (<code>tutienda.portalmaker.ar</code>).
-            </p>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* Columna Izquierda: Los 4 Pasos */}
+          <div className="lg:col-span-7 space-y-4">
+            {/* Paso 1 */}
+            <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs flex items-start gap-4">
+              <span className="text-2xl sm:text-3xl font-black font-mono text-[#FACC15] shrink-0 mt-0.5">01</span>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Registrate y elegí tu link</h3>
+                <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
+                  Creá tu cuenta gratis en 30 segundos y obtené tu dirección web exclusiva (<code>tutienda.portalmaker.ar</code>).
+                </p>
+              </div>
+            </div>
+
+            {/* Paso 2 */}
+            <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs flex items-start gap-4">
+              <span className="text-2xl sm:text-3xl font-black font-mono text-[#FACC15] shrink-0 mt-0.5">02</span>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Subí tus productos</h3>
+                <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
+                  Cargá fotos en alta calidad, variantes de colores o talles y tiempos de fabricación si producís bajo demanda.
+                </p>
+              </div>
+            </div>
+
+            {/* Paso 3 */}
+            <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs flex items-start gap-4">
+              <span className="text-2xl sm:text-3xl font-black font-mono text-[#FACC15] shrink-0 mt-0.5">03</span>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Conectá cobros y envíos</h3>
+                <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
+                  Enlazá tu Mercado Pago o alias bancario y activá cotizaciones automáticas con Andreani y Correo Argentino vía Zipnova.
+                </p>
+              </div>
+            </div>
+
+            {/* Paso 4 */}
+            <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs flex items-start gap-4">
+              <span className="text-2xl sm:text-3xl font-black font-mono text-[#FACC15] shrink-0 mt-0.5">04</span>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Compartí y vendé</h3>
+                <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
+                  Pegá tu link en tu biografía de Instagram, TikTok o WhatsApp y recibí pedidos organizados con aviso inmediato.
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Paso 2 */}
-          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
-            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">02</span>
-            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Subí tus productos</h3>
-            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
-              Cargá fotos en alta calidad, variantes de colores o talles y tiempos de fabricación si producís bajo demanda.
-            </p>
-          </div>
-
-          {/* Paso 3 */}
-          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
-            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">03</span>
-            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Conectá cobros y envíos</h3>
-            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
-              Enlazá tu Mercado Pago o alias bancario y activá cotizaciones automáticas con Andreani y Correo Argentino vía Zipnova.
-            </p>
-          </div>
-
-          {/* Paso 4 */}
-          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
-            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">04</span>
-            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Compartí y vendé</h3>
-            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
-              Pegá tu link en tu biografía de Instagram, TikTok o WhatsApp y recibí pedidos organizados con aviso inmediato.
-            </p>
+          {/* Columna Derecha: Mockup 3D Flotante con Productos y Notificaciones */}
+          <div className="lg:col-span-5 flex justify-center">
+            <div className="relative w-full max-w-sm sm:max-w-md">
+              <div className="relative aspect-[16/10] sm:aspect-[16/9] lg:aspect-square rounded-3xl overflow-hidden">
+                <Image
+                  src="/images/mockup-tienda-mobile.png"
+                  alt="Mockup de tienda online mobile en Portalmaker con carrito y notificaciones de WhatsApp"
+                  fill
+                  className="object-contain drop-shadow-2xl"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
