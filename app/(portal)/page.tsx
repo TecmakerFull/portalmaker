@@ -134,36 +134,15 @@ export default function PortalHomePage() {
                 <HeroQuickRegister />
               </div>
 
-              {/* Accesos secundarios */}
-              <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs sm:text-sm font-semibold">
-                <Link
-                  href="/login"
-                  className="opacity-80 hover:opacity-100 hover:underline flex items-center gap-1.5"
-                >
-                  <span>¿Ya tenés una tienda? Accedé a tu panel</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-                <span className="opacity-40 hidden sm:inline">•</span>
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="opacity-80 hover:opacity-100 hover:underline flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400"
-                >
-                  <WhatsAppIcon className="w-3.5 h-3.5" />
-                  <span>Solicitar asesoría</span>
-                </a>
-              </div>
-
               {/* Social Proof sutil */}
-              <p className="mt-6 text-xs sm:text-sm opacity-70 font-medium text-[var(--color-texto)]">
+              <p className="mt-5 text-xs sm:text-sm opacity-70 font-medium text-[var(--color-texto)]">
                 Impulsamos a tiendas independientes, talleres y creadores en toda la Argentina
               </p>
             </div>
 
-            {/* Columna Derecha: Foto de la Creadora / Maker en su Taller */}
+            {/* Columna Derecha: Foto de la Creadora con botón a WhatsApp en la parte inferior */}
             <div className="lg:col-span-5 relative mt-4 lg:mt-0">
-              <div className="relative mx-auto max-w-md lg:max-w-none rounded-3xl overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl bg-[var(--color-superficie)] aspect-[4/3] sm:aspect-[4/3] lg:aspect-[5/4]">
+              <div className="relative mx-auto max-w-md lg:max-w-none rounded-3xl overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl bg-[var(--color-superficie)] aspect-[4/3] sm:aspect-[4/3] lg:aspect-[5/4] group">
                 <Image
                   src="/images/creadora-taller.jpg"
                   alt="Creadora y emprendedora mostrando su tienda online en Portalmaker"
@@ -171,6 +150,19 @@ export default function PortalHomePage() {
                   className="object-cover object-center"
                   priority
                 />
+
+                {/* Enlace flotante a WhatsApp en la parte inferior de la foto */}
+                <div className="absolute bottom-3.5 left-3.5 right-3.5 sm:bottom-4 sm:left-4 sm:right-4">
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full min-h-[44px] px-4 py-2.5 rounded-2xl bg-[var(--color-superficie)]/90 hover:bg-[var(--color-superficie)] text-[var(--color-texto)] backdrop-blur-md border border-[var(--color-borde)] shadow-lg flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer hover:border-emerald-500/50"
+                  >
+                    <WhatsAppIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span>Solicitar asesoría</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
