@@ -151,15 +151,15 @@ export default function PortalHomePage() {
                   priority
                 />
 
-                {/* Enlace flotante a WhatsApp en la parte inferior de la foto */}
-                <div className="absolute bottom-3.5 left-3.5 right-3.5 sm:bottom-4 sm:left-4 sm:right-4">
+                {/* Enlace sutil a WhatsApp adaptado al texto y con transparencia */}
+                <div className="absolute bottom-3 sm:bottom-4 left-0 right-0 flex justify-center px-4 pointer-events-none">
                   <a
                     href={whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full min-h-[44px] px-4 py-2.5 rounded-2xl bg-[var(--color-superficie)]/90 hover:bg-[var(--color-superficie)] text-[var(--color-texto)] backdrop-blur-md border border-[var(--color-borde)] shadow-lg flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer hover:border-emerald-500/50"
+                    className="pointer-events-auto inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/45 hover:bg-black/65 text-white backdrop-blur-md border border-white/20 shadow-md text-xs font-medium transition-all cursor-pointer hover:border-emerald-400/60 active:scale-95"
                   >
-                    <WhatsAppIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <WhatsAppIcon className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                     <span>Solicitar asesoría</span>
                   </a>
                 </div>
