@@ -7,7 +7,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 
 export default function HeroQuickRegister() {
   const [email, setEmail] = useState('')
@@ -25,20 +25,22 @@ export default function HeroQuickRegister() {
 
   return (
     <div className="w-full max-w-lg">
-      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-stretch gap-2.5">
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-full bg-white dark:bg-[#13161D] border border-slate-200 dark:border-[#242A38] shadow-sm p-1 sm:p-1.5 pl-4 sm:pl-5 flex items-center gap-1.5 sm:gap-2 focus-within:ring-2 focus-within:ring-[#FF5500] focus-within:border-transparent transition-all"
+      >
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="nombre@ejemplo.com"
-          className="flex-1 min-h-[48px] px-4 py-3 rounded-2xl bg-[var(--color-superficie)]/90 backdrop-blur-md border border-[var(--color-borde)] text-sm text-[var(--color-texto)] placeholder:opacity-50 focus:outline-hidden focus:ring-2 focus:ring-[#FF5500] focus:border-transparent transition-all shadow-xs"
+          className="flex-1 min-w-0 bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
         />
         <button
           type="submit"
-          className="min-h-[48px] px-6 py-3 rounded-2xl bg-[#FF5500] text-white text-sm font-bold hover:bg-[#E04B00] active:scale-98 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer shrink-0"
+          className="shrink-0 min-h-[40px] sm:min-h-[44px] px-4 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[#FF5500] text-white text-xs sm:text-sm font-bold hover:bg-[#E04B00] active:scale-95 transition-all shadow-xs flex items-center justify-center cursor-pointer whitespace-nowrap"
         >
           <span>Crear tienda gratis</span>
-          <ArrowRight className="w-4 h-4 text-white" />
         </button>
       </form>
 
