@@ -97,11 +97,11 @@ export default function GuiaView({
       details: [
         {
           sub: '¿Qué categorías crear?',
-          desc: 'Crea carpetas claras según tu rubro, como "Indumentaria", "Calzado", "Tecnología", "Hogar & Deco", "Accesorios" o "Servicios".',
+          desc: 'Crea carpetas claras según tu taller, como "Filamentos & Insumos", "Figuras & Coleccionables", "Deco & Lámparas 3D", "Repuestos Técnicos", "Grabado Láser" o "Servicios de Impresión".',
         },
         {
           sub: 'Subcategorías opcionales',
-          desc: 'Si tienes variedad de artículos, puedes crear divisiones adentro (por ejemplo: dentro de "Indumentaria", crear "Remeras", "Buzos", "Pantalones").',
+          desc: 'Si tienes variedad de artículos, puedes crear divisiones adentro (por ejemplo: dentro de "Filamentos", crear "PLA", "PETG", "FLEX", "ABS").',
         },
       ],
     },
@@ -118,11 +118,11 @@ export default function GuiaView({
       details: [
         {
           sub: 'A. El Producto Padre (La publicación principal)',
-          desc: 'Ponle el nombre general del producto (ej: "Remera Oversize Algodón", "Taza Cerámica Artesanal" o "Auriculares Bluetooth"). No le pongas solo el color o talle aquí.',
+          desc: 'Ponle el nombre general del producto (ej: "Filamento PLA 1kg — Filar", "Lámpara Luna 3D 15cm" o "Soporte Auriculares Gamer"). No le pongas solo el color aquí.',
         },
         {
-          sub: 'B. Las Variantes (Los colores, talles o modelos)',
-          desc: 'Si tu producto tiene opciones, agrega una variante por cada una: "Negro / Talle M", "Blanco / Talle L", "Azul Marino". Cada una lleva su stock individual y precio propio si varía.',
+          sub: 'B. Las Variantes (Los colores, materiales o modelos)',
+          desc: 'Si tu producto tiene opciones, agrega una variante por cada una: "Negro Azabache", "Blanco Antártida", "Rojo Fuego" o "Luz Cálida / RGB". Cada una lleva su stock individual y foto propia.',
         },
         {
           sub: 'C. Fotos Generales vs. Fotos de Variante',
