@@ -11,6 +11,7 @@ import { Sparkles, Store, Palette, MessageSquare, CreditCard, ArrowRight, Shield
 import ShippingFeaturesSection from './shipping-features-section'
 import HeroQuickRegister from './hero-quick-register'
 import StickyBottomCta from './sticky-bottom-cta'
+import PricingSection from './pricing-section'
 
 // Contacto oficial del portal
 const PORTAL_WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_PORTAL_WHATSAPP ?? '5493415866464'
@@ -47,6 +48,13 @@ export default function PortalHomePage() {
 
           {/* Menú Desktop: Espacioso y completo */}
           <div className="hidden sm:flex items-center gap-2 sm:gap-3">
+            <a
+              href="#planes"
+              className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5"
+            >
+              <span>Planes</span>
+            </a>
+
             <a
               href="#contacto"
               className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5"
@@ -202,8 +210,77 @@ export default function PortalHomePage() {
         </div>
       </section>
 
+      {/* Sección: Armá tu tienda en 4 pasos (Inspirada en el flujo directo de Tiendanube) */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20 border-t border-[var(--color-borde)]">
+        <div className="text-center max-w-2xl mx-auto space-y-3 mb-12">
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#CA8A04] dark:text-[#FACC15]">
+            <Sparkles className="w-4 h-4" />
+            <span>Rápido, simple y sin vueltas</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-bold font-[var(--font-portal-heading)]">
+            Armá tu tienda en solo 4 pasos
+          </h2>
+          <p className="text-sm sm:text-base opacity-75">
+            Vendé las 24 horas y despachá a cualquier rincón de la Argentina.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {/* Paso 1 */}
+          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
+            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">01</span>
+            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Registrate y elegí tu link</h3>
+            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
+              Creá tu cuenta gratis en 30 segundos y obtené tu dirección web exclusiva (<code>tutienda.portalmaker.ar</code>).
+            </p>
+          </div>
+
+          {/* Paso 2 */}
+          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
+            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">02</span>
+            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Subí tus productos</h3>
+            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
+              Cargá fotos en alta calidad, variantes de colores o talles y tiempos de fabricación si producís bajo demanda.
+            </p>
+          </div>
+
+          {/* Paso 3 */}
+          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
+            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">03</span>
+            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Conectá cobros y envíos</h3>
+            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
+              Enlazá tu Mercado Pago o alias bancario y activá cotizaciones automáticas con Andreani y Correo Argentino vía Zipnova.
+            </p>
+          </div>
+
+          {/* Paso 4 */}
+          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
+            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">04</span>
+            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Compartí y vendé</h3>
+            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
+              Pegá tu link en tu biografía de Instagram, TikTok o WhatsApp y recibí pedidos organizados con aviso inmediato.
+            </p>
+          </div>
+        </div>
+
+        {/* CTA Intermedio */}
+        <div className="mt-10 text-center">
+          <Link
+            href="/login?mode=register"
+            style={{ color: '#1F2937' }}
+            className="inline-flex min-h-[48px] px-8 py-3.5 rounded-2xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] active:scale-98 transition-all shadow-md items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Crear tienda gratis</span>
+            <ArrowRight className="w-4 h-4 text-[#1F2937]" />
+          </Link>
+        </div>
+      </section>
+
       {/* Envíos Automáticos con Zipnova (Multicourier Argentina) */}
       <ShippingFeaturesSection />
+
+      {/* Sección de Planes & Precios (Inspirada en Tiendanube con selector mensual/anual) */}
+      <PricingSection />
 
       {/* Dominio Propio */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
@@ -222,9 +299,9 @@ export default function PortalHomePage() {
           </div>
 
           <Link
-            href="/login"
+            href="/login?mode=register"
             style={{ color: '#1F2937' }}
-            className="shrink-0 min-h-[48px] px-7 py-3.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-extrabold hover:bg-[#eab308] transition-all flex items-center gap-2 shadow-sm"
+            className="shrink-0 min-h-[48px] px-7 py-3.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-extrabold hover:bg-[#eab308] transition-all flex items-center gap-2 shadow-sm cursor-pointer"
           >
             <span>Empezar Ahora</span>
             <ArrowRight className="w-4 h-4 text-[#1F2937]" />
@@ -293,72 +370,6 @@ export default function PortalHomePage() {
               </div>
             </a>
           </div>
-        </div>
-      </section>
-
-      {/* Sección: Armá tu tienda en 4 pasos (Inspirada en el flujo directo de Tiendanube) */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20 border-t border-[var(--color-borde)]">
-        <div className="text-center max-w-2xl mx-auto space-y-3 mb-12">
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#CA8A04] dark:text-[#FACC15]">
-            <Sparkles className="w-4 h-4" />
-            <span>Rápido, simple y sin vueltas</span>
-          </div>
-          <h2 className="text-2xl sm:text-4xl font-bold font-[var(--font-portal-heading)]">
-            Armá tu tienda en solo 4 pasos
-          </h2>
-          <p className="text-sm sm:text-base opacity-75">
-            Vendé las 24 horas y despachá a cualquier rincón de la Argentina.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {/* Paso 1 */}
-          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
-            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">01</span>
-            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Registrate y elegí tu link</h3>
-            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
-              Creá tu cuenta gratis en 30 segundos y obtené tu dirección web exclusiva (<code>tutienda.portalmaker.ar</code>).
-            </p>
-          </div>
-
-          {/* Paso 2 */}
-          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
-            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">02</span>
-            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Subí tus productos</h3>
-            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
-              Cargá fotos en alta calidad, variantes de colores o talles y tiempos de fabricación si producís bajo demanda.
-            </p>
-          </div>
-
-          {/* Paso 3 */}
-          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
-            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">03</span>
-            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Conectá cobros y envíos</h3>
-            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
-              Enlazá tu Mercado Pago o alias bancario y activá cotizaciones automáticas con Andreani y Correo Argentino vía Zipnova.
-            </p>
-          </div>
-
-          {/* Paso 4 */}
-          <div className="bg-[var(--color-superficie)] p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs space-y-3 relative overflow-hidden">
-            <span className="text-3xl font-black font-mono text-[#FACC15] opacity-80">04</span>
-            <h3 className="text-base font-bold font-[var(--font-portal-heading)]">Compartí y vendé</h3>
-            <p className="text-xs sm:text-sm opacity-75 leading-relaxed">
-              Pegá tu link en tu biografía de Instagram, TikTok o WhatsApp y recibí pedidos organizados con aviso inmediato.
-            </p>
-          </div>
-        </div>
-
-        {/* CTA Intermedio */}
-        <div className="mt-10 text-center">
-          <Link
-            href="/login?mode=register"
-            style={{ color: '#1F2937' }}
-            className="inline-flex min-h-[48px] px-8 py-3.5 rounded-2xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] active:scale-98 transition-all shadow-md items-center justify-center gap-2 cursor-pointer"
-          >
-            <span>Crear tienda gratis</span>
-            <ArrowRight className="w-4 h-4 text-[#1F2937]" />
-          </Link>
         </div>
       </section>
 
