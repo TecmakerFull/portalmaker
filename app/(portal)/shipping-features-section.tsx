@@ -152,7 +152,7 @@ const ITEMS: AccordionItem[] = [
 ]
 
 export default function ShippingFeaturesSection() {
-  const [openItem, setOpenItem] = useState<string | null>('que-es')
+  const [openItem, setOpenItem] = useState<string | null>(null)
 
   const toggleItem = (id: string) => {
     setOpenItem((prev) => (prev === id ? null : id))
