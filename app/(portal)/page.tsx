@@ -63,21 +63,16 @@ export default function PortalHomePage() {
               <span>Contacto</span>
             </a>
 
-            <Link
-              href="/login"
-              className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center"
-            >
-              <span>Acceso Maker</span>
-            </Link>
-
+            {/* Theme Toggle */}
             <ThemeToggle />
 
+            {/* Botón Acceso Maker */}
             <Link
-              href="/login?mode=register"
+              href="/login"
               style={{ color: '#1F2937' }}
-              className="min-h-[44px] px-5 py-2.5 rounded-full bg-[#FACC15] text-[#1F2937] text-xs sm:text-sm font-bold hover:bg-[#eab308] active:scale-95 transition-all shadow-xs flex items-center justify-center cursor-pointer"
+              className="min-h-[42px] px-5 py-2 rounded-full bg-[#FACC15] text-[#1F2937] text-xs sm:text-sm font-bold hover:bg-[#eab308] active:scale-95 transition-all shadow-xs flex items-center justify-center cursor-pointer"
             >
-              <span>Comienza gratis</span>
+              <span>Acceso Maker</span>
             </Link>
           </div>
 
