@@ -97,11 +97,11 @@ export default function GuiaView({
       details: [
         {
           sub: '¿Qué categorías crear?',
-          desc: 'Crea carpetas claras según tu taller, como "Filamentos & Insumos", "Figuras & Coleccionables", "Deco & Lámparas 3D", "Repuestos Técnicos", "Grabado Láser" o "Servicios de Impresión".',
+          desc: 'Crea carpetas claras según tu negocio o rubro. Portalmaker se adapta a todo tipo de tiendas: desde indumentaria, calzado y accesorios, hasta deco del hogar, impresión 3D, repuestos o bazar.',
         },
         {
           sub: 'Subcategorías opcionales',
-          desc: 'Si tienes variedad de artículos, puedes crear divisiones adentro (por ejemplo: dentro de "Filamentos", crear "PLA", "PETG", "FLEX", "ABS").',
+          desc: 'Si tienes variedad de artículos, puedes crear divisiones adentro (por ejemplo: dentro de "Indumentaria", crear "Remeras", "Buzos"; o dentro de "Filamentos", crear "PLA", "PETG").',
         },
       ],
     },
@@ -118,11 +118,11 @@ export default function GuiaView({
       details: [
         {
           sub: 'A. El Producto Padre (La publicación principal)',
-          desc: 'Ponle el nombre general del producto (ej: "Filamento PLA 1kg — Filar", "Lámpara Luna 3D 15cm" o "Soporte Auriculares Gamer"). No le pongas solo el color aquí.',
+          desc: 'Ponle el nombre general del producto (ej: "Remera Oversize de Algodón", "Lámpara Luna 3D", "Zapatillas Urbanas" o "Taza Cerámica"). No le pongas solo el color o talle aquí.',
         },
         {
-          sub: 'B. Las Variantes (Los colores, materiales o modelos)',
-          desc: 'Si tu producto tiene opciones, agrega una variante por cada una: "Negro Azabache", "Blanco Antártida", "Rojo Fuego" o "Luz Cálida / RGB". Cada una lleva su stock individual y foto propia.',
+          sub: 'B. Las Variantes (Los colores, talles, materiales o modelos)',
+          desc: 'Si tu producto tiene opciones, agrega una variante por cada una: "Negro / Talle M", "Blanco / Talle L", "Azul Marino", "Madera Natural". Cada una lleva su stock individual, precio propio si varía y foto asignada.',
         },
         {
           sub: 'C. Fotos Generales vs. Fotos de Variante',
@@ -130,7 +130,11 @@ export default function GuiaView({
         },
         {
           sub: 'D. Subida Fácil y Rápida',
-          desc: 'Puedes arrastrar archivos desde tu PC/celular o simplemente pegar imágenes con Ctrl + V. Todo se convierte a WebP liviano solo.',
+          desc: 'Puedes arrastrar archivos desde tu PC/celular o simplemente pegar imágenes con Ctrl + V. Todo se convierte a WebP liviano de forma automática.',
+        },
+        {
+          sub: 'E. Stock Inmediato vs. Fabricación a Pedido / Sin Stock',
+          desc: 'Si tienes piezas listas, activa "Gestiona stock" e ingresa la cantidad para habilitar la compra directa. Si trabajas a pedido o un producto se queda sin stock, la tienda no detiene tus ventas: le muestra al comprador tus condiciones y tiempo estimado de entrega/fabricación (ej: "Elaboración en 3 a 5 días hábiles") con el botón para consultar disponibilidad por WhatsApp.',
         },
       ],
     },
