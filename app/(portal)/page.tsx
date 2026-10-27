@@ -171,18 +171,6 @@ export default function PortalHomePage() {
                   className="object-cover object-center"
                   priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-
-                {/* Badge Flotante "100% Gratis" */}
-                <div className="absolute bottom-4 left-4 right-4 px-4 py-3 rounded-2xl bg-[var(--color-superficie)]/95 backdrop-blur-md border border-[var(--color-borde)] shadow-xl flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#FACC15]/20 text-[#CA8A04] dark:text-[#FACC15] flex items-center justify-center shrink-0">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div className="text-left leading-tight">
-                    <p className="text-xs font-bold text-[var(--color-texto)]">Tu taller abierto al mundo</p>
-                    <p className="text-[11px] opacity-70">Sin costos mensuales iniciales</p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
