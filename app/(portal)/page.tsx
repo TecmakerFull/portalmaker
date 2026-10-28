@@ -136,8 +136,8 @@ export default function PortalHomePage() {
             </div>
 
             {/* Columna Derecha: Foto de la Creadora con botón a WhatsApp en la parte inferior */}
-            <div className="lg:col-span-5 relative mt-4 lg:mt-0">
-              <div className="relative mx-auto max-w-md lg:max-w-none rounded-3xl overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl bg-[var(--color-superficie)] aspect-[4/3] sm:aspect-[4/3] lg:aspect-[5/4] group">
+            <div className="lg:col-span-5 relative mt-6 lg:mt-0 flex justify-center lg:justify-end">
+              <div className="relative w-full max-w-lg lg:max-w-none rounded-3xl overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl bg-[var(--color-superficie)] aspect-[4/3] sm:aspect-[4/3] lg:aspect-[4/3] lg:scale-105 xl:scale-110 transition-transform group">
                 <Image
                   src="/images/creadora-taller.jpg"
                   alt="Creadora y emprendedora mostrando su tienda online en Portalmaker"
