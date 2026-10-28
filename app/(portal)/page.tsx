@@ -220,7 +220,7 @@ export default function PortalHomePage() {
             <Sparkles className="w-4 h-4" />
             <span>Rápido, simple y sin vueltas</span>
           </div>
-          <h2 className="text-2xl sm:text-4xl font-bold font-[var(--font-portal-heading)]">
+          <h2 className="text-2xl sm:text-4xl font-normal tracking-wide font-brand">
             Armá tu tienda en solo 4 pasos
           </h2>
           <p className="text-sm sm:text-base opacity-75">

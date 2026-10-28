@@ -112,7 +112,7 @@ export default function PricingSection() {
           <Zap className="w-4 h-4" />
           <span>Planes transparentes y sin sorpresas</span>
         </div>
-        <h2 className="text-3xl sm:text-5xl font-normal tracking-wide font-brand">
+        <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight font-[var(--font-portal-heading)]">
           Una solución a medida de cada negocio
         </h2>
         <p className="text-sm sm:text-base opacity-75 max-w-2xl mx-auto leading-relaxed">
