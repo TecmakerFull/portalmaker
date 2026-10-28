@@ -235,7 +235,7 @@ function LoginFormContent() {
         {/* CASO 1: Registro pendiente de confirmación de email */}
         {signupPendingVerification ? (
           <div className="text-center space-y-5 py-2">
-            <div className="w-14 h-14 rounded-3xl bg-[#FACC15]/20 text-[#CA8A04] dark:text-[#FACC15] flex items-center justify-center mx-auto shadow-xs">
+            <div className="w-14 h-14 rounded-3xl bg-[#FF5500]/15 text-[#FF5500] flex items-center justify-center mx-auto shadow-xs">
               <MailCheck className="w-7 h-7" />
             </div>
 
@@ -283,7 +283,7 @@ function LoginFormContent() {
               <button
                 type="button"
                 onClick={() => resetAllStates('login')}
-                className="w-full min-h-[44px] text-xs font-bold text-[#CA8A04] dark:text-[#FACC15] hover:underline"
+                className="w-full min-h-[44px] text-xs font-bold text-[#FF5500] hover:underline"
               >
                 Volver a Iniciar Sesión
               </button>
@@ -339,7 +339,7 @@ function LoginFormContent() {
               <button
                 type="button"
                 onClick={() => resetAllStates('login')}
-                className="w-full min-h-[44px] text-xs font-bold text-[#CA8A04] dark:text-[#FACC15] hover:underline"
+                className="w-full min-h-[44px] text-xs font-bold text-[#FF5500] hover:underline"
               >
                 Volver a Iniciar Sesión
               </button>
@@ -432,7 +432,7 @@ function LoginFormContent() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@email.com"
-                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]"
                 />
               </div>
 
@@ -446,7 +446,7 @@ function LoginFormContent() {
                       <button
                         type="button"
                         onClick={() => resetAllStates('forgot')}
-                        className="text-[11px] font-semibold text-[#CA8A04] dark:text-[#FACC15] hover:underline"
+                        className="text-[11px] font-semibold text-[#FF5500] hover:underline"
                       >
                         ¿Olvidaste tu contraseña?
                       </button>
@@ -460,7 +460,7 @@ function LoginFormContent() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full min-h-[44px] pl-3.5 pr-12 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                      className="w-full min-h-[44px] pl-3.5 pr-12 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]"
                     />
                     <button
                       type="button"
@@ -478,26 +478,26 @@ function LoginFormContent() {
               <button
                 type="submit"
                 disabled={loading}
-                style={{ color: '#1F2937' }}
-                className="w-full min-h-[48px] mt-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-extrabold hover:bg-[#eab308] active:scale-[0.99] transition-all disabled:opacity-50 shadow-md cursor-pointer"
+                style={{ color: '#FFFFFF' }}
+                className="w-full min-h-[48px] mt-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#FF5500] text-white text-sm font-bold hover:bg-[#E04B00] active:scale-[0.99] transition-all disabled:opacity-50 shadow-md cursor-pointer"
               >
                 {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-[#1F2937]" />
+                  <Loader2 className="w-5 h-5 animate-spin text-white" />
                 ) : mode === 'register' ? (
                   <>
-                    <UserPlus className="w-4 h-4 text-[#1F2937]" />
+                    <UserPlus className="w-4 h-4 text-white" />
                     <span>Crear Cuenta</span>
                   </>
                 ) : mode === 'forgot' ? (
                   <>
-                    <KeyRound className="w-4 h-4 text-[#1F2937]" />
+                    <KeyRound className="w-4 h-4 text-white" />
                     <span>Enviar enlace de recuperación</span>
                   </>
                 ) : (
                   <>
-                    <LogIn className="w-4 h-4 text-[#1F2937]" />
+                    <LogIn className="w-4 h-4 text-white" />
                     <span>Ingresar</span>
-                    <ArrowRight className="w-4 h-4 text-[#1F2937] ml-1" />
+                    <ArrowRight className="w-4 h-4 text-white ml-1" />
                   </>
                 )}
               </button>
@@ -509,7 +509,7 @@ function LoginFormContent() {
                 <button
                   type="button"
                   onClick={() => resetAllStates('login')}
-                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#CA8A04] dark:text-[#FACC15] hover:underline"
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#FF5500] hover:underline"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Volver a Iniciar Sesión</span>
@@ -518,7 +518,7 @@ function LoginFormContent() {
                 <button
                   type="button"
                   onClick={() => resetAllStates(mode === 'register' ? 'login' : 'register')}
-                  className="text-xs sm:text-sm font-bold text-[#CA8A04] dark:text-[#FACC15] hover:underline"
+                  className="text-xs sm:text-sm font-bold text-[#FF5500] hover:underline"
                 >
                   {mode === 'register'
                     ? '¿Ya tienes cuenta? Inicia sesión aquí'

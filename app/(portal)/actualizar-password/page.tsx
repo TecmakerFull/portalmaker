@@ -82,7 +82,7 @@ export default function ActualizarPasswordPage() {
       {/* Tarjeta Central */}
       <div className="w-full max-w-md mx-auto my-auto bg-[var(--color-superficie)] rounded-3xl shadow-xl border border-[var(--color-borde)] p-6 sm:p-8 transition-colors duration-200">
         <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-[#FACC15]/20 text-[#CA8A04] dark:text-[#FACC15] flex items-center justify-center mx-auto mb-3">
+          <div className="w-12 h-12 rounded-2xl bg-[#FF5500]/15 text-[#FF5500] flex items-center justify-center mx-auto mb-3">
             <KeyRound className="w-6 h-6" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight font-[var(--font-portal-heading)]">
@@ -109,7 +109,7 @@ export default function ActualizarPasswordPage() {
             <p className="text-xs opacity-75">
               Tu clave fue modificada con éxito. Redirigiendo a tu panel...
             </p>
-            <Loader2 className="w-5 h-5 animate-spin mx-auto text-[#CA8A04] dark:text-[#FACC15] pt-2" />
+            <Loader2 className="w-5 h-5 animate-spin mx-auto text-[#FF5500] pt-2" />
           </div>
         ) : (
           <form onSubmit={handleUpdatePassword} className="space-y-4">
@@ -125,7 +125,7 @@ export default function ActualizarPasswordPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mínimo 6 caracteres"
-                  className="w-full min-h-[44px] pl-3.5 pr-12 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                  className="w-full min-h-[44px] pl-3.5 pr-12 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]"
                 />
                 <button
                   type="button"
@@ -150,22 +150,22 @@ export default function ActualizarPasswordPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Repite tu nueva contraseña"
-                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              style={{ color: '#1F2937' }}
-              className="w-full min-h-[48px] mt-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-extrabold hover:bg-[#eab308] active:scale-[0.99] transition-all disabled:opacity-50 shadow-md"
+              style={{ color: '#FFFFFF' }}
+              className="w-full min-h-[48px] mt-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#FF5500] text-white text-sm font-bold hover:bg-[#E04B00] active:scale-[0.99] transition-all disabled:opacity-50 shadow-md cursor-pointer"
             >
               {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin text-[#1F2937]" />
+                <Loader2 className="w-5 h-5 animate-spin text-white" />
               ) : (
                 <>
                   <span>Guardar nueva contraseña</span>
-                  <ArrowRight className="w-4 h-4 text-[#1F2937]" />
+                  <ArrowRight className="w-4 h-4 text-white" />
                 </>
               )}
             </button>
