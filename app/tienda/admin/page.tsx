@@ -51,7 +51,7 @@ export default async function AdminHomePage() {
   if (store.whatsapp_numero) stepsCompleted++
 
   return (
-    <div className="w-full space-y-6 sm:space-y-8">
+    <div className="w-full max-w-5xl mx-auto space-y-6 sm:space-y-8">
       {/* Saludo Principal */}
       <AdminPageHeader
         title={`¡Hola, ${store.nombre}!`}

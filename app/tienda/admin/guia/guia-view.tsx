@@ -399,7 +399,7 @@ export default function GuiaView({
   })
 
   return (
-    <div className="w-full space-y-6 sm:space-y-8 pb-12">
+    <div className="w-full max-w-5xl mx-auto space-y-6 sm:space-y-8 pb-12">
       {/* Encabezado Principal */}
       <AdminPageHeader
         title="Guía Paso a Paso"

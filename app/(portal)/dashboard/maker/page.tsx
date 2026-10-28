@@ -75,23 +75,24 @@ export default async function MakerDashboardPage() {
       <header className="bg-[var(--color-superficie)] border-b border-[var(--color-borde)] sticky top-0 z-20 transition-colors duration-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5">
+            <Link href="/" className="flex items-center gap-2.5 group">
               <Image
                 src="/logo.png"
                 alt="Portalmaker"
                 width={34}
                 height={34}
-                className="w-8 h-8 rounded-xl object-contain shadow-2xs"
+                className="w-8 h-8 rounded-xl object-contain shadow-2xs shrink-0 group-hover:scale-105 transition-transform"
               />
-              <span className="text-xl font-bold tracking-tight font-[var(--font-portal-heading)]">
-                Portalmaker
+              <span className="text-xl font-normal tracking-wider font-brand uppercase select-none">
+                <span className="text-[var(--color-texto)] dark:text-white transition-colors">PORTAL</span>
+                <span className="text-[#FF5500]">MAKER</span>
               </span>
             </Link>
 
             {isSuperadmin && (
               <Link
                 href="/dashboard/admin"
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold bg-[#FACC15]/20 border border-[#FACC15]/50 text-amber-900 dark:text-amber-200 hover:bg-[#FACC15]/30 transition-colors"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold bg-[#FF5500]/10 border border-[#FF5500]/30 text-[#FF5500] hover:bg-[#FF5500]/20 transition-colors"
               >
                 <span>Panel Superadmin</span>
               </Link>
@@ -133,7 +134,7 @@ export default async function MakerDashboardPage() {
             {userStores.length > 0 && (
               <div className="space-y-5">
                 <h2 className="text-lg font-bold flex items-center gap-2">
-                  <Store className="w-5 h-5 text-[#CA8A04] dark:text-[#FACC15]" />
+                  <Store className="w-5 h-5 text-[#FF5500]" />
                   <span>Tus Tiendas Activas</span>
                 </h2>
 
@@ -190,10 +191,9 @@ export default async function MakerDashboardPage() {
                       <div className="space-y-2 pt-2 border-t border-[var(--color-borde)]">
                         <Link
                           href={`/tienda/admin?tenant=${store.slug}`}
-                          style={{ color: '#1F2937' }}
-                          className="w-full min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] transition-all shadow-xs"
+                          className="w-full min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FF5500] text-white text-sm font-bold hover:bg-[#E04B00] active:scale-[0.99] transition-all shadow-xs"
                         >
-                          <Store className="w-4 h-4 text-[#1F2937]" />
+                          <Store className="w-4 h-4 text-white" />
                           <span>Administrar Mi Tienda</span>
                         </Link>
 
@@ -202,7 +202,7 @@ export default async function MakerDashboardPage() {
                             href={`/tienda/admin/productos?tenant=${store.slug}`}
                             className="min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--color-borde)] text-xs sm:text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all opacity-85 hover:opacity-100"
                           >
-                            <Package className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                            <Package className="w-4 h-4 text-[#FF5500]" />
                             <span>Productos</span>
                           </Link>
 
@@ -259,10 +259,9 @@ export default async function MakerDashboardPage() {
                       <div className="space-y-2 pt-2 border-t border-[var(--color-borde)]">
                         <Link
                           href={`/tienda/admin?tenant=${store.slug}`}
-                          style={{ color: '#1F2937' }}
-                          className="w-full min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] transition-all shadow-xs"
+                          className="w-full min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FF5500] text-white text-sm font-bold hover:bg-[#E04B00] active:scale-[0.99] transition-all shadow-xs"
                         >
-                          <Store className="w-4 h-4 text-[#1F2937]" />
+                          <Store className="w-4 h-4 text-white" />
                           <span>Gestionar Tienda ({store.collabRol === 'admin' ? 'Admin' : 'Colaborador'})</span>
                         </Link>
 
@@ -271,7 +270,7 @@ export default async function MakerDashboardPage() {
                             href={`/tienda/admin/productos?tenant=${store.slug}`}
                             className="min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--color-borde)] text-xs sm:text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all opacity-85 hover:opacity-100"
                           >
-                            <Package className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                            <Package className="w-4 h-4 text-[#FF5500]" />
                             <span>Productos</span>
                           </Link>
 

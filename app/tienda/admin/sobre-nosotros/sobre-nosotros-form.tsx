@@ -154,7 +154,7 @@ export default function SobreNosotrosForm({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-5xl mx-auto space-y-6">
       {/* Encabezado */}
       <AdminPageHeader
         title="Sobre Nosotros"

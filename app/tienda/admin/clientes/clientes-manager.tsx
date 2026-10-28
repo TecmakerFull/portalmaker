@@ -215,7 +215,7 @@ export default function ClientesManager({
   }
 
   return (
-    <div className="w-full space-y-6 sm:space-y-8">
+    <div className="w-full max-w-6xl mx-auto space-y-6 sm:space-y-8">
       {/* Cabecera */}
       <AdminPageHeader
         title="Clientes & CRM"

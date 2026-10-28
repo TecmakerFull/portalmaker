@@ -480,6 +480,66 @@ a,
   font-family: 'Good Timing', var(--font-good-timing), sans-serif !important;
 }
 
+/* =============================================================================
+ * ESTILOS GLOBALES PARA MENÚS DESPLEGABLES (SELECT & OPTION)
+ * Elimina estilos toscos del SO, unifica tipografía, padding, chevron e íconos
+ * ============================================================================= */
+select {
+  cursor: pointer;
+  color-scheme: light;
+  background-color: var(--color-input-bg, var(--color-superficie, #FFFFFF));
+  color: var(--color-input-texto, var(--color-texto, #0F172A));
+  border-color: var(--color-input-borde, var(--color-borde, #CBD5E1));
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748B' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.15em 1.15em;
+  padding-right: 2.25rem !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+:root[data-theme="dark"] select,
+.dark select,
+[data-theme="dark"] select,
+.portal-admin-root[data-theme="dark"] select,
+.tienda-root.dark select,
+.dark .tienda-root select {
+  color-scheme: dark !important;
+  background-color: var(--color-input-bg, var(--color-superficie, #13161D)) !important;
+  color: var(--color-input-texto, var(--color-texto, #FFFFFF)) !important;
+  border-color: var(--color-input-borde, var(--color-borde, #242A38)) !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394A3B8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+}
+
+/* Opciones de los menús desplegables */
+select option {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+}
+
+:root[data-theme="dark"] select option,
+.dark select option,
+[data-theme="dark"] select option,
+.portal-admin-root[data-theme="dark"] select option,
+.tienda-root.dark select option,
+.dark .tienda-root select option {
+  background-color: #1A1F2C !important;
+  color: #F8FAFC !important;
+}
+
+/* Suavizado de foco para eliminar aros amarillos toscos en selectores */
+select:focus,
+.portal-admin-root select:focus {
+  outline: none !important;
+  border-color: #FACC15 !important;
+  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.22) !important;
+}
+
 
 
 

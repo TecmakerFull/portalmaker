@@ -17,23 +17,23 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    // Leer el tema aplicado actualmente en el DOM o localStorage
-    const saved = localStorage.getItem(storageKey) as 'light' | 'dark' | null
-    const currentTheme =
-      saved ||
-      (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') ||
-      (isAdmin ? 'light' : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    // Detectar el tema real aplicado en el DOM o almacenamiento local
+    const isDark =
+      document.documentElement.classList.contains('dark') ||
+      document.documentElement.getAttribute('data-theme') === 'dark' ||
+      localStorage.getItem(storageKey) === 'dark' ||
+      localStorage.getItem('portalmaker-theme') === 'dark'
 
-    setTheme(currentTheme)
+    setTheme(isDark ? 'dark' : 'light')
     setMounted(true)
-  }, [storageKey, isAdmin])
+  }, [storageKey])
 
   const toggleTheme = () => {
-    const current =
-      (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') ||
-      theme ||
-      'light'
-    const next: 'light' | 'dark' = current === 'dark' ? 'light' : 'dark'
+    // Inspección en tiempo real del estado actual del documento
+    const isDark =
+      document.documentElement.classList.contains('dark') ||
+      document.documentElement.getAttribute('data-theme') === 'dark'
+    const next: 'light' | 'dark' = isDark ? 'light' : 'dark'
 
     document.documentElement.setAttribute('data-theme', next)
     if (next === 'dark') {
@@ -41,7 +41,15 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
     } else {
       document.documentElement.classList.remove('dark')
     }
-    localStorage.setItem(storageKey, next)
+
+    try {
+      localStorage.setItem(storageKey, next)
+      localStorage.setItem('portalmaker-theme', next)
+      localStorage.setItem('portalmaker-admin-theme', next)
+    } catch (e) {
+      // Ignorar si localStorage está deshabilitado
+    }
+
     setTheme(next)
   }
 
@@ -63,7 +71,7 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
       {theme === 'light' ? (
         <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-texto)] opacity-80" />
       ) : (
-        <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+        <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-[#FF5500]" />
       )}
     </button>
   )

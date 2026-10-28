@@ -38,6 +38,8 @@ import {
   Lock,
   Sparkles,
   Info,
+  Phone,
+  Image as ImageIcon,
 } from 'lucide-react'
 import type { Store as StoreType } from '@/types/database'
 import ThemeToggle from '@/app/tienda/theme-toggle'
@@ -68,10 +70,11 @@ export default function AdminSidebar({
     pathname.includes('/tienda/admin/productos') ||
     pathname.includes('/tienda/admin/categorias')
 
-  // Estados de navegación (cerrados por defecto salvo que se navegue activamente dentro de su sub-ruta)
+  // Estados de navegación (replegados por defecto a pedido del usuario)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [openTienda, setOpenTienda] = useState(isTiendaRoute)
-  const [openProductos, setOpenProductos] = useState(isProductosRoute)
+  const [openTienda, setOpenTienda] = useState(false)
+  const [openProductos, setOpenProductos] = useState(false)
+  const [openCuenta, setOpenCuenta] = useState(false)
 
   // Cerrar menú móvil al cambiar de ruta
   useEffect(() => {
@@ -82,20 +85,20 @@ export default function AdminSidebar({
   const [tiendaEncendida, setTiendaEncendida] = useState(store.suscripcion_activa ?? true)
   const [updatingStatus, setUpdatingStatus] = useState(false)
 
-  // URL del portal para volver al dashboard de maker sin prefetch RSC erróneo en subdominio
-  const [portalMakerUrl, setPortalMakerUrl] = useState('/dashboard/maker')
+  // URL del portal para volver a portalmaker.ar sin prefetch RSC erróneo en subdominio
+  const [portalMakerUrl, setPortalMakerUrl] = useState('https://portalmaker.ar')
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const host = window.location.host
       const proto = window.location.protocol
       if (host.includes('localhost') || host.includes('127.0.0.1')) {
-        setPortalMakerUrl(`${proto}//${host}/dashboard/maker`)
+        setPortalMakerUrl(`${proto}//${host}/`)
       } else if (host.endsWith('portalmaker.ar')) {
-        setPortalMakerUrl(`${proto}//portalmaker.ar/dashboard/maker`)
+        setPortalMakerUrl(`${proto}//portalmaker.ar/`)
       } else if (host.endsWith('portalmaker.com.ar')) {
-        setPortalMakerUrl(`${proto}//portalmaker.com.ar/dashboard/maker`)
+        setPortalMakerUrl(`${proto}//portalmaker.com.ar/`)
       } else {
-        setPortalMakerUrl('https://portalmaker.ar/dashboard/maker')
+        setPortalMakerUrl('https://portalmaker.ar/')
       }
     }
   }, [])
@@ -216,22 +219,17 @@ export default function AdminSidebar({
           <span>Inicio</span>
         </Link>
 
-        {/* 2. Guía Paso a Paso (Tutorial inicial de onboarding) */}
+        {/* 2. Guía Paso a Paso */}
         <Link
           href={`/tienda/admin/guia${tenantQuery}`}
-          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+          className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
             isGuia
               ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
               : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
           }`}
         >
-          <div className="flex items-center gap-2.5">
-            <BookOpen className="w-4 h-4 text-amber-500" />
-            <span>Guía Paso a Paso</span>
-          </div>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-800 dark:text-amber-300">
-            Tutorial
-          </span>
+          <BookOpen className="w-4 h-4" />
+          <span>Guía Paso a Paso</span>
         </Link>
 
         {/* 3. Grupo: Mi Tienda (Configuración de marca, diseño y datos del negocio) */}
@@ -257,63 +255,62 @@ export default function AdminSidebar({
               <Link
                 href={`/tienda/admin/branding${tenantQuery}`}
                 prefetch={true}
-                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
+                className={`min-h-[40px] flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
                   isBranding
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
                     : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
               >
-                Colores & Logo
+                <Palette className="w-4 h-4 shrink-0" />
+                <span>Colores & Logo</span>
               </Link>
               <Link
                 href={`/tienda/admin/diseno${tenantQuery}`}
                 prefetch={true}
-                className={`min-h-[40px] flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
+                className={`min-h-[40px] flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
                   isDiseno
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
                     : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
               >
+                <Sparkles className="w-4 h-4 shrink-0" />
                 <span>Diseño de Tienda</span>
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-blue-500/20 text-blue-700 dark:text-blue-400">
-                  Nuevo
-                </span>
               </Link>
               <Link
                 href={`/tienda/admin/banners${tenantQuery}`}
                 prefetch={true}
-                className={`min-h-[40px] flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
+                className={`min-h-[40px] flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
                   isBanners
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
                     : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
               >
+                <ImageIcon className="w-4 h-4 shrink-0" />
                 <span>Banners & Promos</span>
-                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-[#FACC15]/20 text-[#CA8A04] dark:text-[#FACC15]">
-                  Carrusel
-                </span>
               </Link>
               <Link
                 href={`/tienda/admin/sobre-nosotros${tenantQuery}`}
                 prefetch={true}
-                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
+                className={`min-h-[40px] flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
                   isSobreNosotros
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
                     : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
               >
-                Sobre Nosotros
+                <Info className="w-4 h-4 shrink-0" />
+                <span>Sobre Nosotros</span>
               </Link>
               <Link
                 href={`/tienda/admin/contacto${tenantQuery}`}
                 prefetch={true}
-                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
+                className={`min-h-[40px] flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
                   isContacto
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
                     : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
               >
-                Contacto & Ubicación
+                <Phone className="w-4 h-4 shrink-0" />
+                <span>Contacto & Ubicación</span>
               </Link>
 
               {/* Envíos & Logística */}
@@ -321,16 +318,14 @@ export default function AdminSidebar({
                 <Link
                   href={`/tienda/admin/envios${tenantQuery}`}
                   prefetch={true}
-                  className={`min-h-[40px] flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
+                  className={`min-h-[40px] flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
                     isEnvios
                       ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
                       : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <Truck className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Envíos & Logística</span>
-                  </div>
+                  <Truck className="w-4 h-4 shrink-0" />
+                  <span>Envíos & Logística</span>
                 </Link>
               ) : (
                 <Link
@@ -340,7 +335,7 @@ export default function AdminSidebar({
                   title="Módulo de envíos configurables disponible a partir del plan Starter (Nivel 2)"
                 >
                   <div className="flex items-center gap-2">
-                    <Truck className="w-3.5 h-3.5 text-zinc-400" />
+                    <Truck className="w-4 h-4 shrink-0 text-zinc-400" />
                     <span>Envíos & Logística</span>
                   </div>
                   <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-200/70 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300/50 dark:border-zinc-700">
@@ -353,13 +348,14 @@ export default function AdminSidebar({
               <Link
                 href={`/tienda/admin/pagos${tenantQuery}`}
                 prefetch={true}
-                className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
+                className={`min-h-[40px] flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
                   isPagos
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
                     : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
               >
-                Cobros & Transferencia
+                <CreditCard className="w-4 h-4 shrink-0" />
+                <span>Cobros & Transferencia</span>
               </Link>
 
               {/* Dominio Propio */}
@@ -367,13 +363,14 @@ export default function AdminSidebar({
                 <Link
                   href={`/tienda/admin/dominio${tenantQuery}`}
                   prefetch={true}
-                  className={`min-h-[40px] flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
+                  className={`min-h-[40px] flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
                     isDominio
                       ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
                       : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                   }`}
                 >
-                  Dominio Propio
+                  <Globe className="w-4 h-4 shrink-0" />
+                  <span>Dominio Propio</span>
                 </Link>
               ) : (
                 <Link
@@ -383,7 +380,7 @@ export default function AdminSidebar({
                   title="Dominio propio disponible a partir del plan Maker Pro (Nivel 3)"
                 >
                   <div className="flex items-center gap-2">
-                    <Globe className="w-3.5 h-3.5 text-zinc-400" />
+                    <Globe className="w-4 h-4 shrink-0 text-zinc-400" />
                     <span>Dominio Propio</span>
                   </div>
                   <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-200/70 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300/50 dark:border-zinc-700">
@@ -453,24 +450,19 @@ export default function AdminSidebar({
           )}
         </div>
 
-        {/* 4. Luego lo demás: Gestión, métricas y operaciones */}
+        {/* 4. Gestión, métricas y operaciones */}
         {/* Ventas & Pedidos */}
         {canCheckout ? (
           <Link
             href={`/tienda/admin/ventas${tenantQuery}`}
-            className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
               isVentas
                 ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
                 : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
             }`}
           >
-            <div className="flex items-center gap-2.5">
-              <ShoppingBag className="w-4 h-4" />
-              <span>Ventas & Pedidos</span>
-            </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
-              Nuevo
-            </span>
+            <ShoppingBag className="w-4 h-4" />
+            <span>Ventas & Pedidos</span>
           </Link>
         ) : (
           <Link
@@ -493,16 +485,14 @@ export default function AdminSidebar({
         {canClientes ? (
           <Link
             href={`/tienda/admin/clientes${tenantQuery}`}
-            className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
               isClientes
                 ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
                 : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
             }`}
           >
-            <div className="flex items-center gap-2.5">
-              <Users className="w-4 h-4" />
-              <span>Clientes & CRM</span>
-            </div>
+            <Users className="w-4 h-4" />
+            <span>Clientes & CRM</span>
           </Link>
         ) : (
           <Link
@@ -525,16 +515,14 @@ export default function AdminSidebar({
         {canResenas ? (
           <Link
             href={`/tienda/admin/resenas${tenantQuery}`}
-            className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
               isResenas
                 ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
                 : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
             }`}
           >
-            <div className="flex items-center gap-2.5">
-              <Star className="w-4 h-4" />
-              <span>Reseñas</span>
-            </div>
+            <Star className="w-4 h-4" />
+            <span>Reseñas</span>
           </Link>
         ) : (
           <Link
@@ -557,16 +545,14 @@ export default function AdminSidebar({
         {canColaboradores ? (
           <Link
             href={`/tienda/admin/colaboradores${tenantQuery}`}
-            className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
               isColaboradores
                 ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
                 : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
             }`}
           >
-            <div className="flex items-center gap-2.5">
-              <UserCheck className="w-4 h-4 text-amber-500" />
-              <span>Colaboradores</span>
-            </div>
+            <UserCheck className="w-4 h-4" />
+            <span>Colaboradores</span>
           </Link>
         ) : (
           <Link
@@ -588,56 +574,65 @@ export default function AdminSidebar({
         {/* Marketing & Suscriptores */}
         <Link
           href={`/tienda/admin/suscriptores${tenantQuery}`}
-          className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+          className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
             isSuscriptores
               ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
               : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
           }`}
         >
-          <div className="flex items-center gap-2.5">
-            <Mail className="w-4 h-4" />
-            <span>Suscriptores</span>
-          </div>
+          <Mail className="w-4 h-4" />
+          <span>Suscriptores</span>
         </Link>
 
-        {/* Mi Suscripción / Plan */}
-        <div className="pt-2">
-          <Link
-            href={`/tienda/admin/suscripcion${tenantQuery}`}
-            className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-              isSuscripcion
-                ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
-                : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <Sparkles className="w-4 h-4 text-amber-500" />
-              <span>Mi Suscripción</span>
-            </div>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-800 dark:text-amber-300 uppercase tracking-wider">
-              {currentPlan.nombre}
-            </span>
-          </Link>
-        </div>
-
-        {/* Mi Perfil / Cuenta */}
+        {/* 5. Grupo: Mi cuenta (Contiene Perfil y Mi Suscripción) */}
         <div className="pt-1">
-          <Link
-            href={`/tienda/admin/perfil${tenantQuery}`}
-            className={`min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-              isPerfil
-                ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
-                : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
-            }`}
+          <button
+            type="button"
+            onClick={() => setOpenCuenta(!openCuenta)}
+            className="min-h-[44px] w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold opacity-75 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-2.5">
               <User className="w-4 h-4" />
               <span>Mi cuenta</span>
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/10 dark:bg-white/10">
-              Perfil
-            </span>
-          </Link>
+            {openCuenta ? (
+              <ChevronDown className="w-4 h-4 opacity-50" />
+            ) : (
+              <ChevronRight className="w-4 h-4 opacity-50" />
+            )}
+          </button>
+
+          {openCuenta && (
+            <div className="ml-4 pl-3 border-l border-[var(--color-borde)] space-y-1 mt-1">
+              <Link
+                href={`/tienda/admin/perfil${tenantQuery}`}
+                className={`min-h-[40px] flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  isPerfil
+                    ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
+                    : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+                }`}
+              >
+                <User className="w-4 h-4 shrink-0" />
+                <span>Perfil y Datos</span>
+              </Link>
+              <Link
+                href={`/tienda/admin/suscripcion${tenantQuery}`}
+                className={`min-h-[40px] flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  isSuscripcion
+                    ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
+                    : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 shrink-0" />
+                  <span>Mi Suscripción</span>
+                </div>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-800 dark:text-amber-300 uppercase tracking-wider">
+                  {currentPlan.nombre}
+                </span>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Enlace a Tienda Pública */}
@@ -656,15 +651,24 @@ export default function AdminSidebar({
         </div>
       </nav>
 
-      {/* Footer del Sidebar */}
-      <div className="p-3.5 border-t border-[var(--color-borde)] text-xs flex items-center justify-between">
+      {/* Footer del Sidebar con datos rápidos del administrador */}
+      <div className="p-3 border-t border-[var(--color-borde)]">
         <Link
           href={`/tienda/admin/perfil${tenantQuery}`}
-          className="min-h-[36px] truncate font-mono text-[11px] opacity-70 hover:opacity-100 hover:underline flex items-center gap-1.5"
-          title="Ver perfil de cuenta"
+          className="min-h-[44px] flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
+          title="Ver perfil y datos básicos del administrador"
         >
-          <User className="w-3.5 h-3.5 opacity-60" />
-          <span className="truncate">{store.admin_email}</span>
+          <div className="w-7 h-7 rounded-lg bg-[var(--color-fondo)]/80 border border-[var(--color-borde)] flex items-center justify-center shrink-0 opacity-70 group-hover:opacity-100">
+            <User className="w-3.5 h-3.5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="block font-mono text-[11px] font-semibold truncate group-hover:underline opacity-90">
+              {store.admin_email}
+            </span>
+            <span className="block text-[10px] opacity-60 truncate">
+              Admin &bull; {store.nombre}
+            </span>
+          </div>
         </Link>
       </div>
     </>
@@ -687,13 +691,21 @@ export default function AdminSidebar({
 
           {/* Logo + Nombre */}
           <div className="flex items-center gap-2">
-            <Image
-              src="/logo.png"
-              alt="Portalmaker"
-              width={28}
-              height={28}
-              className="w-7 h-7 rounded-lg object-contain shadow-2xs"
-            />
+            {store.logo_url ? (
+              <img
+                src={store.logo_url}
+                alt={store.nombre}
+                className="w-7 h-7 rounded-lg object-contain bg-white/5 border border-[var(--color-borde)] shadow-2xs shrink-0"
+              />
+            ) : (
+              <Image
+                src="/logo.png"
+                alt="Portalmaker"
+                width={28}
+                height={28}
+                className="w-7 h-7 rounded-lg object-contain shadow-2xs shrink-0"
+              />
+            )}
             <span className="font-bold text-sm truncate max-w-[140px] font-[var(--font-heading)]">
               {store.nombre}
             </span>
@@ -713,7 +725,7 @@ export default function AdminSidebar({
 
           <a
             href={portalMakerUrl}
-            title="Volver al Portal"
+            title="Ir a Portalmaker.ar"
             className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -735,13 +747,21 @@ export default function AdminSidebar({
             {/* Header del Drawer */}
             <div className="p-4 border-b border-[var(--color-borde)] flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <Image
-                  src="/logo.png"
-                  alt="Portalmaker"
-                  width={30}
-                  height={30}
-                  className="w-7 h-7 rounded-lg object-contain shadow-2xs"
-                />
+                {store.logo_url ? (
+                  <img
+                    src={store.logo_url}
+                    alt={store.nombre}
+                    className="w-7 h-7 rounded-lg object-contain bg-white/5 border border-[var(--color-borde)] shadow-2xs shrink-0"
+                  />
+                ) : (
+                  <Image
+                    src="/logo.png"
+                    alt="Portalmaker"
+                    width={30}
+                    height={30}
+                    className="w-7 h-7 rounded-lg object-contain shadow-2xs shrink-0"
+                  />
+                )}
                 <span className="font-bold text-sm truncate font-[var(--font-heading)]">
                   {store.nombre}
                 </span>
@@ -765,13 +785,21 @@ export default function AdminSidebar({
         {/* Header de Escritorio */}
         <div className="p-4 sm:p-5 border-b border-[var(--color-borde)] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <Image
-              src="/logo.png"
-              alt="Portalmaker"
-              width={32}
-              height={32}
-              className="w-7 h-7 rounded-lg object-contain shadow-2xs"
-            />
+            {store.logo_url ? (
+              <img
+                src={store.logo_url}
+                alt={store.nombre}
+                className="w-7 h-7 rounded-lg object-contain bg-white/5 border border-[var(--color-borde)] shadow-2xs shrink-0"
+              />
+            ) : (
+              <Image
+                src="/logo.png"
+                alt="Portalmaker"
+                width={32}
+                height={32}
+                className="w-7 h-7 rounded-lg object-contain shadow-2xs shrink-0"
+              />
+            )}
             <div className="min-w-0">
               <h2 className="text-sm font-bold truncate max-w-[150px] font-[var(--font-heading)] leading-tight">
                 {store.nombre}
@@ -783,7 +811,7 @@ export default function AdminSidebar({
             <ThemeToggle className="!w-8 !h-8 !min-w-[32px] !min-h-[32px] rounded-lg" />
             <a
               href={portalMakerUrl}
-              title="Volver al Portal Maker"
+              title="Ir a Portalmaker.ar"
               className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 opacity-70 hover:opacity-100 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />

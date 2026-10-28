@@ -185,7 +185,7 @@ export default function CategoriasManager({
     categories.filter((c) => c.parent_id === parentCatId)
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-5xl mx-auto space-y-6">
       {/* Encabezado */}
       <AdminPageHeader
         title="Categorías"
@@ -387,7 +387,7 @@ export default function CategoriasManager({
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
                   placeholder="Ej: Filamentos, Lámparas, Llaveros..."
-                  className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15] focus:border-[#FACC15] transition-all"
+                  className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 transition-all shadow-2xs"
                 />
               </div>
 
@@ -399,7 +399,7 @@ export default function CategoriasManager({
                   <select
                     value={parentId}
                     onChange={(e) => setParentId(e.target.value)}
-                    className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15] focus:border-[#FACC15] cursor-pointer transition-all"
+                    className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 cursor-pointer transition-all shadow-2xs"
                   >
                     <option value="" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white py-1.5">
                       Ninguna (Es Categoría Principal)

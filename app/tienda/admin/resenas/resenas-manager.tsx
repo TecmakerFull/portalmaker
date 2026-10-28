@@ -138,7 +138,7 @@ export default function ResenasManager({
   }
 
   return (
-    <div className="w-full space-y-6 sm:space-y-8">
+    <div className="w-full max-w-5xl mx-auto space-y-6 sm:space-y-8">
       {/* Cabecera */}
       <AdminPageHeader
         title="Reseñas de Clientes"

@@ -719,7 +719,7 @@ export default function SuperadminTiendaDetailFullpage({
               onClick={onBack}
               className="min-h-[44px] px-3.5 sm:px-4 py-2 rounded-xl bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] border border-[var(--color-borde)] text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
             >
-              <ArrowLeft className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+              <ArrowLeft className="w-4 h-4 text-[#FF5500]" />
               <span className="hidden sm:inline">Volver a todas las tiendas</span>
               <span className="sm:hidden">Volver</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-xs bg-black/10 dark:bg-white/10 font-bold">
@@ -744,7 +744,7 @@ export default function SuperadminTiendaDetailFullpage({
           <div className="flex items-center gap-2">
             <Link
               href={`/tienda/admin/productos?tenant=${store.slug}`}
-              className="min-h-[40px] px-3 py-1.5 rounded-xl bg-amber-400/20 text-[#CA8A04] dark:text-[#FACC15] hover:bg-amber-400/30 text-xs font-semibold flex items-center gap-1.5 transition-all"
+              className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#FF5500]/15 text-[#FF5500] hover:bg-[#FF5500]/25 text-xs font-semibold flex items-center gap-1.5 transition-all"
             >
               <Package className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Panel Tienda</span>
@@ -794,7 +794,7 @@ export default function SuperadminTiendaDetailFullpage({
                 {store.logo_url ? (
                   <img src={store.logo_url} alt="" className="w-full h-full object-contain p-1.5" />
                 ) : (
-                  <span className="font-bold text-2xl text-[#CA8A04] dark:text-[#FACC15]">
+                  <span className="font-bold text-2xl text-[#FF5500]">
                     {store.nombre.charAt(0).toUpperCase()}
                   </span>
                 )}
@@ -827,7 +827,7 @@ export default function SuperadminTiendaDetailFullpage({
                   <button
                     type="button"
                     onClick={handleCopyLink}
-                    className="font-mono text-[#CA8A04] dark:text-[#FACC15] hover:underline flex items-center gap-1 cursor-pointer"
+                    className="font-mono text-zinc-500 dark:text-zinc-400 hover:text-[#FF5500] hover:underline flex items-center gap-1 cursor-pointer"
                     title="Copiar URL pública"
                   >
                     <span>{store.slug}.portalmaker.ar</span>
@@ -892,7 +892,7 @@ export default function SuperadminTiendaDetailFullpage({
               onClick={() => setActiveTab('suscripcion')}
               className={`min-h-[44px] pb-3 px-2 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
                 activeTab === 'suscripcion'
-                  ? 'border-[#CA8A04] text-[#CA8A04] dark:border-[#FACC15] dark:text-[#FACC15]'
+                  ? 'border-[#FF5500] text-[#FF5500]'
                   : 'border-transparent opacity-60 hover:opacity-100'
               }`}
             >
@@ -905,14 +905,14 @@ export default function SuperadminTiendaDetailFullpage({
               onClick={() => setActiveTab('opciones')}
               className={`min-h-[44px] pb-3 px-2 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
                 activeTab === 'opciones'
-                  ? 'border-[#CA8A04] text-[#CA8A04] dark:border-[#FACC15] dark:text-[#FACC15]'
+                  ? 'border-[#FF5500] text-[#FF5500]'
                   : 'border-transparent opacity-60 hover:opacity-100'
               }`}
             >
               <Sliders className="w-4 h-4" />
               <span>Opciones & Límites</span>
               {Object.keys(subEditForm.features_override || {}).length > 0 && (
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span className="w-2 h-2 rounded-full bg-[#FF5500]" />
               )}
             </button>
 
@@ -921,7 +921,7 @@ export default function SuperadminTiendaDetailFullpage({
               onClick={() => setActiveTab('pagos')}
               className={`min-h-[44px] pb-3 px-2 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
                 activeTab === 'pagos'
-                  ? 'border-[#CA8A04] text-[#CA8A04] dark:border-[#FACC15] dark:text-[#FACC15]'
+                  ? 'border-[#FF5500] text-[#FF5500]'
                   : 'border-transparent opacity-60 hover:opacity-100'
               }`}
             >
@@ -937,7 +937,7 @@ export default function SuperadminTiendaDetailFullpage({
               onClick={() => setActiveTab('metricas')}
               className={`min-h-[44px] pb-3 px-2 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
                 activeTab === 'metricas'
-                  ? 'border-[#CA8A04] text-[#CA8A04] dark:border-[#FACC15] dark:text-[#FACC15]'
+                  ? 'border-[#FF5500] text-[#FF5500]'
                   : 'border-transparent opacity-60 hover:opacity-100'
               }`}
             >
@@ -950,7 +950,7 @@ export default function SuperadminTiendaDetailFullpage({
               onClick={() => setActiveTab('contacto')}
               className={`min-h-[44px] pb-3 px-2 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
                 activeTab === 'contacto'
-                  ? 'border-[#CA8A04] text-[#CA8A04] dark:border-[#FACC15] dark:text-[#FACC15]'
+                  ? 'border-[#FF5500] text-[#FF5500]'
                   : 'border-transparent opacity-60 hover:opacity-100'
               }`}
             >
@@ -963,14 +963,14 @@ export default function SuperadminTiendaDetailFullpage({
               onClick={() => setActiveTab('notas')}
               className={`min-h-[44px] pb-3 px-2 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
                 activeTab === 'notas'
-                  ? 'border-[#CA8A04] text-[#CA8A04] dark:border-[#FACC15] dark:text-[#FACC15]'
+                  ? 'border-[#FF5500] text-[#FF5500]'
                   : 'border-transparent opacity-60 hover:opacity-100'
               }`}
             >
               <FileText className="w-4 h-4" />
               <span>Notas Internas</span>
               {store.notas_admin && (
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-[#FF5500] animate-pulse" />
               )}
             </button>
           </div>
@@ -1258,28 +1258,28 @@ export default function SuperadminTiendaDetailFullpage({
                     <button
                       type="button"
                       onClick={() => handleExtendDueDate(30, '+1 Mes')}
-                      className="min-h-[40px] px-2 py-1.5 rounded-xl bg-[#CA8A04] hover:bg-[#A16207] text-white text-xs font-bold transition-all shadow-xs cursor-pointer text-center"
+                      className="min-h-[40px] px-2 py-1.5 rounded-xl bg-[#FF5500] hover:bg-[#E04B00] text-white text-xs font-bold transition-all shadow-xs cursor-pointer text-center"
                     >
                       +1 Mes (30d)
                     </button>
                     <button
                       type="button"
                       onClick={() => handleExtendDueDate(90, '+3 Meses')}
-                      className="min-h-[40px] px-2 py-1.5 rounded-xl border border-amber-500/40 hover:bg-amber-500/10 text-xs font-bold text-[#CA8A04] dark:text-[#FACC15] transition-all cursor-pointer text-center"
+                      className="min-h-[40px] px-2 py-1.5 rounded-xl border border-[#FF5500]/40 hover:bg-[#FF5500]/10 text-xs font-bold text-[#FF5500] transition-all cursor-pointer text-center"
                     >
                       +3 Meses
                     </button>
                     <button
                       type="button"
                       onClick={() => handleExtendDueDate(180, '+6 Meses')}
-                      className="min-h-[40px] px-2 py-1.5 rounded-xl border border-amber-500/40 hover:bg-amber-500/10 text-xs font-bold text-[#CA8A04] dark:text-[#FACC15] transition-all cursor-pointer text-center"
+                      className="min-h-[40px] px-2 py-1.5 rounded-xl border border-[#FF5500]/40 hover:bg-[#FF5500]/10 text-xs font-bold text-[#FF5500] transition-all cursor-pointer text-center"
                     >
                       +6 Meses
                     </button>
                     <button
                       type="button"
                       onClick={() => handleExtendDueDate(365, '+1 Año')}
-                      className="min-h-[40px] px-2 py-1.5 rounded-xl border border-amber-500/40 hover:bg-amber-500/10 text-xs font-bold text-[#CA8A04] dark:text-[#FACC15] transition-all cursor-pointer text-center"
+                      className="min-h-[40px] px-2 py-1.5 rounded-xl border border-[#FF5500]/40 hover:bg-[#FF5500]/10 text-xs font-bold text-[#FF5500] transition-all cursor-pointer text-center"
                     >
                       +1 Año
                     </button>
@@ -1357,7 +1357,7 @@ export default function SuperadminTiendaDetailFullpage({
               <button
                 type="submit"
                 disabled={savingSubEdit}
-                className="min-h-[44px] px-6 rounded-xl bg-[#CA8A04] hover:bg-[#A16207] text-white text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+                className="min-h-[44px] px-6 rounded-xl bg-[#FF5500] hover:bg-[#E04B00] text-white text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
               >
                 {savingSubEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 <span>Guardar Cambios de la Tienda</span>
@@ -1396,16 +1396,16 @@ export default function SuperadminTiendaDetailFullpage({
                 <button
                   type="button"
                   onClick={handleResetToPlanDefaults}
-                  className="min-h-[44px] px-4 py-2 rounded-xl border border-amber-500/40 hover:bg-amber-500/10 text-xs font-semibold text-[#CA8A04] dark:text-[#FACC15] transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 self-start sm:self-center"
+                  className="min-h-[44px] px-4 py-2 rounded-xl border border-[#FF5500]/40 hover:bg-[#FF5500]/10 text-xs font-semibold text-[#FF5500] transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0 self-start sm:self-center"
                 >
                   <RotateCcw className="w-4 h-4" />
                   <span>Sincronizar con Plan {currentFormPlan.nombre}</span>
                 </button>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-amber-400/[0.06] border border-amber-400/20 text-xs text-zinc-700 dark:text-zinc-300 space-y-1">
+              <div className="p-3.5 rounded-xl bg-[#FF5500]/[0.06] border border-[#FF5500]/20 text-xs text-zinc-700 dark:text-zinc-300 space-y-1">
                 <span className="font-semibold block text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                  <Info className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <Info className="w-4 h-4 text-[#FF5500]" />
                   <span>Prioridad de configuraciones de tienda:</span>
                 </span>
                 <p className="opacity-90 leading-relaxed text-[11px] sm:text-xs">
@@ -1417,7 +1417,7 @@ export default function SuperadminTiendaDetailFullpage({
             {/* SECCIÓN 1: LÍMITES NUMÉRICOS Y CAPACIDADES */}
             <div className="p-5 sm:p-6 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-2xs space-y-5">
               <div className="flex items-center gap-2.5 pb-2 border-b border-[var(--color-borde)]">
-                <Sliders className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                <Sliders className="w-4 h-4 text-[#FF5500]" />
                 <h3 className="font-semibold text-sm sm:text-base">
                   Límites de Capacidad y Parámetros Operativos
                 </h3>
@@ -2138,7 +2138,7 @@ export default function SuperadminTiendaDetailFullpage({
               <button
                 type="submit"
                 disabled={savingSubEdit}
-                className="min-h-[44px] px-6 rounded-xl bg-[#CA8A04] hover:bg-[#A16207] text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 shrink-0 w-full sm:w-auto"
+                className="min-h-[44px] px-6 rounded-xl bg-[#FF5500] hover:bg-[#E04B00] text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 shrink-0 w-full sm:w-auto"
               >
                 {savingSubEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 <span>Guardar Opciones & Límites</span>
@@ -2185,7 +2185,7 @@ export default function SuperadminTiendaDetailFullpage({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)]">
               <div>
                 <h3 className="font-semibold text-base flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-[#CA8A04] dark:text-[#FACC15]" />
+                  <CreditCard className="w-5 h-5 text-[#FF5500]" />
                   <span>Libro de Cobros y Comprobantes de Suscripción</span>
                 </h3>
                 <p className="text-xs opacity-70 mt-0.5">
@@ -2197,7 +2197,7 @@ export default function SuperadminTiendaDetailFullpage({
                 <button
                   type="button"
                   onClick={() => setShowNewPaymentForm(true)}
-                  className="min-h-[44px] px-5 rounded-xl bg-[#CA8A04] hover:bg-[#A16207] text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
+                  className="min-h-[44px] px-5 rounded-xl bg-[#FF5500] hover:bg-[#E04B00] text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Registrar Nuevo Cobro</span>
@@ -2209,7 +2209,7 @@ export default function SuperadminTiendaDetailFullpage({
             {showNewPaymentForm && (
               <form
                 onSubmit={handleCreatePayment}
-                className="p-6 rounded-2xl border-2 border-amber-400/40 bg-amber-400/[0.03] space-y-5 animate-in fade-in"
+                className="p-6 rounded-2xl border-2 border-[#FF5500]/40 bg-[#FF5500]/[0.03] space-y-5 animate-in fade-in"
               >
                 <div className="flex items-center justify-between border-b border-amber-400/20 pb-3">
                   <div>
@@ -2306,7 +2306,7 @@ export default function SuperadminTiendaDetailFullpage({
                   <button
                     type="submit"
                     disabled={savingPayment}
-                    className="min-h-[44px] px-6 rounded-xl bg-[#CA8A04] hover:bg-[#A16207] text-white text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+                    className="min-h-[44px] px-6 rounded-xl bg-[#FF5500] hover:bg-[#E04B00] text-white text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
                   >
                     {savingPayment ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -2611,14 +2611,14 @@ export default function SuperadminTiendaDetailFullpage({
               value={subEditForm.notas_admin || ''}
               onChange={(e) => setSubEditForm({ ...subEditForm, notas_admin: e.target.value })}
               placeholder="Escribe aquí las notas internas sobre esta tienda o cliente maker..."
-              className="w-full p-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 leading-relaxed font-sans"
+              className="w-full p-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm outline-none focus:border-[#FF5500] focus:ring-2 focus:ring-[#FF5500]/20 leading-relaxed font-sans"
             />
 
             <div className="flex justify-end pt-2">
               <button
                 type="button"
                 onClick={handleSaveNotes}
-                className="min-h-[44px] px-6 rounded-xl bg-[#CA8A04] hover:bg-[#A16207] text-white text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-xs cursor-pointer"
+                className="min-h-[44px] px-6 rounded-xl bg-[#FF5500] hover:bg-[#E04B00] text-white text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-xs cursor-pointer"
               >
                 <Save className="w-4 h-4" />
                 <span>Guardar Notas Internas</span>

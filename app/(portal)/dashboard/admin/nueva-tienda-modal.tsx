@@ -7,19 +7,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
-import { COLOR_PRESETS } from '@/lib/constants'
-import { PlusCircle, X, Loader2, Sparkles, ChevronDown, AlertCircle } from 'lucide-react'
-
-const RUBROS_MAKER = [
-  { id: 'impresion_3d', label: 'Impresión 3D (FDM / Resina)' },
-  { id: 'corte_laser', label: 'Corte y Grabado Láser' },
-  { id: 'mecanizado_cnc', label: 'Mecanizado CNC / Router' },
-  { id: 'taller_integral', label: 'Taller Maker Integral (3D + Láser + CNC)' },
-  { id: 'modelado_3d', label: 'Modelado y Diseño 3D a Medida' },
-  { id: 'insumos_repuestos', label: 'Insumos, Filamentos y Repuestos' },
-  { id: 'objetos_diseno', label: 'Objetos de Diseño & Artesanías Maker' },
-  { id: 'otro', label: 'Otro rubro' },
-]
+import { COLOR_PRESETS, RUBROS_TIENDA } from '@/lib/constants'
+import { PlusCircle, X, Loader2, Sparkles, AlertCircle } from 'lucide-react'
 
 export default function NuevaTiendaModal() {
   const router = useRouter()
@@ -27,7 +16,8 @@ export default function NuevaTiendaModal() {
   const [nombre, setNombre] = useState('')
   const [slug, setSlug] = useState('')
   const [adminEmail, setAdminEmail] = useState('')
-  const [rubro, setRubro] = useState(RUBROS_MAKER[0].label)
+  const [rubro, setRubro] = useState<string>(RUBROS_TIENDA[0].label)
+  const [rubroPersonalizado, setRubroPersonalizado] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -49,6 +39,10 @@ export default function NuevaTiendaModal() {
     setLoading(true)
 
     try {
+      const rubroFinal = rubro === 'Otro rubro'
+        ? (rubroPersonalizado.trim() || 'Comercio / Taller')
+        : rubro
+
       const defaultPreset = COLOR_PRESETS.find((p) => p.id === 6) ?? COLOR_PRESETS[0]
       const defaultDueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
@@ -58,7 +52,7 @@ export default function NuevaTiendaModal() {
           nombre: nombre.trim(),
           slug: slug.trim().toLowerCase(),
           admin_email: adminEmail.trim().toLowerCase(),
-          slogan: rubro,
+          slogan: rubroFinal,
           plan: 'maker_pro',
           precio_mensual: 0,
           estado_pago: 'al_dia',
@@ -104,10 +98,9 @@ export default function NuevaTiendaModal() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        style={{ color: '#1F2937' }}
-        className="min-h-[44px] px-4 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] active:scale-95 transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+        className="min-h-[44px] px-4 py-2.5 rounded-xl bg-[#FF5500] text-white text-sm font-bold hover:bg-[#E04B00] active:scale-95 transition-all shadow-sm flex items-center gap-2 cursor-pointer"
       >
-        <PlusCircle className="w-4 h-4 text-[#1F2937]" />
+        <PlusCircle className="w-4 h-4 text-white" />
         <span>Crear Nueva Tienda</span>
       </button>
 
@@ -149,7 +142,7 @@ export default function NuevaTiendaModal() {
                   value={nombre}
                   onChange={(e) => handleNombreChange(e.target.value)}
                   placeholder="Ej: Impresiones del Valle"
-                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] placeholder:text-[var(--color-input-placeholder)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] placeholder:text-[var(--color-input-placeholder)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]"
                 />
               </div>
 
@@ -157,7 +150,7 @@ export default function NuevaTiendaModal() {
                 <label className="block text-xs font-semibold uppercase tracking-wider opacity-80 mb-1.5">
                   Subdominio
                 </label>
-                <div className="flex items-center rounded-xl border border-[var(--color-input-borde)] overflow-hidden bg-[var(--color-input-bg)] focus-within:ring-2 focus-within:ring-[#FACC15]">
+                <div className="flex items-center rounded-xl border border-[var(--color-input-borde)] overflow-hidden bg-[var(--color-input-bg)] focus-within:ring-2 focus-within:ring-[#FF5500]">
                   <input
                     type="text"
                     required
@@ -183,30 +176,45 @@ export default function NuevaTiendaModal() {
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
                   placeholder="maker@gmail.com"
-                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] placeholder:text-[var(--color-input-placeholder)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] placeholder:text-[var(--color-input-placeholder)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider opacity-80 mb-1.5">
-                  Rubro Principal
-                </label>
-                <div className="relative">
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider opacity-80 mb-1.5">
+                    Rubro Principal
+                  </label>
                   <select
                     value={rubro}
                     onChange={(e) => setRubro(e.target.value)}
-                    className="w-full min-h-[44px] px-3.5 py-2.5 pr-10 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15] appearance-none cursor-pointer"
+                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]/25 focus:border-[#FF5500] transition-colors cursor-pointer"
                   >
-                    {RUBROS_MAKER.map((r) => (
+                    {RUBROS_TIENDA.map((r) => (
                       <option key={r.id} value={r.label} className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)]">
                         {r.label}
                       </option>
                     ))}
                   </select>
-                  <div className="absolute right-3.5 top-0 bottom-0 flex items-center pointer-events-none opacity-60">
-                    <ChevronDown className="w-4 h-4 text-[var(--color-texto-muted)]" />
-                  </div>
                 </div>
+
+                {/* Campo interactivo si elige 'Otro rubro' */}
+                {rubro === 'Otro rubro' && (
+                  <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <label className="block text-xs font-semibold uppercase tracking-wider opacity-80">
+                      ¿Cuál es el rubro o actividad de la tienda?
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      autoFocus
+                      value={rubroPersonalizado}
+                      onChange={(e) => setRubroPersonalizado(e.target.value)}
+                      placeholder="Ej: Tienda de Ropa, Electrónica, Decoración, Joyería..."
+                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] placeholder:text-[var(--color-input-placeholder)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]/25 focus:border-[#FF5500] transition-colors"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="pt-3 flex items-center justify-end gap-3">
@@ -220,14 +228,13 @@ export default function NuevaTiendaModal() {
                 <button
                   type="submit"
                   disabled={loading}
-                  style={{ color: '#1F2937' }}
-                  className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] active:scale-95 transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FF5500] text-white text-sm font-bold hover:bg-[#E04B00] active:scale-95 transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-[#1F2937]" />
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
                   ) : (
                     <>
-                      <Sparkles className="w-4 h-4 text-[#1F2937]" />
+                      <Sparkles className="w-4 h-4 text-white" />
                       <span>Dar de Alta Tienda</span>
                     </>
                   )}

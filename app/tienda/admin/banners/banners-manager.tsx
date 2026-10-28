@@ -335,7 +335,7 @@ export default function BannersManager({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-5xl mx-auto space-y-6">
       {/* Header del Módulo */}
       <AdminPageHeader
         title="Banners & Carrusel Promocional"

@@ -148,6 +148,7 @@ export default function ProductoForm({
   const [tagsInput, setTagsInput] = useState(initialDetails?.tags?.join(', ') ?? '')
   const [optimizingSeo, setOptimizingSeo] = useState(false)
   const [seoNotice, setSeoNotice] = useState<string | null>(null)
+  const [showSeoHelpModal, setShowSeoHelpModal] = useState(false)
   const seoAbortControllerRef = useRef<AbortController | null>(null)
 
   // 9. Preguntas Frecuentes del Producto (FAQ)
@@ -899,7 +900,7 @@ export default function ProductoForm({
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className={isModal ? 'w-full space-y-6' : 'w-full max-w-5xl mx-auto space-y-6 pb-12'}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -1835,9 +1836,15 @@ export default function ProductoForm({
                   <Globe className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
                   <span>Posicionamiento en Google (SEO)</span>
                 </h2>
-                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-800 dark:text-amber-300">
-                  Estilo Shopify Magic
-                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowSeoHelpModal(true)}
+                  className="min-h-[44px] min-w-[44px] -my-2 -ml-1 flex items-center justify-center rounded-xl text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-400/10 transition-colors cursor-pointer"
+                  title="¿Cómo mejorar el posicionamiento en Google?"
+                  aria-label="Ver consejos para posicionar en Google"
+                >
+                  <Info className="w-4 h-4" />
+                </button>
               </div>
               <p className="text-xs opacity-70 mt-0.5">
                 Optimiza cómo se verá este producto en los resultados de búsqueda de Google y redes sociales.
@@ -1978,9 +1985,6 @@ export default function ProductoForm({
                   <MessageCircleQuestion className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
                   <span>Preguntas Frecuentes del Producto (FAQ)</span>
                 </h2>
-                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-400">
-                  Estilo Amazon
-                </span>
               </div>
               <p className="text-xs opacity-70 mt-0.5">
                 Anticípate a las dudas de tus compradores (materiales, resistencia, tiempos o personalizaciones) para reducir consultas repetitivas en WhatsApp.
@@ -2474,6 +2478,89 @@ export default function ProductoForm({
           }}
           onClose={() => setShowAiModal(false)}
         />
+      )}
+
+      {/* Modal Guía de Posicionamiento en Google (SEO) */}
+      {showSeoHelpModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg bg-[var(--color-superficie)] border border-[var(--color-borde)] rounded-3xl shadow-2xl p-6 sm:p-7 space-y-5 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3 border-b border-[var(--color-borde)] pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-400/20 text-[#CA8A04] dark:text-[#FACC15] flex items-center justify-center shrink-0">
+                  <Globe className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold font-[var(--font-heading)]">
+                    ¿Cómo posicionar tu producto en Google?
+                  </h3>
+                  <p className="text-xs opacity-70">
+                    Guía práctica para atraer visitas desde motores de búsqueda
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSeoHelpModal(false)}
+                className="min-w-[44px] min-h-[44px] -mr-2 -mt-2 flex items-center justify-center rounded-xl opacity-60 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                aria-label="Cerrar ventana informativa"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs leading-relaxed">
+              <div className="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-[var(--color-borde)] space-y-1.5">
+                <div className="font-bold text-sm text-[var(--color-texto)] flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300 flex items-center justify-center text-[11px] font-bold">1</span>
+                  <span>Título en Google (Meta Title)</span>
+                </div>
+                <p className="opacity-80 pl-7">
+                  Incluí el nombre del producto, una característica o material clave y tu marca (ej: <span className="font-semibold text-[var(--color-texto)]">Vaso Chop de Aluminio Térmico | Tecmaker3D</span>). Los mejores títulos tienen entre 40 y 60 caracteres.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-[var(--color-borde)] space-y-1.5">
+                <div className="font-bold text-sm text-[var(--color-texto)] flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300 flex items-center justify-center text-[11px] font-bold">2</span>
+                  <span>Descripción atractiva (Meta Description)</span>
+                </div>
+                <p className="opacity-80 pl-7">
+                  Escribí en 1 o 2 frases qué problema resuelve el producto y qué facilidades brindás (envíos a todo el país, cuotas o personalizaciones). Esto convence al usuario de hacer clic antes de entrar a otra tienda.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-[var(--color-borde)] space-y-1.5">
+                <div className="font-bold text-sm text-[var(--color-texto)] flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300 flex items-center justify-center text-[11px] font-bold">3</span>
+                  <span>Datos Estructurados Automáticos (Schema.org)</span>
+                </div>
+                <p className="opacity-80 pl-7">
+                  Tu tienda de Portalmaker genera automáticamente etiquetas Schema.org para que Google pueda mostrar tu precio en pesos argentinos ($), stock en verde y foto en los resultados de búsqueda.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-[var(--color-borde)] space-y-1.5">
+                <div className="font-bold text-sm text-[var(--color-texto)] flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300 flex items-center justify-center text-[11px] font-bold">4</span>
+                  <span>Acelerar la aparición en Google</span>
+                </div>
+                <p className="opacity-80 pl-7">
+                  Compartí el link del producto en tus redes sociales (Instagram, Facebook o WhatsApp). Si registraste tu tienda en <span className="font-semibold text-[var(--color-texto)]">Google Search Console</span>, podés pegar la URL y solicitar su indexación en 24 a 48 horas.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowSeoHelpModal(false)}
+                className="min-h-[44px] px-5 py-2 rounded-xl bg-[var(--color-superficie)] border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-bold transition-all cursor-pointer"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

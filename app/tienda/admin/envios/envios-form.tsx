@@ -501,7 +501,7 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
       )
 
   return (
-    <div className="space-y-6 max-w-4xl pb-12">
+    <div className="w-full max-w-5xl mx-auto space-y-6 pb-12">
       {/* Encabezado */}
       <AdminPageHeader
         title="Envíos & Logística"

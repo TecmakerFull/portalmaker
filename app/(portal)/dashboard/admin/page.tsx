@@ -102,21 +102,22 @@ export default async function SuperadminDashboardPage() {
       <header className="bg-[var(--color-superficie)] border-b border-[var(--color-borde)] sticky top-0 z-20 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4">
-            <Link href="/" className="flex items-center gap-2.5">
+            <Link href="/" className="flex items-center gap-2.5 group">
               <Image
                 src="/logo.png"
                 alt="Portalmaker"
                 width={34}
                 height={34}
-                className="w-8 h-8 rounded-xl object-contain shadow-2xs"
+                className="w-8 h-8 rounded-xl object-contain shadow-2xs shrink-0 group-hover:scale-105 transition-transform"
               />
-              <span className="text-xl font-bold tracking-tight font-[var(--font-portal-heading)]">
-                Portalmaker
+              <span className="text-xl font-normal tracking-wider font-brand uppercase select-none">
+                <span className="text-[var(--color-texto)] dark:text-white transition-colors">PORTAL</span>
+                <span className="text-[#FF5500]">MAKER</span>
               </span>
             </Link>
 
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#FACC15]/20 border border-[#FACC15]/50 text-amber-900 dark:text-amber-200">
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#FF5500]/10 border border-[#FF5500]/30 text-[#FF5500]">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#FF5500]" />
               <span>Superadmin</span>
             </span>
           </div>
@@ -127,7 +128,7 @@ export default async function SuperadminDashboardPage() {
               href="/dashboard/maker"
               className="text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden sm:inline-flex items-center gap-1.5"
             >
-              <Store className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <Store className="w-4 h-4 text-[#FF5500]" />
               <span>Mi Taller Maker</span>
             </Link>
 
@@ -169,7 +170,7 @@ export default async function SuperadminDashboardPage() {
               <span className="text-[11px] font-semibold uppercase tracking-wider opacity-70">
                 Tiendas Totales
               </span>
-              <Store className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+              <Store className="w-4 h-4 text-[#FF5500]" />
             </div>
             <div className="text-2xl sm:text-3xl font-bold tracking-tight">{totalStores}</div>
             <p className="text-[11px] opacity-60 mt-0.5">Talleres creados</p>
@@ -221,7 +222,7 @@ export default async function SuperadminDashboardPage() {
               </span>
               <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">$</span>
             </div>
-            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#CA8A04] dark:text-[#FACC15]">
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
               ${estimatedMRR.toLocaleString('es-AR')}
             </div>
             <p className="text-[11px] opacity-60 mt-0.5">MRR de tiendas activas</p>

@@ -7,25 +7,15 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
-import { COLOR_PRESETS } from '@/lib/constants'
-import { Loader2, ArrowRight, AlertCircle, Sparkles, ChevronDown } from 'lucide-react'
-
-const RUBROS_MAKER = [
-  { id: 'impresion_3d', label: 'Impresión 3D (FDM / Resina)' },
-  { id: 'corte_laser', label: 'Corte y Grabado Láser' },
-  { id: 'mecanizado_cnc', label: 'Mecanizado CNC / Router' },
-  { id: 'taller_integral', label: 'Taller Maker Integral (3D + Láser + CNC)' },
-  { id: 'modelado_3d', label: 'Modelado y Diseño 3D a Medida' },
-  { id: 'insumos_repuestos', label: 'Insumos, Filamentos y Repuestos' },
-  { id: 'objetos_diseno', label: 'Objetos de Diseño & Artesanías Maker' },
-  { id: 'otro', label: 'Otro rubro' },
-]
+import { COLOR_PRESETS, RUBROS_TIENDA } from '@/lib/constants'
+import { Loader2, ArrowRight, AlertCircle, Sparkles } from 'lucide-react'
 
 export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
   const router = useRouter()
   const [nombre, setNombre] = useState('')
   const [slug, setSlug] = useState('')
-  const [rubro, setRubro] = useState(RUBROS_MAKER[0].label)
+  const [rubro, setRubro] = useState<string>(RUBROS_TIENDA[0].label)
+  const [rubroPersonalizado, setRubroPersonalizado] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -48,6 +38,11 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
     setLoading(true)
 
     try {
+      // Si eligió 'Otro rubro', usar lo que escribió en el campo de texto
+      const rubroFinal = rubro === 'Otro rubro'
+        ? (rubroPersonalizado.trim() || 'Comercio / Taller')
+        : rubro
+
       // Paleta por defecto: 06 Yellow & Gray (preset 6)
       const defaultPreset = COLOR_PRESETS.find((p) => p.id === 6) ?? COLOR_PRESETS[0]
 
@@ -57,7 +52,7 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
           nombre: nombre.trim(),
           slug: slug.trim().toLowerCase(),
           admin_email: userEmail,
-          slogan: rubro,
+          slogan: rubroFinal,
           color_primario: defaultPreset.claro.primario,
           color_secundario: defaultPreset.claro.secundario,
           color_fondo: defaultPreset.claro.fondo,
@@ -108,7 +103,7 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
           value={nombre}
           onChange={(e) => handleNombreChange(e.target.value)}
           placeholder="Ej: TecMaker 3D"
-          className="w-full min-h-[46px] px-4 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] placeholder:text-[var(--color-input-placeholder)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15] focus:border-[#FACC15] transition-colors"
+          className="w-full min-h-[46px] px-4 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] placeholder:text-[var(--color-input-placeholder)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500] focus:border-[#FF5500] transition-colors"
         />
       </div>
 
@@ -117,7 +112,7 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
         <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-texto)] opacity-80 mb-1.5">
           Dirección Web (Subdominio)
         </label>
-        <div className="flex items-center rounded-xl border border-[var(--color-input-borde)] overflow-hidden bg-[var(--color-input-bg)] focus-within:ring-2 focus-within:ring-[#FACC15] focus-within:border-[#FACC15] transition-colors">
+        <div className="flex items-center rounded-xl border border-[var(--color-input-borde)] overflow-hidden bg-[var(--color-input-bg)] focus-within:ring-2 focus-within:ring-[#FF5500] focus-within:border-[#FF5500] transition-colors">
           <input
             type="text"
             required
@@ -134,42 +129,56 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
       </div>
 
       {/* Rubro Principal */}
-      <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-texto)] opacity-80 mb-1.5">
-          Rubro o Especialidad Principal
-        </label>
-        <div className="relative">
+      <div className="space-y-3">
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-texto)] opacity-80 mb-1.5">
+            Rubro o Especialidad Principal
+          </label>
           <select
             value={rubro}
             onChange={(e) => setRubro(e.target.value)}
-            className="w-full min-h-[46px] px-4 py-2.5 pr-10 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15] focus:border-[#FACC15] transition-colors appearance-none cursor-pointer"
+            className="w-full min-h-[46px] px-4 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]/25 focus:border-[#FF5500] transition-colors cursor-pointer"
           >
-            {RUBROS_MAKER.map((r) => (
+            {RUBROS_TIENDA.map((r) => (
               <option key={r.id} value={r.label} className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)]">
                 {r.label}
               </option>
             ))}
           </select>
-          <div className="absolute right-3.5 top-0 bottom-0 flex items-center pointer-events-none opacity-60">
-            <ChevronDown className="w-4 h-4 text-[var(--color-texto-muted)]" />
-          </div>
         </div>
+
+        {/* Campo interactivo si elige 'Otro rubro' */}
+        {rubro === 'Otro rubro' && (
+          <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-texto)] opacity-80">
+              ¿Cuál es el rubro o actividad de tu tienda?
+            </label>
+            <input
+              type="text"
+              required
+              autoFocus
+              value={rubroPersonalizado}
+              onChange={(e) => setRubroPersonalizado(e.target.value)}
+              placeholder="Ej: Tienda de Ropa, Electrónica, Decoración, Joyería..."
+              className="w-full min-h-[46px] px-4 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] placeholder:text-[var(--color-input-placeholder)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]/25 focus:border-[#FF5500] transition-colors"
+            />
+          </div>
+        )}
       </div>
 
       {/* Botón de Enviar */}
       <button
         type="submit"
         disabled={loading}
-        style={{ color: '#1F2937' }}
-        className="w-full min-h-[48px] mt-2 flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-[#FACC15] text-[#1F2937] text-sm font-bold hover:bg-[#eab308] active:scale-[0.99] transition-all disabled:opacity-50 shadow-md cursor-pointer"
+        className="w-full min-h-[48px] mt-2 flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-[#FF5500] text-white text-sm font-bold hover:bg-[#E04B00] active:scale-[0.99] transition-all disabled:opacity-50 shadow-md cursor-pointer"
       >
         {loading ? (
-          <Loader2 className="w-5 h-5 animate-spin text-[#1F2937]" />
+          <Loader2 className="w-5 h-5 animate-spin text-white" />
         ) : (
           <>
-            <Sparkles className="w-4 h-4 text-[#1F2937]" />
+            <Sparkles className="w-4 h-4 text-white" />
             <span>Crear y Configurar Mi Tienda</span>
-            <ArrowRight className="w-4 h-4 text-[#1F2937] ml-1" />
+            <ArrowRight className="w-4 h-4 text-white ml-1" />
           </>
         )}
       </button>

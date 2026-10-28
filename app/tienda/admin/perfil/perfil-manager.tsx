@@ -27,7 +27,13 @@ import {
   Loader2,
   Save,
   Check,
+  Mail,
+  Phone,
+  Power,
+  ShoppingCart,
+  BadgeCheck,
 } from 'lucide-react'
+import { getPlanConfig } from '@/lib/plans'
 import { AdminPageHeader } from '../components/admin-page-header'
 
 export default function PerfilManager({
@@ -152,330 +158,376 @@ export default function PerfilManager({
   const trialProgress = Math.min(100, Math.max(0, ((10 - diasRestantes) / 10) * 100))
 
   return (
-    <div className="space-y-6">
-      {/* Encabezado */}
+    <div className="space-y-5">
+      {/* Encabezado Compacto y Proporcional */}
       <AdminPageHeader
         title="Perfil de Tienda"
         description="Modifica el nombre de tu página, revisa el estado de tu cuenta y personaliza tus preferencias."
         icon={User}
+        className="!rounded-2xl !p-4 sm:!p-5"
       />
 
-      {/* 1. Modificar Nombre de la Tienda y Datos Básicos */}
-      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
-        <div>
-          <h2 className="text-base font-bold flex items-center gap-2">
-            <StoreIcon className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-            <span>Nombre de tu Página / Tienda</span>
-          </h2>
-          <p className="text-xs opacity-70 mt-0.5">
-            Puedes cambiar el nombre público de tu tienda y tu slogan en cualquier momento.
-          </p>
-        </div>
-
-        <form onSubmit={handleSaveStoreData} className="space-y-4 pt-1">
-          {storeSuccessMsg && (
-            <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
-              <Check className="w-4 h-4 shrink-0" />
-              <span>{storeSuccessMsg}</span>
-            </div>
-          )}
-
-          {storeErrorMsg && (
-            <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span>{storeErrorMsg}</span>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
-                Nombre de la Tienda *
-              </label>
-              <input
-                type="text"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                placeholder="Ej: Aetera, Tecmaker 3D..."
-                required
-                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
-                Slogan / Frase corta
-              </label>
-              <input
-                type="text"
-                value={slogan}
-                onChange={(e) => setSlogan(e.target.value)}
-                placeholder="Ej: Diversión duradera de alta gama."
-                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-2">
-            {storeSuccessMsg && (
-              <div className="p-2.5 px-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-                <Check className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                <span>{storeSuccessMsg}</span>
-              </div>
-            )}
-            {storeErrorMsg && (
-              <div className="p-2.5 px-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
-                <span>{storeErrorMsg}</span>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={savingStore}
-              className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-bold text-xs hover:bg-[#EAB308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
-            >
-              {savingStore ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Guardando...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>Guardar Nombre</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-
-        {/* Notificación Toast Flotante */}
-        {storeSuccessMsg && (
-          <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-[#1F2937] text-white text-sm font-medium shadow-2xl border border-white/10 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
-            <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
-              <Check className="w-3.5 h-3.5" />
-            </div>
-            <span>{storeSuccessMsg}</span>
-          </div>
-        )}
-      </div>
-
-      {/* 2. Tarjeta de Estado de Cuenta & Suscripción */}
-      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#FACC15]/20 text-[#CA8A04] dark:text-[#FACC15] flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
+      {/* Layout Principal: 2 columnas en Desktop (2/3 y 1/3) y 1 columna en Móvil */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+        {/* Columna Izquierda / Principal (2/3) */}
+        <div className="lg:col-span-2 space-y-5">
+          {/* 1. Nombre de la Tienda y Slogan */}
+          <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-4 sm:p-5 shadow-xs space-y-4">
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold">Estado del Plan</h2>
-                <span
-                  className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-                    store.suscripcion_activa
-                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
-                      : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20'
-                  }`}
-                >
-                  {store.suscripcion_activa ? 'Plan Activo' : 'En Pausa'}
-                </span>
-              </div>
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <StoreIcon className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                <span>Nombre de tu Página / Tienda</span>
+              </h2>
               <p className="text-xs opacity-70 mt-0.5">
-                {isTrial ? 'Periodo de prueba gratuito (10 días iniciales)' : 'Suscripción Maker Vitrina'}
+                Configura el nombre público de tu tienda y el slogan visible en tu cabecera.
               </p>
             </div>
-          </div>
 
-          <div className="text-left sm:text-right">
-            <span className="text-xs opacity-60 uppercase font-semibold tracking-wider block">
-              Días Restantes
-            </span>
-            <span className="text-2xl font-black text-[#CA8A04] dark:text-[#FACC15]">
-              {diasRestantes} {diasRestantes === 1 ? 'día' : 'días'}
-            </span>
-          </div>
-        </div>
-
-        {/* Barra de Progreso del Periodo de Prueba */}
-        <div className="space-y-2 pt-2 border-t border-[var(--color-borde)]">
-          <div className="flex items-center justify-between text-xs opacity-70">
-            <span>Día {diffDays} de uso</span>
-            <span>Vence el {vencimiento.toLocaleDateString('es-AR')}</span>
-          </div>
-          <div className="w-full bg-black/5 dark:bg-white/10 h-2.5 rounded-full overflow-hidden">
-            <div
-              className="bg-[#FACC15] h-full rounded-full transition-all duration-500"
-              style={{ width: `${trialProgress}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Métricas rápidas de la cuenta */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-          <div className="p-3.5 rounded-2xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)]">
-            <div className="flex items-center gap-2 text-xs opacity-60 mb-1">
-              <Calendar className="w-3.5 h-3.5" />
-              <span>Fecha de alta</span>
-            </div>
-            <span className="text-sm font-bold block">
-              {createdDate.toLocaleDateString('es-AR')}
-            </span>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)]">
-            <div className="flex items-center gap-2 text-xs opacity-60 mb-1">
-              <Clock className="w-3.5 h-3.5" />
-              <span>Tiempo activo</span>
-            </div>
-            <span className="text-sm font-bold block">
-              {diffDays} {diffDays === 1 ? 'día en línea' : 'días en línea'}
-            </span>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)]">
-            <div className="flex items-center gap-2 text-xs opacity-60 mb-1">
-              <Globe className="w-3.5 h-3.5" />
-              <span>Dirección web</span>
-            </div>
-            <span className="text-sm font-bold truncate block">
-              {store.slug}.portalmaker.ar
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Preferencia de Visualización del Menú / Panel Admin */}
-      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
-        <div>
-          <h2 className="text-base font-bold flex items-center gap-2">
-            <Sun className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-            <span>Visualización de tu Panel de Control</span>
-          </h2>
-          <p className="text-xs opacity-70 mt-0.5">
-            Selecciona el tema de tu panel de administración. Por defecto toma la preferencia de tu sistema operativo.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-          {/* Opción Automático / Sistema (Por Defecto) */}
-          <button
-            type="button"
-            onClick={() => handleChangeTheme('sistema')}
-            className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between gap-3 cursor-pointer ${
-              panelTheme === 'sistema'
-                ? 'border-[#FACC15] ring-2 ring-[#FACC15]/40 bg-[#FACC15]/10 shadow-xs'
-                : 'border-[var(--color-borde)] hover:border-[var(--color-texto-muted)] bg-[var(--color-fondo)]/40'
-            }`}
-          >
-            <div className="flex items-center justify-between w-full">
-              <div className="w-9 h-9 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                <Laptop className="w-5 h-5" />
-              </div>
-              {panelTheme === 'sistema' && (
-                <CheckCircle2 className="w-5 h-5 text-[#CA8A04] dark:text-[#FACC15]" />
+            <form onSubmit={handleSaveStoreData} className="space-y-4">
+              {storeSuccessMsg && (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium flex items-center gap-2 animate-in fade-in">
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span>{storeSuccessMsg}</span>
+                </div>
               )}
-            </div>
-            <div>
-              <span className="font-bold text-sm block">Según el Sistema</span>
-              <span className="text-xs opacity-60">Se adapta a tu dispositivo (Por defecto)</span>
-            </div>
-          </button>
 
-          {/* Opción Claro */}
-          <button
-            type="button"
-            onClick={() => handleChangeTheme('light')}
-            className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between gap-3 cursor-pointer ${
-              panelTheme === 'light'
-                ? 'border-[#FACC15] ring-2 ring-[#FACC15]/40 bg-[#FACC15]/10 shadow-xs'
-                : 'border-[var(--color-borde)] hover:border-[var(--color-texto-muted)] bg-[var(--color-fondo)]/40'
-            }`}
-          >
-            <div className="flex items-center justify-between w-full">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                <Sun className="w-5 h-5" />
-              </div>
-              {panelTheme === 'light' && (
-                <CheckCircle2 className="w-5 h-5 text-[#CA8A04] dark:text-[#FACC15]" />
+              {storeErrorMsg && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-medium flex items-center gap-2 animate-in fade-in">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{storeErrorMsg}</span>
+                </div>
               )}
-            </div>
-            <div>
-              <span className="font-bold text-sm block">Modo Claro</span>
-              <span className="text-xs opacity-60">Fondo blanco luminoso</span>
-            </div>
-          </button>
 
-          {/* Opción Oscuro */}
-          <button
-            type="button"
-            onClick={() => handleChangeTheme('dark')}
-            className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between gap-3 cursor-pointer ${
-              panelTheme === 'dark'
-                ? 'border-[#FACC15] ring-2 ring-[#FACC15]/40 bg-[#FACC15]/10 shadow-xs'
-                : 'border-[var(--color-borde)] hover:border-[var(--color-texto-muted)] bg-[var(--color-fondo)]/40'
-            }`}
-          >
-            <div className="flex items-center justify-between w-full">
-              <div className="w-9 h-9 rounded-xl bg-slate-800 text-slate-100 flex items-center justify-center">
-                <Moon className="w-5 h-5" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium opacity-75 block">
+                    Nombre de la Tienda *
+                  </label>
+                  <input
+                    type="text"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    placeholder="Ej: Tecmaker 3D"
+                    required
+                    className="w-full h-10 px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15] transition-all"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium opacity-75 block">
+                    Slogan / Frase corta
+                  </label>
+                  <input
+                    type="text"
+                    value={slogan}
+                    onChange={(e) => setSlogan(e.target.value)}
+                    placeholder="Ej: Insumos y servicio de impresión 3D"
+                    className="w-full h-10 px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15] transition-all"
+                  />
+                </div>
               </div>
-              {panelTheme === 'dark' && (
-                <CheckCircle2 className="w-5 h-5 text-[#CA8A04] dark:text-[#FACC15]" />
-              )}
-            </div>
-            <div>
-              <span className="font-bold text-sm block">Modo Oscuro</span>
-              <span className="text-xs opacity-60">Fondo carbón de alto contraste</span>
-            </div>
-          </button>
-        </div>
-      </div>
 
-      {/* 4. Datos de Administrador & Dominio */}
-      <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
-        <h2 className="text-base font-bold flex items-center gap-2">
-          <User className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-          <span>Datos del Administrador</span>
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-4 rounded-2xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)]">
-            <span className="text-xs font-semibold opacity-60 block mb-1">
-              Email de Google OAuth
-            </span>
-            <span className="text-sm font-mono font-bold">{store.admin_email}</span>
+              <div className="flex items-center justify-end pt-1">
+                <button
+                  type="submit"
+                  disabled={savingStore}
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-[#FACC15] text-[#1F2937] font-semibold text-xs hover:bg-[#EAB308] active:scale-98 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {savingStore ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>Guardar Cambios</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
 
-          <div className="p-4 rounded-2xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)] flex items-center justify-between gap-2">
+          {/* 2. Datos Básicos del Administrador */}
+          <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-4 sm:p-5 shadow-xs space-y-4">
             <div>
-              <span className="text-xs font-semibold opacity-60 block mb-1">
-                Dominio Propio
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <User className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                <span>Datos Básicos del Administrador</span>
+              </h2>
+              <p className="text-xs opacity-70 mt-0.5">
+                Información de contacto oficial, credenciales y configuración del taller.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Email Titular */}
+              <div className="p-3 rounded-xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)] flex flex-col justify-between gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium opacity-60 flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5" />
+                    Email Titular
+                  </span>
+                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                    OAuth
+                  </span>
+                </div>
+                <span className="text-xs font-mono font-medium truncate" title={store.admin_email}>
+                  {store.admin_email}
+                </span>
+              </div>
+
+              {/* Rol de Cuenta */}
+              <div className="p-3 rounded-xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)] flex flex-col justify-between gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium opacity-60 flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Rol de Cuenta
+                  </span>
+                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-800 dark:text-amber-300">
+                    Titular
+                  </span>
+                </div>
+                <span className="text-xs font-semibold">Administrador General</span>
+              </div>
+
+              {/* WhatsApp Oficial */}
+              <div className="p-3 rounded-xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)] flex flex-col justify-between gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium opacity-60 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5" />
+                    WhatsApp Oficial
+                  </span>
+                  <Link
+                    href={`/tienda/admin/contacto${tenantQuery}`}
+                    className="text-[10px] font-semibold text-[#CA8A04] dark:text-[#FACC15] hover:underline"
+                  >
+                    Editar
+                  </Link>
+                </div>
+                <span className="text-xs font-mono font-semibold">
+                  {store.whatsapp_numero || 'Sin configurar'}
+                </span>
+              </div>
+
+              {/* Subdominio Portalmaker */}
+              <div className="p-3 rounded-xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)] flex flex-col justify-between gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium opacity-60 flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5" />
+                    Subdominio
+                  </span>
+                  <a
+                    href={`/tienda${tenantQuery}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[10px] font-semibold text-[#CA8A04] dark:text-[#FACC15] hover:underline flex items-center gap-0.5"
+                  >
+                    <span>Visitar</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+                <span className="text-xs font-medium truncate" title={`${store.slug}.portalmaker.ar`}>
+                  {store.slug}.portalmaker.ar
+                </span>
+              </div>
+
+              {/* Dominio Propio */}
+              <div className="p-3 rounded-xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)] flex flex-col justify-between gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium opacity-60 flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5" />
+                    Dominio Propio
+                  </span>
+                  <Link
+                    href={`/tienda/admin/dominio${tenantQuery}`}
+                    className="text-[10px] font-semibold text-[#CA8A04] dark:text-[#FACC15] hover:underline"
+                  >
+                    Gestionar
+                  </Link>
+                </div>
+                <span className="text-xs font-medium truncate">
+                  {store.custom_domain || 'Sin dominio vinculado'}
+                </span>
+              </div>
+
+              {/* Modo de Operación */}
+              <div className="p-3 rounded-xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)] flex flex-col justify-between gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-medium opacity-60 flex items-center gap-1.5">
+                    <ShoppingCart className="w-3.5 h-3.5" />
+                    Modo Operativo
+                  </span>
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      store.suscripcion_activa ? 'bg-emerald-500' : 'bg-rose-500'
+                    }`}
+                    title={store.suscripcion_activa ? 'Tienda Encendida' : 'Tienda Pausada'}
+                  />
+                </div>
+                <span className="text-xs font-medium">
+                  {store.modo_operacion === 'vitrina'
+                    ? 'Vitrina Digital & WhatsApp'
+                    : 'Tienda con Carrito & Checkout'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Columna Derecha / Lateral (1/3) */}
+        <div className="space-y-5">
+          {/* 3. Estado del Plan & Periodo de Prueba */}
+          <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-4 sm:p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                <h2 className="text-sm font-semibold">Estado del Plan</h2>
+              </div>
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  store.suscripcion_activa
+                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                    : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20'
+                }`}
+              >
+                {store.suscripcion_activa ? 'Plan Activo' : 'En Pausa'}
               </span>
-              <span className="text-sm font-bold">
-                {store.custom_domain || 'Sin dominio configurado'}
-              </span>
             </div>
+
+            {/* Tarjeta de Días Restantes */}
+            <div className="p-3.5 rounded-xl bg-[var(--color-fondo)]/40 border border-[var(--color-borde)] flex items-center justify-between">
+              <div>
+                <span className="text-[11px] opacity-60 uppercase font-medium tracking-wider block">
+                  Días restantes
+                </span>
+                <span className="text-xl font-bold text-[#CA8A04] dark:text-[#FACC15]">
+                  {diasRestantes} {diasRestantes === 1 ? 'día' : 'días'}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-[11px] opacity-60 uppercase font-medium tracking-wider block">
+                  Nivel
+                </span>
+                <span className="text-xs font-bold uppercase">
+                  {getPlanConfig(store.plan).nombre}
+                </span>
+              </div>
+            </div>
+
+            {/* Barra de progreso */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] opacity-70">
+                <span>Día {diffDays} de uso</span>
+                <span>Vence {vencimiento.toLocaleDateString('es-AR')}</span>
+              </div>
+              <div className="w-full bg-black/5 dark:bg-white/10 h-2 rounded-full overflow-hidden">
+                <div
+                  className="bg-[#FACC15] h-full rounded-full transition-all duration-500"
+                  style={{ width: `${trialProgress}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Fechas clave compactas */}
+            <div className="space-y-2 pt-2 border-t border-[var(--color-borde)] text-xs">
+              <div className="flex items-center justify-between py-1 opacity-80">
+                <span className="flex items-center gap-1.5 opacity-70">
+                  <Calendar className="w-3.5 h-3.5" />
+                  Fecha de alta
+                </span>
+                <span className="font-semibold">{createdDate.toLocaleDateString('es-AR')}</span>
+              </div>
+              <div className="flex items-center justify-between py-1 opacity-80">
+                <span className="flex items-center gap-1.5 opacity-70">
+                  <Clock className="w-3.5 h-3.5" />
+                  Tiempo en línea
+                </span>
+                <span className="font-semibold">{diffDays} {diffDays === 1 ? 'día' : 'días'}</span>
+              </div>
+            </div>
+
             <Link
-              href={`/tienda/admin/dominio${tenantQuery}`}
-              className="px-3 py-1.5 rounded-xl border border-[var(--color-borde)] hover:border-[#FACC15] text-xs font-bold hover:bg-[#FACC15]/10 text-[#CA8A04] dark:text-[#FACC15] transition-all"
+              href={`/tienda/admin/suscripcion${tenantQuery}`}
+              className="min-h-[44px] w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-[var(--color-borde)] hover:border-[#FACC15] text-xs font-semibold hover:bg-[#FACC15]/10 text-[#CA8A04] dark:text-[#FACC15] transition-all"
             >
-              Configurar
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Gestionar Suscripción</span>
             </Link>
           </div>
-        </div>
 
-        {/* Botón de Cerrar Sesión */}
-        <div className="pt-3 flex justify-end">
-          <form action="/auth/signout" method="post">
-            <button
-              type="submit"
-              className="min-h-[44px] px-5 py-2.5 rounded-xl border border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500/10 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Cerrar Sesión</span>
-            </button>
-          </form>
+          {/* 4. Preferencia de Visualización / Tema */}
+          <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-4 sm:p-5 shadow-xs space-y-3">
+            <div>
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <Sun className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
+                <span>Tema del Panel</span>
+              </h2>
+              <p className="text-xs opacity-70 mt-0.5">
+                Ajusta el modo visual de tu panel de administración.
+              </p>
+            </div>
+
+            {/* Selector Segmentado Compacto */}
+            <div className="grid grid-cols-3 gap-1.5 p-1 bg-black/5 dark:bg-white/5 rounded-xl border border-[var(--color-borde)]">
+              <button
+                type="button"
+                onClick={() => handleChangeTheme('sistema')}
+                className={`min-h-[44px] py-2 px-2 rounded-lg text-xs font-medium transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 cursor-pointer ${
+                  panelTheme === 'sistema'
+                    ? 'bg-[var(--color-superficie)] text-[var(--color-texto)] shadow-xs font-semibold border border-[var(--color-borde)]'
+                    : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                <Laptop className="w-3.5 h-3.5 shrink-0" />
+                <span className="text-[11px]">Auto</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleChangeTheme('light')}
+                className={`min-h-[44px] py-2 px-2 rounded-lg text-xs font-medium transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 cursor-pointer ${
+                  panelTheme === 'light'
+                    ? 'bg-[var(--color-superficie)] text-[var(--color-texto)] shadow-xs font-semibold border border-[var(--color-borde)]'
+                    : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                <Sun className="w-3.5 h-3.5 shrink-0 text-amber-500" />
+                <span className="text-[11px]">Claro</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleChangeTheme('dark')}
+                className={`min-h-[44px] py-2 px-2 rounded-lg text-xs font-medium transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 cursor-pointer ${
+                  panelTheme === 'dark'
+                    ? 'bg-[var(--color-superficie)] text-[var(--color-texto)] shadow-xs font-semibold border border-[var(--color-borde)]'
+                    : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                <Moon className="w-3.5 h-3.5 shrink-0 text-blue-400" />
+                <span className="text-[11px]">Oscuro</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 5. Sesión del Administrador */}
+          <div className="bg-[var(--color-superficie)] rounded-2xl border border-[var(--color-borde)] p-4 sm:p-5 shadow-xs flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <span className="text-xs font-semibold block">Sesión Activa</span>
+              <span className="text-[11px] opacity-60 font-mono truncate block max-w-[150px]" title={store.admin_email}>
+                {store.admin_email}
+              </span>
+            </div>
+            <form action="/auth/signout" method="post">
+              <button
+                type="submit"
+                className="min-h-[44px] px-4 py-2 rounded-xl border border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500/10 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Salir</span>
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>

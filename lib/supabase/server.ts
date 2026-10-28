@@ -40,7 +40,12 @@ export async function createSupabaseServerClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, {
+                ...options,
+                maxAge: 60 * 60 * 24 * 365,
+                sameSite: 'lax',
+                path: '/',
+              })
             })
           } catch {
             // setAll puede fallar en Server Components de solo lectura (ej: pages).

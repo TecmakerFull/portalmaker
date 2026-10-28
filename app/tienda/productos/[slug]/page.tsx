@@ -145,8 +145,78 @@ export default async function ProductoDetallePage({ params }: PageProps) {
     .eq('visible', true)
     .order('created_at', { ascending: false })
 
+  // 8. Construcción de Schema.org JSON-LD (Product Rich Snippets para Google)
+  const productImages = Array.isArray(product.imagenes) && product.imagenes.length > 0
+    ? (product.imagenes as string[])
+    : []
+
+  const activeVariants = variants ?? []
+  let displayPrice = product.precio_final || 0
+  if (activeVariants.length > 0) {
+    const variantPrices = activeVariants
+      .map((v) => Number(v.precio_final))
+      .filter((p) => !isNaN(p) && p > 0)
+    if (variantPrices.length > 0) {
+      displayPrice = Math.min(...variantPrices)
+    }
+  }
+
+  const isAvailable = !product.gestiona_stock || (product.stock ?? 0) > 0 || activeVariants.some((v) => (v.stock ?? 0) > 0)
+  const reviewList = reviews ?? []
+  const hasReviews = reviewList.length > 0
+  const avgRating = hasReviews
+    ? Number((reviewList.reduce((acc, r) => acc + (r.calificacion || 5), 0) / reviewList.length).toFixed(1))
+    : null
+
+  const productUrl = store.custom_domain
+    ? `https://${store.custom_domain}/productos/${product.slug}`
+    : `https://${store.slug}.portalmaker.ar/productos/${product.slug}`
+
+  const schemaJsonLd: Record<string, any> = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.nombre,
+    description: details?.meta_description || product.descripcion?.slice(0, 300) || product.nombre,
+    image: productImages,
+    sku: product.sku || undefined,
+    url: productUrl,
+    brand: {
+      '@type': 'Brand',
+      name: store.nombre,
+    },
+    offers: {
+      '@type': 'Offer',
+      url: productUrl,
+      priceCurrency: 'ARS',
+      price: displayPrice,
+      availability: isAvailable
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
+      seller: {
+        '@type': 'Organization',
+        name: store.nombre,
+      },
+    },
+  }
+
+  if (hasReviews && avgRating) {
+    schemaJsonLd.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: avgRating,
+      reviewCount: reviewList.length,
+      bestRating: 5,
+      worstRating: 1,
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] transition-colors duration-200 flex flex-col justify-between">
+      {/* Schema.org JSON-LD para indexación y snippets de Google */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaJsonLd) }}
+      />
       <div>
         {/* Cabecera y Navegación Modular (Top Bar -> Header -> Navbar) */}
         <StorefrontHeaderFlow

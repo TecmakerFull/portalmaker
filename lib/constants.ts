@@ -63,6 +63,22 @@ export type AvailableFont = typeof AVAILABLE_FONTS[number]['value'];
 
 
 // =============================================================================
+// RUBROS DE TIENDA — Categorías principales para alta de tiendas
+// =============================================================================
+
+export const RUBROS_TIENDA = [
+  { id: 'impresion_3d', label: 'Impresión 3D y Modelado' },
+  { id: 'corte_laser', label: 'Corte Láser y Grabado' },
+  { id: 'electronica', label: 'Electrónica, Robótica y Gadgets' },
+  { id: 'indumentaria', label: 'Indumentaria, Ropa y Calzado' },
+  { id: 'bazar_hogar', label: 'Bazar, Decoración y Hogar' },
+  { id: 'artesanias_diseno', label: 'Diseño, Regalos y Artesanías' },
+  { id: 'insumos_herramientas', label: 'Herramientas, Insumos y Repuestos' },
+  { id: 'otro', label: 'Otro rubro' },
+] as const;
+
+
+// =============================================================================
 // PALETAS DE COLOR PRESET (10 Paletas Oficiales)
 // =============================================================================
 

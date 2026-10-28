@@ -11,6 +11,7 @@
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
 const PORTAL_DOMAIN = (process.env.NEXT_PUBLIC_PORTAL_DOMAIN ?? 'portalmaker.com.ar').split(':')[0].toLowerCase()
 
@@ -23,7 +24,7 @@ const BASE_PORTAL_DOMAINS = Array.from(
   ].filter(Boolean))
 )
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { nextUrl, headers } = request
 
   // Host actual sin puerto (ej: "portalmaker.vercel.app", "localhost", "tecmaker3d.portalmaker.ar")
@@ -37,20 +38,70 @@ export function middleware(request: NextRequest) {
     (base) => host === base || host === `www.${base}`
   )
 
-  // Headers de seguridad globales que deben aplicarse a todas las respuestas
+  // Sanitizar headers entrantes para evitar que un atacante inyecte tenants falsos
+  const requestHeaders = new Headers(headers)
+  requestHeaders.delete('x-store-slug')
+  requestHeaders.delete('x-store-domain')
+  requestHeaders.delete('x-tenant-source')
+
+  // Respuesta base para capturar y refrescar cookies de sesión de Supabase
+  const supabaseCookiesResponse = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
+
+  // Dominio con comodín para compartir sesión entre subdominios en producción
+  let cookieDomain: string | undefined = undefined
+  if (host.endsWith('portalmaker.ar')) {
+    cookieDomain = '.portalmaker.ar'
+  } else if (host.endsWith('portalmaker.com.ar')) {
+    cookieDomain = '.portalmaker.com.ar'
+  }
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value, options }) => {
+            supabaseCookiesResponse.cookies.set(name, value, {
+              ...options,
+              maxAge: 60 * 60 * 24 * 365, // 1 año persistente en dispositivo
+              sameSite: 'lax',
+              path: '/',
+              ...(cookieDomain ? { domain: cookieDomain } : {}),
+            })
+          })
+        },
+      },
+    }
+  )
+
+  // Refrescar el token del usuario en segundo plano para mantener la sesión viva
+  try {
+    await supabase.auth.getUser()
+  } catch {
+    // Si falla la verificación de sesión en la red, continuar sin bloquear la petición
+  }
+
+  // Headers de seguridad globales y propagación de cookies de sesión a la respuesta final
   const applySecurityHeaders = (res: NextResponse): NextResponse => {
+    // Propagar cualquier cookie que Supabase haya refrescado o generado
+    supabaseCookiesResponse.cookies.getAll().forEach((cookie) => {
+      res.cookies.set(cookie)
+    })
     res.headers.set('X-Content-Type-Options', 'nosniff')
     res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
     res.headers.set('Content-Security-Policy', "frame-ancestors 'self'")
     res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
     return res
   }
-
-  // Sanitizar headers entrantes para evitar que un atacante inyecte tenants falsos
-  const requestHeaders = new Headers(headers)
-  requestHeaders.delete('x-store-slug')
-  requestHeaders.delete('x-store-domain')
-  requestHeaders.delete('x-tenant-source')
 
   // Detección previa de tenant para inyectar headers tanto en APIs como en páginas
   const isDevOrPreview = process.env.NODE_ENV !== 'production' || isLocalhost || isVercelDomain || isBasePortalDomain

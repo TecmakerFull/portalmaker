@@ -483,12 +483,12 @@ export default function BrandingForm({ store, tenantQuery, initialSections = [] 
               <select
                 value={logoTamano}
                 onChange={(e) => setLogoTamano(e.target.value as any)}
-                className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#FACC15] cursor-pointer"
+                className="w-full min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 cursor-pointer transition-all shadow-2xs"
               >
-                <option value="chico">Chico (compacto, 28px)</option>
-                <option value="mediano">Mediano (estándar, 40px)</option>
-                <option value="grande">Grande (destacado, 56px)</option>
-                <option value="xl">Extra Grande (máximo, 72px)</option>
+                <option value="chico" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Chico (compacto, 28px)</option>
+                <option value="mediano" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Mediano (estándar, 40px)</option>
+                <option value="grande" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Grande (destacado, 56px)</option>
+                <option value="xl" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Extra Grande (máximo, 72px)</option>
               </select>
             </div>
 
@@ -1128,7 +1128,7 @@ export default function BrandingForm({ store, tenantQuery, initialSections = [] 
                       ? 'var(--font-dm-serif-display), Georgia, serif'
                       : 'sans-serif',
                 }}
-                className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FACC15] cursor-pointer"
+                className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 cursor-pointer transition-all shadow-2xs"
               >
                 {AVAILABLE_FONTS.map((f) => (
                   <option
@@ -1201,7 +1201,7 @@ export default function BrandingForm({ store, tenantQuery, initialSections = [] 
                       ? 'var(--font-dm-serif-display), Georgia, serif'
                       : 'sans-serif',
                 }}
-                className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15] cursor-pointer"
+                className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 cursor-pointer transition-all shadow-2xs"
               >
                 {AVAILABLE_FONTS.map((f) => (
                   <option

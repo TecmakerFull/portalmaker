@@ -429,7 +429,7 @@ export default function ProductosTable({
   const superadminWaUrl = `https://wa.me/5491136450073?text=${superadminWaMsg}`
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-6xl mx-auto space-y-6">
       {/* Barra de Estadísticas y Botón Principal */}
       <AdminPageHeader
         title="Productos"

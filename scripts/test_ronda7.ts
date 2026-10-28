@@ -62,7 +62,7 @@ async function runTests() {
       'x-tenant-source': 'malicious',
     },
   })
-  const resSpoofed = middleware(reqSpoofed)
+  const resSpoofed = await middleware(reqSpoofed)
   console.log('[9g.1] Header entrante x-store-slug eliminado en portal:', resSpoofed.headers.get('x-store-slug') === null ? 'PASS' : 'FAIL')
 
   // b) ?tenant= en producción
@@ -71,7 +71,7 @@ async function runTests() {
   const reqTenantProd = new NextRequest('http://portalmaker.com.ar/?tenant=tecmaker3d', {
     headers: { 'host': 'portalmaker.com.ar' },
   })
-  const resTenantProd = middleware(reqTenantProd)
+  const resTenantProd = await middleware(reqTenantProd)
   console.log('[9g.2] ?tenant= ignorado en host de producción con NODE_ENV=production:', resTenantProd.headers.get('x-tenant-source') === null ? 'PASS' : 'FAIL')
   ;(process.env as Record<string, string | undefined>).NODE_ENV = prevEnv
 
@@ -79,7 +79,7 @@ async function runTests() {
   const reqSec = new NextRequest('http://portalmaker.com.ar/', {
     headers: { 'host': 'portalmaker.com.ar' },
   })
-  const resSec = middleware(reqSec)
+  const resSec = await middleware(reqSec)
   console.log('[9g.3] X-Content-Type-Options:', resSec.headers.get('X-Content-Type-Options') === 'nosniff' ? 'PASS (nosniff)' : 'FAIL')
   console.log('[9g.4] Referrer-Policy:', resSec.headers.get('Referrer-Policy') === 'strict-origin-when-cross-origin' ? 'PASS (strict-origin-when-cross-origin)' : 'FAIL')
   console.log('[9g.5] CSP frame-ancestors:', resSec.headers.get('Content-Security-Policy') === "frame-ancestors 'self'" ? "PASS (frame-ancestors 'self')" : 'FAIL')

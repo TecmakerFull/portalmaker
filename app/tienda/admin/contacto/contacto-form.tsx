@@ -106,10 +106,10 @@ function TimeSelect24h({
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
       aria-label={ariaLabel}
-      className="h-9 w-[86px] px-2 text-xs font-mono font-medium rounded-lg border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-[#FACC15] shrink-0 text-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:border-black/30 dark:hover:border-white/30"
+      className="h-9 w-[86px] px-2 text-xs font-mono font-medium rounded-lg border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 shrink-0 text-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:border-black/30 dark:hover:border-white/30"
     >
       {opciones.map((h) => (
-        <option key={h} value={h}>
+        <option key={h} value={h} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1">
           {h} hs
         </option>
       ))}
@@ -403,11 +403,11 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
   }
 
   const inputClass =
-    'w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-sm focus:outline-hidden focus:ring-2 focus:ring-[#FACC15] transition-all'
+    'w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-sm focus:outline-hidden focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 transition-all'
   const labelClass = 'block text-xs font-semibold mb-1.5 opacity-80'
 
   return (
-    <div className="space-y-8 w-full max-w-4xl pb-12">
+    <div className="w-full max-w-5xl mx-auto space-y-8 pb-12">
       {/* Encabezado */}
       <AdminPageHeader
         title="Contacto & Ubicación"

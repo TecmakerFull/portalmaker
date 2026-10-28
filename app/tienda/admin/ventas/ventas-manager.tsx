@@ -858,7 +858,7 @@ export default function VentasManager({
   }
 
   return (
-    <div className="w-full space-y-6 pb-20">
+    <div className="w-full max-w-6xl mx-auto space-y-6 pb-20">
       {/* Encabezado con Botón de Nueva Venta */}
       <AdminPageHeader
         title="Ventas & Pedidos"
@@ -1116,13 +1116,13 @@ export default function VentasManager({
               <select
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value as DateRangeFilter)}
-                className="min-h-[38px] px-2.5 py-1.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                className="min-h-[38px] px-3 py-1.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 cursor-pointer transition-all shadow-2xs"
               >
-                <option value="todos">Cualquier fecha</option>
-                <option value="hoy">Hoy</option>
-                <option value="7dias">Últimos 7 días</option>
-                <option value="30dias">Últimos 30 días</option>
-                <option value="este_mes">Este mes</option>
+                <option value="todos" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Cualquier fecha</option>
+                <option value="hoy" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Hoy</option>
+                <option value="7dias" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Últimos 7 días</option>
+                <option value="30dias" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Últimos 30 días</option>
+                <option value="este_mes" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Este mes</option>
               </select>
             </div>
 
@@ -1857,11 +1857,11 @@ export default function VentasManager({
                       <select
                         value={selectedCustomerId}
                         onChange={(e) => setSelectedCustomerId(e.target.value)}
-                        className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 cursor-pointer transition-all shadow-2xs"
                       >
-                        <option value="">-- Elige un cliente --</option>
+                        <option value="" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-2">-- Elige un cliente --</option>
                         {initialCustomers.map((c) => (
-                          <option key={c.id} value={c.id}>
+                          <option key={c.id} value={c.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-2">
                             {c.nombre} {c.telefono ? `(${c.telefono})` : ''} {c.email ? `· ${c.email}` : ''}
                           </option>
                         ))}
@@ -2120,12 +2120,12 @@ export default function VentasManager({
                     <select
                       value={manualMetodoPago}
                       onChange={(e) => setManualMetodoPago(e.target.value)}
-                      className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 cursor-pointer transition-all shadow-2xs"
                     >
-                      <option value="efectivo">Efectivo (Mostrador)</option>
-                      <option value="transferencia">Transferencia Bancaria</option>
-                      <option value="mercadopago">Mercado Pago / Débito</option>
-                      <option value="acordar">A convenir / Cuenta Corriente</option>
+                      <option value="efectivo" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Efectivo (Mostrador)</option>
+                      <option value="transferencia" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Transferencia Bancaria</option>
+                      <option value="mercadopago" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Mercado Pago / Débito</option>
+                      <option value="acordar" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">A convenir / Cuenta Corriente</option>
                     </select>
                   </div>
 
@@ -2136,11 +2136,11 @@ export default function VentasManager({
                     <select
                       value={manualTipoEntrega}
                       onChange={(e) => setManualTipoEntrega(e.target.value as any)}
-                      className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
+                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 cursor-pointer transition-all shadow-2xs"
                     >
-                      <option value="retiro">Entregado en local / Retiro</option>
-                      <option value="envio">Envío a domicilio</option>
-                      <option value="acordar">A coordinar</option>
+                      <option value="retiro" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Entregado en local / Retiro</option>
+                      <option value="envio" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Envío a domicilio</option>
+                      <option value="acordar" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">A coordinar</option>
                     </select>
                   </div>
 

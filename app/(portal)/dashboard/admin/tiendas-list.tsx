@@ -381,7 +381,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="min-h-[42px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-amber-400 cursor-pointer"
+              className="min-h-[42px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-[#FF5500] focus:ring-1 focus:ring-[#FF5500] cursor-pointer"
             >
               <option value="all">Todos los estados ({stores.length})</option>
               <option value="activa">Al día / Activas</option>
@@ -395,7 +395,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
             <select
               value={planFilter}
               onChange={(e) => setPlanFilter(e.target.value)}
-              className="min-h-[42px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-amber-400 cursor-pointer"
+              className="min-h-[42px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-[#FF5500] focus:ring-1 focus:ring-[#FF5500] cursor-pointer"
             >
               <option value="all">Todos los planes</option>
               <option value="maker_pro">Maker Pro</option>
@@ -476,7 +476,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                     <tr
                       key={store.id}
                       onClick={() => handleSelectStore(store)}
-                      className="hover:bg-amber-500/[0.04] dark:hover:bg-amber-400/[0.05] transition-colors cursor-pointer group"
+                      className="hover:bg-[#FF5500]/[0.04] transition-colors cursor-pointer group"
                     >
                       {/* Tienda: Logo + Nombre + Subdominio */}
                       <td className="py-3.5 px-4">
@@ -485,18 +485,18 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                             {store.logo_url ? (
                               <img src={store.logo_url} alt="" className="w-full h-full object-contain p-0.5" />
                             ) : (
-                              <span className="font-bold text-sm text-[#CA8A04] dark:text-[#FACC15]">
+                              <span className="font-bold text-sm text-[#FF5500]">
                                 {store.nombre.charAt(0).toUpperCase()}
                               </span>
                             )}
                           </div>
 
                           <div className="min-w-0">
-                            <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 block truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                            <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 block truncate group-hover:text-[#FF5500] transition-colors">
                               {store.nombre}
                             </span>
                             <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="font-mono text-[11px] text-[#CA8A04] dark:text-[#FACC15] truncate">
+                              <span className="font-mono text-[11px] text-zinc-500 dark:text-zinc-400 group-hover:text-[#FF5500] transition-colors truncate">
                                 {store.slug}.portalmaker.ar
                               </span>
                               <button
@@ -613,9 +613,9 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                             type="button"
                             onClick={() => handleSelectStore(store)}
                             title="Configurar Tienda en Página Completa"
-                            className="min-h-[34px] px-2.5 py-1 rounded-xl bg-amber-400/15 hover:bg-amber-400/25 text-[#CA8A04] dark:text-[#FACC15] font-semibold text-xs flex items-center gap-1 transition-all cursor-pointer"
+                            className="min-h-[34px] px-2.5 py-1 rounded-xl bg-[#FF5500]/15 hover:bg-[#FF5500]/25 text-[#FF5500] font-semibold text-xs flex items-center gap-1 transition-all cursor-pointer"
                           >
-                            <Sliders className="w-3.5 h-3.5" />
+                            <Sliders className="w-3.5 h-3.5 text-[#FF5500]" />
                             <span className="hidden sm:inline">Configurar</span>
                           </button>
 
@@ -625,7 +625,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                             title="Ingresar al Panel de Tienda"
                             className="min-h-[34px] p-2 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 opacity-80 hover:opacity-100 flex items-center justify-center transition-all"
                           >
-                            <Package className="w-3.5 h-3.5 text-[#CA8A04] dark:text-[#FACC15]" />
+                            <Package className="w-3.5 h-3.5 text-[#FF5500]" />
                           </Link>
 
                           {/* Visitar Tienda */}
@@ -680,7 +680,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
               <div
                 key={store.id}
                 onClick={() => handleSelectStore(store)}
-                className="p-5 rounded-2xl border border-[var(--color-borde)] bg-[var(--color-superficie)] hover:border-amber-400/50 transition-all space-y-4 shadow-2xs cursor-pointer group"
+                className="p-5 rounded-2xl border border-[var(--color-borde)] bg-[var(--color-superficie)] hover:border-[#FF5500]/50 transition-all space-y-4 shadow-2xs cursor-pointer group"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -688,16 +688,16 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                       {store.logo_url ? (
                         <img src={store.logo_url} alt="" className="w-full h-full object-contain p-1" />
                       ) : (
-                        <span className="font-bold text-base text-[#CA8A04] dark:text-[#FACC15]">
+                        <span className="font-bold text-base text-[#FF5500]">
                           {store.nombre.charAt(0).toUpperCase()}
                         </span>
                       )}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-base group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                      <h3 className="font-semibold text-base group-hover:text-[#FF5500] transition-colors">
                         {store.nombre}
                       </h3>
-                      <p className="font-mono text-xs text-[#CA8A04] dark:text-[#FACC15]">
+                      <p className="font-mono text-xs text-zinc-500 dark:text-zinc-400 group-hover:text-[#FF5500]">
                         {store.slug}.portalmaker.ar
                       </p>
                       {/* D3d: Alerta para superadmin si MP está conectado con 0% de comisión */}
@@ -741,10 +741,10 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                   <button
                     type="button"
                     onClick={() => handleSelectStore(store)}
-                    className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs font-semibold text-[#FF5500] hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <span>Configurar Tienda</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
+                    <ChevronRight className="w-3.5 h-3.5 text-[#FF5500]" />
                   </button>
 
                   <div className="flex items-center gap-1.5">
@@ -752,7 +752,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                       href={`/tienda/admin/productos?tenant=${store.slug}`}
                       className="min-h-[34px] px-2.5 py-1 rounded-xl border border-[var(--color-borde)] text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-1"
                     >
-                      <Package className="w-3.5 h-3.5 text-[#CA8A04]" />
+                      <Package className="w-3.5 h-3.5 text-[#FF5500]" />
                       <span>Admin</span>
                     </Link>
                     <Link

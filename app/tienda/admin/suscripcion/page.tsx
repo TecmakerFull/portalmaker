@@ -81,7 +81,7 @@ export default async function TiendaSuscripcionPage() {
   const planKeys: PlanKey[] = ['free', 'starter', 'maker_pro', 'enterprise']
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="w-full max-w-5xl mx-auto space-y-8 pb-12">
       {/* Cabecera */}
       <AdminPageHeader
         title="Suscripción & Plan"

@@ -245,7 +245,7 @@ export default function PagosForm({
   }
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="w-full max-w-5xl mx-auto space-y-6 pb-20">
       {/* Encabezado */}
       <AdminPageHeader
         title="Cobros & Transferencia"
