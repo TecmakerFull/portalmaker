@@ -33,7 +33,7 @@ export default function HeroQuickRegister() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="nombre@ejemplo.com"
+          placeholder="tucorreo@ejemplo.com"
           className="flex-1 min-w-0 bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
         />
         <button
