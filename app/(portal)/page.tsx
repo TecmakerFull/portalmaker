@@ -230,7 +230,7 @@ export default function PortalHomePage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           {/* Columna Izquierda: Los 4 Pasos */}
-          <div className="lg:col-span-7 space-y-4">
+          <div className="lg:col-span-6 space-y-4">
             {/* Paso 1 */}
             <div className="bg-[var(--color-superficie)] p-5 sm:p-6 rounded-3xl border border-[var(--color-borde)] shadow-xs flex items-start gap-4">
               <span className="text-2xl sm:text-3xl font-normal font-brand text-[#FF5500] shrink-0 mt-0.5">01</span>
@@ -277,16 +277,15 @@ export default function PortalHomePage() {
           </div>
 
           {/* Columna Derecha: Mockup 3D Flotante con Productos y Notificaciones */}
-          <div className="lg:col-span-5 flex justify-center">
-            <div className="relative w-full max-w-sm sm:max-w-md">
-              <div className="relative aspect-[16/10] sm:aspect-[16/9] lg:aspect-square rounded-3xl overflow-hidden">
-                <Image
-                  src="/images/mockup-tienda-mobile.png"
-                  alt="Mockup de tienda online mobile en Portalmaker con carrito y notificaciones de WhatsApp"
-                  fill
-                  className="object-contain drop-shadow-2xl"
-                />
-              </div>
+          <div className="lg:col-span-6 flex items-center justify-center w-full">
+            <div className="relative w-full h-[320px] sm:h-[420px] lg:h-[500px] xl:h-[520px]">
+              <Image
+                src="/images/mockup-tienda-mobile.png"
+                alt="Mockup de tienda online mobile en Portalmaker con carrito y notificaciones de WhatsApp"
+                fill
+                className="object-contain lg:scale-110 drop-shadow-2xl"
+                priority
+              />
             </div>
           </div>
         </div>
