@@ -28,9 +28,10 @@ export default function NewsletterSection({ storeId, storeName = 'nuestra tienda
     setLoading(true)
     try {
       if (storeId) {
+        // Usamos insert (anon solo tiene privilegio INSERT en newsletter_subscribers, nunca SELECT/UPDATE)
         await supabase
           .from('newsletter_subscribers')
-          .upsert([{ store_id: storeId, email: cleanEmail, activo: true }], { onConflict: 'store_id,email' })
+          .insert([{ store_id: storeId, email: cleanEmail, activo: true }])
       }
       setSubscribed(true)
     } catch (err) {

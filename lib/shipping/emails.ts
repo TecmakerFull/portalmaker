@@ -37,8 +37,9 @@ export async function sendBuyerOrderConfirmationEmail(params: {
     return { ok: false, error: 'Sin email de comprador' }
   }
 
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'Portalmaker <onboarding@resend.dev>'
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.portalmaker.ar'
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'Portalmaker <info@portalmaker.ar>'
+  const replyTo = store.email_contacto?.trim() || store.admin_email?.trim() || 'info@portalmaker.ar'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portalmaker.ar'
   const shortOrderId = order.id.slice(0, 8).toUpperCase()
   const trackingPageUrl = `${appUrl}/tienda/seguimiento/${order.public_token}`
 
@@ -148,6 +149,7 @@ export async function sendBuyerOrderConfirmationEmail(params: {
       body: JSON.stringify({
         from: fromEmail,
         to: [buyerEmail],
+        reply_to: replyTo,
         subject: `Pedido #${shortOrderId} confirmado en ${store.nombre}`,
         html,
       }),
@@ -183,8 +185,9 @@ export async function sendBuyerOrderDispatchedEmail(params: {
   const buyerEmail = order.email_comprador?.trim()
   if (!buyerEmail) return { ok: false, error: 'Sin email de comprador' }
 
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'Portalmaker <onboarding@resend.dev>'
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.portalmaker.ar'
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'Portalmaker <info@portalmaker.ar>'
+  const replyTo = store.email_contacto?.trim() || store.admin_email?.trim() || 'info@portalmaker.ar'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portalmaker.ar'
   const shortOrderId = order.id.slice(0, 8).toUpperCase()
   const trackingPageUrl = `${appUrl}/tienda/seguimiento/${order.public_token}`
 
@@ -246,6 +249,7 @@ export async function sendBuyerOrderDispatchedEmail(params: {
       body: JSON.stringify({
         from: fromEmail,
         to: [buyerEmail],
+        reply_to: replyTo,
         subject: `Tu pedido #${shortOrderId} de ${store.nombre} ya fue despachado`,
         html,
       }),
@@ -270,8 +274,9 @@ export async function sendBuyerOrderDeliveredEmail(params: {
   const buyerEmail = order.email_comprador?.trim()
   if (!buyerEmail) return { ok: false, error: 'Sin email de comprador' }
 
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'Portalmaker <onboarding@resend.dev>'
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.portalmaker.ar'
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'Portalmaker <info@portalmaker.ar>'
+  const replyTo = store.email_contacto?.trim() || store.admin_email?.trim() || 'info@portalmaker.ar'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portalmaker.ar'
   const shortOrderId = order.id.slice(0, 8).toUpperCase()
   const trackingPageUrl = `${appUrl}/tienda/seguimiento/${order.public_token}`
 
@@ -321,6 +326,7 @@ export async function sendBuyerOrderDeliveredEmail(params: {
       body: JSON.stringify({
         from: fromEmail,
         to: [buyerEmail],
+        reply_to: replyTo,
         subject: `Tu pedido #${shortOrderId} de ${store.nombre} fue entregado`,
         html,
       }),

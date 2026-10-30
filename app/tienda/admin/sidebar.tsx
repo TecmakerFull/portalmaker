@@ -209,6 +209,7 @@ export default function AdminSidebar({
         {/* 1. Inicio */}
         <Link
           href={`/tienda/admin${tenantQuery}`}
+          prefetch={true}
           className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
             isInicio
               ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
@@ -222,6 +223,7 @@ export default function AdminSidebar({
         {/* 2. Guía Paso a Paso */}
         <Link
           href={`/tienda/admin/guia${tenantQuery}`}
+          prefetch={true}
           className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
             isGuia
               ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
@@ -415,6 +417,7 @@ export default function AdminSidebar({
             <div className="ml-4 pl-3 border-l border-[var(--color-borde)] space-y-1 mt-1">
               <Link
                 href={`/tienda/admin/categorias${tenantQuery}`}
+                prefetch={true}
                 className={`min-h-[40px] flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   isCategorias
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
@@ -426,6 +429,7 @@ export default function AdminSidebar({
               </Link>
               <Link
                 href={`/tienda/admin/productos/nuevo${tenantQuery}`}
+                prefetch={true}
                 className={`min-h-[40px] flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   isNuevoProducto
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
@@ -437,6 +441,7 @@ export default function AdminSidebar({
               </Link>
               <Link
                 href={`/tienda/admin/productos${tenantQuery}`}
+                prefetch={true}
                 className={`min-h-[40px] flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   isProductosAdmin
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
@@ -455,6 +460,7 @@ export default function AdminSidebar({
         {canCheckout ? (
           <Link
             href={`/tienda/admin/ventas${tenantQuery}`}
+            prefetch={true}
             className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
               isVentas
                 ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
@@ -467,6 +473,7 @@ export default function AdminSidebar({
         ) : (
           <Link
             href={`/tienda/admin/ventas${tenantQuery}`}
+            prefetch={true}
             className="min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold opacity-45 hover:opacity-75 text-zinc-400 dark:text-zinc-500 transition-colors"
             title="Gestión de ventas y checkout disponible a partir de Nivel 2 (Starter)"
           >
@@ -485,6 +492,7 @@ export default function AdminSidebar({
         {canClientes ? (
           <Link
             href={`/tienda/admin/clientes${tenantQuery}`}
+            prefetch={true}
             className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
               isClientes
                 ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
@@ -497,6 +505,7 @@ export default function AdminSidebar({
         ) : (
           <Link
             href={`/tienda/admin/clientes${tenantQuery}`}
+            prefetch={true}
             className="min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold opacity-45 hover:opacity-75 text-zinc-400 dark:text-zinc-500 transition-colors"
             title="CRM de clientes disponible a partir de Nivel 2 (Starter)"
           >
@@ -515,6 +524,7 @@ export default function AdminSidebar({
         {canResenas ? (
           <Link
             href={`/tienda/admin/resenas${tenantQuery}`}
+            prefetch={true}
             className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
               isResenas
                 ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
@@ -527,6 +537,7 @@ export default function AdminSidebar({
         ) : (
           <Link
             href={`/tienda/admin/resenas${tenantQuery}`}
+            prefetch={true}
             className="min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold opacity-45 hover:opacity-75 text-zinc-400 dark:text-zinc-500 transition-colors"
             title="Reseñas de clientes disponibles a partir de Nivel 2 (Starter)"
           >
@@ -545,6 +556,7 @@ export default function AdminSidebar({
         {canColaboradores ? (
           <Link
             href={`/tienda/admin/colaboradores${tenantQuery}`}
+            prefetch={true}
             className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
               isColaboradores
                 ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
@@ -557,6 +569,7 @@ export default function AdminSidebar({
         ) : (
           <Link
             href={`/tienda/admin/colaboradores${tenantQuery}`}
+            prefetch={true}
             className="min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold opacity-45 hover:opacity-75 text-zinc-400 dark:text-zinc-500 transition-colors"
             title="Colaboradores de taller disponibles a partir de Nivel 2 (Starter)"
           >
@@ -574,6 +587,7 @@ export default function AdminSidebar({
         {/* Marketing & Suscriptores */}
         <Link
           href={`/tienda/admin/suscriptores${tenantQuery}`}
+          prefetch={true}
           className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
             isSuscriptores
               ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
@@ -606,6 +620,7 @@ export default function AdminSidebar({
             <div className="ml-4 pl-3 border-l border-[var(--color-borde)] space-y-1 mt-1">
               <Link
                 href={`/tienda/admin/perfil${tenantQuery}`}
+                prefetch={true}
                 className={`min-h-[40px] flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   isPerfil
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'
@@ -617,6 +632,7 @@ export default function AdminSidebar({
               </Link>
               <Link
                 href={`/tienda/admin/suscripcion${tenantQuery}`}
+                prefetch={true}
                 className={`min-h-[40px] flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   isSuscripcion
                     ? 'text-[#CA8A04] dark:text-[#FACC15] font-bold bg-[#FACC15]/10'

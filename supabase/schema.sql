@@ -1048,8 +1048,46 @@ create table if not exists store_collaborators (
 
 create index if not exists idx_store_collaborators_store on store_collaborators(store_id, estado);
 alter table store_collaborators enable row level security;
-create policy "allow_all_store_collaborators" on store_collaborators for all using (true) with check (true);
-grant select, insert, update, delete on store_collaborators to anon, authenticated, service_role;
+revoke all on store_collaborators from public, anon;
+grant select, insert, update, delete on store_collaborators to authenticated, service_role;
+
+create policy "store_collaborators_select" on store_collaborators
+  for select to authenticated
+  using (
+    is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_collaborator(store_id)
+    or lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  );
+
+create policy "store_collaborators_insert" on store_collaborators
+  for insert to authenticated
+  with check (
+    is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_admin_collaborator(store_id)
+  );
+
+create policy "store_collaborators_update" on store_collaborators
+  for update to authenticated
+  using (
+    is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_admin_collaborator(store_id)
+  )
+  with check (
+    is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_admin_collaborator(store_id)
+  );
+
+create policy "store_collaborators_delete" on store_collaborators
+  for delete to authenticated
+  using (
+    is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_admin_collaborator(store_id)
+  );
 
 
 -- =============================================================================
@@ -1068,8 +1106,49 @@ create table if not exists store_customers (
 
 create index if not exists idx_store_customers_store on store_customers(store_id, created_at desc);
 alter table store_customers enable row level security;
-create policy "allow_all_store_customers" on store_customers for all using (true) with check (true);
-grant select, insert, update, delete on store_customers to anon, authenticated, service_role;
+revoke all on store_customers from public, anon;
+grant select, insert, update, delete on store_customers to authenticated, service_role;
+
+create policy "store_customers_select" on store_customers
+  for select to authenticated
+  using (
+    is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_collaborator(store_id)
+    or lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  );
+
+create policy "store_customers_insert" on store_customers
+  for insert to authenticated
+  with check (
+    is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_collaborator(store_id)
+    or lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  );
+
+create policy "store_customers_update" on store_customers
+  for update to authenticated
+  using (
+    is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_collaborator(store_id)
+    or lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  )
+  with check (
+    is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_collaborator(store_id)
+    or lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  );
+
+create policy "store_customers_delete" on store_customers
+  for delete to authenticated
+  using (
+    is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_admin_collaborator(store_id)
+  );
 
 
 -- =============================================================================
@@ -1090,8 +1169,49 @@ create table if not exists product_reviews (
 create index if not exists idx_product_reviews_product on product_reviews(product_id, visible);
 create index if not exists idx_product_reviews_store on product_reviews(store_id, created_at desc);
 alter table product_reviews enable row level security;
-create policy "allow_all_product_reviews" on product_reviews for all using (true) with check (true);
-grant select, insert, update, delete on product_reviews to anon, authenticated, service_role;
+revoke all on product_reviews from public, anon;
+grant select on product_reviews to anon;
+grant select, insert, update, delete on product_reviews to authenticated, service_role;
+
+create policy "product_reviews_select" on product_reviews
+  for select
+  using (
+    visible = true
+    or is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_collaborator(store_id)
+    or lower(user_email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  );
+
+create policy "product_reviews_insert" on product_reviews
+  for insert to authenticated
+  with check (
+    lower(user_email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+    or is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_collaborator(store_id)
+  );
+
+create policy "product_reviews_admin_update" on product_reviews
+  for update to authenticated
+  using (
+    is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_collaborator(store_id)
+  )
+  with check (
+    is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_collaborator(store_id)
+  );
+
+create policy "product_reviews_admin_delete" on product_reviews
+  for delete to authenticated
+  using (
+    is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_collaborator(store_id)
+  );
 
 
 -- =============================================================================
@@ -1108,8 +1228,29 @@ create table if not exists newsletter_subscribers (
 
 create index if not exists idx_newsletter_subscribers_store on newsletter_subscribers(store_id, created_at desc);
 alter table newsletter_subscribers enable row level security;
-create policy "allow_all_newsletter_subscribers" on newsletter_subscribers for all using (true) with check (true);
-grant select, insert, update, delete on newsletter_subscribers to anon, authenticated, service_role;
+revoke all on newsletter_subscribers from public, anon;
+grant insert on newsletter_subscribers to anon;
+grant select, insert, update, delete on newsletter_subscribers to authenticated, service_role;
+
+create policy "newsletter_subscribers_public_insert" on newsletter_subscribers
+  for insert to anon, authenticated
+  with check (
+    email is not null
+    and length(trim(email)) > 3
+  );
+
+create policy "newsletter_subscribers_admin_all" on newsletter_subscribers
+  for all to authenticated
+  using (
+    is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_collaborator(store_id)
+  )
+  with check (
+    is_platform_admin()
+    or public.is_store_owner(store_id)
+    or public.is_store_collaborator(store_id)
+  );
 
 
 -- =============================================================================

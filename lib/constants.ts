@@ -13,13 +13,15 @@ export const PLATFORM = {
   /** Tagline de la plataforma */
   tagline: 'El portal del Maker',
   /** Dominio principal del portal (sin protocolo, sin www) */
-  domain: process.env.NEXT_PUBLIC_PORTAL_DOMAIN ?? 'portalmaker.com.ar',
+  domain: process.env.NEXT_PUBLIC_PORTAL_DOMAIN ?? 'portalmaker.ar',
   /** URL completa del portal */
-  url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://portalmaker.com.ar',
+  url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://portalmaker.ar',
   /** Número de WhatsApp de contacto y asesoramiento */
   whatsapp: process.env.NEXT_PUBLIC_PORTAL_WHATSAPP ?? '5493415866464',
-  /** Correo de contacto y soporte */
-  email: process.env.NEXT_PUBLIC_PORTAL_EMAIL ?? 'temperini@gmail.com',
+  /** Correo público de contacto y soporte */
+  email: process.env.NEXT_PUBLIC_PORTAL_EMAIL ?? 'info@portalmaker.ar',
+  /** Correo interno del administrador general para alertas y consultas */
+  adminNotificationEmail: process.env.ADMIN_NOTIFICATION_EMAIL ?? 'temperini@gmail.com',
 } as const;
 
 

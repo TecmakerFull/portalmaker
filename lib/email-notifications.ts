@@ -23,8 +23,9 @@ export async function sendOrderPaidNotification({ store, order }: SendOrderNotif
     return { ok: false, error: 'Sin email de destino' }
   }
 
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'Portalmaker <onboarding@resend.dev>'
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.portalmaker.ar'
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'Portalmaker <info@portalmaker.ar>'
+  const replyTo = order.email_comprador?.trim() || 'info@portalmaker.ar'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portalmaker.ar'
   const shortOrderId = order.id.slice(0, 8).toUpperCase()
 
   // Limpiar teléfono del comprador para enlace de WhatsApp
@@ -124,7 +125,7 @@ export async function sendOrderPaidNotification({ store, order }: SendOrderNotif
 
     <div class="footer">
       Este correo fue generado automáticamente por <strong>Portalmaker</strong> para tu tienda <strong>${store.nombre}</strong>.<br/>
-      portalmaker.com.ar — El portal del Maker
+      portalmaker.ar — El portal del Maker
     </div>
   </div>
 </body>
@@ -141,6 +142,7 @@ export async function sendOrderPaidNotification({ store, order }: SendOrderNotif
       body: JSON.stringify({
         from: fromEmail,
         to: [recipientEmail],
+        reply_to: replyTo,
         subject: `¡Nueva venta confirmada! $${Number(order.total).toLocaleString('es-AR')} - Pedido #${shortOrderId} (${store.nombre})`,
         html: htmlContent,
       }),
@@ -186,10 +188,11 @@ export async function notifyPlatformAlert({
   details,
   paymentId,
 }: PlatformAlertParams) {
-  const portalEmail = process.env.NEXT_PUBLIC_PORTAL_EMAIL || 'temperini@gmail.com'
+  // Las alertas internas del portal siempre llegan a la casilla administrativa (temperini@gmail.com)
+  const adminAlertEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'temperini@gmail.com'
   const storeEmail = store?.admin_email?.trim() || store?.email_contacto?.trim() || null
 
-  const recipients = Array.from(new Set([portalEmail, storeEmail].filter(Boolean))) as string[]
+  const recipients = Array.from(new Set([adminAlertEmail, storeEmail].filter(Boolean))) as string[]
 
   const alertTitles: Record<string, string> = {
     revision: 'ALERTA: Pedido enviado a REVISIÓN por discrepancia',
@@ -210,7 +213,7 @@ export async function notifyPlatformAlert({
     return { ok: false, error: 'RESEND_API_KEY no configurado' }
   }
 
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'Portalmaker <alertas@resend.dev>'
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'Portalmaker <info@portalmaker.ar>'
   const htmlContent = `
     <div style="font-family: sans-serif; padding: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; max-width: 600px;">
       <h2 style="color: #b91c1c; margin-top: 0;">${alertTitles[type] || 'Alerta de Mercado Pago'}</h2>

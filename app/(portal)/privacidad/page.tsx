@@ -168,10 +168,10 @@ export default function PrivacidadPage() {
             <p>
               Para solicitar la eliminación completa de tu cuenta o de tus datos personales, puedes escribirnos directamente a nuestro correo de privacidad:{' '}
               <a
-                href="mailto:temperini@gmail.com?subject=Solicitud%20de%20eliminacion%20de%20datos%20-%20Portalmaker"
+                href="mailto:info@portalmaker.ar?subject=Solicitud%20de%20eliminacion%20de%20datos%20-%20Portalmaker"
                 className="font-semibold text-[#CA8A04] dark:text-[#FACC15] hover:underline"
               >
-                temperini@gmail.com
+                info@portalmaker.ar
               </a>
               . Procesaremos tu solicitud dentro de los plazos legales establecidos.
             </p>
@@ -188,7 +188,7 @@ export default function PrivacidadPage() {
             </p>
             <div className="text-xs space-y-1 opacity-80">
               <p><strong>Responsable:</strong> Enrique Temperini (Portalmaker)</p>
-              <p><strong>Email:</strong> temperini@gmail.com</p>
+              <p><strong>Email:</strong> info@portalmaker.ar</p>
               <p><strong>Sitio Web Oficial:</strong> portalmaker.ar</p>
               <p><strong>Ubicación:</strong> Argentina</p>
             </div>

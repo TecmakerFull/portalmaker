@@ -106,8 +106,8 @@ export default function TerminosPage() {
             </h2>
             <p className="text-xs sm:text-sm">
               Por dudas o reclamos relativos a los Términos del Servicio, puedes contactarnos a{' '}
-              <a href="mailto:temperini@gmail.com" className="font-semibold text-[#CA8A04] dark:text-[#FACC15] hover:underline">
-                temperini@gmail.com
+              <a href="mailto:info@portalmaker.ar" className="font-semibold text-[#CA8A04] dark:text-[#FACC15] hover:underline">
+                info@portalmaker.ar
               </a>.
             </p>
           </section>

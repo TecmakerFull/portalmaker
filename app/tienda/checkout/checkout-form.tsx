@@ -453,20 +453,21 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
         }
       }
 
-      // Sincronizar datos del cliente en CRM y sesión de usuario
+      // Sincronizar datos del cliente en sesión si el usuario está autenticado
+      // (el alta en store_customers ya se realiza de forma segura en /api/checkout/orders)
       try {
-        await supabase.from('store_customers').upsert(
-          {
-            store_id: store.id,
-            email: email.trim().toLowerCase(),
-            nombre: nombre.trim(),
-            telefono: telefono.trim() || null,
-            ultimo_login: new Date().toISOString(),
-          },
-          { onConflict: 'store_id,email' }
-        )
         const { data: { user } } = await supabase.auth.getUser()
         if (user && user.email?.toLowerCase() === email.trim().toLowerCase()) {
+          await supabase.from('store_customers').upsert(
+            {
+              store_id: store.id,
+              email: email.trim().toLowerCase(),
+              nombre: nombre.trim(),
+              telefono: telefono.trim() || null,
+              ultimo_login: new Date().toISOString(),
+            },
+            { onConflict: 'store_id,email' }
+          )
           await supabase.auth.updateUser({
             data: {
               nombre: nombre.trim(),

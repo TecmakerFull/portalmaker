@@ -5,9 +5,45 @@
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server'
+import { verifyStoreAccess } from '@/lib/store-auth'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
 
 export async function POST(request: NextRequest) {
   try {
+    // 1. Limitar tasa de envíos por IP (máx 15 invitaciones cada 10 minutos)
+    const ip = getClientIp(request)
+    const rate = await checkRateLimit({
+      ip: `invite-collab:${ip}`,
+      maxPerIp: 15,
+      windowMs: 10 * 60 * 1000,
+    })
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes. Por favor espera unos minutos.' },
+        { status: 429 }
+      )
+    }
+
+    // 2. Exigir usuario autenticado
+    const supabase = await createSupabaseServerClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user?.email) {
+      return NextResponse.json({ error: 'No autenticado.' }, { status: 401 })
+    }
+
     const apiKey = process.env.RESEND_API_KEY
 
     if (!apiKey) {
@@ -33,12 +69,42 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portalmaker.ar'
-    const loginLink = `${appUrl}/tienda/admin?tenant=${storeSlug}`
+    // 3. Verificar que el usuario autenticado sea dueño, co-admin o superadmin de la tienda
+    const supabaseAdmin = createSupabaseAdminClient()
+    const { data: targetStore } = await supabaseAdmin
+      .from('stores')
+      .select('id, slug, nombre')
+      .eq('slug', String(storeSlug).trim().toLowerCase())
+      .maybeSingle()
 
-    // Remitente: usa RESEND_FROM_EMAIL si está definido (ej: "Portalmaker <hola@portalmaker.ar>"),
-    // o el remitente verificado de testing de Resend "onboarding@resend.dev"
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Portalmaker <onboarding@resend.dev>'
+    if (!targetStore) {
+      return NextResponse.json({ error: 'Tienda no encontrada.' }, { status: 404 })
+    }
+
+    const authResult = await verifyStoreAccess(user.email, targetStore.id, {
+      allowCollaborators: true,
+      requiredCollaboratorRoles: ['admin'],
+    })
+
+    if (!authResult.authorized) {
+      return NextResponse.json(
+        { error: authResult.error || 'No tienes permisos para invitar colaboradores en esta tienda.' },
+        { status: 403 }
+      )
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase()
+    const safeStoreName = escapeHtml(String(targetStore.nombre || storeName).trim())
+    const safeInvitadoPor = escapeHtml(String(invitadoPor || user.email).trim())
+    const safeRol = rol === 'admin' ? 'admin' : 'colaborador'
+    const safeEmail = escapeHtml(cleanEmail)
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portalmaker.ar'
+    const loginLink = `${appUrl}/tienda/admin?tenant=${encodeURIComponent(String(targetStore.slug))}`
+
+    // Remitente oficial verificado de Portalmaker en Resend
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Portalmaker <info@portalmaker.ar>'
+    const replyTo = user.email
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -64,12 +130,12 @@ export async function POST(request: NextRequest) {
     <div class="badge">Invitación de Equipo</div>
     <h1>Te han invitado a colaborar en una tienda</h1>
     <p>
-      Hola, <strong>${invitadoPor || 'El propietario'}</strong> te ha agregado como <strong>${rol}</strong> en el panel de administración de su tienda en <strong>Portalmaker</strong>.
+      Hola, <strong>${safeInvitadoPor}</strong> te ha agregado como <strong>${safeRol}</strong> en el panel de administración de su tienda en <strong>Portalmaker</strong>.
     </p>
 
     <div class="store-box">
-      <div class="store-name">${storeName}</div>
-      <div class="store-role">Rol asignado: ${rol === 'admin' ? 'Co-administrador' : 'Colaborador'}</div>
+      <div class="store-name">${safeStoreName}</div>
+      <div class="store-role">Rol asignado: ${safeRol === 'admin' ? 'Co-administrador' : 'Colaborador'}</div>
     </div>
 
     <p>
@@ -87,7 +153,7 @@ export async function POST(request: NextRequest) {
 
     <div class="footer">
       Portalmaker — "El portal del Maker"<br>
-      Este es un correo automático enviado a ${email}.
+      Este es un correo automático enviado a ${safeEmail}.
     </div>
   </div>
 </body>
@@ -102,8 +168,9 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         from: fromEmail,
-        to: [email],
-        subject: `Invitación para colaborar en la tienda ${storeName} — Portalmaker`,
+        to: [cleanEmail],
+        reply_to: replyTo,
+        subject: `Invitación para colaborar en la tienda ${targetStore.nombre || storeName} — Portalmaker`,
         html: htmlContent,
       }),
     })

@@ -432,6 +432,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No se pudo crear el pedido. Intenta nuevamente.' }, { status: 500 })
     }
 
+    // 7. Sincronizar cliente en CRM de la tienda (store_customers) desde servidor con service_role
+    if (cleanEmail) {
+      try {
+        await supabaseAdmin.from('store_customers').upsert(
+          {
+            store_id: store.id,
+            email: cleanEmail,
+            nombre: cleanNombre,
+            telefono: cleanTelefono || null,
+            ultimo_login: new Date().toISOString(),
+          },
+          { onConflict: 'store_id,email' }
+        )
+      } catch (crmErr) {
+        console.warn('Aviso no bloqueante registrando cliente en CRM:', crmErr)
+      }
+    }
+
     return NextResponse.json({
       success: true,
       orderId: createdOrder.id,

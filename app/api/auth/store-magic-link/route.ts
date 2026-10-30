@@ -53,8 +53,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ useFallbackOtp: true }, { status: 200 })
     }
 
-    // 2. Extraer dirección base del remitente (ej: "Portalmaker <notificaciones@portalmaker.ar>")
-    const rawFrom = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
+    // 2. Extraer dirección base del remitente (ej: "Portalmaker <info@portalmaker.ar>")
+    const rawFrom = process.env.RESEND_FROM_EMAIL || 'Portalmaker <info@portalmaker.ar>'
     const emailMatch = rawFrom.match(/<([^>]+)>/)
     const baseEmail = emailMatch ? emailMatch[1] : rawFrom.trim()
     const senderDisplayName = storeName ? `${storeName}` : 'Tu Tienda'

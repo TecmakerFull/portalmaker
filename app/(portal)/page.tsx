@@ -12,13 +12,14 @@ import ShippingFeaturesSection from './shipping-features-section'
 import HeroQuickRegister from './hero-quick-register'
 import StickyBottomCta from './sticky-bottom-cta'
 import PricingSection from './pricing-section'
+import PortalContactForm from './portal-contact-form'
 
 // Contacto oficial del portal
 const PORTAL_WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_PORTAL_WHATSAPP ?? '5493415866464'
-const PORTAL_EMAIL = process.env.NEXT_PUBLIC_PORTAL_EMAIL ?? 'temperini@gmail.com'
+const PORTAL_EMAIL = process.env.NEXT_PUBLIC_PORTAL_EMAIL ?? 'info@portalmaker.ar'
 
 const whatsappUrl = `https://wa.me/${PORTAL_WHATSAPP_NUMBER.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-  '¡Hola! Me comunico desde portalmaker.com.ar. Me gustaría recibir más información y asesoramiento para crear mi tienda online.'
+  '¡Hola! Me comunico desde portalmaker.ar. Me gustaría recibir más información y asesoramiento para crear mi tienda online.'
 )}`
 
 const mailtoUrl = `mailto:${PORTAL_EMAIL}?subject=${encodeURIComponent(
@@ -392,10 +393,14 @@ export default function PortalHomePage() {
               </div>
 
               <div className="pt-2 flex items-center gap-1.5 text-xs font-bold text-[#FF5500] group-hover:underline">
-                <span>Enviar un email</span>
+                <span>{PORTAL_EMAIL}</span>
                 <ArrowUpRight className="w-4 h-4" />
               </div>
             </a>
+          </div>
+
+          <div className="max-w-2xl mx-auto pt-2">
+            <PortalContactForm />
           </div>
         </div>
       </section>

@@ -5,9 +5,33 @@
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request)
+    const rate = await checkRateLimit({
+      ip: `ai-seo:${ip}`,
+      maxPerIp: 20,
+      windowMs: 10 * 60 * 1000,
+    })
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: 'Límite de generaciones alcanzado. Espera unos minutos.' },
+        { status: 429 }
+      )
+    }
+
+    const supabase = await createSupabaseServerClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user?.email) {
+      return NextResponse.json({ error: 'No autenticado.' }, { status: 401 })
+    }
+
     const apiKey =
       process.env.GEMINI_API_KEY ||
       process.env.GOOGLE_AI_API_KEY ||

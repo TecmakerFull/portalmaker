@@ -22,6 +22,7 @@ import {
   Loader2,
   ShieldAlert,
   Send,
+  MessageCircle,
 } from 'lucide-react'
 import { AdminPageHeader } from '../components/admin-page-header'
 
@@ -50,6 +51,11 @@ export default function ColaboradoresManager({
 
   // URL de acceso directo para compartir con el colaborador (vía portal central)
   const inviteLink = `https://portalmaker.ar/tienda/admin?tenant=${store.slug}`
+
+  // Enlace para compartir invitación por WhatsApp sin emojis (cumpliendo regla crítica #1)
+  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(
+    `Hola, te agregue como colaborador en el panel de administracion de la tienda ${store.nombre} en Portalmaker. Podes ingresar con tu correo desde este enlace: ${inviteLink}`
+  )}`
 
   // Copiar link de acceso rápido al portapapeles
   const handleCopyLink = async () => {
@@ -236,6 +242,15 @@ export default function ColaboradoresManager({
               </>
             )}
           </button>
+          <a
+            href={whatsappShareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="min-h-[44px] px-4 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <MessageCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span>Compartir por WhatsApp</span>
+          </a>
         </div>
       </div>
 

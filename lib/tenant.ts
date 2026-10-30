@@ -47,7 +47,12 @@ export const getTenantStore = cache(async function getTenantStore(): Promise<Ten
 
   const HOSTNAME_REGEX = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/i
 
-  // Columnas explícitas para stores (excluye notas_admin que pertenece a store_admin_notes)
+  // Columnas explícitas para stores en resolución general de tenant.
+  // Se excluyen deliberadamente notas_admin y campos sensibles bancarios/fiscales
+  // (transferencia_cbu_cvu, transferencia_alias, transferencia_cuit, origen_calle, origen_cuit, etc.)
+  // para que nunca se serialicen hacia Client Components de la vitrina pública.
+  // Las vistas privadas de administración (/admin/pagos, /admin/contacto, /admin/envios)
+  // consultan esos campos explícitamente en el servidor tras verificar isStoreAdmin.
   const EXPLICIT_STORE_COLUMNS = [
     'id', 'nombre', 'slug', 'custom_domain', 'custom_domain_verified',
     'admin_email', 'whatsapp_numero', 'slogan', 'logo_url', 'icono_url',
@@ -59,18 +64,14 @@ export const getTenantStore = cache(async function getTenantStore(): Promise<Ten
     'horario_atencion', 'mostrar_horarios', 'horarios_semanales', 'direccion', 'meta_title', 'meta_description',
     'ga_measurement_id', 'meta_pixel_id', 'google_maps_embed_url',
     'modo_operacion', 'checkout_activo', 'transferencia_activa',
-    'transferencia_alias', 'transferencia_cbu_cvu', 'transferencia_banco',
-    'transferencia_titular', 'transferencia_cuit', 'transferencia_instrucciones',
     'plan', 'precio_mensual', 'comision_portalmaker', 'mp_connected',
     'mp_recargo_porcentaje', 'estado_pago', 'limite_productos', 'features_override',
     'suscripcion_activa', 'fecha_inicio_suscripcion', 'fecha_proximo_vencimiento',
     'dias_gracia', 'created_at', 'updated_at',
-    // Envíos (solo ruta de dueño/superadmin; la vista pública expone únicamente flags no sensibles)
-    'envios_activo', 'origen_calle', 'origen_altura', 'origen_piso_depto',
-    'origen_localidad', 'origen_provincia', 'origen_codigo_postal', 'origen_cuit',
-    'origen_razon_social', 'origen_telefono', 'origen_email', 'envio_gratis_desde',
-    'envio_markup_porcentaje', 'envio_tarifa_fallback', 'envio_retiro_local_activo',
-    'envio_comision_incluye_envio'
+    // Flags públicos/operativos de envíos (sin domicilio de taller ni CUIT fiscal)
+    'envios_activo', 'origen_localidad', 'origen_provincia', 'origen_codigo_postal',
+    'envio_gratis_desde', 'envio_markup_porcentaje', 'envio_tarifa_fallback',
+    'envio_retiro_local_activo', 'envio_comision_incluye_envio'
   ].join(',')
 
   // Intentar cargar store con perfil completo si el usuario autenticado es el dueño o superadmin

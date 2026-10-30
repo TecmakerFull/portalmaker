@@ -137,13 +137,18 @@ export default async function ProductoDetallePage({ params }: PageProps) {
     hasSobreNosotros
   )
 
-  // 7. Obtener reseñas visibles del producto
-  const { data: reviews } = await supabase
+  // 7. Obtener reseñas visibles del producto y limpiar user_email para no exponerlo en el HTML público
+  const { data: rawReviews } = await supabase
     .from('product_reviews')
-    .select('*')
+    .select('id, store_id, product_id, user_name, rating, comentario, visible, created_at')
     .eq('product_id', product.id)
     .eq('visible', true)
     .order('created_at', { ascending: false })
+
+  const reviews = (rawReviews ?? []).map((r: any) => ({
+    ...r,
+    user_email: '',
+  }))
 
   // 8. Construcción de Schema.org JSON-LD (Product Rich Snippets para Google)
   const productImages = Array.isArray(product.imagenes) && product.imagenes.length > 0
