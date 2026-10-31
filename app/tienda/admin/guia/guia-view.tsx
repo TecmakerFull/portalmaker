@@ -439,14 +439,15 @@ export default function GuiaView({
             )}
           </button>
 
-          <Link
-            href={`/tienda${tenantQuery}`}
+          <a
+            href={storeUrl}
             target="_blank"
+            rel="noopener noreferrer"
             className="min-h-[44px] px-4 py-2 rounded-2xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shrink-0"
           >
             <ExternalLink className="w-4 h-4 opacity-60" />
             <span>Ver Tienda Pública</span>
-          </Link>
+          </a>
         </div>
       </div>
 

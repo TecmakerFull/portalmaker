@@ -414,14 +414,19 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
         description="Configurá de forma independiente los canales de atención, horarios semanales, ubicación del taller y redes sociales."
         icon={Phone}
         actions={
-          <Link
-            href={`/tienda/contacto${effectiveQuery}`}
+          <a
+            href={
+              store.custom_domain && store.custom_domain_verified
+                ? `https://${store.custom_domain}/contacto`
+                : `https://${store.slug}.portalmaker.ar/contacto`
+            }
             target="_blank"
+            rel="noopener noreferrer"
             className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[var(--color-borde)] text-xs sm:text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-colors self-start"
           >
             <ExternalLink className="w-4 h-4 opacity-70" />
             <span>Ver Página Pública</span>
-          </Link>
+          </a>
         }
       />
 

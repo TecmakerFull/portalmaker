@@ -34,7 +34,7 @@ export default async function MakerDashboardPage() {
   // 3. Buscar si el maker es dueño de tiendas
   const { data: stores } = await supabase
     .from('stores')
-    .select('id, nombre, slug, logo_url, custom_domain, suscripcion_activa, modo_operacion, plan, estado_pago, created_at, slogan, color_primario, color_secundario, color_fondo, font_heading')
+    .select('id, nombre, slug, logo_url, custom_domain, custom_domain_verified, suscripcion_activa, modo_operacion, plan, estado_pago, created_at, slogan, color_primario, color_secundario, color_fondo, font_heading')
     .ilike('admin_email', userEmail)
     .order('created_at', { ascending: false })
 
@@ -43,7 +43,7 @@ export default async function MakerDashboardPage() {
   // 4. Buscar si el usuario es colaborador activo de alguna tienda
   const { data: collabs } = await supabase
     .from('store_collaborators')
-    .select('id, rol, store:stores(id, nombre, slug, logo_url, custom_domain, suscripcion_activa, modo_operacion, plan, estado_pago, created_at, slogan, color_primario, color_secundario, color_fondo, font_heading)')
+    .select('id, rol, store:stores(id, nombre, slug, logo_url, custom_domain, custom_domain_verified, suscripcion_activa, modo_operacion, plan, estado_pago, created_at, slogan, color_primario, color_secundario, color_fondo, font_heading)')
     .eq('email', user.email)
     .eq('estado', 'activo')
 
@@ -206,14 +206,19 @@ export default async function MakerDashboardPage() {
                             <span>Productos</span>
                           </Link>
 
-                          <Link
-                            href={store.custom_domain ? `https://${store.custom_domain}` : `/tienda?tenant=${store.slug}`}
+                          <a
+                            href={
+                              store.custom_domain && store.custom_domain_verified
+                                ? `https://${store.custom_domain}`
+                                : `https://${store.slug}.portalmaker.ar`
+                            }
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--color-borde)] text-xs sm:text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all opacity-85 hover:opacity-100"
                           >
                             <ExternalLink className="w-4 h-4 opacity-60" />
                             <span>Ver Tienda</span>
-                          </Link>
+                          </a>
                         </div>
                       </div>
                     </div>
@@ -274,14 +279,19 @@ export default async function MakerDashboardPage() {
                             <span>Productos</span>
                           </Link>
 
-                          <Link
-                            href={store.custom_domain ? `https://${store.custom_domain}` : `/tienda?tenant=${store.slug}`}
+                          <a
+                            href={
+                              store.custom_domain && store.custom_domain_verified
+                                ? `https://${store.custom_domain}`
+                                : `https://${store.slug}.portalmaker.ar`
+                            }
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--color-borde)] text-xs sm:text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-all opacity-85 hover:opacity-100"
                           >
                             <ExternalLink className="w-4 h-4 opacity-60" />
                             <span>Ver Tienda</span>
-                          </Link>
+                          </a>
                         </div>
                       </div>
                     </div>

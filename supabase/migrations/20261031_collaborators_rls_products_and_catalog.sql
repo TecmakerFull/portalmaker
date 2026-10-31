@@ -214,3 +214,4 @@ create policy "admin_read_audit_log" on public.audit_log
     or public.is_store_owner(store_id)
     or public.is_store_collaborator(store_id)
   );
+

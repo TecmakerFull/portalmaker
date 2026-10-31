@@ -56,6 +56,7 @@ export type SuperadminStoreItem = {
   nombre: string
   slug: string
   custom_domain: string | null
+  custom_domain_verified?: boolean | null
   admin_email: string
   whatsapp_numero: string | null
   slogan: string | null
@@ -629,14 +630,19 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                           </Link>
 
                           {/* Visitar Tienda */}
-                          <Link
-                            href={`/tienda?tenant=${store.slug}`}
+                          <a
+                            href={
+                              store.custom_domain && store.custom_domain_verified
+                                ? `https://${store.custom_domain}`
+                                : `https://${store.slug}.portalmaker.ar`
+                            }
                             target="_blank"
+                            rel="noopener noreferrer"
                             title="Visitar Tienda Pública"
                             className="min-h-[34px] p-2 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 opacity-80 hover:opacity-100 flex items-center justify-center transition-all"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
-                          </Link>
+                          </a>
 
                           {/* Pausar / Activar */}
                           <button
@@ -755,14 +761,19 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                       <Package className="w-3.5 h-3.5 text-[#FF5500]" />
                       <span>Admin</span>
                     </Link>
-                    <Link
-                      href={`/tienda?tenant=${store.slug}`}
+                    <a
+                      href={
+                        store.custom_domain && store.custom_domain_verified
+                          ? `https://${store.custom_domain}`
+                          : `https://${store.slug}.portalmaker.ar`
+                      }
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="min-h-[34px] px-2.5 py-1 rounded-xl border border-[var(--color-borde)] text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-1"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                       <span>Visitar</span>
-                    </Link>
+                    </a>
                   </div>
                 </div>
               </div>

@@ -653,9 +653,14 @@ export default function AdminSidebar({
 
         {/* Enlace a Tienda Pública */}
         <div className="pt-4 mt-4 border-t border-[var(--color-borde)]">
-          <Link
-            href={`/tienda${tenantQuery}`}
+          <a
+            href={
+              store.custom_domain && store.custom_domain_verified
+                ? `https://${store.custom_domain}`
+                : `https://${store.slug}.portalmaker.ar`
+            }
             target="_blank"
+            rel="noopener noreferrer"
             className="min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
           >
             <div className="flex items-center gap-2.5">
@@ -663,7 +668,7 @@ export default function AdminSidebar({
               <span>Ver mi tienda</span>
             </div>
             <ExternalLink className="w-4 h-4 opacity-40" />
-          </Link>
+          </a>
         </div>
       </nav>
 

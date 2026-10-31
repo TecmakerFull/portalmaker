@@ -896,14 +896,19 @@ export default function ProductosTable({
                               <Edit className="w-4 h-4" />
                             </button>
 
-                            <Link
-                              href={`/tienda/productos/${product.slug}${tenantQuery}`}
+                            <a
+                              href={
+                                store.custom_domain && store.custom_domain_verified
+                                  ? `https://${store.custom_domain}/productos/${product.slug}`
+                                  : `https://${store.slug}.portalmaker.ar/productos/${product.slug}`
+                              }
                               target="_blank"
+                              rel="noopener noreferrer"
                               title="Ver en tienda pública"
                               className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
                             >
                               <ExternalLink className="w-4 h-4" />
-                            </Link>
+                            </a>
 
                             <button
                               type="button"

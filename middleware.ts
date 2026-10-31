@@ -164,6 +164,23 @@ export async function middleware(request: NextRequest) {
   // Permitido en desarrollo, previews de Vercel y también en el dominio principal del portal
   // (por ejemplo desde el panel de control o enlaces directos).
   if (tenantParam && isDevOrPreview) {
+    // En producción (portalmaker.ar / www.portalmaker.ar), si la ruta es de la tienda pública
+    // (no es /tienda/admin ni /admin), redirigir directamente al subdominio oficial de la tienda
+    // (ej: https://tecmaker3d.portalmaker.ar) para evitar problemas de ruteo en www y mostrar la URL limpia.
+    const isAdminPath =
+      nextUrl.pathname.startsWith('/tienda/admin') || nextUrl.pathname.startsWith('/admin')
+    if (isBasePortalDomain && !isAdminPath && /^[a-z0-9-]+$/i.test(tenantParam)) {
+      const cleanPath =
+        nextUrl.pathname === '/tienda'
+          ? '/'
+          : nextUrl.pathname.replace(/^\/tienda(?=\/|$)/, '') || '/'
+      const targetUrl = new URL(`https://${tenantParam.toLowerCase()}.portalmaker.ar${cleanPath}`)
+      nextUrl.searchParams.forEach((val, key) => {
+        if (key !== 'tenant') targetUrl.searchParams.set(key, val)
+      })
+      return applySecurityHeaders(NextResponse.redirect(targetUrl, 307))
+    }
+
     requestHeaders.set('x-store-slug', tenantParam)
     requestHeaders.set('x-tenant-source', 'query-param-dev')
 

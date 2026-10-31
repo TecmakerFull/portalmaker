@@ -342,15 +342,20 @@ export default function BannersManager({
         description="Mostrá hasta 3 anuncios o novedades debajo del header con botones de acceso directo."
         icon={ImageIcon}
         actions={
-          <Link
-            href={`/tienda${tenantQuery}`}
+          <a
+            href={
+              store.custom_domain && store.custom_domain_verified
+                ? `https://${store.custom_domain}`
+                : `https://${store.slug}.portalmaker.ar`
+            }
             target="_blank"
+            rel="noopener noreferrer"
             className="min-h-[44px] px-4 py-2.5 rounded-xl border border-[var(--color-borde)] text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-2"
           >
             <Eye className="w-4 h-4 opacity-70" />
             <span>Ver mi tienda</span>
             <ExternalLink className="w-3.5 h-3.5 opacity-40" />
-          </Link>
+          </a>
         }
       />
 

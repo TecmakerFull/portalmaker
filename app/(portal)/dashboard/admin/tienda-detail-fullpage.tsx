@@ -750,14 +750,19 @@ export default function SuperadminTiendaDetailFullpage({
               <span className="hidden sm:inline">Panel Tienda</span>
             </Link>
 
-            <Link
-              href={`/tienda?tenant=${store.slug}`}
+            <a
+              href={
+                store.custom_domain && store.custom_domain_verified
+                  ? `https://${store.custom_domain}`
+                  : `https://${store.slug}.portalmaker.ar`
+              }
               target="_blank"
+              rel="noopener noreferrer"
               className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold flex items-center gap-1.5 transition-all"
             >
               <ExternalLink className="w-3.5 h-3.5 opacity-70" />
               <span className="hidden sm:inline">Visitar Tienda</span>
-            </Link>
+            </a>
 
             <button
               type="button"
