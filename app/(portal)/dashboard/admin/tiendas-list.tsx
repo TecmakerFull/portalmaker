@@ -56,6 +56,7 @@ export type SuperadminStoreItem = {
   nombre: string
   slug: string
   custom_domain: string | null
+  custom_domain_verified?: boolean | null
   admin_email: string
   whatsapp_numero: string | null
   slogan: string | null
