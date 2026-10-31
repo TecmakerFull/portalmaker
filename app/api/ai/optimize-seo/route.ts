@@ -71,7 +71,9 @@ ${categoria ? `- Categoría: ${categoria}` : ''}
 ${descripcion ? `- Descripción: ${descripcion.substring(0, 400)}` : ''}
 ${storeName ? `- Tienda: ${storeName}` : ''}`
 
-    const models = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash']
+    // Priorizar gemini-3.5-flash-lite (~800ms) y gemini-3.5-flash (modelos activos v1beta)
+    // eliminando gemini-2.5-flash y gemini-2.0-flash que fueron retirados por Google.
+    const models = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-3.8-flash']
     let parsedResult = null
     let lastError = null
 
@@ -82,15 +84,13 @@ ${storeName ? `- Tienda: ${storeName}` : ''}`
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: AbortSignal.timeout(8000),
             body: JSON.stringify({
               contents: [{ role: 'user', parts: [{ text: `${systemInstruction}\n\n${userPrompt}` }] }],
               generationConfig: {
                 temperature: 0.4,
                 responseMimeType: 'application/json',
                 maxOutputTokens: 1000,
-                thinkingConfig: {
-                  thinkingBudget: 0,
-                },
               },
             }),
           }

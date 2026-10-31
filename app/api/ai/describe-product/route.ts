@@ -86,8 +86,9 @@ ${promptDetalles ? `- Puntos clave / Prompt del maker: ${promptDetalles}` : ''}
 
 Recuerda: Cero emojis, redacción profesional, estructura concisa con viñetas y formato Markdown.`
 
-    // Intentar invocar gemini-3.8-flash (o fallback a gemini-3.5-flash y gemini-flash-latest)
-    const models = ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-flash-latest']
+    // Priorizar gemini-3.5-flash-lite (~800ms) y gemini-3.5-flash con timeout por intento
+    // para evitar esperas prolongadas si un modelo presenta saturación temporal.
+    const models = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-3.8-flash']
     let generatedText = ''
     let lastError = null
 
@@ -100,6 +101,7 @@ Recuerda: Cero emojis, redacción profesional, estructura concisa con viñetas y
             headers: {
               'Content-Type': 'application/json',
             },
+            signal: AbortSignal.timeout(8000),
             body: JSON.stringify({
               contents: [
                 {
@@ -109,10 +111,7 @@ Recuerda: Cero emojis, redacción profesional, estructura concisa con viñetas y
               ],
               generationConfig: {
                 temperature: 0.7,
-                maxOutputTokens: 2500,
-                thinkingConfig: {
-                  thinkingBudget: 0,
-                },
+                maxOutputTokens: 1500,
               },
             }),
           }
