@@ -56,7 +56,6 @@ export type SuperadminStoreItem = {
   nombre: string
   slug: string
   custom_domain: string | null
-  custom_domain_verified?: boolean | null
   admin_email: string
   whatsapp_numero: string | null
   slogan: string | null
@@ -411,11 +410,10 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                 type="button"
                 onClick={() => setViewMode('lista')}
                 title="Vista en Lista compacta"
-                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                  viewMode === 'lista'
+                className={`p-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'lista'
                     ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs'
                     : 'opacity-50 hover:opacity-100'
-                }`}
+                  }`}
               >
                 <LayoutList className="w-4 h-4" />
               </button>
@@ -423,11 +421,10 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                 type="button"
                 onClick={() => setViewMode('tarjetas')}
                 title="Vista en Tarjetas"
-                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                  viewMode === 'tarjetas'
+                className={`p-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'tarjetas'
                     ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs'
                     : 'opacity-50 hover:opacity-100'
-                }`}
+                  }`}
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
@@ -593,13 +590,12 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                           </div>
                           <div className="h-1.5 w-full bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
                             <div
-                              className={`h-full rounded-full transition-all ${
-                                usagePercent >= 100
+                              className={`h-full rounded-full transition-all ${usagePercent >= 100
                                   ? 'bg-red-500'
                                   : usagePercent >= 80
-                                  ? 'bg-amber-500'
-                                  : 'bg-emerald-500'
-                              }`}
+                                    ? 'bg-amber-500'
+                                    : 'bg-emerald-500'
+                                }`}
                               style={{ width: `${usagePercent}%` }}
                             />
                           </div>
@@ -650,11 +646,10 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
                             disabled={loadingId === store.id}
                             onClick={() => toggleSuscripcion(store.id, store.suscripcion_activa)}
                             title={store.suscripcion_activa ? 'Pausar tienda' : 'Activar tienda'}
-                            className={`min-h-[34px] p-2 rounded-xl border transition-all cursor-pointer ${
-                              store.suscripcion_activa
+                            className={`min-h-[34px] p-2 rounded-xl border transition-all cursor-pointer ${store.suscripcion_activa
                                 ? 'border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30'
                                 : 'border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
-                            }`}
+                              }`}
                           >
                             {loadingId === store.id ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
