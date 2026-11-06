@@ -112,6 +112,32 @@ export async function removeDomainFromVercel(rawDomain: string): Promise<VercelD
 }
 
 /**
+ * Indica si el dominio está asignado a NUESTRO proyecto y Vercel dio por
+ * verificada su titularidad. Se combina con checkDomainStatusInVercel porque
+ * ese endpoint solo mira el DNS: un dominio de otra cuenta de Vercel también
+ * "apunta a Vercel", pero no está verificado en este proyecto.
+ */
+export async function isDomainVerifiedForProject(rawDomain: string): Promise<boolean> {
+  const token = process.env.VERCEL_AUTH_TOKEN
+  const projectId = process.env.VERCEL_PROJECT_ID
+  if (!token || !projectId) return false
+
+  const apex = rawDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^www\./, '')
+
+  try {
+    const res = await fetch(`https://api.vercel.com/v9/projects/${projectId}/domains/${apex}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    })
+    if (!res.ok) return false
+    const data = await res.json()
+    return data?.verified === true
+  } catch {
+    return false
+  }
+}
+
+/**
  * Consulta en tiempo real el estado de configuración DNS y verificación en Vercel.
  */
 export async function checkDomainStatusInVercel(rawDomain: string): Promise<{

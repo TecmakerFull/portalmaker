@@ -375,16 +375,16 @@ export default function GuiaView({
       summary: 'Conecta tu dominio propio (.com.ar o .ar) mediante delegación en NIC.ar o registros A y CNAME en Cloudflare / DonWeb.',
       details: [
         {
-          sub: 'Opción 1: Delegar directo en NIC.ar (La más fácil)',
-          desc: 'En nic.ar pulsa "Delegar" y pega: Servidor 1: ns1.vercel-dns.com y Servidor 2: ns2.vercel-dns.com.',
+          sub: 'Opción 1: Delegar directo en NIC.ar (la más fácil)',
+          desc: 'En nic.ar entrá a "Delegaciones" de tu dominio. Tocá "+ Agregar una nueva delegación", escribí ns1.vercel-dns.com en Host y tocá el disquete (Guardar) de esa fila. Repetí con ns2.vercel-dns.com. Recién con las dos filas guardadas tocá "Ejecutar cambios". En la sección Dominio Propio tenés el paso a paso con imagen.',
         },
         {
           sub: 'Opción 2: Usar registros A y CNAME (Cloudflare / DonWeb)',
           desc: 'Crea un Registro A con nombre @ apuntando a 76.76.21.21 y un Registro CNAME con nombre www apuntando a cname.vercel-dns.com.',
         },
         {
-          sub: 'Propagación y Candado SSL Gratis',
-          desc: 'La propagación demora entre 2 y 12 horas. Una vez propagado, el certificado de seguridad HTTPS se activa automáticamente sin costo.',
+          sub: 'Propagación, verificación y candado SSL gratis',
+          desc: 'La propagación demora entre 1 y 24 horas. Después tocá "Comprobar estado" en Dominio Propio: cuando diga "Activo y Verificado", el dominio queda listo y el certificado HTTPS se activa solo, sin costo.',
         },
       ],
     },

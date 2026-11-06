@@ -16,6 +16,7 @@ import {
   addDomainToVercel,
   removeDomainFromVercel,
   checkDomainStatusInVercel,
+  isDomainVerifiedForProject,
 } from '@/lib/vercel-domains'
 
 // Dominios de la plataforma que jamás pueden vincularse ni desvincularse como
@@ -166,15 +167,43 @@ export async function removeCustomDomainAction(storeId: string) {
   return { success: true }
 }
 
-export async function checkCustomDomainAction(domain: string) {
-  if (!domain) return { configured: false, verified: false, misconfigured: false }
+/**
+ * Comprueba el dominio de la tienda en Vercel y, si está bien configurado,
+ * lo marca como verificado (custom_domain_verified = true).
+ *
+ * Por qué se verifica acá: varios flujos (login de compradores en el dominio
+ * propio, retorno de Mercado Pago) solo confían en dominios verificados. Que
+ * el DNS apunte a nosotros Y que Vercel confirme el dominio en nuestro
+ * proyecto prueba que el dueño controla el dominio, así que no hace falta
+ * intervención manual del superadmin.
+ */
+export async function checkCustomDomainAction(storeId: string) {
+  const empty = { configured: false, verified: false, misconfigured: false }
+  if (!storeId) return empty
 
-  // Evita que cualquiera use nuestro token de Vercel como servicio de consulta DNS.
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { configured: false, verified: false, misconfigured: false }
+  // Requiere permisos sobre la tienda; el dominio se lee de la base, no del cliente.
+  const auth = await requireDomainManager(storeId)
+  const store = auth.store!
+  const domain = store.custom_domain ? normalizeDomain(store.custom_domain) : null
+  if (!domain || isReservedDomain(domain)) return empty
 
-  return await checkDomainStatusInVercel(normalizeDomain(domain))
+  const [status, projectVerified] = await Promise.all([
+    checkDomainStatusInVercel(domain),
+    isDomainVerifiedForProject(domain),
+  ])
+
+  const isVerified = status.configured && projectVerified
+
+  // Solo se marca como verificado (nunca se desmarca acá): una caída momentánea
+  // de la API de Vercel no debe romper el login en un dominio que ya funcionaba.
+  if (isVerified && !store.custom_domain_verified) {
+    const supabaseAdmin = createSupabaseAdminClient()
+    await supabaseAdmin
+      .from('stores')
+      .update({ custom_domain_verified: true, updated_at: new Date().toISOString() })
+      .eq('id', store.id)
+      .eq('custom_domain', store.custom_domain)
+  }
+
+  return { ...status, verified: isVerified }
 }

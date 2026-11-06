@@ -19,13 +19,13 @@ import {
   AlertCircle,
   Copy,
   ExternalLink,
-  ShieldCheck,
   CheckCircle2,
   Trash2,
   BookOpen,
-  Sparkles,
   Server,
   RefreshCw,
+  Plus,
+  Save,
 } from 'lucide-react'
 import { AdminPageHeader } from '../components/admin-page-header'
 
@@ -53,12 +53,19 @@ export default function DominioManager({
 
   // Comprobar estado si ya tiene un dominio vinculado
   useEffect(() => {
+    // La comprobación también marca el dominio como verificado en la base si
+    // Vercel lo confirma; se refresca para que el resto del panel lo refleje.
     if (store.custom_domain) {
-      checkCustomDomainAction(store.custom_domain).then((res) => {
-        setVerificationResult(res)
-      })
+      checkCustomDomainAction(store.id)
+        .then((res) => {
+          setVerificationResult(res)
+          if (res.verified && !store.custom_domain_verified) router.refresh()
+        })
+        .catch(() => {
+          // Sin permisos de administración o Vercel no disponible: se deja el estado pendiente.
+        })
     }
-  }, [store.custom_domain])
+  }, [store.custom_domain, store.custom_domain_verified, store.id, router])
 
   const handleCopy = (text: string, fieldId: string) => {
     navigator.clipboard.writeText(text)
@@ -70,8 +77,9 @@ export default function DominioManager({
     if (!store.custom_domain) return
     setVerifying(true)
     try {
-      const res = await checkCustomDomainAction(store.custom_domain)
+      const res = await checkCustomDomainAction(store.id)
       setVerificationResult(res)
+      if (res.verified && !store.custom_domain_verified) router.refresh()
     } catch (e: any) {
       console.error(e)
     } finally {
@@ -279,7 +287,7 @@ export default function DominioManager({
           </div>
           <h2 className="text-base font-bold">2. Servidores para delegar en NIC Argentina</h2>
           <p className="text-xs opacity-70 mt-0.5">
-            Ingresa al portal de <strong>NIC.ar</strong> con tu CUIT y Clave Fiscal, busca tu dominio, presiona <strong>&quot;Delegar&quot;</strong> e ingresa estos servidores de nombres:
+            En NIC.ar, entrá a <strong>Delegaciones</strong> de tu dominio y cargá estos dos servidores. Más abajo tenés el paso a paso con imagen.
           </p>
         </div>
 
@@ -382,84 +390,143 @@ export default function DominioManager({
         </div>
       </div>
 
-      {/* 3. Tutorial Ilustrado Paso a Paso */}
+      {/* 3. Tutorial paso a paso en NIC.ar.
+          Los pasos reflejan la pantalla real de "Delegaciones" de NIC.ar: cada
+          servidor es una fila que se guarda con su propio botón (disquete) y
+          recién después se confirma todo con "Ejecutar cambios". Saltear el
+          disquete es el error más común: NIC.ar descarta la fila sin avisar. */}
       <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-6">
         <div>
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#CA8A04] dark:text-[#FACC15] mb-1">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#CA8A04] dark:text-[#FACC15] mb-1">
             <BookOpen className="w-4 h-4" />
-            <span>Instructivo Simple</span>
+            <span>Instructivo paso a paso</span>
           </div>
-          <h2 className="text-lg font-bold font-[var(--font-heading)]">
-            Paso a paso en NIC Argentina (nic.ar)
+          <h2 className="text-lg font-semibold font-[var(--font-heading)]">
+            Cómo delegar tu dominio en NIC Argentina (nic.ar)
           </h2>
           <p className="text-xs opacity-70 mt-0.5">
-            Sigue estos pasos para conectar tu dominio propio a la infraestructura de Portalmaker:
+            Para dominios .com.ar o .ar registrados en NIC.ar. Te lleva unos 5 minutos.
           </p>
         </div>
 
-        <div className="space-y-4">
+        <ol className="space-y-4">
           {/* Paso 1 */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-[var(--color-fondo)]/50 border border-[var(--color-borde)] space-y-2">
-            <div className="flex items-center justify-between gap-3">
+          <li className="p-4 sm:p-5 rounded-2xl bg-[var(--color-fondo)]/50 border border-[var(--color-borde)] space-y-2">
+            <div className="flex items-center gap-2.5">
+              <StepNumber n={1} />
+              <h3 className="font-semibold text-sm">Guardá tu dominio en este panel</h3>
+            </div>
+            <p className="text-xs opacity-75 pl-8 leading-relaxed">
+              Escribí tu dominio en el recuadro <strong>1</strong> de esta página (por ejemplo <code>mitienda.com.ar</code>) y tocá <strong>Guardar Dominio</strong>. Así la plataforma ya lo reconoce como tuyo.
+            </p>
+          </li>
+
+          {/* Paso 2 */}
+          <li className="p-4 sm:p-5 rounded-2xl bg-[var(--color-fondo)]/50 border border-[var(--color-borde)] space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <span className="w-6 h-6 rounded-full bg-[#FACC15] text-[#1F2937] font-bold text-xs flex items-center justify-center shrink-0">
-                  1
-                </span>
-                <h3 className="font-bold text-sm">Ingresar a NIC Argentina</h3>
+                <StepNumber n={2} />
+                <h3 className="font-semibold text-sm">Entrá a NIC.ar y abrí &quot;Delegaciones&quot;</h3>
               </div>
               <a
                 href="https://nic.ar"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs font-bold text-[#CA8A04] dark:text-[#FACC15] hover:underline inline-flex items-center gap-1"
+                className="min-h-11 px-3 rounded-xl border border-[var(--color-borde)] text-xs font-semibold text-[#CA8A04] dark:text-[#FACC15] hover:bg-black/5 dark:hover:bg-white/5 inline-flex items-center gap-1.5"
               >
                 <span>Abrir NIC.ar</span>
-                <ExternalLink className="w-3 h-3" />
+                <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
             <p className="text-xs opacity-75 pl-8 leading-relaxed">
-              Ingresa en <a href="https://nic.ar" target="_blank" rel="noopener noreferrer" className="underline font-semibold">nic.ar</a> con tu CUIT y Clave Fiscal AFIP y ve a tu lista de dominios registrados.
+              Ingresá con tu CUIT/CUIL y <strong>Clave Fiscal</strong> (ARCA, ex AFIP). En la lista de tus dominios, elegí el que querés conectar y entrá a la opción <strong>Delegaciones</strong>.
             </p>
-          </div>
-
-          {/* Paso 2 */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-[var(--color-fondo)]/50 border border-[var(--color-borde)] space-y-2">
-            <div className="flex items-center gap-2.5">
-              <span className="w-6 h-6 rounded-full bg-[#FACC15] text-[#1F2937] font-bold text-xs flex items-center justify-center shrink-0">
-                2
-              </span>
-              <h3 className="font-bold text-sm">Hacer clic en &quot;Delegar&quot;</h3>
-            </div>
             <p className="text-xs opacity-75 pl-8 leading-relaxed">
-              Al lado de tu dominio, pulsa el botón <strong>&quot;Delegar&quot;</strong>, haz clic en <strong>&quot;Agregar Servidor&quot;</strong> y pega los dos servidores de arriba:
+              Si ya aparecen servidores cargados que no son los de abajo (por ejemplo, de un hosting anterior), borralos con el ícono del <Trash2 className="inline w-3.5 h-3.5 -mt-0.5" aria-label="tacho de basura" /> tacho. Tienen que quedar <strong>solo</strong> los dos servidores de Portalmaker.
             </p>
-            <div className="pl-8 pt-1 space-y-1 font-mono text-xs text-[#CA8A04] dark:text-[#FACC15]">
-              <div className="p-2 rounded-lg bg-black/5 dark:bg-white/5 font-bold">
-                Host 1: ns1.vercel-dns.com
-              </div>
-              <div className="p-2 rounded-lg bg-black/5 dark:bg-white/5 font-bold">
-                Host 2: ns2.vercel-dns.com
-              </div>
-            </div>
-          </div>
+          </li>
 
           {/* Paso 3 */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-[var(--color-fondo)]/50 border border-[var(--color-borde)] space-y-2">
+          <li className="p-4 sm:p-5 rounded-2xl bg-[var(--color-fondo)]/50 border border-[var(--color-borde)] space-y-3">
             <div className="flex items-center gap-2.5">
-              <span className="w-6 h-6 rounded-full bg-[#FACC15] text-[#1F2937] font-bold text-xs flex items-center justify-center shrink-0">
-                3
-              </span>
-              <h3 className="font-bold text-sm">Propagación y Certificado de Seguridad</h3>
+              <StepNumber n={3} />
+              <h3 className="font-semibold text-sm">Agregá el primer servidor y guardalo</h3>
+            </div>
+            <div className="text-xs opacity-75 pl-8 leading-relaxed space-y-1.5">
+              <p>
+                Tocá <strong><Plus className="inline w-3.5 h-3.5 -mt-0.5" aria-hidden="true" /> Agregar una nueva delegación</strong>. Aparece una fila vacía: en <strong>Host</strong> pegá este servidor. Los campos IPv4 e IPv6 dejalos vacíos.
+              </p>
+            </div>
+            <div className="pl-8">
+              <CopyRow value="ns1.vercel-dns.com" id="ns1-step" copiedField={copiedField} onCopy={handleCopy} />
             </div>
             <p className="text-xs opacity-75 pl-8 leading-relaxed">
-              Guarda los cambios en NIC.ar y en este panel. La propagación en los DNS de Argentina suele demorar entre <strong>2 y 12 horas</strong>. Una vez propagado, el certificado SSL (candado HTTPS) se activa de forma automática y gratuita.
+              Después tocá el <strong><Save className="inline w-3.5 h-3.5 -mt-0.5" aria-hidden="true" /> disquete</strong> (Guardar) de esa misma fila.
+            </p>
+          </li>
+
+          {/* Paso 4 */}
+          <li className="p-4 sm:p-5 rounded-2xl bg-[var(--color-fondo)]/50 border border-[var(--color-borde)] space-y-3">
+            <div className="flex items-center gap-2.5">
+              <StepNumber n={4} />
+              <h3 className="font-semibold text-sm">Repetí con el segundo servidor</h3>
+            </div>
+            <p className="text-xs opacity-75 pl-8 leading-relaxed">
+              Tocá otra vez <strong><Plus className="inline w-3.5 h-3.5 -mt-0.5" aria-hidden="true" /> Agregar una nueva delegación</strong>, pegá este servidor en <strong>Host</strong> y tocá el <strong><Save className="inline w-3.5 h-3.5 -mt-0.5" aria-hidden="true" /> disquete</strong> de esa fila:
+            </p>
+            <div className="pl-8">
+              <CopyRow value="ns2.vercel-dns.com" id="ns2-step" copiedField={copiedField} onCopy={handleCopy} />
+            </div>
+          </li>
+
+          {/* Paso 5 */}
+          <li className="p-4 sm:p-5 rounded-2xl bg-[var(--color-fondo)]/50 border border-[var(--color-borde)] space-y-3">
+            <div className="flex items-center gap-2.5">
+              <StepNumber n={5} />
+              <h3 className="font-semibold text-sm">Revisá y tocá &quot;Ejecutar cambios&quot;</h3>
+            </div>
+            <p className="text-xs opacity-75 pl-8 leading-relaxed">
+              Tienen que quedar las dos filas como en esta imagen. Recién ahí tocá <strong>Ejecutar cambios</strong> al pie de la página de NIC.ar.
+            </p>
+            <figure className="pl-8 space-y-1.5">
+              {/* Se abre en una pestaña nueva para verla en tamaño completo (tap en mobile). */}
+              <a href="/images/guias/nic-delegaciones.png" target="_blank" rel="noopener noreferrer" className="block">
+                <img
+                  src="/images/guias/nic-delegaciones.png"
+                  alt="Pantalla de Delegaciones de NIC.ar con las filas ns1.vercel-dns.com y ns2.vercel-dns.com cargadas, y el botón Ejecutar cambios"
+                  loading="lazy"
+                  width={1381}
+                  height={731}
+                  className="w-full h-auto rounded-xl border border-[var(--color-borde)] bg-white"
+                />
+              </a>
+              <figcaption className="text-[11px] opacity-60">
+                Ejemplo de cómo deben quedar las delegaciones. Tocá la imagen para verla más grande.
+              </figcaption>
+            </figure>
+            <div className="ml-8 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-800 dark:text-amber-300 flex gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                <strong>Importante:</strong> si tocás &quot;Ejecutar cambios&quot; sin haber guardado cada fila con su disquete, NIC.ar no registra ese servidor y tu dominio no va a funcionar.
+              </span>
+            </div>
+          </li>
+
+          {/* Paso 6 */}
+          <li className="p-4 sm:p-5 rounded-2xl bg-[var(--color-fondo)]/50 border border-[var(--color-borde)] space-y-2">
+            <div className="flex items-center gap-2.5">
+              <StepNumber n={6} />
+              <h3 className="font-semibold text-sm">Esperá la propagación y comprobá</h3>
+            </div>
+            <p className="text-xs opacity-75 pl-8 leading-relaxed">
+              El cambio tarda normalmente entre <strong>1 y 24 horas</strong> en propagarse. Volvé a esta página y tocá <strong>Comprobar estado</strong>: cuando aparezca <strong>Activo y Verificado</strong>, tu tienda ya funciona con tu dominio y el candado de seguridad (HTTPS) se activa solo, sin costo.
             </p>
             <div className="pl-8 pt-1 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Portalmaker mantiene tu tienda siempre segura bajo HTTPS sin costo adicional.</span>
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>No tenés que hacer nada más: el certificado HTTPS se renueva automáticamente.</span>
             </div>
-          </div>
-        </div>
+          </li>
+        </ol>
       </div>
 
       {/* Notificación Toast Flotante */}
@@ -471,6 +538,56 @@ export default function DominioManager({
           <span>{successMsg}</span>
         </div>
       )}
+    </div>
+  )
+}
+
+/** Círculo numerado de cada paso del instructivo. */
+function StepNumber({ n }: { n: number }) {
+  return (
+    <span className="w-6 h-6 rounded-full bg-[#FACC15] text-[#1F2937] font-semibold text-xs flex items-center justify-center shrink-0">
+      {n}
+    </span>
+  )
+}
+
+/**
+ * Valor para pegar en NIC.ar con botón de copiar. El botón mide al menos
+ * 44x44 px porque muchos dueños hacen la delegación desde el celular.
+ */
+function CopyRow({
+  value,
+  id,
+  copiedField,
+  onCopy,
+}: {
+  value: string
+  id: string
+  copiedField: string | null
+  onCopy: (text: string, fieldId: string) => void
+}) {
+  const copied = copiedField === id
+  return (
+    <div className="flex items-center justify-between gap-2 pl-3 pr-1 py-1 rounded-xl bg-black/5 dark:bg-white/5 border border-[var(--color-borde)]">
+      <span className="font-mono text-xs font-semibold text-[#CA8A04] dark:text-[#FACC15] break-all">{value}</span>
+      <button
+        type="button"
+        onClick={() => onCopy(value, id)}
+        className="min-h-11 min-w-11 px-3 rounded-lg border border-[var(--color-borde)] bg-[var(--color-superficie)] hover:bg-black/5 dark:hover:bg-white/5 inline-flex items-center justify-center gap-1.5 text-[11px] font-semibold cursor-pointer shrink-0"
+        aria-label={`Copiar ${value}`}
+      >
+        {copied ? (
+          <>
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Copiado</span>
+          </>
+        ) : (
+          <>
+            <Copy className="w-3.5 h-3.5 opacity-70" />
+            <span>Copiar</span>
+          </>
+        )}
+      </button>
     </div>
   )
 }

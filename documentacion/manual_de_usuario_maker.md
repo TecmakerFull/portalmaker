@@ -288,16 +288,28 @@ Solo debes elegir **uno** de estos dos caminos, según dónde administres tu dom
 
 ---
 
-#### 🌟 CAMINO A: Si compraste tu dominio en NIC Argentina y no usas nada más (La opción más fácil)
-Si compraste tu `.com.ar` o `.ar` en NIC Argentina y no tienes hosting ni paneles externos:
-1. Entra en **[nic.ar](https://nic.ar)** con tu CUIT y Clave Fiscal AFIP.
-2. Ve a tu lista de dominios registrados y busca tu dominio.
-3. Haz clic en el botón **"Delegar"** al lado de tu nombre de dominio.
-4. Presiona **"Agregar Servidor"** y coloca estos dos nombres:
-   * **Servidor 1 (Host 1):** `ns1.vercel-dns.com`
-   * **Servidor 2 (Host 2):** `ns2.vercel-dns.com`
-5. Presiona **"Guardar cambios"** en NIC.ar.
-*(¡Eso es todo! Ya le dijiste a NIC Argentina que tu dominio apunta a la infraestructura de Portalmaker)*.
+#### CAMINO A: Si compraste tu dominio en NIC Argentina (la opción más fácil)
+Si compraste tu `.com.ar` o `.ar` en NIC Argentina y no usás otro panel de DNS (Cloudflare, DonWeb, etc.), delegás el dominio directo desde NIC.ar. Te lleva unos 5 minutos:
+
+1. **Entrá a NIC.ar.** Ingresá en **[nic.ar](https://nic.ar)** con tu CUIT/CUIL y **Clave Fiscal** (ARCA, ex AFIP).
+2. **Abrí "Delegaciones".** En la lista de tus dominios, elegí el que querés conectar y entrá a la opción **Delegaciones**.
+3. **Borrá servidores viejos (si hay).** Si ya aparecen servidores cargados que no son los de Portalmaker (por ejemplo, de un hosting anterior), eliminalos con el ícono del **tacho de basura**. Tienen que quedar solo los dos de Portalmaker.
+4. **Agregá el primer servidor.**
+   * Tocá **"+ Agregar una nueva delegación"**. Aparece una fila vacía.
+   * En **Host** escribí: `ns1.vercel-dns.com`
+   * Dejá **IPv4** e **IPv6** vacíos.
+   * Tocá el **disquete** (botón Guardar) de esa misma fila.
+5. **Agregá el segundo servidor.**
+   * Tocá otra vez **"+ Agregar una nueva delegación"**.
+   * En **Host** escribí: `ns2.vercel-dns.com`
+   * Tocá el **disquete** de esa fila.
+6. **Revisá y confirmá.** Tienen que quedar las dos filas como en esta imagen. Recién ahí tocá **"Ejecutar cambios"** al pie de la página.
+
+   ![Pantalla de Delegaciones de NIC.ar con ns1.vercel-dns.com y ns2.vercel-dns.com cargados](../public/images/guias/nic-delegaciones.png)
+
+> **Importante:** cada fila se guarda con su propio **disquete** antes de tocar "Ejecutar cambios". Si tocás "Ejecutar cambios" sin haber guardado una fila, NIC.ar no registra ese servidor y tu dominio no va a funcionar.
+
+*(Listo: ya le indicaste a NIC Argentina que tu dominio apunta a Portalmaker. Seguí con "¿Cuánto tiempo tarda en funcionar?" más abajo).*
 
 ---
 
@@ -327,11 +339,13 @@ Si no delegas los servidores en NIC.ar porque ya usas un administrador de DNS co
 
 ### ¿Cuánto tiempo tarda en funcionar y qué pasa después?
 
-1. **Tiempo de espera (Propagación en internet)**:
-   En internet los cambios no son instantáneos de un segundo al otro. NIC Argentina y los proveedores de internet de cada compañía (Fibertel, Personal, Claro, Movistar) demoran habitualmente entre **2 y 12 horas** en enterarse de que tu dominio cambió de dirección. Es completamente normal que al principio no abra de inmediato.
-2. **Candado de seguridad gratuito (HTTPS / SSL)**:
+1. **Tiempo de espera (propagación en internet)**:
+   En internet los cambios no son instantáneos. NIC Argentina y los proveedores de internet (Fibertel, Personal, Claro, Movistar) demoran habitualmente entre **1 y 24 horas** en enterarse de que tu dominio cambió de dirección. Es completamente normal que al principio no abra de inmediato.
+2. **Comprobá el estado en tu panel**:
+   Pasado ese tiempo, entrá a **Dominio Propio** y tocá **"Comprobar estado"**. Cuando aparezca **"Activo y Verificado"**, tu dominio quedó conectado y verificado: desde ese momento tus clientes pueden iniciar sesión y volver del pago con Mercado Pago directamente en tu dominio. Si sigue en "Esperando DNS / Propagación", esperá un rato más y volvé a comprobar.
+3. **Candado de seguridad gratuito (HTTPS / SSL)**:
    No tienes que comprar certificados caros ni hacer configuraciones difíciles. En cuanto el dominio termina de propagarse, Portalmaker y la infraestructura activan automáticamente el candado de seguridad verde (HTTPS) para que tus clientes compren con total confianza.
-3. **Tu dirección gratuita sigue funcionando**:
+4. **Tu dirección gratuita sigue funcionando**:
    Tu tienda nunca dejará de funcionar en `mitienda.portalmaker.ar`. Quien entre por la dirección de Portalmaker o por tu dominio propio llegará siempre al mismo catálogo.
 </details>
 
