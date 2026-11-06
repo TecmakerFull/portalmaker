@@ -33,6 +33,8 @@ export async function getRequestOrigin(): Promise<string> {
  * 1. Primer banner activo (imagen ancha, ideal para tarjetas grandes)
  * 2. Banner de portada legado (hero_banner_url)
  * 3. Logo de la tienda
+ * 4. Foto del primer producto visible (destacados primero): muchas tiendas
+ *    arrancan sin logo ni banners, y una foto de producto vende más que nada.
  */
 export async function getStoreShareImage(store: Store): Promise<string | null> {
   try {
@@ -47,8 +49,22 @@ export async function getStoreShareImage(store: Store): Promise<string | null> {
       .maybeSingle()
 
     if (banner?.imagen_url) return banner.imagen_url
+    if (store.hero_banner_url) return store.hero_banner_url
+    if (store.logo_url) return store.logo_url
+
+    const { data: products } = await supabase
+      .from('products')
+      .select('imagenes')
+      .eq('store_id', store.id)
+      .eq('visible', true)
+      .order('destacado', { ascending: false })
+      .order('orden', { ascending: true })
+      .limit(10)
+
+    const withImage = (products || []).find((p) => Array.isArray(p.imagenes) && p.imagenes.length > 0)
+    if (withImage) return (withImage.imagenes as string[])[0]
   } catch {
-    // Si falla la consulta, se sigue con las imágenes de la propia tienda.
+    // Si falla alguna consulta, se usan las imágenes propias de la tienda.
   }
 
   return store.hero_banner_url || store.logo_url || null
