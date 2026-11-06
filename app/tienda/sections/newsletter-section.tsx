@@ -12,9 +12,18 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 interface NewsletterSectionProps {
   storeId?: string
   storeName?: string
+  // Textos configurables en Diseño → Novedades
+  etiqueta?: string
+  titulo?: string
+  texto?: string
 }
 
-export default function NewsletterSection({ storeId, storeName = 'nuestra tienda' }: NewsletterSectionProps) {
+export default function NewsletterSection({
+  storeId,
+  etiqueta = 'Novedades',
+  titulo = 'Enterate primero de las novedades',
+  texto = 'Lanzamientos y ofertas exclusivas directo en tu correo.',
+}: NewsletterSectionProps) {
   const [email, setEmail] = useState('')
   const [subscribed, setSubscribed] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -48,13 +57,13 @@ export default function NewsletterSection({ storeId, storeName = 'nuestra tienda
       <div className="wrap grid gap-6 sm:gap-8 md:grid-cols-2 md:items-center">
         <div>
           <span className="eyebrow text-[var(--color-primario)]">
-            EL UNIVERSO {storeName.toUpperCase()}
+            {etiqueta}
           </span>
           <h2 className="mt-2 sm:mt-3 text-xl sm:text-2xl md:text-3xl font-medium font-[var(--font-heading)] text-[var(--color-texto)] leading-snug">
-            Un poco de inspiración en tu bandeja.
+            {titulo}
           </h2>
           <p className="mt-2 text-xs sm:text-sm opacity-70 text-[var(--color-texto)]">
-            Novedades, lanzamientos y ofertas exclusivas directo en tu correo.
+            {texto}
           </p>
         </div>
 

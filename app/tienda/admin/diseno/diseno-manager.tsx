@@ -21,7 +21,14 @@ import type {
   NavbarSettings,
   NavbarItem,
   HeroBannerSettings,
-  HeroBannerSlide
+  HeroBannerSlide,
+  TrustBarSettings,
+  TrustBarItem,
+  FooterSettings,
+  CatalogHeaderSettings,
+  StorySettings,
+  StoryPillar,
+  NewsletterSettings
 } from '@/types/database';
 import {
   Layers,
@@ -39,18 +46,27 @@ import {
   MessageSquare,
   Compass,
   Image as ImageIcon,
-  LayoutTemplate
+  LayoutTemplate,
+  ShieldCheck,
+  PanelBottom,
+  Type,
+  Mail
 } from 'lucide-react';
 import TopBarEditor from './top-bar-editor';
 import { HeaderEditor } from './header-editor';
 import { NavbarEditor } from './navbar-editor';
 import { HeroEditor } from './hero-editor';
+import TrustBarEditor from './trust-bar-editor';
+import FooterEditor from './footer-editor';
+import { CatalogHeaderEditor, StoryEditor, NewsletterEditor } from './portada-editors';
 import { LivePreview } from './live-preview';
 import { AdminPageHeader } from '../components/admin-page-header';
 
 interface DisenoManagerProps {
   store: Store;
   initialSections: StoreSection[];
+  // Mensajes de confianza y footer: no forman parte del orden del encabezado
+  initialExtraSections: StoreSection[];
   categories: Category[];
   products: Product[];
   pages: StorePage[];
@@ -60,6 +76,7 @@ interface DisenoManagerProps {
 export function DisenoManager({
   store,
   initialSections,
+  initialExtraSections,
   categories,
   products,
   pages,
@@ -70,6 +87,8 @@ export function DisenoManager({
 
   // Secciones en estado local editable
   const [sections, setSections] = useState<StoreSection[]>(initialSections);
+  const [extraSections, setExtraSections] = useState<StoreSection[]>(initialExtraSections);
+  const isExtraType = (type: string) => extraSections.some((s) => s.section_type === type);
   const [activeEditorTab, setActiveEditorTab] = useState<string | null>(null);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
 
@@ -80,7 +99,8 @@ export function DisenoManager({
 
   // Actualizar una sección específica
   const handleUpdateSection = (updated: StoreSection) => {
-    setSections((prev) =>
+    const setter = isExtraType(updated.section_type) ? setExtraSections : setSections;
+    setter((prev) =>
       prev.map((s) => (s.section_type === updated.section_type ? updated : s))
     );
     setSaveSuccess(false);
@@ -88,7 +108,8 @@ export function DisenoManager({
 
   // Activar o desactivar sección
   const handleToggleEnabled = (sectionType: string, enabled: boolean) => {
-    setSections((prev) =>
+    const setter = isExtraType(sectionType) ? setExtraSections : setSections;
+    setter((prev) =>
       prev.map((s) => (s.section_type === sectionType ? { ...s, enabled } : s))
     );
     setSaveSuccess(false);
@@ -139,6 +160,28 @@ export function DisenoManager({
         }
       }
 
+      // Secciones extra: conservan su propio orden (no compiten con el encabezado).
+      for (const sec of extraSections) {
+        const { error } = await supabase
+          .from('store_sections')
+          .upsert(
+            {
+              store_id: store.id,
+              section_type: sec.section_type,
+              enabled: sec.enabled,
+              orden: sec.orden,
+              settings: sec.settings,
+              content: sec.content,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'store_id,section_type' }
+          );
+        if (error) {
+          console.error('Error guardando seccion:', sec.section_type, error);
+          throw error;
+        }
+      }
+
       setSaveSuccess(true);
       router.refresh();
       setTimeout(() => setSaveSuccess(false), 4000);
@@ -153,7 +196,8 @@ export function DisenoManager({
   // Meta información de cada tipo de sección
   const sectionMeta: Record<
     string,
-    { label: string; desc: string; icon: React.ReactNode }
+    // hideable=false: la sección no se puede ocultar (por ejemplo, el catálogo)
+    { label: string; desc: string; icon: React.ReactNode; hideable?: boolean }
   > = {
     top_bar: {
       label: 'Top Bar / Barra Superior',
@@ -175,9 +219,37 @@ export function DisenoManager({
       desc: 'Carrusel promocional con imágenes para Desktop y Mobile',
       icon: <ImageIcon className="w-5 h-5 text-amber-500" />,
     },
+    trust_bar: {
+      label: 'Mensajes de confianza',
+      desc: 'Envíos, garantía, atención: editá u ocultá cada mensaje',
+      icon: <ShieldCheck className="w-5 h-5 text-sky-500" />,
+    },
+    catalog_header: {
+      label: 'Encabezado del catálogo',
+      desc: 'El título que aparece arriba de tus productos',
+      icon: <Type className="w-5 h-5 text-indigo-500" />,
+      hideable: false,
+    },
+    story: {
+      label: 'Por qué elegirnos',
+      desc: 'Bloque para contar qué hace especial a tu tienda',
+      icon: <Sparkles className="w-5 h-5 text-amber-500" />,
+    },
+    newsletter: {
+      label: 'Novedades por email',
+      desc: 'Bloque para que tus clientes dejen su email',
+      icon: <Mail className="w-5 h-5 text-teal-500" />,
+    },
+    footer: {
+      label: 'Pie de página',
+      desc: 'Medios de pago que se muestran al final de la tienda',
+      icon: <PanelBottom className="w-5 h-5 text-rose-500" />,
+    },
   };
 
-  const currentSection = sections.find((s) => s.section_type === activeEditorTab);
+  const currentSection =
+    sections.find((s) => s.section_type === activeEditorTab) ||
+    extraSections.find((s) => s.section_type === activeEditorTab);
 
   return (
     <div className="space-y-6 pb-24">
@@ -265,6 +337,42 @@ export function DisenoManager({
                   categories={categories}
                   products={products}
                   pages={pages}
+                  onChange={handleUpdateSection}
+                />
+              )}
+
+              {activeEditorTab === 'trust_bar' && currentSection && (
+                <TrustBarEditor
+                  section={currentSection as StoreSection<TrustBarSettings, TrustBarItem[]>}
+                  onChange={handleUpdateSection}
+                />
+              )}
+
+              {activeEditorTab === 'catalog_header' && currentSection && (
+                <CatalogHeaderEditor
+                  section={currentSection as StoreSection<CatalogHeaderSettings, []>}
+                  onChange={handleUpdateSection}
+                />
+              )}
+
+              {activeEditorTab === 'story' && currentSection && (
+                <StoryEditor
+                  section={currentSection as StoreSection<StorySettings, StoryPillar[]>}
+                  onChange={handleUpdateSection}
+                />
+              )}
+
+              {activeEditorTab === 'newsletter' && currentSection && (
+                <NewsletterEditor
+                  section={currentSection as StoreSection<NewsletterSettings, []>}
+                  onChange={handleUpdateSection}
+                />
+              )}
+
+              {activeEditorTab === 'footer' && currentSection && (
+                <FooterEditor
+                  store={store}
+                  section={currentSection as StoreSection<FooterSettings, []>}
                   onChange={handleUpdateSection}
                 />
               )}
@@ -400,6 +508,72 @@ export function DisenoManager({
                             type="button"
                             onClick={() => setActiveEditorTab(section.section_type)}
                             className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold border border-[var(--color-borde)] rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                          >
+                            <span>Configurar</span>
+                            <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Secciones fuera del encabezado: confianza y pie de página.
+                  Sin flechas de orden porque su ubicación en la tienda es fija. */}
+              <div className="pt-4 border-t border-[var(--color-borde)] space-y-3">
+                <div>
+                  <h2 className="text-base font-semibold">Contenido de la portada</h2>
+                  <p className="text-xs opacity-70 mt-0.5">
+                    Editá los textos o ocultá lo que no uses. Mostrá solo lo que tu tienda realmente ofrece.
+                  </p>
+                </div>
+                {extraSections.map((section) => {
+                  const meta = sectionMeta[section.section_type];
+                  return (
+                    <div
+                      key={section.section_type}
+                      className={`p-4 rounded-2xl border border-[var(--color-borde)] transition-all ${
+                        section.enabled ? 'bg-black/[0.02] dark:bg-white/[0.02] shadow-xs' : 'bg-black/[0.01] dark:bg-white/[0.01] opacity-70'
+                      }`}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-2.5 rounded-xl bg-black/5 dark:bg-white/10 shrink-0">{meta?.icon}</div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold truncate">{meta?.label}</span>
+                              {meta?.hideable !== false && (
+                                <span
+                                  className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                                    section.enabled
+                                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                                      : 'bg-black/5 dark:bg-white/10 opacity-60'
+                                  }`}
+                                >
+                                  {section.enabled ? 'Activo' : 'Oculto'}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs opacity-70 mt-0.5">{meta?.desc}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          {meta?.hideable !== false && (
+                            <label className="relative inline-flex items-center cursor-pointer min-h-11" aria-label={`Mostrar ${meta?.label}`}>
+                              <input
+                                type="checkbox"
+                                checked={section.enabled}
+                                onChange={(e) => handleToggleEnabled(section.section_type, e.target.checked)}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-slate-300 dark:bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[12px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FACC15]" />
+                            </label>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setActiveEditorTab(section.section_type)}
+                            className="min-h-11 inline-flex items-center gap-1 px-3 text-xs font-semibold border border-[var(--color-borde)] rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
                           >
                             <span>Configurar</span>
                             <ChevronRight className="w-3.5 h-3.5 opacity-60" />

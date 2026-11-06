@@ -12,6 +12,7 @@ import ProductDetailView from './product-detail-view'
 import StoreFooter from '../../sections/store-footer'
 import { getStoreSections } from '@/lib/store-sections'
 import { getStoreShareImage } from '@/lib/store-metadata'
+import { getStoreExtraSections } from '@/lib/store-extra-sections'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -152,6 +153,9 @@ export default async function ProductoDetallePage({ params }: PageProps) {
     hasSobreNosotros
   )
 
+  // 7. Mensajes de confianza configurados por la tienda (se repiten en la ficha si así lo eligió)
+  const extraSections = await getStoreExtraSections(store)
+
   // 7. Obtener reseñas visibles del producto y limpiar user_email para no exponerlo en el HTML público
   const { data: rawReviews } = await supabase
     .from('product_reviews')
@@ -255,6 +259,11 @@ export default async function ProductoDetallePage({ params }: PageProps) {
             relatedProducts={relatedProducts ?? []}
             initialReviews={reviews ?? []}
             tenantQuery={tenantQuery}
+            trustItems={
+              extraSections.trust_bar.enabled && extraSections.trust_bar.settings.mostrar_en_producto
+                ? extraSections.trust_bar.content
+                : []
+            }
           />
         </main>
       </div>

@@ -16,6 +16,7 @@ import StorySection from './sections/story-section'
 import NewsletterSection from './sections/newsletter-section'
 import StoreFooter from './sections/store-footer'
 import { getStoreSections } from '@/lib/store-sections'
+import { getStoreExtraSections } from '@/lib/store-extra-sections'
 import { MessageSquare, Package } from 'lucide-react'
 
 interface TiendaPageProps {
@@ -77,6 +78,9 @@ export default async function TiendaPage({ searchParams }: TiendaPageProps) {
     store,
     hasSobreNosotros
   )
+
+  // 5. Mensajes de confianza y footer configurables por la tienda
+  const extraSections = await getStoreExtraSections(store)
 
   const productList = products ?? []
   const categoryList = categories ?? []
@@ -153,8 +157,8 @@ export default async function TiendaPage({ searchParams }: TiendaPageProps) {
           tenantQuery={tenantQuery}
         />
 
-        {/* 3. Barra de Confianza & Beneficios (4 columnas) */}
-        <TrustFeatures />
+        {/* 3. Mensajes de confianza (configurables en Diseño; se ocultan si la tienda los desactiva) */}
+        {extraSections.trust_bar.enabled && <TrustFeatures items={extraSections.trust_bar.content} />}
 
         {/* 4. Colección Curada de Productos con Filtros y Buscador */}
         <main id="catalogo" className="wrap pt-12 sm:pt-16 scroll-mt-24">
@@ -166,18 +170,24 @@ export default async function TiendaPage({ searchParams }: TiendaPageProps) {
             initialQuery={initialQuery}
             initialCategory={initialCategory}
             initialOffer={initialOffer}
+            header={extraSections.catalog_header.settings}
           />
         </main>
 
-        {/* 5. Propuesta de Valor / Manifiesto Maker ("MENOS, PERO MEJOR") */}
-        <StorySection
-          storeName={store.nombre}
-          slogan={store.slogan}
-          tenantQuery={tenantQuery}
-        />
+        {/* 5. "Por qué elegirnos" (editable u oculta desde Diseño) */}
+        {extraSections.story.enabled && (
+          <StorySection section={extraSections.story} tenantQuery={tenantQuery} />
+        )}
 
         {/* 6. Suscripción a Novedades (Newsletter) */}
-        <NewsletterSection storeId={store.id} storeName={store.nombre} />
+        {extraSections.newsletter.enabled && (
+          <NewsletterSection
+            storeId={store.id}
+            etiqueta={extraSections.newsletter.settings.etiqueta}
+            titulo={extraSections.newsletter.settings.titulo}
+            texto={extraSections.newsletter.settings.texto}
+          />
+        )}
       </div>
 
       {/* 7. Footer de 4 Columnas con Medios de Pago y Enlaces Legales */}

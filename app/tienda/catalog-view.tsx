@@ -7,7 +7,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import type { Product, Category, Store } from '@/types/database'
+import type { Product, Category, Store, CatalogHeaderSettings } from '@/types/database'
 import ProductCard from './product-card'
 import { Search, X, ArrowRight } from 'lucide-react'
 
@@ -23,6 +23,8 @@ interface CatalogViewProps {
   initialCategory?: string
   initialOffer?: boolean
   showAllHeader?: boolean
+  // Textos del encabezado de la portada (Diseño → Encabezado del catálogo)
+  header?: CatalogHeaderSettings
 }
 
 // Helper para normalizar texto eliminando tildes y diacríticos (ej: "impresión" -> "impresion")
@@ -42,6 +44,7 @@ export default function CatalogView({
   initialQuery = '',
   initialCategory = 'Todos',
   initialOffer = false,
+  header,
   showAllHeader = false,
 }: CatalogViewProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery)
@@ -143,21 +146,21 @@ export default function CatalogView({
               ? 'BÚSQUEDA EN CATÁLOGO'
               : showAllHeader
               ? 'CATÁLOGO COMPLETO'
-              : 'CURADOS PARA TI'}
+              : header?.etiqueta || 'Nuestros productos'}
           </p>
           <h2 className="text-2xl sm:text-3xl font-medium font-[var(--font-heading)] mt-1.5 text-[var(--color-texto)]">
             {isSearching
               ? `Resultados para "${searchQuery.trim()}"`
               : showAllHeader
               ? 'Nuestra colección'
-              : 'Tus próximos favoritos'}
+              : header?.titulo || 'Tus próximos favoritos'}
           </h2>
           <p className="mt-2 text-xs sm:text-sm opacity-70 text-[var(--color-texto)]">
             {isSearching
               ? `Mostrando ${filteredProducts.length} ${
                   filteredProducts.length === 1 ? 'producto encontrado' : 'productos encontrados'
                 }.`
-              : 'Diseño, calidad y esos detalles que marcan la diferencia.'}
+              : header?.subtitulo || ''}
           </p>
         </div>
 

@@ -41,7 +41,7 @@ export default function HeroBanners({
     imagen_mobile: '/banner.png',
     subtitulo: 'NUEVA COLECCIÓN · 2026',
     texto_adicional: 'OBJETOS CON INTENCIÓN. ESPACIOS CON ALMA.',
-    titulo: storeSlogan || 'Diseño para tu día a día.',
+    titulo: storeSlogan || storeName || 'Bienvenido',
     cta_texto: 'Explorar colección',
     cta_url: '/tienda',
     activo: true,
@@ -153,7 +153,7 @@ export default function HeroBanners({
 
           {/* Título Principal con límite de 2 líneas */}
           <h1 className="text-2xl sm:text-4xl lg:text-5xl font-semibold tracking-tight font-[var(--font-heading)] text-[var(--color-texto)] leading-[1.15] line-clamp-2 max-w-[500px]">
-            {currentSlide.titulo || storeSlogan || 'Diseño para tu día a día.'}
+            {currentSlide.titulo || storeSlogan || storeName || 'Bienvenido'}
           </h1>
 
           {/* Descripción con límite de 2-3 líneas */}

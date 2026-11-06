@@ -529,6 +529,10 @@ export type StoreSectionType =
   | 'hero'
   | 'featured_categories'
   | 'featured_products'
+  | 'trust_bar'
+  | 'catalog_header'
+  | 'story'
+  | 'newsletter'
   | 'footer'
   | string;
 
@@ -612,6 +616,58 @@ export interface HeroBannerSettings {
   mostrar_indicadores: boolean;
   pausar_hover: boolean;
   altura: 'adaptable' | 'compacta' | 'pantalla_completa';
+}
+
+// 5. MENSAJES DE CONFIANZA (franja bajo el hero y bloque en la ficha de producto)
+// Antes eran textos fijos ("Devoluciones sencillas", "Pago 100% seguro"...) que
+// algunas tiendas no podían cumplir; ahora cada tienda los edita u oculta.
+export interface TrustBarItem {
+  id: string;
+  icono: string;          // Nombre de un ícono de TRUST_ICONS (lib/trust-icons.ts)
+  titulo: string;
+  texto?: string | null;  // Subtítulo opcional
+  activo: boolean;
+}
+
+export interface TrustBarSettings {
+  mostrar_en_producto: boolean; // Repetir los mensajes en la ficha de cada producto
+}
+
+// 6. FOOTER (pie de página)
+export interface FooterSettings {
+  mostrar_medios_pago: boolean;
+  // null = automático según lo activo en Pagos (transferencia, Mercado Pago).
+  // Un array = elección manual del dueño (ids de MEDIOS_PAGO_FOOTER).
+  medios_pago: string[] | null;
+}
+
+// 7. ENCABEZADO DEL CATÁLOGO EN LA PORTADA ("Nuestros productos")
+export interface CatalogHeaderSettings {
+  etiqueta: string;   // Texto chico en mayúsculas sobre el título
+  titulo: string;
+  subtitulo: string;
+}
+
+// 8. "POR QUÉ ELEGIRNOS" (antes "manifiesto" fijo: "Menos, pero mejor")
+export interface StoryPillar {
+  id: string;
+  icono: string;      // Nombre de un ícono de TRUST_ICONS
+  titulo: string;
+  texto?: string | null;
+}
+
+export interface StorySettings {
+  etiqueta: string;
+  titulo: string;
+  texto: string;
+  mostrar_link_historia: boolean; // Enlace a "Sobre nosotros"
+}
+
+// 9. BLOQUE DE SUSCRIPCIÓN A NOVEDADES
+export interface NewsletterSettings {
+  etiqueta: string;
+  titulo: string;
+  texto: string;
 }
 
 // Interfaz Genérica de Sección en Base de Datos

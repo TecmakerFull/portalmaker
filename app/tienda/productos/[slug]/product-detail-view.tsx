@@ -25,9 +25,6 @@ import {
   Minus,
   Check,
   ArrowRight,
-  ShieldCheck,
-  RotateCcw,
-  Truck,
   Heart,
   Star,
   Sparkles,
@@ -39,6 +36,8 @@ import {
   ImageIcon,
 } from 'lucide-react'
 import WhatsAppIcon from '../../sections/whatsapp-icon'
+import { getTrustIcon } from '@/lib/trust-icons'
+import type { TrustBarItem } from '@/types/database'
 
 interface ProductDetailViewProps {
   product: Product & { category?: { nombre: string } | null }
@@ -48,6 +47,8 @@ interface ProductDetailViewProps {
   relatedProducts?: (Product & { category?: { nombre: string } | null })[]
   initialReviews?: ProductReview[]
   tenantQuery?: string
+  // Mensajes de confianza configurados por la tienda (vacío = no se muestra el bloque)
+  trustItems?: TrustBarItem[]
 }
 
 export default function ProductDetailView({
@@ -58,6 +59,7 @@ export default function ProductDetailView({
   relatedProducts = [],
   initialReviews = [],
   tenantQuery = '',
+  trustItems = [],
 }: ProductDetailViewProps) {
   const router = useRouter()
   const supabase = createSupabaseBrowserClient()
@@ -721,21 +723,25 @@ export default function ProductDetailView({
             </a>
           )}
 
-          {/* Beneficios de confianza TiendaDemo */}
-          <div className="mt-6 grid gap-3 border-t border-black/10 dark:border-white/10 pt-6 text-xs opacity-75">
-            <span className="flex items-center gap-3">
-              <Truck className="w-4 h-4 text-[var(--color-primario)] shrink-0" />
-              <span>Envío de cortesía / a convenir en tu pedido</span>
-            </span>
-            <span className="flex items-center gap-3">
-              <RotateCcw className="w-4 h-4 text-[var(--color-primario)] shrink-0" />
-              <span>Devoluciones sencillas y garantía</span>
-            </span>
-            <span className="flex items-center gap-3">
-              <ShieldCheck className="w-4 h-4 text-[var(--color-primario)] shrink-0" />
-              <span>Compra y datos protegidos</span>
-            </span>
-          </div>
+          {/* Mensajes de confianza: los mismos que la tienda configura para la portada
+              (Diseño → Mensajes de confianza). Antes eran fijos y prometían, por ejemplo,
+              devoluciones que no todas las tiendas ofrecen. */}
+          {trustItems.filter((t) => t.activo && t.titulo?.trim()).length > 0 && (
+            <div className="mt-6 grid gap-3 border-t border-black/10 dark:border-white/10 pt-6 text-xs opacity-75">
+              {trustItems
+                .filter((t) => t.activo && t.titulo?.trim())
+                .slice(0, 4)
+                .map((t) => {
+                  const Icon = getTrustIcon(t.icono)
+                  return (
+                    <span key={t.id} className="flex items-center gap-3">
+                      <Icon className="w-4 h-4 text-[var(--color-primario)] shrink-0" />
+                      <span>{t.texto?.trim() ? `${t.titulo} — ${t.texto}` : t.titulo}</span>
+                    </span>
+                  )
+                })}
+            </div>
+          )}
         </div>
       </div>
 

@@ -14,7 +14,15 @@ import type {
   NavbarItem,
   HeroBannerSettings,
   HeroBannerSlide,
+  TrustBarItem,
+  TrustBarSettings,
+  FooterSettings,
+  CatalogHeaderSettings,
+  StorySettings,
+  StoryPillar,
+  NewsletterSettings,
 } from '@/types/database'
+import { DEFAULT_TRUST_ITEMS } from '@/lib/trust-icons'
 
 export interface ResolvedStoreSections {
   top_bar: StoreSection<TopBarSettings, TopBarMessageItem[]>
@@ -175,6 +183,109 @@ export function getDefaultStoreSections(
     navbar: defaultNavbar,
     hero: defaultHero,
     sectionsList: [defaultTopBar, defaultHeader, defaultNavbar, defaultHero],
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Secciones "extra" de la portada: mensajes de confianza, encabezado del
+// catálogo, "por qué elegirnos", novedades y footer.
+// Viven aparte de sectionsList porque no participan del orden del encabezado.
+// Sus textos por defecto son neutros (sirven para cualquier rubro) porque la
+// mayoría de los dueños no los va a editar.
+// -----------------------------------------------------------------------------
+export interface StoreExtraSections {
+  trust_bar: StoreSection<TrustBarSettings, TrustBarItem[]>
+  catalog_header: StoreSection<CatalogHeaderSettings, []>
+  story: StoreSection<StorySettings, StoryPillar[]>
+  newsletter: StoreSection<NewsletterSettings, []>
+  footer: StoreSection<FooterSettings, []>
+}
+
+/** Tipos de sección extra, en el orden en que aparecen en la portada. */
+export const EXTRA_SECTION_TYPES = ['trust_bar', 'catalog_header', 'story', 'newsletter', 'footer'] as const
+
+export function getDefaultExtraSections(store: Store): StoreExtraSections {
+  const now = new Date().toISOString()
+  const base = (type: string, orden: number) => ({
+    id: `default-${type}-${store.id}`,
+    store_id: store.id,
+    section_type: type,
+    enabled: true, // Todo visible por defecto: las tiendas existentes no pierden secciones
+    orden,
+    created_at: now,
+    updated_at: now,
+  })
+
+  return {
+    trust_bar: {
+      ...base('trust_bar', 10),
+      settings: { mostrar_en_producto: true },
+      content: DEFAULT_TRUST_ITEMS,
+    },
+    catalog_header: {
+      ...base('catalog_header', 11),
+      settings: {
+        etiqueta: 'Nuestros productos',
+        titulo: 'Tus próximos favoritos',
+        subtitulo: 'Elegí lo que te guste y hacé tu pedido online.',
+      },
+      content: [],
+    },
+    story: {
+      ...base('story', 12),
+      settings: {
+        etiqueta: 'Por qué elegirnos',
+        titulo: `Bienvenido a ${store.nombre}`,
+        texto: store.slogan
+          ? `${store.slogan}. Elegimos cada producto con cuidado y te acompañamos antes y después de tu compra.`
+          : 'Elegimos cada producto con cuidado y te acompañamos antes y después de tu compra.',
+        mostrar_link_historia: true,
+      },
+      content: [
+        { id: 'pilar-1', icono: 'BadgeCheck', titulo: 'Calidad en cada detalle', texto: 'Productos elegidos con cuidado.' },
+        { id: 'pilar-2', icono: 'Headphones', titulo: 'Atención cercana', texto: 'Respondemos tus consultas de forma rápida y personal.' },
+      ],
+    },
+    newsletter: {
+      ...base('newsletter', 13),
+      settings: {
+        etiqueta: 'Novedades',
+        titulo: 'Enterate primero de las novedades',
+        texto: 'Lanzamientos y ofertas exclusivas directo en tu correo.',
+      },
+      content: [],
+    },
+    footer: {
+      ...base('footer', 14),
+      settings: { mostrar_medios_pago: true, medios_pago: null },
+      content: [],
+    },
+  }
+}
+
+/** Combina las filas guardadas en store_sections con los valores por defecto. */
+export function mergeExtraSections(store: Store, rows: StoreSection[]): StoreExtraSections {
+  const defaults = getDefaultExtraSections(store)
+  const find = (type: string) => rows.find((r) => r.section_type === type)
+
+  // Mezcla settings (los campos nuevos que falten toman el default) y, para las
+  // secciones con lista, respeta un array vacío guardado: el dueño los borró a propósito.
+  const merge = <S, C>(def: StoreSection<S, C>, row: StoreSection | undefined, hasList: boolean): StoreSection<S, C> => {
+    if (!row) return def
+    return {
+      ...def,
+      ...row,
+      settings: { ...def.settings, ...(row.settings || {}) },
+      content: hasList ? (Array.isArray(row.content) ? row.content : def.content) : def.content,
+    } as StoreSection<S, C>
+  }
+
+  return {
+    trust_bar: merge(defaults.trust_bar, find('trust_bar'), true),
+    catalog_header: merge(defaults.catalog_header, find('catalog_header'), false),
+    story: merge(defaults.story, find('story'), true),
+    newsletter: merge(defaults.newsletter, find('newsletter'), false),
+    footer: merge(defaults.footer, find('footer'), false),
   }
 }
 

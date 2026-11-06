@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import { getTenantStore } from '@/lib/tenant';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getStoreSections } from '@/lib/store-sections';
+import { getStoreExtraSections } from '@/lib/store-extra-sections';
 import { DisenoManager } from './diseno-manager';
 
 export default async function AdminDisenoPage() {
@@ -29,6 +30,9 @@ export default async function AdminDisenoPage() {
     store,
     false
   );
+
+  // 1b. Mensajes de confianza y pie de página (editables desde el mismo panel)
+  const extraSections = await getStoreExtraSections(store);
 
   // 2. Obtener lista de categorías para selectores de navegación y CTA
   const { data: categories } = await supabase
@@ -56,6 +60,13 @@ export default async function AdminDisenoPage() {
       <DisenoManager
         store={store}
         initialSections={resolvedSections.sectionsList}
+        initialExtraSections={[
+          extraSections.trust_bar,
+          extraSections.catalog_header,
+          extraSections.story,
+          extraSections.newsletter,
+          extraSections.footer,
+        ]}
         categories={categories ?? []}
         products={(products as any) ?? []}
         pages={pages ?? []}
