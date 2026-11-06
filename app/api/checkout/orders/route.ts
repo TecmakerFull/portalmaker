@@ -355,7 +355,7 @@ export async function POST(req: Request) {
     } else if (tipoEntrega === 'retiro') {
       costoEnvio = 0
       envioProveedor = 'manual'
-      envioServicio = 'Retiro en el taller / local'
+      envioServicio = 'Retiro en el local'
       envioModalidad = 'retiro_local'
     }
 

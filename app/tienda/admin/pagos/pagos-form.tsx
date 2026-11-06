@@ -554,7 +554,7 @@ export default function PagosForm({
                 type="text"
                 value={alias}
                 onChange={(e) => setAlias(e.target.value)}
-                placeholder="Ej: tecmaker.3d.mp"
+                placeholder="Ej: mi.tienda.mp"
                 className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
               />
             </div>

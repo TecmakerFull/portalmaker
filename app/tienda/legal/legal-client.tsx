@@ -85,13 +85,13 @@ export default function LegalClient({ store, initialTab = 'terms' }: LegalClient
               2. Precios y Formas de Pago
             </h2>
             <p>
-              Los precios se encuentran expresados en moneda de curso legal (o la moneda especificada en catálogo). Las transferencias bancarias directas deberán acreditarse para dar inicio al despacho o preparación de la pieza.
+              Los precios se encuentran expresados en moneda de curso legal (o la moneda especificada en catálogo). Las transferencias bancarias directas deberán acreditarse para dar inicio al despacho o preparación del pedido.
             </p>
             <h2 className="text-base sm:text-lg font-semibold text-[var(--color-texto)] opacity-100">
               3. Envíos y Tiempos de Fabricación
             </h2>
             <p>
-              Las piezas producidas bajo pedido o personalizadas cuentan con plazos estimados de fabricación acordados directamente con el cliente antes de la entrega o despacho.
+              Los productos a pedido o personalizados cuentan con plazos estimados de entrega acordados directamente con el cliente antes de la entrega o despacho.
             </p>
           </div>
         )}

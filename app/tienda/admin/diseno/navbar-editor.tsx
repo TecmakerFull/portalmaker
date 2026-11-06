@@ -359,7 +359,7 @@ export function NavbarEditor({
                             type="text"
                             value={item.texto}
                             onChange={(e) => handleUpdateItem(item.id, { texto: e.target.value })}
-                            placeholder="Ej: Ofertas, Impresoras 3D, Contacto"
+                            placeholder="Ej: Ofertas, Novedades, Contacto"
                             className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                           />
                         </div>

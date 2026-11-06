@@ -27,12 +27,12 @@ export default function StorySection({
     {
       icon: PackageCheck,
       title: 'Calidad en cada detalle',
-      text: 'Materiales nobles y acabados realizados con precisión de taller.',
+      text: 'Productos elegidos con cuidado y atención en cada detalle.',
     },
     {
       icon: Check,
       title: 'Diseño atemporal',
-      text: 'Piezas creadas con dedicación para acompañarte en tu día a día.',
+      text: 'Pensados para acompañarte en tu día a día.',
     },
   ]
 

@@ -612,7 +612,7 @@ export default function BannersManager({
                           type="text"
                           value={slide.subtitulo}
                           onChange={(e) => handleUpdateSlide(idx, 'subtitulo', e.target.value)}
-                          placeholder="Ej: Piezas exclusivas impresas en alta precisión"
+                          placeholder="Ej: Descubrí las novedades de la temporada"
                           className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-fondo)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primario)]"
                         />
                       </div>

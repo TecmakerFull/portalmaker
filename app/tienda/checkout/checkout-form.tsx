@@ -512,7 +512,7 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
       // 2. Construir mensaje de WhatsApp
       let entregaLabel = 'A convenir / coordinar por WhatsApp'
       if (tipoEntrega === 'retiro') {
-        entregaLabel = `Retiro en local / taller${store.direccion ? ` (${store.direccion})` : ''}`
+        entregaLabel = `Retiro en el local${store.direccion ? ` (${store.direccion})` : ''}`
       } else if (tipoEntrega === 'envio') {
         const optionName = selectedOption?.serviceName || 'Envío a domicilio'
         const costoText = costoEnvio > 0 ? `$${costoEnvio.toLocaleString('es-AR')}` : esEnvioGratis ? '¡Gratis!' : '$0'
@@ -893,7 +893,7 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
                 <span className="font-bold text-xs">Retiro en local</span>
               </div>
               <span className="text-[11px] opacity-60 truncate">
-                {store.direccion ? 'Retirar en taller' : 'Retirar en taller'}
+                Retirar en el local
               </span>
             </button>
 
@@ -951,7 +951,7 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-[var(--color-primario)] shrink-0 mt-0.5" />
                 <div className="text-xs space-y-1">
-                  <div className="font-bold">Dirección de retiro del taller / local:</div>
+                  <div className="font-bold">Dirección de retiro:</div>
                   {store.direccion ? (
                     <div className="text-xs sm:text-sm font-semibold opacity-90">
                       {store.direccion}
@@ -1416,7 +1416,7 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
         {/* 4. Notas Adicionales */}
         <div className="bg-[var(--color-superficie)]/50 rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 space-y-2 shadow-xs">
           <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
-            Notas adicionales para el taller / vendedor (Opcional)
+            Notas adicionales para el vendedor (opcional)
           </label>
           <textarea
             rows={3}
@@ -1482,7 +1482,7 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
             <div className="p-3 rounded-2xl bg-[var(--color-primario)]/10 border border-[var(--color-primario)]/25 text-[var(--color-texto)] text-[11px] leading-snug flex items-center gap-2">
               <Clock className="w-4 h-4 shrink-0 text-[var(--color-primario)]" />
               <span>
-                Incluye piezas <strong>a fabricar bajo pedido</strong>. El maker te indicará el plazo estimado.
+                Incluye productos <strong>a preparar bajo pedido</strong>. El vendedor te indicará el plazo estimado.
               </span>
             </div>
           )}

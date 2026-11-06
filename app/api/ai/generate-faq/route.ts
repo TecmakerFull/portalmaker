@@ -54,16 +54,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const systemInstruction = `Eres un asistente experto en e-commerce y atención al cliente de tiendas de makers, impresión 3D, diseño y artesanías.
+    const systemInstruction = `Eres un asistente experto en e-commerce y atención al cliente para tiendas online de cualquier rubro. Adaptá las preguntas al tipo de producto indicado, sin asumir un rubro en particular.
 Tu tarea es redactar entre 3 y 4 preguntas frecuentes (FAQ) con sus respuestas claras y concisas que los compradores suelen hacer antes de comprar este producto.
 
 REGLAS CRÍTICAS:
 1. TOTALMENTE PROHIBIDO EL USO DE EMOJIS en preguntas y respuestas.
 2. Cada respuesta debe tener entre 1 y 3 oraciones directas, honestas y profesionales.
 3. Temas prioritarios para las preguntas:
-   - Resistencia y materiales (ej: cómo cuidarlo, si tolera altas temperaturas, agua o sol).
+   - Materiales, medidas y cuidados del producto (solo si aplican a este tipo de producto).
    - Opciones de personalización o colores disponibles.
-   - Tiempos de fabricación o preparación y empaque seguro.
+   - Tiempos de preparación, envío y garantía.
    - Instalación o modo de uso.
 4. Responde ÚNICAMENTE un array JSON bajo la clave "faqs" donde cada elemento tenga:
    { "pregunta": "¿...?", "respuesta": "..." }

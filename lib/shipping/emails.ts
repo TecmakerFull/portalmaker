@@ -298,7 +298,7 @@ export async function sendBuyerOrderDeliveredEmail(params: {
           </p>
 
           <p style="font-size: 14px; color: #475569; line-height: 1.5;">
-            ¡Esperamos que disfrutes de tu compra! Si tienes alguna consulta o necesitas contactar al taller de ${store.nombre}, puedes comunicarte mediante WhatsApp o responder a este correo.
+            ¡Esperamos que disfrutes de tu compra! Si tienes alguna consulta o necesitas contactar a ${store.nombre}, puedes comunicarte mediante WhatsApp o responder a este correo.
           </p>
 
           <div style="text-align: center; margin-top: 32px;">

@@ -571,7 +571,7 @@ export default function AdminSidebar({
             href={`/tienda/admin/colaboradores${tenantQuery}`}
             prefetch={true}
             className="min-h-[44px] flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold opacity-45 hover:opacity-75 text-zinc-400 dark:text-zinc-500 transition-colors"
-            title="Colaboradores de taller disponibles a partir de Nivel 2 (Starter)"
+            title="Colaboradores disponibles a partir de Nivel 2 (Starter)"
           >
             <div className="flex items-center gap-2.5">
               <UserCheck className="w-4 h-4 text-zinc-400" />

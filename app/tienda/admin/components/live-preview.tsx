@@ -55,7 +55,7 @@ export function LivePreview({ store, sections = [] }: LivePreviewProps) {
         id: 'msg-1',
         texto: store.whatsapp_numero
           ? `Envíos a todo el país • Consultas al WhatsApp ${store.whatsapp_numero}`
-          : 'Envíos a todo el país • ¡Comprá tus impresiones 3D online!',
+          : 'Envíos a todo el país • ¡Comprá online!',
         activo: true,
       },
     ],
@@ -122,9 +122,9 @@ export function LivePreview({ store, sections = [] }: LivePreviewProps) {
       {
         id: 'slide-demo',
         imagen_url:
-          'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=1200&auto=format&fit=crop&q=80',
-        titulo: 'Filamentos Premium & Modelos 3D',
-        subtitulo: 'Soluciones y piezas de ingeniería fabricadas en alta precisión.',
+          'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+        titulo: 'Nueva colección',
+        subtitulo: 'Descubrí nuestros productos destacados.',
         cta_texto: 'Ver Productos',
         cta_url: '/tienda',
         activo: true,

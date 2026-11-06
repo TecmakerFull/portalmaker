@@ -139,7 +139,7 @@ export default async function PedidoConfirmadoPage({ searchParams }: PageProps) 
     aprobado: {
       titulo: '¡Pago y pedido confirmados!',
       descripcion:
-        'Recibimos tu pago correctamente. El taller comenzará la preparación de tu compra.',
+        'Recibimos tu pago correctamente. Ya estamos preparando tu compra.',
       badgeTexto: 'Pago Aprobado',
       badgeClass:
         'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
@@ -299,7 +299,7 @@ export default async function PedidoConfirmadoPage({ searchParams }: PageProps) 
               <span className="text-zinc-500 dark:text-zinc-400">Modalidad de entrega</span>
               <span className="capitalize font-medium text-zinc-800 dark:text-zinc-200">
                 {order.tipo_entrega === 'retiro'
-                  ? 'Retiro en taller / local'
+                  ? 'Retiro en el local'
                   : order.tipo_entrega === 'envio'
                   ? 'Envío a domicilio'
                   : 'A coordinar'}

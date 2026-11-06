@@ -158,7 +158,7 @@ export default function SobreNosotrosForm({
       {/* Encabezado */}
       <AdminPageHeader
         title="Sobre Nosotros"
-        description="Configura la sección informativa donde cuentas la historia de tu taller, equipo y proyectos."
+        description="Configura la sección informativa donde contás la historia de tu negocio y tu equipo."
         icon={Users}
         actions={
           visible ? (
@@ -235,7 +235,7 @@ export default function SobreNosotrosForm({
           {/* Foto del Taller / Equipo */}
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider opacity-70 block">
-              Foto o Imagen del Taller / Equipo (Opcional)
+              Foto de tu local o tu equipo (opcional)
             </label>
 
             {imagenUrl ? (
@@ -267,7 +267,7 @@ export default function SobreNosotrosForm({
                   )}
                 </div>
                 <p className="text-xs font-bold">
-                  {uploadingImage ? 'Subiendo imagen...' : 'Click para subir una foto de tu taller'}
+                  {uploadingImage ? 'Subiendo imagen...' : 'Tocá para subir una foto'}
                 </p>
                 <p className="text-[11px] opacity-60 mt-0.5">Formatos JPG, PNG, WebP</p>
               </div>
@@ -286,13 +286,13 @@ export default function SobreNosotrosForm({
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wider opacity-70 block flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5 text-[#CA8A04] dark:text-[#FACC15]" />
-              <span>Historia & Descripción del Taller</span>
+              <span>Historia y descripción de tu negocio</span>
             </label>
             <textarea
               rows={7}
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
-              placeholder="Contá cómo nació tu proyecto, qué tecnologías utilizas (impresión 3D, corte láser, modelado), tus valores y el compromiso con cada pieza personalizada..."
+              placeholder="Contá cómo empezó tu negocio, qué ofrecés y qué te diferencia..."
               className="w-full p-3.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15] leading-relaxed"
             />
             <p className="text-[11px] opacity-50">

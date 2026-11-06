@@ -95,7 +95,7 @@ export async function sendOrderPaidNotification({ store, order }: SendOrderNotif
       <div class="client-row"><strong>Nombre:</strong> ${buyerName}</div>
       <div class="client-row"><strong>Teléfono:</strong> ${order.telefono_comprador || 'No especificado'}</div>
       <div class="client-row"><strong>Email:</strong> ${order.email_comprador || 'No especificado'}</div>
-      <div class="client-row"><strong>Entrega:</strong> ${order.tipo_entrega === 'envio' ? 'Envío a domicilio' : order.tipo_entrega === 'retiro' ? 'Retiro en taller / local' : 'A convenir'}</div>
+      <div class="client-row"><strong>Entrega:</strong> ${order.tipo_entrega === 'envio' ? 'Envío a domicilio' : order.tipo_entrega === 'retiro' ? 'Retiro en el local' : 'A convenir'}</div>
       ${order.direccion_entrega ? `<div class="client-row"><strong>Dirección:</strong> ${order.direccion_entrega}</div>` : ''}
       ${order.notas ? `<div class="client-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1;"><strong>Aclaraciones del cliente:</strong> <em>"${order.notas}"</em></div>` : ''}
 

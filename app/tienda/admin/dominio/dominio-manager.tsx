@@ -182,7 +182,7 @@ export default function DominioManager({
                 type="text"
                 value={customDomain}
                 onChange={(e) => setCustomDomain(e.target.value)}
-                placeholder="ej: mitaller3d.com.ar o www.mitaller3d.com.ar"
+                placeholder="Ej: mitienda.com.ar"
                 className="flex-1 min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
               />
               <button

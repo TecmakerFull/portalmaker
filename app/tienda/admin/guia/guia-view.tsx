@@ -101,7 +101,7 @@ export default function GuiaView({
         },
         {
           sub: 'Subcategorías opcionales',
-          desc: 'Si tienes variedad de artículos, puedes crear divisiones adentro (por ejemplo: dentro de "Indumentaria", crear "Remeras", "Buzos"; o dentro de "Filamentos", crear "PLA", "PETG").',
+          desc: 'Si tienes variedad de artículos, puedes crear divisiones adentro (por ejemplo: dentro de "Indumentaria", crear "Remeras", "Buzos"; o dentro de "Hogar", crear "Cocina", "Baño").',
         },
       ],
     },
@@ -134,7 +134,7 @@ export default function GuiaView({
         },
         {
           sub: 'E. Stock Inmediato vs. Fabricación a Pedido / Sin Stock',
-          desc: 'Si tienes piezas listas, activa "Gestiona stock" e ingresa la cantidad para habilitar la compra directa. Si trabajas a pedido o un producto se queda sin stock, la tienda no detiene tus ventas: le muestra al comprador tus condiciones y tiempo estimado de entrega/fabricación (ej: "Elaboración en 3 a 5 días hábiles") con el botón para consultar disponibilidad por WhatsApp.',
+          desc: 'Si tienes productos listos para entregar, activa "Gestiona stock" e ingresa la cantidad para habilitar la compra directa. Si trabajas a pedido o un producto se queda sin stock, la tienda no detiene tus ventas: le muestra al comprador tus condiciones y tiempo estimado de entrega/fabricación (ej: "Elaboración en 3 a 5 días hábiles") con el botón para consultar disponibilidad por WhatsApp.',
         },
       ],
     },
@@ -234,11 +234,11 @@ export default function GuiaView({
         },
         {
           sub: '3. El paso a paso diario para despachar un pedido',
-          desc: '1) Recepción: el cliente paga y la orden entra con la dirección cargada. 2) Imprimir etiqueta: desde el panel de Ventas tocás "Imprimir Etiqueta PDF". 3) Embalar: pegás la guía en el paquete. 4) Despacho: dejás el paquete en cualquier sucursal de Andreani o Correo Argentino (Drop-off) sin hacer fila porque ya está pago y rotulado, o solicitás retiro por tu taller (Pick-up) si tu zona lo habilita.',
+          desc: '1) Recepción: el cliente paga y la orden entra con la dirección cargada. 2) Imprimir etiqueta: desde el panel de Ventas tocás "Imprimir Etiqueta PDF". 3) Embalar: pegás la guía en el paquete. 4) Despacho: dejás el paquete en cualquier sucursal de Andreani o Correo Argentino (Drop-off) sin hacer fila porque ya está pago y rotulado, o solicitás retiro en tu local (Pick-up) si tu zona lo habilita.',
         },
         {
           sub: '4. Preguntas Frecuentes y Dudas Habituales',
-          desc: '¿Quién paga el envío? El comprador lo abona en el checkout al momento de pagar. ¿Cómo rastrea el cliente el paquete? Recibe un email con el número de guía y el link de seguimiento oficial. ¿Y si quieren retirar en mi taller? Podés mantener activa la opción "Retiro en local" sin costo adicional.',
+          desc: '¿Quién paga el envío? El comprador lo abona en el checkout al momento de pagar. ¿Cómo rastrea el cliente el paquete? Recibe un email con el número de guía y el link de seguimiento oficial. ¿Y si quieren retirar en mi local? Podés mantener activa la opción "Retiro en local" sin costo adicional.',
         },
       ],
     },
@@ -403,7 +403,7 @@ export default function GuiaView({
       {/* Encabezado Principal */}
       <AdminPageHeader
         title="Guía Paso a Paso"
-        description="Aprende a configurar tu vidriera, gestionar pedidos, invitar colaboradores, moderar reseñas y potenciar tu taller."
+        description="Aprende a configurar tu vidriera, gestionar pedidos, invitar colaboradores, moderar reseñas y potenciar tu tienda."
         icon={BookOpen}
       />
 

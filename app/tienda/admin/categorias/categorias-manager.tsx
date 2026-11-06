@@ -333,7 +333,7 @@ export default function CategoriasManager({
             Aún no has creado categorías
           </h2>
           <p className="text-sm opacity-70 mb-6">
-            Crea categorías como "Filamentos", "Impresiones 3D", "Llaveros" o "Lámparas" para estructurar tu catálogo.
+            Creá categorías (por ejemplo "Ofertas", "Novedades" o un tipo de producto) para ordenar tu catálogo.
           </p>
           <button
             type="button"
@@ -386,7 +386,7 @@ export default function CategoriasManager({
                   autoFocus
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Ej: Filamentos, Lámparas, Llaveros..."
+                  placeholder="Nombre de la categoría"
                   className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 transition-all shadow-2xs"
                 />
               </div>

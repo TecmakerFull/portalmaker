@@ -83,7 +83,7 @@ export default async function AdminHomePage() {
             </div>
 
             <p className="text-xs sm:text-sm opacity-70 mb-5">
-              Te dejamos una guía rápida para que empieces a poner en marcha tu taller online.
+              Te dejamos una guía rápida para que empieces a poner en marcha tu tienda online.
             </p>
 
             {/* Barra de Progreso */}
@@ -122,10 +122,10 @@ export default async function AdminHomePage() {
                   )}
                   <div>
                     <span className="text-sm font-semibold group-hover:text-[#CA8A04] dark:group-hover:text-[#FACC15] transition-colors">
-                      {hasProducts ? 'Productos cargados en catálogo' : 'Agregá tus productos de taller'}
+                      {hasProducts ? 'Productos cargados en catálogo' : 'Agregá tus productos'}
                     </span>
                     <p className="text-xs opacity-60">
-                      Cargá piezas de impresión 3D, corte láser o CNC con fotos y fichas técnicas.
+                      Cargá tus productos con fotos, precio y una breve descripción.
                     </p>
                   </div>
                 </div>
@@ -179,11 +179,11 @@ export default async function AdminHomePage() {
           <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 shadow-xs">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#CA8A04] dark:text-[#FACC15] mb-2">
               <Sparkles className="w-4 h-4" />
-              <span>Tip Maker</span>
+              <span>Consejo</span>
             </div>
             <h3 className="text-sm font-bold mb-1.5">Fichas técnicas y materiales</h3>
             <p className="text-xs opacity-75 leading-relaxed">
-              En cada producto podés detallar el filamento (PLA, PETG, ABS, Resina), espesores de corte o tolerancias CNC para que tus clientes conozcan la calidad de tu trabajo.
+              En cada producto contá medidas, materiales y qué incluye: cuanta más información tenga tu cliente, menos dudas y más ventas.
             </p>
           </div>
 
@@ -195,7 +195,7 @@ export default async function AdminHomePage() {
             </div>
             <h3 className="text-sm font-bold mb-1.5">Atención directa</h3>
             <p className="text-xs opacity-75 leading-relaxed">
-              Al no haber intermediarios en los cobros del plan vitrina, acordás envíos por Andreani, Correo Argentino o retiro en tu taller sin pagar comisiones por venta.
+              Al no haber intermediarios en los cobros del plan vitrina, acordás envíos por Andreani, Correo Argentino o retiro en tu local sin pagar comisiones por venta.
             </p>
           </div>
         </div>

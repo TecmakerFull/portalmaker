@@ -317,7 +317,7 @@ export default function BrandingForm({ store, tenantQuery, initialSections = [] 
                   type="text"
                   value={slogan}
                   onChange={(e) => setSlogan(e.target.value)}
-                  placeholder="Ej: Impresiones 3D personalizadas y de alta precisión"
+                  placeholder="Una frase corta sobre lo que vendés"
                   className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]"
                 />
               </div>
@@ -618,7 +618,7 @@ export default function BrandingForm({ store, tenantQuery, initialSections = [] 
             <div>
               <span className="font-bold text-sm block">Modo Oscuro</span>
               <p className="text-xs opacity-70 mt-0.5">
-                Fondo oscuro y moderno. Destaca piezas tecnológicas y de ingeniería.
+                Fondo oscuro y moderno. Ideal para productos de tecnología y diseño.
               </p>
             </div>
           </button>
@@ -789,7 +789,7 @@ export default function BrandingForm({ store, tenantQuery, initialSections = [] 
                       )}
                     </div>
                     <p className="text-xs opacity-75">
-                      Define los códigos hexadecimales o usa el selector visual para replicar la identidad corporativa de tu taller.
+                      Define los códigos hexadecimales o usa el selector visual para replicar la identidad de tu marca.
                     </p>
                   </div>
 
@@ -1174,7 +1174,7 @@ export default function BrandingForm({ store, tenantQuery, initialSections = [] 
                     : 'sans-serif',
               }}
             >
-              {nombre || 'Portalmaker'} — Taller Maker
+              {nombre || 'Tu tienda'}
             </div>
           </div>
 
@@ -1247,7 +1247,7 @@ export default function BrandingForm({ store, tenantQuery, initialSections = [] 
                     : 'sans-serif',
               }}
             >
-              Impresión 3D de alta precisión con filamento PLA premium y corte láser CNC.
+              Así se verán los textos y descripciones de tus productos.
             </div>
           </div>
         </div>

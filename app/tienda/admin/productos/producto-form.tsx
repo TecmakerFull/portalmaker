@@ -923,7 +923,7 @@ export default function ProductoForm({
             <p className="text-xs sm:text-sm opacity-70 mt-0.5">
               {isEditing
                 ? 'Modifica los datos, fotos, dimensiones y variantes de tu producto.'
-                : 'Carga las fotos y especificaciones de tu pieza para publicarla en tu tienda.'}
+                : 'Cargá las fotos y los datos de tu producto para publicarlo en tu tienda.'}
             </p>
           </div>
         </div>
@@ -971,11 +971,7 @@ export default function ProductoForm({
                 maxLength={80}
                 value={nombre}
                 onChange={(e) => handleNombreChange(e.target.value)}
-                placeholder={
-                  variants.length > 0
-                    ? 'Ej: Remera Lisa de Algodón, Maceta Geométrica, Lámpara Nórdica...'
-                    : 'Ej: Lámpara de Mesa con Base de Madera, Mochila Urbana...'
-                }
+                placeholder={variants.length > 0 ? 'Nombre del producto (sin color ni talle)' : 'Nombre del producto'}
                 className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-semibold focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
               />
               {variants.length > 0 ? (
@@ -1177,7 +1173,7 @@ export default function ProductoForm({
             rows={5}
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
-            placeholder="Describe las características de tu producto: filamentos utilizados (PLA, PETG, Resina), dimensiones, tolerancias, cuidados, o agrega enlaces..."
+            placeholder="Contá cómo es tu producto: qué es, medidas, materiales, colores, qué incluye..."
             className="w-full p-4 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 leading-relaxed transition-all shadow-xs"
           />
         </div>
@@ -1321,7 +1317,7 @@ export default function ProductoForm({
                       handleAddImageUrl(e)
                     }
                   }}
-                  placeholder="https://ejemplo.com/fotos/mi-pieza.jpg"
+                  placeholder="https://ejemplo.com/foto.jpg"
                   className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
                 />
                 <button
@@ -1449,7 +1445,7 @@ export default function ProductoForm({
                 type="text"
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
-                placeholder="Ej: LAMP-001"
+                placeholder="Ej: PROD-001"
                 className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
               />
               <p className="text-[11px] opacity-60 mt-1">
@@ -1723,7 +1719,7 @@ export default function ProductoForm({
                         type="text"
                         value={variant.nombre}
                         onChange={(e) => handleUpdateVariant(index, 'nombre', e.target.value)}
-                        placeholder="Ej: Negro / PLA, Talle L, 15cm"
+                        placeholder="Ej: Rojo, Talle M, Grande"
                         className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
                       />
                     </div>
@@ -1900,7 +1896,7 @@ export default function ProductoForm({
             <div className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
               {metaDescription ||
                 descripcion.substring(0, 150) ||
-                'Compra online con envío a todo el país. Calidad garantizada y atención personalizada en nuestro taller maker.'}
+                'Comprá online con envío a todo el país. Calidad garantizada y atención personalizada.'}
             </div>
           </div>
 
@@ -1969,7 +1965,7 @@ export default function ProductoForm({
                 type="text"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
-                placeholder="ej: soporte, auriculares, gaming, pla, impresion 3d"
+                placeholder="Ej: regalo, oferta, verano"
                 className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
               />
             </div>
@@ -2071,7 +2067,7 @@ export default function ProductoForm({
                     type="text"
                     value={faq.pregunta}
                     onChange={(e) => handleUpdateFaq(idx, 'pregunta', e.target.value)}
-                    placeholder="¿Qué resistencia tiene el producto?"
+                    placeholder="Ej: ¿Tiene garantía?"
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:border-amber-400 dark:focus:border-amber-400"
                   />
                   <textarea
@@ -2403,7 +2399,7 @@ export default function ProductoForm({
                   autoFocus
                   value={nuevaCatNombre}
                   onChange={(e) => setNuevaCatNombre(e.target.value)}
-                  placeholder="Ej: Filamentos, Lámparas, Cortados Láser..."
+                  placeholder="Nombre de la categoría"
                   className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
                 />
               </div>
@@ -2515,7 +2511,7 @@ export default function ProductoForm({
                   <span>Título en Google (Meta Title)</span>
                 </div>
                 <p className="opacity-80 pl-7">
-                  Incluí el nombre del producto, una característica o material clave y tu marca (ej: <span className="font-semibold text-[var(--color-texto)]">Vaso Chop de Aluminio Térmico | Tecmaker3D</span>). Los mejores títulos tienen entre 40 y 60 caracteres.
+                  Incluí el nombre del producto, una característica o material clave y tu marca (ej: <span className="font-semibold text-[var(--color-texto)]">Mochila Urbana Impermeable | Tu Marca</span>). Los mejores títulos tienen entre 40 y 60 caracteres.
                 </p>
               </div>
 

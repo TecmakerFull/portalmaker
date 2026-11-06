@@ -363,7 +363,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por nombre, subdominio, email del maker o notas..."
+              placeholder="Buscar por nombre, subdominio, email del dueño o notas..."
               className="w-full min-h-[42px] pl-10 pr-9 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
             />
             {searchTerm && (

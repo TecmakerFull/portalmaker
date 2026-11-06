@@ -739,7 +739,7 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
               <div className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 text-xs opacity-75 leading-relaxed flex items-start gap-2.5">
                 <ShieldCheck className="w-4 h-4 text-[var(--color-primario)] shrink-0 mt-0.5" />
                 <span>
-                  Tus datos están protegidos y vinculados a tus compras en <strong>{store.nombre}</strong>. Todos los pedidos se coordinan y despachan desde el taller del Maker.
+                  Tus datos están protegidos y vinculados a tus compras en <strong>{store.nombre}</strong>. Todos los pedidos se coordinan y despachan directamente desde la tienda.
                 </span>
               </div>
             </div>
@@ -805,7 +805,7 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
                             <Truck className="w-3.5 h-3.5 text-[var(--color-primario)] shrink-0" />
                             <span>
                               {o.tipo_entrega === 'retiro'
-                                ? 'Retiro en taller / local'
+                                ? 'Retiro en el local'
                                 : o.tipo_entrega === 'envio'
                                 ? 'Envío a domicilio'
                                 : 'A convenir por WhatsApp'}

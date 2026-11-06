@@ -729,7 +729,7 @@ export default function ProductDetailView({
             </span>
             <span className="flex items-center gap-3">
               <RotateCcw className="w-4 h-4 text-[var(--color-primario)] shrink-0" />
-              <span>Devoluciones sencillas y garantía de taller</span>
+              <span>Devoluciones sencillas y garantía</span>
             </span>
             <span className="flex items-center gap-3">
               <ShieldCheck className="w-4 h-4 text-[var(--color-primario)] shrink-0" />
@@ -810,7 +810,7 @@ export default function ProductDetailView({
                   renderMarkdown(product.descripcion)
                 ) : (
                   <p>
-                    Pieza seleccionada con altos estándares de fabricación, acabados pulidos y diseño funcional pensado para durar.
+                    Producto seleccionado con altos estándares de calidad, pensado para durar.
                   </p>
                 )}
               </div>
@@ -861,7 +861,7 @@ export default function ProductDetailView({
                     )}
                     <div className="grid grid-cols-2 py-3.5">
                       <dt className="opacity-60 font-medium">Garantía</dt>
-                      <dd className="font-semibold">{details?.garantia_texto || 'Garantía oficial de taller'}</dd>
+                      <dd className="font-semibold">{details?.garantia_texto || 'Garantía del vendedor'}</dd>
                     </div>
                   </>
                 )}
@@ -875,7 +875,7 @@ export default function ProductDetailView({
               <div className="p-5 sm:p-6 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.01] dark:bg-white/[0.02] space-y-4">
                 <h3 className="text-sm sm:text-base font-semibold text-[var(--color-texto)] flex items-center gap-2">
                   <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                  <span>Tu opinión sobre esta pieza</span>
+                  <span>Tu opinión sobre este producto</span>
                 </h3>
 
                 {currentUser ? (
@@ -930,7 +930,7 @@ export default function ProductDetailView({
                     {/* Comentario */}
                     <div>
                       <label className="block text-xs font-medium mb-1.5 opacity-80">
-                        Comentario / Experiencia con la pieza:
+                        Comentario / Experiencia con el producto:
                       </label>
                       <textarea
                         rows={3}

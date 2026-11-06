@@ -68,14 +68,23 @@ export type AvailableFont = typeof AVAILABLE_FONTS[number]['value'];
 // RUBROS DE TIENDA — Categorías principales para alta de tiendas
 // =============================================================================
 
+// Rubros generales primero: la plataforma ya no es solo para makers y quien
+// vende, por ejemplo, cocinas tiene que encontrar su rubro sin leer de más.
+// El label elegido se guarda como slogan inicial de la tienda (editable luego).
 export const RUBROS_TIENDA = [
+  { id: 'indumentaria', label: 'Ropa, Calzado y Accesorios' },
+  { id: 'hogar', label: 'Hogar, Muebles y Electrodomésticos' },
+  { id: 'bazar_hogar', label: 'Bazar y Decoración' },
+  { id: 'alimentos', label: 'Alimentos y Bebidas' },
+  { id: 'belleza', label: 'Belleza y Cuidado Personal' },
+  { id: 'electronica', label: 'Electrónica y Tecnología' },
+  { id: 'artesanias_diseno', label: 'Regalos, Diseño y Artesanías' },
+  { id: 'insumos_herramientas', label: 'Herramientas, Insumos y Repuestos' },
+  { id: 'deportes', label: 'Deportes y Tiempo Libre' },
+  { id: 'ninos', label: 'Juguetes, Bebés y Niños' },
+  { id: 'mascotas', label: 'Mascotas' },
   { id: 'impresion_3d', label: 'Impresión 3D y Modelado' },
   { id: 'corte_laser', label: 'Corte Láser y Grabado' },
-  { id: 'electronica', label: 'Electrónica, Robótica y Gadgets' },
-  { id: 'indumentaria', label: 'Indumentaria, Ropa y Calzado' },
-  { id: 'bazar_hogar', label: 'Bazar, Decoración y Hogar' },
-  { id: 'artesanias_diseno', label: 'Diseño, Regalos y Artesanías' },
-  { id: 'insumos_herramientas', label: 'Herramientas, Insumos y Repuestos' },
   { id: 'otro', label: 'Otro rubro' },
 ] as const;
 
@@ -126,7 +135,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   {
     id: 3,
     nombre: '03 Orange & Navy',
-    descripcion: 'Moderno y enérgico — estilo taller y fabricación',
+    descripcion: 'Moderno y enérgico — ideal para marcas con personalidad',
     tags: 'Startups, Agencies, SaaS, Landing Pages',
     coloresHex: ['#F97316', '#FDBA74', '#0F172A', '#334155', '#F8FAFC'],
     claro:  { primario: '#F97316', secundario: '#FDBA74', fondo: '#F8FAFC', texto: '#0F172A' },
@@ -135,7 +144,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   {
     id: 4,
     nombre: '04 Purple & Pink',
-    descripcion: 'Creativo y artístico — piezas de diseño y autor',
+    descripcion: 'Creativo y artístico — diseño y productos de autor',
     tags: 'SaaS, Portfolio, Creative, Agency',
     coloresHex: ['#7C3AED', '#A78BFA', '#EC4899', '#F9A8D4', '#FCE7F3'],
     claro:  { primario: '#7C3AED', secundario: '#EC4899', fondo: '#FFFFFF', texto: '#1E1B4B' },
@@ -144,7 +153,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   {
     id: 5,
     nombre: '05 Teal & Dark',
-    descripcion: 'Look tech y láser — sobrio con contrastes cian',
+    descripcion: 'Look tecnológico — sobrio con contrastes cian',
     tags: 'SaaS, AI Tools, Modern Websites',
     coloresHex: ['#0D9488', '#2DD4BF', '#0F766E', '#1F2937', '#111827'],
     claro:  { primario: '#0D9488', secundario: '#2DD4BF', fondo: '#F0FDFA', texto: '#111827' },
@@ -171,7 +180,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   {
     id: 8,
     nombre: '08 Blue & Light Gray',
-    descripcion: 'Elegante y limpio — ingeniería y precisión',
+    descripcion: 'Elegante y limpio — profesional y confiable',
     tags: 'Corporate, SaaS, Education, Tech',
     coloresHex: ['#3B82F6', '#93C5FD', '#DBEAFE', '#E5E7EB', '#FFFFFF'],
     claro:  { primario: '#3B82F6', secundario: '#93C5FD', fondo: '#FFFFFF', texto: '#1E293B' },
@@ -180,7 +189,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   {
     id: 9,
     nombre: '09 Rose & Cream',
-    descripcion: 'Cálido y artesanal — piezas decorativas y hogar',
+    descripcion: 'Cálido y artesanal — decoración, hogar y regalos',
     tags: 'Beauty, Fashion, Lifestyle, Blogs',
     coloresHex: ['#F43F5E', '#FB7185', '#FFF1F2', '#FEF3C7', '#FFFBEB'],
     claro:  { primario: '#F43F5E', secundario: '#FB7185', fondo: '#FFFBEB', texto: '#1C1917' },
@@ -189,7 +198,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   {
     id: 10,
     nombre: '10 Green & Black',
-    descripcion: 'Look terminal maker / tech — moderno y contrastado',
+    descripcion: 'Look tech — moderno y contrastado',
     tags: 'SaaS, Finance, Crypto, Technology',
     coloresHex: ['#22C55E', '#4ADE80', '#16A34A', '#0D1117', '#1F2937'],
     claro:  { primario: '#16A34A', secundario: '#4ADE80', fondo: '#F0FDF4', texto: '#0D1117' },

@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description =
     details?.meta_description ||
     product.descripcion?.slice(0, 160).replace(/[*#_]/g, '') ||
-    `Descubrí ${product.nombre} en ${store.nombre}. Calidad de taller y envíos directos.`
+    `Descubrí ${product.nombre} en ${store.nombre}. Comprá online con envíos a todo el país.`
 
   // Sin foto de producto se usa la imagen de la tienda: un openGraph propio
   // reemplaza por completo al del layout, así que hay que volver a darle imagen.

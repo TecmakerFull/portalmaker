@@ -469,7 +469,7 @@ export default function ContactoClient({ store, tenantQuery }: ContactoClientPro
                   rows={5}
                   value={mensaje}
                   onChange={(e) => setMensaje(e.target.value)}
-                  placeholder="Escribe tu consulta o los detalles de la pieza que deseas fabricar..."
+                  placeholder="Escribí tu consulta..."
                   className="w-full p-3.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-superficie)] text-xs sm:text-sm outline-none focus:border-[var(--color-primario)] focus:ring-1 focus:ring-[var(--color-primario)] text-[var(--color-texto)] resize-none"
                 />
               </label>

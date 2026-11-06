@@ -54,7 +54,7 @@ export default function NewsletterSection({ storeId, storeName = 'nuestra tienda
             Un poco de inspiración en tu bandeja.
           </h2>
           <p className="mt-2 text-xs sm:text-sm opacity-70 text-[var(--color-texto)]">
-            Novedades de taller, lanzamientos y piezas exclusivas que merecen un lugar en tu vida.
+            Novedades, lanzamientos y ofertas exclusivas directo en tu correo.
           </p>
         </div>
 

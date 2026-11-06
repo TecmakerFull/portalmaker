@@ -457,7 +457,7 @@ export function HeroEditor({
                             type="text"
                             value={slide.subtitulo || ''}
                             onChange={(e) => handleUpdateSlide(slide.id, { subtitulo: e.target.value })}
-                            placeholder="Ej: Hasta 3 cuotas sin interés en filamentos"
+                            placeholder="Ej: Hasta 3 cuotas sin interés"
                             className="w-full px-3 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
                           />
                         </div>

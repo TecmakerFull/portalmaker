@@ -1011,7 +1011,7 @@ export default function SuperadminTiendaDetailFullpage({
                       required
                       value={subEditForm.nombre || ''}
                       onChange={(e) => setSubEditForm({ ...subEditForm, nombre: e.target.value })}
-                      placeholder="Ej. Tecmaker 3D"
+                      placeholder="Nombre de la tienda"
                       className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
                     />
                   </div>
@@ -1031,7 +1031,7 @@ export default function SuperadminTiendaDetailFullpage({
                             slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''),
                           })
                         }
-                        placeholder="tecmaker3d"
+                        placeholder="mitienda"
                         className="w-full h-11 pl-3.5 pr-32 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
                       />
                       <span className="absolute right-3 text-xs font-mono text-zinc-500 dark:text-zinc-400 select-none pointer-events-none">
@@ -1052,7 +1052,7 @@ export default function SuperadminTiendaDetailFullpage({
                       required
                       value={subEditForm.admin_email || ''}
                       onChange={(e) => setSubEditForm({ ...subEditForm, admin_email: e.target.value })}
-                      placeholder="maker@ejemplo.com"
+                      placeholder="email@ejemplo.com"
                       className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
                     />
                   </div>
@@ -2615,7 +2615,7 @@ export default function SuperadminTiendaDetailFullpage({
               rows={10}
               value={subEditForm.notas_admin || ''}
               onChange={(e) => setSubEditForm({ ...subEditForm, notas_admin: e.target.value })}
-              placeholder="Escribe aquí las notas internas sobre esta tienda o cliente maker..."
+              placeholder="Escribe aquí las notas internas sobre esta tienda o cliente..."
               className="w-full p-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm outline-none focus:border-[#FF5500] focus:ring-2 focus:ring-[#FF5500]/20 leading-relaxed font-sans"
             />
 

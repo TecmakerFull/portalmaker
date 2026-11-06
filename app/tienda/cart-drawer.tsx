@@ -121,7 +121,7 @@ export default function CartDrawer({
                   Tu carrito está esperando
                 </h3>
                 <p className="mt-1 text-xs opacity-60">
-                  Encuentra tu próxima pieza favorita en {storeName}.
+                  Encontrá tu próximo producto favorito en {storeName}.
                 </p>
               </div>
               <Link
@@ -269,7 +269,7 @@ export default function CartDrawer({
 
             <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] opacity-60">
               <CreditCard className="w-3.5 h-3.5" />
-              <span>{checkoutActivo ? 'Pago 100% protegido y transparente' : 'Coordinación directa con el maker'}</span>
+              <span>{checkoutActivo ? 'Pago 100% protegido y transparente' : 'Coordinación directa con el vendedor'}</span>
             </p>
           </footer>
         )}

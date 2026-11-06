@@ -14,7 +14,9 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
   const router = useRouter()
   const [nombre, setNombre] = useState('')
   const [slug, setSlug] = useState('')
-  const [rubro, setRubro] = useState<string>(RUBROS_TIENDA[0].label)
+  // Sin rubro preseleccionado: antes arrancaba en "Impresión 3D" y quien no lo
+  // cambiaba quedaba con ese slogan aunque vendiera otra cosa.
+  const [rubro, setRubro] = useState<string>('')
   const [rubroPersonalizado, setRubroPersonalizado] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -24,7 +26,11 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
   // Autocompletar slug amigable a partir del nombre
   const handleNombreChange = (val: string) => {
     setNombre(val)
+    // normalize('NFD') separa los acentos para que "Café Ñandú" quede "cafe-nandu"
+    // en vez de perder letras ("caf-and").
     const generatedSlug = val
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .trim()
       .replace(/[^a-z0-9]+/g, '-')
@@ -40,7 +46,7 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
     try {
       // Si eligió 'Otro rubro', usar lo que escribió en el campo de texto
       const rubroFinal = rubro === 'Otro rubro'
-        ? (rubroPersonalizado.trim() || 'Comercio / Taller')
+        ? (rubroPersonalizado.trim() || 'Tienda online')
         : rubro
 
       // Paleta por defecto: 06 Yellow & Gray (preset 6)
@@ -95,14 +101,14 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
       {/* Nombre de la Tienda */}
       <div>
         <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-texto)] opacity-80 mb-1.5">
-          Nombre de tu Tienda o Taller
+          Nombre de tu Tienda
         </label>
         <input
           type="text"
           required
           value={nombre}
           onChange={(e) => handleNombreChange(e.target.value)}
-          placeholder="Ej: TecMaker 3D"
+          placeholder="Nombre de tu tienda"
           className="w-full min-h-[46px] px-4 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] placeholder:text-[var(--color-input-placeholder)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500] focus:border-[#FF5500] transition-colors"
         />
       </div>
@@ -119,7 +125,7 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
             pattern="^[a-z0-9-]+$"
             value={slug}
             onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-            placeholder="tecmaker"
+            placeholder="mitienda"
             className="w-full min-h-[46px] px-4 py-2.5 text-sm bg-transparent text-[var(--color-input-texto)] placeholder:text-[var(--color-input-placeholder)] focus:outline-none"
           />
           <span className="bg-[var(--color-input-bg-muted)] px-3.5 py-3 text-xs font-semibold text-[var(--color-texto-muted)] font-mono shrink-0 border-l border-[var(--color-input-borde)]">
@@ -132,13 +138,17 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
       <div className="space-y-3">
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-texto)] opacity-80 mb-1.5">
-            Rubro o Especialidad Principal
+            ¿Qué vendés?
           </label>
           <select
+            required
             value={rubro}
             onChange={(e) => setRubro(e.target.value)}
             className="w-full min-h-[46px] px-4 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]/25 focus:border-[#FF5500] transition-colors cursor-pointer"
           >
+            <option value="" disabled className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)]">
+              Elegí el rubro de tu tienda
+            </option>
             {RUBROS_TIENDA.map((r) => (
               <option key={r.id} value={r.label} className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)]">
                 {r.label}

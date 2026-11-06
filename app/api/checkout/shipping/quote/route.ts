@@ -314,13 +314,13 @@ export async function POST(req: Request) {
       processedOptions.push({
         optionId: 'retiro_local',
         provider: 'manual',
-        serviceName: 'Retiro en el taller / local',
+        serviceName: 'Retiro en el local',
         serviceType: 'retiro_local',
         costoCarrier: 0,
         precioFinal: 0,
         plazoMinDias: 0,
         plazoMaxDias: 1,
-        plazoTexto: 'A coordinar con el taller',
+        plazoTexto: 'A coordinar con la tienda',
         carrierMetadata: {
           retiroLocal: true,
         },

@@ -360,7 +360,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
 
       setFeedbackUbicacion({
         type: 'ok',
-        message: '¡Ubicación del taller y origen de envíos guardados correctamente!',
+        message: '¡Ubicación y origen de envíos guardados correctamente!',
       })
       router.refresh()
       setTimeout(() => setFeedbackUbicacion(null), 4000)
@@ -411,7 +411,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
       {/* Encabezado */}
       <AdminPageHeader
         title="Contacto & Ubicación"
-        description="Configurá de forma independiente los canales de atención, horarios semanales, ubicación del taller y redes sociales."
+        description="Configurá de forma independiente los canales de atención, horarios semanales, ubicación y redes sociales."
         icon={Phone}
         actions={
           <a
@@ -463,7 +463,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
               type="email"
               value={emailContacto}
               onChange={(e) => setEmailContacto(e.target.value)}
-              placeholder="contacto@mitaller.com.ar"
+              placeholder="contacto@mitienda.com.ar"
               className={inputClass}
             />
             <p className="text-[11px] opacity-60 mt-1">
@@ -521,7 +521,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--color-borde)] pb-3">
           <div className="flex items-center gap-2 text-sm font-bold opacity-90">
             <Clock className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-            <span>Horarios de Atención del Taller</span>
+            <span>Horarios de Atención</span>
           </div>
 
           {/* Switch de visibilidad en la tienda pública */}
@@ -541,7 +541,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
         </div>
 
         <p className="text-xs opacity-70">
-          Configurá los días y horarios en que atendés a tus clientes o realizás entregas en el taller. Podés definir hasta dos franjas por día (por ejemplo, turno mañana y turno tarde).
+          Configurá los días y horarios en que atendés a tus clientes o realizás entregas en tu local. Podés definir hasta dos franjas por día (por ejemplo, turno mañana y turno tarde).
         </p>
 
         {/* Barra de atajos y vista previa */}
@@ -744,7 +744,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--color-borde)] pb-3">
           <div className="flex items-center gap-2 text-sm font-bold opacity-90">
             <MapPin className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-            <span>Ubicación del Taller / Showroom & Origen de Envíos</span>
+            <span>Ubicación del Local y Origen de Envíos</span>
           </div>
           <span className="text-[11px] font-medium opacity-60 flex items-center gap-1.5">
             <Truck className="w-3.5 h-3.5 text-amber-500" />
@@ -753,7 +753,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
         </div>
 
         <p className="text-xs opacity-70">
-          Ingresá la dirección física de tu taller o showroom. Se mostrará a tus compradores para retiros presenciales y se utilizará como punto de origen para calcular tarifas de paquetería (Correo Argentino, Andreani, etc.).
+          Ingresá la dirección de tu local, depósito o showroom. Se mostrará a tus compradores para retiros presenciales y se utilizará como punto de origen para calcular tarifas de paquetería (Correo Argentino, Andreani, etc.).
         </p>
 
         {/* Campos estructurados de dirección con autocompletado en tiempo real Georef */}
@@ -907,7 +907,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
                   type="text"
                   value={razonSocial}
                   onChange={(e) => setRazonSocial(e.target.value)}
-                  placeholder="Nombre de tu taller o empresa"
+                  placeholder="Nombre de tu negocio o empresa"
                   className={inputClass}
                   maxLength={120}
                 />
@@ -953,7 +953,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
             ) : (
               <>
                 <Save className="w-4 h-4 text-[#1F2937]" />
-                <span>Guardar Ubicación del Taller</span>
+                <span>Guardar Ubicación</span>
               </>
             )}
           </button>
@@ -982,7 +982,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
               type="text"
               value={instagramUrl}
               onChange={(e) => setInstagramUrl(e.target.value)}
-              placeholder="https://instagram.com/mitaller"
+              placeholder="https://instagram.com/mitienda"
               className={inputClass}
             />
           </div>
@@ -993,7 +993,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
               type="text"
               value={facebookUrl}
               onChange={(e) => setFacebookUrl(e.target.value)}
-              placeholder="https://facebook.com/mitaller"
+              placeholder="https://facebook.com/mitienda"
               className={inputClass}
             />
           </div>
@@ -1004,7 +1004,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
               type="text"
               value={tiktokUrl}
               onChange={(e) => setTiktokUrl(e.target.value)}
-              placeholder="https://tiktok.com/@mitaller"
+              placeholder="https://tiktok.com/@mitienda"
               className={inputClass}
             />
           </div>

@@ -158,8 +158,7 @@ export default function HeroBanners({
 
           {/* Descripción con límite de 2-3 líneas */}
           <p className="text-xs sm:text-sm leading-relaxed opacity-75 max-w-[400px] text-[var(--color-texto)] line-clamp-2 sm:line-clamp-3">
-            Piezas que combinan forma y función. Descubre una selección cuidada
-            que hace de lo cotidiano algo extraordinario.
+            Descubrí una selección cuidada de productos pensados para vos.
           </p>
 
           {/* Botones de Acción */}

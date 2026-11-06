@@ -124,7 +124,7 @@ export default async function MakerDashboardPage() {
           <div className="space-y-10">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight font-[var(--font-portal-heading)]">
-                Panel de Maker
+                Mi Panel
               </h1>
               <p className="text-sm opacity-70 mt-1">
                 Gestiona tus tiendas virtuales, productos y colaboraciones autorizadas.
@@ -314,7 +314,7 @@ export default async function MakerDashboardPage() {
                   className="w-13 h-13 rounded-2xl object-contain mx-auto mb-3.5 shadow-md"
                 />
                 <h1 className="text-2xl font-bold tracking-tight font-[var(--font-portal-heading)]">
-                  ¡Crea tu tienda Maker!
+                  ¡Creá tu tienda!
                 </h1>
                 <p className="text-xs sm:text-sm opacity-70 mt-1 max-w-sm mx-auto">
                   En menos de un minuto tendrás tu catálogo online listo para publicar productos y recibir consultas.

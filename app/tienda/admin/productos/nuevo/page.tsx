@@ -57,7 +57,7 @@ export default async function NuevoProductoPage() {
               <div className="bg-amber-500 h-full w-full rounded-full" />
             </div>
             <p className="text-[11px] opacity-60 pt-1">
-              Para agregar más productos podés actualizar tu suscripción o eliminar piezas en desuso.
+              Para agregar más productos podés actualizar tu suscripción o eliminar productos que ya no vendas.
             </p>
           </div>
 

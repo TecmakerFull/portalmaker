@@ -40,32 +40,32 @@ export default async function TiendaAyudaPage() {
   const faqs = [
     [
       '¿Cómo puedo hacer un pedido o encargo?',
-      `Elige una pieza de nuestro catálogo, selecciona la variante que prefieras y agrégala al carrito. Al finalizar compra podrás elegir entre envío a domicilio, retiro en taller o acordar directamente con ${store.nombre}.`,
+      `Elegí un producto de nuestro catálogo, seleccioná la variante que prefieras y agregalo al carrito. Al finalizar la compra podrás elegir entre envío a domicilio, retiro en el local o acordar directamente con ${store.nombre}.`,
     ],
     [
       'Envíos y plazos de fabricación',
       store.direccion
-        ? `Coordinamos envíos a todo el país o retiros en nuestro taller ubicado en ${store.direccion}. Para piezas a medida, el plazo de fabricación estimado suele ser de 3 a 7 días hábiles según complejidad.`
-        : 'Coordinamos envíos a todo el país y entregas personalizadas. Si la pieza es bajo pedido, acordamos los tiempos de entrega antes de iniciar la producción.',
+        ? `Coordinamos envíos a todo el país o retiros en nuestro local ubicado en ${store.direccion}. Si un producto es a pedido, te avisamos el plazo de entrega antes de confirmar la compra.`
+        : 'Coordinamos envíos a todo el país y entregas personalizadas. Si un producto es a pedido, acordamos los tiempos de entrega antes de confirmar la compra.',
     ],
     [
       'Métodos de pago disponibles',
       store.transferencia_activa
         ? `Aceptamos transferencia bancaria directa (con alias/CBU verificado), efectivo al retirar y métodos de pago digitales acordados.`
-        : 'Aceptamos transferencias bancarias, efectivo y modalidades a convenir con el titular del taller.',
+        : 'Aceptamos transferencias bancarias, efectivo y modalidades a convenir con la tienda.',
     ],
     [
       'Garantía y devoluciones',
-      'Nos enorgullece la calidad de nuestro trabajo maker. Si alguna pieza sufre un inconveniente durante el traslado o presenta alguna falla de fabricación, nos contactas de inmediato para coordinar el reemplazo o ajuste.',
+      'Si tu producto sufre un inconveniente durante el traslado o presenta alguna falla, contactanos de inmediato para coordinar el cambio o la solución.',
     ],
     [
-      '¿Cómo contacto con el taller?',
+      '¿Cómo me contacto con la tienda?',
       store.whatsapp_numero
         ? `Puedes comunicarte por WhatsApp directamente mediante el botón flotante en la pantalla, o completar el formulario en la sección de contacto.`
         : 'Puedes comunicarte mediante el formulario de la sección de contacto y responderemos a la brevedad.',
     ],
     [
-      '¿Puedo guardar mis piezas favoritas?',
+      '¿Puedo guardar mis productos favoritos?',
       'Sí, pulsa el ícono de corazón en cualquier producto para guardarlo en tu lista de Favoritos y tenerlo a mano siempre.',
     ],
   ]

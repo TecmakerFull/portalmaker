@@ -77,12 +77,12 @@ export default async function TiendaSobreNosotrosPage() {
     {
       icon: Leaf,
       title: 'Elegir con intención',
-      text: 'Una colección cuidada pieza por pieza, sin ruido innecesario ni producción descartable.',
+      text: 'Una selección cuidada de productos, elegidos uno por uno.',
     },
     {
       icon: Heart,
       title: 'Cerca de las personas',
-      text: 'Una experiencia sencilla, honesta y directa de taller a tu hogar.',
+      text: 'Una experiencia de compra sencilla, honesta y directa.',
     },
   ]
 
@@ -100,7 +100,7 @@ export default async function TiendaSobreNosotrosPage() {
         <section className="relative min-h-[420px] sm:min-h-[480px] overflow-hidden bg-black/[0.03] dark:bg-white/[0.04]">
           <img
             src={bannerImage}
-            alt={`El taller de ${store.nombre}`}
+            alt={`${store.nombre}`}
             className="absolute inset-0 w-full h-full object-cover object-center opacity-65 dark:opacity-35"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-fondo)] via-[var(--color-fondo)]/80 to-transparent sm:w-2/3 pointer-events-none" />
@@ -140,7 +140,7 @@ export default async function TiendaSobreNosotrosPage() {
               ) : (
                 <>
                   <p>
-                    {store.nombre} nace de una idea simple: rodearnos de menos cosas, pero mejores. Piezas donde la belleza y la utilidad conviven sin esfuerzo.
+                    {store.nombre} nace de una idea simple: ofrecer buenos productos con una atención cercana y de confianza.
                   </p>
                   <p>
                     Seleccionamos y fabricamos objetos para tu día a día con una mirada que prioriza el detalle, el tacto de los materiales y esa dedicación artesanal que marca una gran diferencia.

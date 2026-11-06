@@ -85,7 +85,7 @@ export default async function TiendaSuscripcionPage() {
       {/* Cabecera */}
       <AdminPageHeader
         title="Suscripción & Plan"
-        description="Conoce las capacidades de tu tienda, límites de catálogo y opciones disponibles para escalar tu taller."
+        description="Conoce las capacidades de tu tienda, límites de catálogo y opciones disponibles para hacer crecer tu tienda."
         icon={Sparkles}
         actions={
           <div className="flex items-center gap-2">
@@ -206,7 +206,7 @@ export default async function TiendaSuscripcionPage() {
             Comparativa Completa de Posibilidades y Funciones
           </h2>
           <p className="text-xs opacity-70 mt-0.5">
-            Compara en detalle qué incluye cada nivel para tomar la mejor decisión para tu taller maker.
+            Compara en detalle qué incluye cada nivel para tomar la mejor decisión para tu tienda.
           </p>
         </div>
 
@@ -282,7 +282,7 @@ export default async function TiendaSuscripcionPage() {
       <div className="p-6 rounded-3xl bg-[var(--color-superficie)] border border-[var(--color-borde)] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
         <div>
           <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
-            ¿Necesitas una configuración especial para tu taller?
+            ¿Necesitas una configuración especial para tu tienda?
           </h3>
           <p className="opacity-70 mt-0.5">
             Podemos acordar planes a medida para cooperativas, proyectos educativos o empresas con múltiples creadores.

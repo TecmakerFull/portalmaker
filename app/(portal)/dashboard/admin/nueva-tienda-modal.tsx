@@ -16,7 +16,8 @@ export default function NuevaTiendaModal() {
   const [nombre, setNombre] = useState('')
   const [slug, setSlug] = useState('')
   const [adminEmail, setAdminEmail] = useState('')
-  const [rubro, setRubro] = useState<string>(RUBROS_TIENDA[0].label)
+  // Sin rubro preseleccionado para no crear tiendas con un slogan que no corresponde.
+  const [rubro, setRubro] = useState<string>('')
   const [rubroPersonalizado, setRubroPersonalizado] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -40,7 +41,7 @@ export default function NuevaTiendaModal() {
 
     try {
       const rubroFinal = rubro === 'Otro rubro'
-        ? (rubroPersonalizado.trim() || 'Comercio / Taller')
+        ? (rubroPersonalizado.trim() || 'Tienda online')
         : rubro
 
       const defaultPreset = COLOR_PRESETS.find((p) => p.id === 6) ?? COLOR_PRESETS[0]
@@ -141,7 +142,7 @@ export default function NuevaTiendaModal() {
                   required
                   value={nombre}
                   onChange={(e) => handleNombreChange(e.target.value)}
-                  placeholder="Ej: Impresiones del Valle"
+                  placeholder="Nombre de la tienda"
                   className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] placeholder:text-[var(--color-input-placeholder)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]"
                 />
               </div>
@@ -157,7 +158,7 @@ export default function NuevaTiendaModal() {
                     pattern="^[a-z0-9-]+$"
                     value={slug}
                     onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                    placeholder="delvalle3d"
+                    placeholder="mitienda"
                     className="w-full min-h-[44px] px-3.5 py-2.5 text-sm bg-transparent text-[var(--color-input-texto)] placeholder:text-[var(--color-input-placeholder)] focus:outline-none"
                   />
                   <span className="bg-[var(--color-input-bg-muted)] px-3 py-2.5 text-xs font-semibold opacity-70 font-mono shrink-0 border-l border-[var(--color-input-borde)]">
@@ -175,7 +176,7 @@ export default function NuevaTiendaModal() {
                   required
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
-                  placeholder="maker@gmail.com"
+                  placeholder="email@ejemplo.com"
                   className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] placeholder:text-[var(--color-input-placeholder)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]"
                 />
               </div>
@@ -186,10 +187,14 @@ export default function NuevaTiendaModal() {
                     Rubro Principal
                   </label>
                   <select
+                    required
                     value={rubro}
                     onChange={(e) => setRubro(e.target.value)}
                     className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]/25 focus:border-[#FF5500] transition-colors cursor-pointer"
                   >
+                    <option value="" disabled className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)]">
+                      Elegí el rubro de la tienda
+                    </option>
                     {RUBROS_TIENDA.map((r) => (
                       <option key={r.id} value={r.label} className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)]">
                         {r.label}

@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     const wordLimit = longitud === 'detallada' ? '180 a 240 palabras' : '90 a 140 palabras'
 
-    const systemInstruction = `Eres un redactor profesional de e-commerce especializado en productos de makers, talleres de diseño, impresión 3D, corte láser y artesanía de precisión.
+    const systemInstruction = `Eres un redactor profesional de e-commerce para tiendas online de Argentina y Latinoamérica. Las tiendas pueden vender productos de cualquier rubro (ropa, hogar, electrodomésticos, alimentos, tecnología, artesanías, etc.): adaptá el tono y los detalles al tipo de producto indicado, sin asumir un rubro en particular.
 Tu misión es redactar una descripción de producto comercial, atractiva y precisa en español (neutro / rioplatense sutil para Argentina y Latinoamérica).
 
 REGLAS CRÍTICAS NO NEGOCIABLES:
@@ -76,13 +76,13 @@ REGLAS CRÍTICAS NO NEGOCIABLES:
 3. Estructura:
    - Primer párrafo breve: gancho comercial de 1 o 2 oraciones destacando la utilidad y valor del producto.
    - Lista con viñetas (- ): características técnicas clave (materiales, resistencia, compatibilidad, acabados o medidas).
-   - Frase final breve: recomendación de uso, cuidado o compromiso de calidad artesanal/maker.
+   - Frase final breve: recomendación de uso, cuidado o compromiso de calidad.
 4. Usa formato Markdown limpio con negritas sutiles para resaltar datos importantes. No uses títulos gigantes H1 o H2.`
 
     const userPrompt = `Genera la descripción para el siguiente producto:
 - Nombre del producto: ${nombre || 'Sin título definido'}
 ${categoria ? `- Categoría: ${categoria}` : ''}
-${promptDetalles ? `- Puntos clave / Prompt del maker: ${promptDetalles}` : ''}
+${promptDetalles ? `- Puntos clave indicados por el vendedor: ${promptDetalles}` : ''}
 
 Recuerda: Cero emojis, redacción profesional, estructura concisa con viñetas y formato Markdown.`
 

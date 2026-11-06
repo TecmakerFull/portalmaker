@@ -213,7 +213,7 @@ export default function StoreFooter({ store, tenantQuery }: StoreFooterProps) {
             </h3>
             <div className="grid gap-2.5 text-xs opacity-75">
               <Link href={withTenant('/tienda/contacto')} className="hover:opacity-100 hover:text-[var(--color-primario)] transition-colors inline-flex items-center gap-1.5">
-                <span>Contacto & Taller</span>
+                <span>Contacto</span>
                 {estadoTienda && (
                   <span
                     className={`inline-block w-1.5 h-1.5 rounded-full ${

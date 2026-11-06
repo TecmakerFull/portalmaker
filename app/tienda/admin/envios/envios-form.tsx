@@ -358,7 +358,7 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Error al guardar origen de despacho')
 
-      setFeedback({ type: 'ok', message: '¡Dirección de origen del taller guardada exitosamente!' })
+      setFeedback({ type: 'ok', message: '¡Dirección de origen guardada exitosamente!' })
       await loadData()
       router.refresh()
     } catch (err: unknown) {
@@ -570,10 +570,10 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
             />
             <div>
               <span className="font-semibold text-slate-900 dark:text-white block text-sm">
-                El origen de despacho es la ubicación del taller
+                El origen de despacho es la ubicación de mi local
               </span>
               <span className="text-xs text-slate-500 dark:text-slate-400">
-                Por defecto habilitado. Toma automáticamente la dirección de tu taller configurada en Contacto & Ubicación para no repetir datos.
+                Por defecto habilitado. Toma automáticamente la dirección de tu local configurada en Contacto & Ubicación para no repetir datos.
               </span>
             </div>
           </label>
@@ -589,7 +589,7 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
                   <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
                   <div className="space-y-1">
                     <h3 className="text-sm font-bold">
-                      Faltan datos en la ubicación del taller para calcular envíos
+                      Faltan datos en la ubicación de tu local para calcular envíos
                     </h3>
                     <p className="text-xs leading-relaxed opacity-90">
                       Los proveedores de paquetería (Zipnova, Correo Argentino, Andreani) exigen una dirección de origen normalizada con código postal para cotizar tarifas en el checkout.
@@ -607,7 +607,7 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
                     href={`/tienda/admin/contacto${effectiveQuery}`}
                     className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white text-xs font-semibold transition-all shadow-xs"
                   >
-                    <span>Completar ubicación del taller en Contacto & Ubicación</span>
+                    <span>Completar ubicación en Contacto & Ubicación</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </Link>
                 </div>
@@ -617,7 +617,7 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
               <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.01] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block uppercase tracking-wider">
-                    Dirección de despacho tomada del taller
+                    Dirección de despacho tomada de tu local
                   </span>
                   <p className="text-sm font-medium text-slate-900 dark:text-white">
                     {direccionTallerVisible}
@@ -645,7 +645,7 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
                   Dirección de Despacho Alternativa (Depósito / Almacén)
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Ingresá el domicilio específico desde donde salen las cajas si es distinto a tu taller.
+                  Ingresá el domicilio específico desde donde salen las cajas si es distinto a tu local.
                 </p>
               </div>
             </div>
@@ -1240,7 +1240,7 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
                 Ofrecer opción de Retiro en Local
               </span>
               <span className="text-slate-500 dark:text-slate-400">
-                Permite al comprador elegir retirar gratis en tu taller o showroom.
+                Permite al comprador elegir retirar gratis en tu local o showroom.
               </span>
             </div>
           </label>
@@ -1307,10 +1307,10 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
             },
             {
               q: '¿Cómo es el paso a paso diario para despachar un pedido?',
-              a: '1) Cuando entra una compra con envío, vas a Ventas y hacés clic en "Imprimir Etiqueta PDF". 2) Embalás el producto y le pegás la etiqueta rotulada en el frente. 3) Despacho Drop-off: dejás el paquete en cualquier sucursal de Andreani o Correo Argentino sin hacer fila de cobro porque ya está pago y rotulado; o bien esperás el Pick-up si tu zona y volumen admiten retiro por tu taller.',
+              a: '1) Cuando entra una compra con envío, vas a Ventas y hacés clic en "Imprimir Etiqueta PDF". 2) Embalás el producto y le pegás la etiqueta rotulada en el frente. 3) Despacho Drop-off: dejás el paquete en cualquier sucursal de Andreani o Correo Argentino sin hacer fila de cobro porque ya está pago y rotulado; o bien esperás el Pick-up si tu zona y volumen admiten retiro en tu local.',
             },
             {
-              q: '¿Puedo ofrecer envíos y a la vez retiro gratis en mi taller?',
+              q: '¿Puedo ofrecer envíos y a la vez retiro gratis en mi local?',
               a: 'Sí. Podés mantener marcada la opción "Ofrecer opción de Retiro en Local". De este modo, los compradores cercanos pueden elegir retirar gratis por tu dirección y los del resto del país cotizan su envío por Andreani o Correo.',
             },
             {

@@ -110,7 +110,7 @@ export default async function TiendaPage({ searchParams }: TiendaPageProps) {
               ¡Volvemos muy pronto!
             </h2>
             <p className="text-sm opacity-70 mt-2 leading-relaxed">
-              Estamos actualizando el catálogo, nuevos modelos y piezas de taller.
+              Estamos actualizando el catálogo con nuevos productos.
               Si precisás realizar un encargo urgente, podés contactarnos directamente por WhatsApp.
             </p>
           </div>

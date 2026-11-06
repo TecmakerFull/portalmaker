@@ -135,7 +135,7 @@ export default function AiDescriptionModal({
                   handleGenerate()
                 }
               }}
-              placeholder="Ej: Soporte de Auriculares Gamer RGB"
+              placeholder="Nombre del producto"
               className="w-full min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-xs focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
           </div>
@@ -154,7 +154,7 @@ export default function AiDescriptionModal({
                   handleGenerate()
                 }
               }}
-              placeholder="Ej: Fabricado en PLA de alta resistencia, base con goma antideslizante, encastre a presión, disponible en varios colores, ideal para escritorios de oficina o gaming..."
+              placeholder="Ej: material, medidas, colores disponibles, para qué sirve, qué incluye..."
               className="w-full p-3 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
             <p className="text-[11px] opacity-60 mt-1">

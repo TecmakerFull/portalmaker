@@ -47,7 +47,7 @@ export default function SuscriptoresManager({
 
   // Redactor de Campaña
   const [campaignSubject, setCampaignSubject] = useState(
-    `Novedades y piezas exclusivas en ${store.nombre}`
+    `Novedades y ofertas exclusivas en ${store.nombre}`
   )
   const [campaignMessage, setCampaignMessage] = useState(
     `Hola!\n\nTe compartimos las novedades de taller y nuevos lanzamientos disponibles en nuestra tienda.\n\nPuedes ver el catálogo completo aquí: https://${store.slug}.portalmaker.ar\n\nSaludos,\nEl equipo de ${store.nombre}`

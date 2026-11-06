@@ -207,7 +207,7 @@ export default function PerfilManager({
                     type="text"
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
-                    placeholder="Ej: Tecmaker 3D"
+                    placeholder="Nombre de tu tienda"
                     required
                     className="w-full h-10 px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15] transition-all"
                   />
@@ -221,7 +221,7 @@ export default function PerfilManager({
                     type="text"
                     value={slogan}
                     onChange={(e) => setSlogan(e.target.value)}
-                    placeholder="Ej: Insumos y servicio de impresión 3D"
+                    placeholder="Una frase corta sobre lo que vendés"
                     className="w-full h-10 px-3 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/40 text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15] transition-all"
                   />
                 </div>
@@ -257,7 +257,7 @@ export default function PerfilManager({
                 <span>Datos Básicos del Administrador</span>
               </h2>
               <p className="text-xs opacity-70 mt-0.5">
-                Información de contacto oficial, credenciales y configuración del taller.
+                Información de contacto oficial, credenciales y configuración de tu tienda.
               </p>
             </div>
 

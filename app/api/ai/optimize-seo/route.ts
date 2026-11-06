@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const systemInstruction = `Eres un especialista en SEO y optimización de conversión para tiendas online de creadores y makers en habla hispana.
+    const systemInstruction = `Eres un especialista en SEO y optimización de conversión para tiendas online de cualquier rubro en habla hispana.
 Tu tarea es generar metadatos de posicionamiento para Google (Search Engine Optimization) para una ficha de producto.
 
 REGLAS CRÍTICAS:

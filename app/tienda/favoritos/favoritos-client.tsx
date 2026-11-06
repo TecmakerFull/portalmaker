@@ -40,7 +40,7 @@ export default function FavoritosClient({
           Tus favoritos
         </h1>
         <p className="mt-2 text-xs sm:text-sm opacity-70 text-[var(--color-texto)]">
-          Guarda las piezas que te inspiran y encuéntralas rápidamente cuando estés listo para encargar.
+          Guardá los productos que te gustan y encontralos rápido cuando quieras comprarlos.
         </p>
       </div>
 
@@ -62,7 +62,7 @@ export default function FavoritosClient({
             El comienzo de una buena colección.
           </h2>
           <p className="mt-1.5 text-xs opacity-60 max-w-sm mx-auto">
-            Todavía no has guardado ningún producto. Pulsa el corazón en cualquier pieza del catálogo.
+            Todavía no has guardado ningún producto. Tocá el corazón en cualquier producto del catálogo.
           </p>
           <Link
             href={withTenant('/tienda')}

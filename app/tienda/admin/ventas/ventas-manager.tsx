@@ -1946,7 +1946,7 @@ export default function VentasManager({
                             setComboboxOpen(false)
                           }
                         }}
-                        placeholder="Escribe producto o variante (ej: PLA, Rojo, Filar, Soporte)..."
+                        placeholder="Buscá por nombre del producto o variante..."
                         className="w-full min-h-[46px] pl-10 pr-20 py-2.5 rounded-2xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15] shadow-xs"
                       />
 
