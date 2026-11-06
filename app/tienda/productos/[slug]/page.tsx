@@ -11,6 +11,7 @@ import StorefrontHeaderFlow from '../../sections/storefront-header-flow'
 import ProductDetailView from './product-detail-view'
 import StoreFooter from '../../sections/store-footer'
 import { getStoreSections } from '@/lib/store-sections'
+import { getStoreShareImage } from '@/lib/store-metadata'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -46,18 +47,32 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     product.descripcion?.slice(0, 160).replace(/[*#_]/g, '') ||
     `Descubrí ${product.nombre} en ${store.nombre}. Calidad de taller y envíos directos.`
 
+  // Sin foto de producto se usa la imagen de la tienda: un openGraph propio
+  // reemplaza por completo al del layout, así que hay que volver a darle imagen.
   const rawImages = Array.isArray(product.imagenes) ? (product.imagenes as string[]) : []
-  const ogImages = rawImages.length > 0 ? [{ url: rawImages[0] }] : []
+  const fallbackImage = rawImages.length === 0 ? await getStoreShareImage(store) : null
+  const ogImages = rawImages.length > 0
+    ? [{ url: rawImages[0], alt: product.nombre }]
+    : fallbackImage
+      ? [{ url: fallbackImage, alt: store.nombre }]
+      : []
+  const productPath = `/tienda/productos/${slug}`
 
   return {
-    title,
+    // absolute: el meta_title del producto ya incluye el nombre de la tienda;
+    // sin esto la plantilla del layout lo duplicaría ("X | Tienda | Tienda").
+    title: { absolute: title },
     description,
     keywords: Array.isArray(details?.tags) && details.tags.length > 0 ? details.tags : undefined,
+    alternates: { canonical: productPath },
     openGraph: {
       title,
       description,
       images: ogImages,
       type: 'website',
+      url: productPath,
+      siteName: store.nombre,
+      locale: 'es_AR',
     },
     twitter: {
       card: 'summary_large_image',

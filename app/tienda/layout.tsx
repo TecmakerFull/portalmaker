@@ -7,6 +7,12 @@ import StoreThemeSync from "./theme-sync";
 import CartProviderClient from "./cart-provider-client";
 import { getTenantCSSVars } from "@/lib/color-utils";
 import { isStoreCheckoutActive, isFeatureAllowed } from "@/lib/plans";
+import {
+  getRequestOrigin,
+  getStoreDefaultDescription,
+  getStoreDefaultTitle,
+  getStoreShareImage,
+} from "@/lib/store-metadata";
 
 export async function generateMetadata(): Promise<Metadata> {
   const tenant = await getTenantStore();
@@ -14,13 +20,44 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const { store } = tenant;
   const storeIcon = store.favicon_url || store.icono_url || store.logo_url || "/logo.png";
+  const origin = await getRequestOrigin();
+  const title = getStoreDefaultTitle(store);
+  const description = getStoreDefaultDescription(store);
+  const shareImage = await getStoreShareImage(store);
 
   return {
+    // metadataBase propio: sin esto, og:url e imágenes relativas se resolverían
+    // contra portalmaker.ar (el metadataBase del layout raíz).
+    metadataBase: new URL(origin),
+    // absolute evita que la plantilla del portal ("%s | Portalmaker") se aplique
+    // al título de la tienda; las páginas hijas usan la plantilla de la tienda.
     title: {
-      default: `${store.nombre}${store.slogan ? ` — ${store.slogan}` : ""}`,
+      absolute: title,
       template: `%s | ${store.nombre}`,
     },
-    description: store.meta_description || store.slogan || `Catálogo oficial de ${store.nombre}`,
+    description,
+    // Se anulan las keywords y la canonical del portal: heredadas, le decían a
+    // Google que cada página de la tienda era un duplicado de portalmaker.ar.
+    // No se fija una canonical acá porque el layout la heredaría a todas las
+    // páginas hijas; cada página que la necesite define la suya.
+    keywords: null,
+    alternates: { canonical: null },
+    // WhatsApp, Facebook y Telegram arman la vista previa con estas etiquetas.
+    // Sin og:url: así cada página se comparte con su propia URL.
+    openGraph: {
+      type: "website",
+      locale: "es_AR",
+      siteName: store.nombre,
+      title,
+      description,
+      images: shareImage ? [{ url: shareImage, alt: store.nombre }] : [],
+    },
+    twitter: {
+      card: shareImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: shareImage ? [shareImage] : [],
+    },
     icons: {
       icon: [{ url: storeIcon }],
       shortcut: [{ url: storeIcon }],
