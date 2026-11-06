@@ -441,6 +441,14 @@ export default function DominioManager({
             <p className="text-xs opacity-75 pl-8 leading-relaxed">
               Ingresá con tu CUIT/CUIL y <strong>Clave Fiscal</strong> (ARCA, ex AFIP). En la lista de tus dominios, elegí el que querés conectar y entrá a la opción <strong>Delegaciones</strong>.
             </p>
+            {/* Aclaración pedida porque la captura de ejemplo muestra portalmaker.ar
+                y algunos dueños creían que debían delegar ese dominio. */}
+            <div className="ml-8 p-3 rounded-xl bg-sky-500/10 border border-sky-500/30 text-xs text-sky-800 dark:text-sky-300 flex gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                El dominio tiene que estar <strong>registrado a tu nombre</strong> (o al del titular de la tienda) en NIC.ar: solo el titular puede delegarlo con su Clave Fiscal. Siempre trabajás sobre <strong>tu propio dominio</strong> (por ejemplo <code>mitienda.com.ar</code>), nunca sobre portalmaker.ar.
+              </span>
+            </div>
             <p className="text-xs opacity-75 pl-8 leading-relaxed">
               Si ya aparecen servidores cargados que no son los de abajo (por ejemplo, de un hosting anterior), borralos con el ícono del <Trash2 className="inline w-3.5 h-3.5 -mt-0.5" aria-label="tacho de basura" /> tacho. Tienen que quedar <strong>solo</strong> los dos servidores de Portalmaker.
             </p>
@@ -488,6 +496,9 @@ export default function DominioManager({
             <p className="text-xs opacity-75 pl-8 leading-relaxed">
               Tienen que quedar las dos filas como en esta imagen. Recién ahí tocá <strong>Ejecutar cambios</strong> al pie de la página de NIC.ar.
             </p>
+            <p className="text-xs opacity-75 pl-8 leading-relaxed">
+              En la imagen de ejemplo aparece <strong>portalmaker.ar</strong>; en tu pantalla, en <strong>Datos del Dominio → Nombre</strong>, tiene que aparecer <strong>tu dominio</strong>. Si ves otro nombre, volvé a la lista y elegí el correcto.
+            </p>
             <figure className="pl-8 space-y-1.5">
               {/* Se abre en una pestaña nueva para verla en tamaño completo (tap en mobile). */}
               <a href="/images/guias/nic-delegaciones.png" target="_blank" rel="noopener noreferrer" className="block">
@@ -501,7 +512,7 @@ export default function DominioManager({
                 />
               </a>
               <figcaption className="text-[11px] opacity-60">
-                Ejemplo de cómo deben quedar las delegaciones. Tocá la imagen para verla más grande.
+                Ejemplo con el dominio portalmaker.ar: en tu caso va a figurar tu propio dominio. Tocá la imagen para verla más grande.
               </figcaption>
             </figure>
             <div className="ml-8 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-800 dark:text-amber-300 flex gap-2">

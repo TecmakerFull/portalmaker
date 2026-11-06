@@ -376,7 +376,7 @@ export default function GuiaView({
       details: [
         {
           sub: 'Opción 1: Delegar directo en NIC.ar (la más fácil)',
-          desc: 'En nic.ar entrá a "Delegaciones" de tu dominio. Tocá "+ Agregar una nueva delegación", escribí ns1.vercel-dns.com en Host y tocá el disquete (Guardar) de esa fila. Repetí con ns2.vercel-dns.com. Recién con las dos filas guardadas tocá "Ejecutar cambios". En la sección Dominio Propio tenés el paso a paso con imagen.',
+          desc: 'El dominio tiene que estar registrado a tu nombre en NIC.ar (siempre tu propio dominio, nunca portalmaker.ar). En nic.ar entrá a "Delegaciones" de tu dominio. Tocá "+ Agregar una nueva delegación", escribí ns1.vercel-dns.com en Host y tocá el disquete (Guardar) de esa fila. Repetí con ns2.vercel-dns.com. Recién con las dos filas guardadas tocá "Ejecutar cambios". En la sección Dominio Propio tenés el paso a paso con imagen.',
         },
         {
           sub: 'Opción 2: Usar registros A y CNAME (Cloudflare / DonWeb)',

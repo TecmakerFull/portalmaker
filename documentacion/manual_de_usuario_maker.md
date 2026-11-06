@@ -291,6 +291,8 @@ Solo debes elegir **uno** de estos dos caminos, según dónde administres tu dom
 #### CAMINO A: Si compraste tu dominio en NIC Argentina (la opción más fácil)
 Si compraste tu `.com.ar` o `.ar` en NIC Argentina y no usás otro panel de DNS (Cloudflare, DonWeb, etc.), delegás el dominio directo desde NIC.ar. Te lleva unos 5 minutos:
 
+> **Antes de empezar:** el dominio tiene que estar **registrado a tu nombre** (o al del titular de la tienda) en NIC.ar, porque solo el titular puede delegarlo con su Clave Fiscal. Siempre trabajás sobre **tu propio dominio** (por ejemplo `mitienda.com.ar`), nunca sobre portalmaker.ar.
+
 1. **Entrá a NIC.ar.** Ingresá en **[nic.ar](https://nic.ar)** con tu CUIT/CUIL y **Clave Fiscal** (ARCA, ex AFIP).
 2. **Abrí "Delegaciones".** En la lista de tus dominios, elegí el que querés conectar y entrá a la opción **Delegaciones**.
 3. **Borrá servidores viejos (si hay).** Si ya aparecen servidores cargados que no son los de Portalmaker (por ejemplo, de un hosting anterior), eliminalos con el ícono del **tacho de basura**. Tienen que quedar solo los dos de Portalmaker.
@@ -306,6 +308,8 @@ Si compraste tu `.com.ar` o `.ar` en NIC Argentina y no usás otro panel de DNS 
 6. **Revisá y confirmá.** Tienen que quedar las dos filas como en esta imagen. Recién ahí tocá **"Ejecutar cambios"** al pie de la página.
 
    ![Pantalla de Delegaciones de NIC.ar con ns1.vercel-dns.com y ns2.vercel-dns.com cargados](../public/images/guias/nic-delegaciones.png)
+
+   *La imagen es un ejemplo con el dominio portalmaker.ar. En tu pantalla, en **Datos del Dominio → Nombre**, tiene que figurar tu propio dominio.*
 
 > **Importante:** cada fila se guarda con su propio **disquete** antes de tocar "Ejecutar cambios". Si tocás "Ejecutar cambios" sin haber guardado una fila, NIC.ar no registra ese servidor y tu dominio no va a funcionar.
 
