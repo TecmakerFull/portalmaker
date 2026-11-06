@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import { emailIlikePattern } from '@/lib/sql-utils'
 import ThemeToggle from '@/app/tienda/theme-toggle'
 import {
   LogIn,
@@ -104,7 +105,7 @@ function LoginFormContent() {
         const { data: isAdmin } = await supabase
           .from('platform_admins')
           .select('id')
-          .ilike('email', email.trim())
+          .ilike('email', emailIlikePattern(email))
           .maybeSingle()
 
         const destination = nextParam || (isAdmin ? '/dashboard/admin' : '/dashboard/maker')

@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Store as StoreIcon, ExternalLink, LogIn, Loader2 } from 'lucide-react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import { emailIlikePattern } from '@/lib/sql-utils'
 import type { Store as StoreType } from '@/types/database'
 
 interface AdminAuthFallbackProps {
@@ -53,7 +54,7 @@ export default function AdminAuthFallback({
         const { data: platformAdmin } = await supabase
           .from('platform_admins')
           .select('id')
-          .ilike('email', userEmail)
+          .ilike('email', emailIlikePattern(userEmail))
           .maybeSingle()
 
         if (platformAdmin) {
@@ -66,7 +67,7 @@ export default function AdminAuthFallback({
           .from('store_collaborators')
           .select('id')
           .eq('store_id', store.id)
-          .ilike('email', userEmail)
+          .ilike('email', emailIlikePattern(userEmail))
           .eq('estado', 'activo')
           .maybeSingle()
 

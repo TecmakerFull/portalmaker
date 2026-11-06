@@ -1,6 +1,6 @@
 // =============================================================================
 // PORTALMAKER — Configuración de Next.js
-// "El portal del Maker" | portalmaker.com.ar
+// portalmaker.com.ar | Desplegado en Vercel
 // =============================================================================
 
 import type { NextConfig } from "next";
@@ -9,23 +9,28 @@ import type { NextConfig } from "next";
 process.env.WATCHPACK_POLLING = 'true';
 process.env.CHOKIDAR_USEPOLLING = '1';
 
-const nextConfig: NextConfig = {
-  // ============================================================
-  // CLOUDFLARE PAGES COMPATIBILITY
-  // El middleware usa el Edge Runtime de Cloudflare.
-  // @cloudflare/next-on-pages (o OpenNext) lo requiere.
-  // ============================================================
+// Headers de seguridad aplicados a todas las respuestas (portal y tiendas).
+// - nosniff: evita que el navegador "adivine" tipos MIME (p. ej. ejecutar una imagen como script).
+// - Referrer-Policy: no filtra rutas completas (con tokens de seguimiento/pedido) a sitios externos.
+// - X-Frame-Options SAMEORIGIN: impide que un tercero embeba el panel admin para clickjacking;
+//   hoy ningún flujo embebe páginas propias desde otro origen.
+// - Permissions-Policy: la app no usa cámara, micrófono ni geolocalización; se desactivan.
+//   Si un módulo futuro (p. ej. turnos con ubicación) los necesita, habilitarlo aquí.
+const securityHeaders = [
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+];
 
-  // Optimización de imágenes — deshabilitada para Cloudflare Pages
-  // (el worker de Edge no soporta el optimizador de imágenes de Next.js).
-  // Las imágenes de Supabase Storage se sirven directamente desde su CDN.
+const nextConfig: NextConfig = {
+  // Las imágenes de Supabase Storage se sirven directamente desde su CDN
+  // (ya se comprimen en el cliente antes de subirlas), sin el optimizador de Next.
   images: {
     unoptimized: true,
     remotePatterns: [
       {
-        // Permitir imágenes de Supabase Storage
         // El hostname exacto varía por proyecto (xxxxxxxxxxx.supabase.co)
-        // En producción, usar el dominio exacto del proyecto Supabase.
         protocol: 'https',
         hostname: '*.supabase.co',
         pathname: '/storage/v1/object/public/**',
@@ -33,14 +38,12 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // ============================================================
-  // TYPESCRIPT Y ESLINT
-  // En CI/CD (Cloudflare Pages build) queremos que los errores
-  // detengan el deploy para no publicar código roto.
-  // ============================================================
+  async headers() {
+    return [{ source: '/:path*', headers: securityHeaders }];
+  },
+
+  // Los errores de tipos detienen el build en Vercel para no publicar código roto.
   typescript: {
-    // Durante desarrollo se puede ignorar temporalmente,
-    // pero en producción debe ser false.
     ignoreBuildErrors: false,
   },
   webpack: (config, { dev }) => {

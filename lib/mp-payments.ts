@@ -24,6 +24,32 @@ export function getMpApiBaseUrl(): string {
 }
 
 /**
+ * Consulta a Mercado Pago con el access token guardado de la tienda.
+ * Devuelve true solo si MP responde 401/403 (token revocado o inválido).
+ * Ante errores de red o 5xx devuelve false: preferimos no desconectar por error.
+ */
+async function isStoredMpTokenRevoked(storeId: string): Promise<boolean> {
+  const supabaseAdmin = createSupabaseAdminClient()
+  const { data: creds } = await supabaseAdmin
+    .from('store_mp_credentials')
+    .select('mp_access_token')
+    .eq('store_id', storeId)
+    .maybeSingle()
+
+  if (!creds?.mp_access_token) return true
+
+  try {
+    const res = await fetch(`${getMpApiBaseUrl()}/users/me`, {
+      headers: { Authorization: `Bearer ${creds.mp_access_token}` },
+      cache: 'no-store',
+    })
+    return res.status === 401 || res.status === 403
+  } catch {
+    return false
+  }
+}
+
+/**
  * Registra y procesa la revocación de autorización de un vendedor desde Mercado Pago.
  */
 export async function handleSellerTokenRevoked(userId: string): Promise<void> {
@@ -53,6 +79,23 @@ export async function handleSellerTokenRevoked(userId: string): Promise<void> {
         .eq('id', cred.store_id)
         .maybeSingle()
       store = s
+
+      // Seguridad: este aviso llega sin firma HMAC verificable, así que cualquiera
+      // podría enviarlo para desconectar tiendas ajenas. Solo se desconecta si
+      // Mercado Pago confirma que el token guardado ya no es válido.
+      const revoked = await isStoredMpTokenRevoked(cred.store_id)
+      if (!revoked) {
+        await supabaseAdmin
+          .from('mp_webhook_events')
+          .insert({
+            type: 'seller_token_revoked_unconfirmed',
+            result: { user_id: userId, store_id: cred.store_id },
+            received_at: new Date().toISOString(),
+            processed_at: new Date().toISOString(),
+            status: 'ignored_token_still_valid',
+          })
+        return
+      }
 
       await supabaseAdmin
         .from('stores')
@@ -231,6 +274,17 @@ export async function processMpPayment(params: {
   }
 
   const payment = await paymentRes.json()
+
+  // Defensa en profundidad: la firma HMAC de MP cubre data.id pero NO el
+  // order_id que viaja en la query de notification_url. Se exige que el pago
+  // pertenezca realmente al pedido (external_reference = order.id, seteado al
+  // crear la preferencia) para que no pueda acreditarse un pago en otro pedido.
+  if (payment.external_reference && String(payment.external_reference) !== String(order.id)) {
+    console.warn(
+      `Procesamiento MP: El pago ${paymentId} pertenece a external_reference ${payment.external_reference}, no al pedido ${order.id}`
+    )
+    return finalizeEvent({ status: 'external_reference_mismatch', httpStatus: 200 })
+  }
 
   // 6. Extracción de fee de Portalmaker
   const feeDetails = Array.isArray(payment.fee_details) ? payment.fee_details : []

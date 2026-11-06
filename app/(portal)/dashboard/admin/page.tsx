@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { emailIlikePattern } from '@/lib/sql-utils'
 import ThemeToggle from '@/app/tienda/theme-toggle'
 import {
   ShieldCheck,
@@ -39,7 +40,7 @@ export default async function SuperadminDashboardPage() {
   const { data: platformAdmin } = await supabase
     .from('platform_admins')
     .select('id')
-    .ilike('email', userEmail)
+    .ilike('email', emailIlikePattern(userEmail))
     .maybeSingle()
 
   const isSuperadmin = Boolean(platformAdmin)

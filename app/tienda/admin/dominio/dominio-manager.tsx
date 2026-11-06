@@ -120,7 +120,7 @@ export default function DominioManager({
     setLoading(true)
     try {
       // Elimina de Supabase y borra de Vercel automáticamente
-      await removeCustomDomainAction(store.id, store.custom_domain || '')
+      await removeCustomDomainAction(store.id)
 
       setCustomDomain('')
       setVerificationResult(null)

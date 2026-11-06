@@ -1,13 +1,15 @@
-# Portalmaker — "El portal del Maker"
+# Portalmaker
 
-> Plataforma multi-tenant e-commerce diseñada para talleres de Impresión 3D, Grabado Láser, CNC y Fabricación Digital.
+> Plataforma multi-tenant de comercio online para emprendedores y negocios de cualquier rubro, con WhatsApp como canal principal.
+> Nació para makers (impresión 3D, láser, CNC) y hoy sirve a cualquier persona que quiera vender sus productos. Próximamente también servicios con turnos.
 > Dominio: [portalmaker.com.ar](https://portalmaker.com.ar)
 
 ---
 
 ## Stack Tecnológico
 
-- **Framework**: Next.js 15 (App Router, Server Components & Server Actions)
+- **Framework**: Next.js 15.5 (App Router, Server Components & Server Actions) + React 19
+- **Contexto para agentes de IA**: ver `AGENTS.md` (arquitectura, convenciones de seguridad y roadmap)
 - **Base de Datos & Auth**: Supabase (PostgreSQL + Auth + Storage + RLS)
 - **Estilos**: Tailwind CSS + Variables CSS Dinámicas por Tenant + Modo Claro/Oscuro
 - **Iconografía**: `lucide-react` (exclusivo)

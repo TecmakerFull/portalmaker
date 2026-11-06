@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'Clave de API de Gemini no configurada. Por favor agrega GEMINI_API_KEY en tu archivo .env.local o en las variables de entorno de Cloudflare / Vercel.',
+            'Clave de API de Gemini no configurada. Por favor agrega GEMINI_API_KEY en tu archivo .env.local o en las variables de entorno del proyecto en Vercel.',
         },
         { status: 400 }
       )

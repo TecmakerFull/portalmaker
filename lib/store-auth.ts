@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import type { Store } from '@/types/database'
+import { emailIlikePattern } from '@/lib/sql-utils'
 
 export interface StoreAuthResult {
   authorized: boolean
@@ -59,7 +60,7 @@ export async function verifyStoreAccess(
   const { data: superadminRow } = await supabaseAdmin
     .from('platform_admins')
     .select('email')
-    .ilike('email', cleanEmail)
+    .ilike('email', emailIlikePattern(cleanEmail))
     .maybeSingle()
 
   if (superadminRow) {
@@ -89,7 +90,7 @@ export async function verifyStoreAccess(
       .from('store_collaborators')
       .select('rol, estado')
       .eq('store_id', storeId)
-      .ilike('email', cleanEmail)
+      .ilike('email', emailIlikePattern(cleanEmail))
       .eq('estado', 'activo')
       .maybeSingle()
 

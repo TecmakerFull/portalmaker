@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { emailIlikePattern } from '@/lib/sql-utils'
 import ThemeToggle from '@/app/tienda/theme-toggle'
 import { Store, ExternalLink, LogOut, Package, Palette, Users, ShieldCheck } from 'lucide-react'
 import CrearTiendaForm from './crear-tienda-form'
@@ -26,7 +27,7 @@ export default async function MakerDashboardPage() {
   const { data: platformAdmin } = await supabase
     .from('platform_admins')
     .select('id')
-    .ilike('email', userEmail)
+    .ilike('email', emailIlikePattern(userEmail))
     .maybeSingle()
 
   const isSuperadmin = Boolean(platformAdmin)
@@ -35,7 +36,7 @@ export default async function MakerDashboardPage() {
   const { data: stores } = await supabase
     .from('stores')
     .select('id, nombre, slug, logo_url, custom_domain, custom_domain_verified, suscripcion_activa, modo_operacion, plan, estado_pago, created_at, slogan, color_primario, color_secundario, color_fondo, font_heading')
-    .ilike('admin_email', userEmail)
+    .ilike('admin_email', emailIlikePattern(userEmail))
     .order('created_at', { ascending: false })
 
   const userStores = stores ?? []

@@ -6,7 +6,7 @@
 // obtener los datos de la tienda correspondiente desde Supabase.
 //
 // Flujo completo:
-//   1. Request llega a Cloudflare Edge
+//   1. Request llega al Edge de Vercel
 //   2. middleware.ts inyecta x-store-slug o x-store-domain en el header
 //   3. Server Component llama a getTenantStore()
 //   4. getTenantStore() busca en la BD y retorna los datos de la tienda
@@ -16,6 +16,7 @@
 import { cache } from 'react'
 import { headers } from 'next/headers'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { emailIlikePattern } from '@/lib/sql-utils'
 import type { Store, TenantContext } from '@/types/database'
 
 /**
@@ -169,7 +170,7 @@ export const isStoreAdmin = cache(async function isStoreAdmin(store: Store): Pro
     const { data: platformAdmin } = await supabase
       .from('platform_admins')
       .select('id')
-      .ilike('email', userEmail)
+      .ilike('email', emailIlikePattern(userEmail))
       .maybeSingle()
 
     if (platformAdmin) return true
@@ -183,7 +184,7 @@ export const isStoreAdmin = cache(async function isStoreAdmin(store: Store): Pro
       .from('store_collaborators')
       .select('id')
       .eq('store_id', store.id)
-      .ilike('email', userEmail)
+      .ilike('email', emailIlikePattern(userEmail))
       .eq('estado', 'activo')
       .maybeSingle()
 
@@ -209,7 +210,7 @@ export const isPlatformAdmin = cache(async function isPlatformAdmin(): Promise<b
   const { data } = await supabase
     .from('platform_admins')
     .select('id')
-    .ilike('email', userEmail)
+    .ilike('email', emailIlikePattern(userEmail))
     .maybeSingle()
 
   return !!data

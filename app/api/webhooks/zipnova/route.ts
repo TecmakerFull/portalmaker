@@ -5,6 +5,7 @@
 // =============================================================================
 
 import { NextResponse } from 'next/server'
+import crypto from 'node:crypto'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { sendBuyerOrderDeliveredEmail } from '@/lib/shipping/emails'
 
@@ -14,13 +15,18 @@ export async function POST(req: Request) {
     const secretParam = searchParams.get('secret') || req.headers.get('x-webhook-secret')
     const configuredSecret = process.env.ZIPNOVA_WEBHOOK_SECRET
 
-    // 1. Validar autenticidad del webhook
+    // 1. Validar autenticidad del webhook.
+    // En producción se falla cerrado: sin secreto, cualquiera podría marcar envíos
+    // como entregados y disparar emails a compradores.
     if (configuredSecret) {
-      if (secretParam !== configuredSecret) {
+      const provided = Buffer.from(String(secretParam || ''))
+      const expected = Buffer.from(configuredSecret)
+      if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) {
         return NextResponse.json({ error: 'Firma o secreto inválido' }, { status: 401 })
       }
     } else if (process.env.NODE_ENV === 'production') {
-      console.warn('ZIPNOVA_WEBHOOK_SECRET no configurado en producción.')
+      console.error('ERROR CRITICO: ZIPNOVA_WEBHOOK_SECRET no configurado en producción.')
+      return NextResponse.json({ error: 'Configuración de seguridad incompleta' }, { status: 500 })
     }
 
     const payload = await req.json().catch(() => null)

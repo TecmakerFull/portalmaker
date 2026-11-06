@@ -152,7 +152,7 @@ export default function PrivacidadPage() {
               Seguridad y Almacenamiento
             </h2>
             <p>
-              Toda la comunicación entre tu navegador y nuestros servidores se realiza mediante conexiones encriptadas con protocolos de seguridad <strong>SSL / TLS (HTTPS)</strong>. Los datos se almacenan en infraestructuras seguras provistas por Supabase y Cloudflare con estándares internacionales de protección de datos (SOC 2, ISO 27001).
+              Toda la comunicación entre tu navegador y nuestros servidores se realiza mediante conexiones encriptadas con protocolos de seguridad <strong>SSL / TLS (HTTPS)</strong>. Los datos se almacenan en infraestructuras seguras provistas por Supabase y Vercel con estándares internacionales de protección de datos (SOC 2, ISO 27001).
             </p>
           </section>
 

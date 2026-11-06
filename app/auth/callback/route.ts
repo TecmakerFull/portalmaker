@@ -12,6 +12,8 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import type { EmailOtpType } from '@supabase/supabase-js'
+import { emailIlikePattern } from '@/lib/sql-utils'
+import { getTrustedOrigin } from '@/lib/safe-redirect'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -38,12 +40,16 @@ export async function GET(request: NextRequest) {
   // establezca la sesión en las cookies de su propio dominio.
   if (storeOrigin && (code || token_hash)) {
     try {
-      const targetOriginUrl = new URL(storeOrigin)
-      const targetHostNorm = normalizeHost(targetOriginUrl.host)
+      // Seguridad: este salto reenvía el code/token_hash de sesión. Solo se permite
+      // hacia orígenes de la plataforma o dominios propios verificados; de lo
+      // contrario un atacante recibiría las credenciales de la víctima.
+      const trustedStoreOrigin = await getTrustedOrigin(storeOrigin)
+      const targetOriginUrl = trustedStoreOrigin ? new URL(trustedStoreOrigin) : null
+      const targetHostNorm = targetOriginUrl ? normalizeHost(targetOriginUrl.host) : currentHostNorm
 
       // Si el origen actual no coincide con el dominio destino de la tienda, transferir
-      if (targetHostNorm !== currentHostNorm) {
-        const forwardUrl = new URL('/auth/callback', storeOrigin)
+      if (targetOriginUrl && targetHostNorm !== currentHostNorm) {
+        const forwardUrl = new URL('/auth/callback', targetOriginUrl.origin)
         requestUrl.searchParams.forEach((val, key) => {
           forwardUrl.searchParams.set(key, val)
         })
@@ -92,14 +98,18 @@ export async function GET(request: NextRequest) {
 
       const nextParam = requestUrl.searchParams.get('next')
 
-      // 1. Destino por defecto según contexto de dominio
-      let targetUrl = nextParam
-        ? nextParam.startsWith('http')
-          ? nextParam
-          : `${origin}${nextParam}`
-        : isStoreDomain
-          ? `${origin}/tienda/cuenta`
-          : `${origin}/dashboard/maker`
+      // 1. Destino por defecto según contexto de dominio.
+      // `next` absoluto solo se acepta hacia orígenes confiables (evita open redirect);
+      // los relativos deben empezar con una sola "/" para no convertirse en "//evil.com".
+      const defaultTarget = isStoreDomain ? `${origin}/tienda/cuenta` : `${origin}/dashboard/maker`
+      let targetUrl = defaultTarget
+      if (nextParam) {
+        if (/^https?:\/\//i.test(nextParam)) {
+          targetUrl = (await getTrustedOrigin(nextParam)) ? nextParam : defaultTarget
+        } else if (nextParam.startsWith('/') && !nextParam.startsWith('//') && !nextParam.startsWith('/\\')) {
+          targetUrl = `${origin}${nextParam}`
+        }
+      }
 
       // 2. Si estamos en el portal central y no se especificó ?next=..., enrutar inteligentemente por rol
       if (!isStoreDomain && user?.email && !nextParam) {
@@ -109,7 +119,7 @@ export async function GET(request: NextRequest) {
         const { data: platformAdmin } = await supabase
           .from('platform_admins')
           .select('id')
-          .ilike('email', userEmail)
+          .ilike('email', emailIlikePattern(userEmail))
           .maybeSingle()
 
         if (platformAdmin) {
@@ -119,7 +129,7 @@ export async function GET(request: NextRequest) {
           const { data: stores } = await supabase
             .from('stores')
             .select('slug, custom_domain')
-            .ilike('admin_email', userEmail)
+            .ilike('admin_email', emailIlikePattern(userEmail))
             .order('created_at', { ascending: false })
 
           if (stores && stores.length === 1) {

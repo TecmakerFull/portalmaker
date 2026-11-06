@@ -70,7 +70,7 @@ export function createSupabaseAdminClient() {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
       'SUPABASE_SERVICE_ROLE_KEY no está configurado. ' +
-      'Agregar al .env.local y a las variables de entorno de Cloudflare Pages.'
+      'Agregar al .env.local y a las variables de entorno del proyecto en Vercel.'
     )
   }
 

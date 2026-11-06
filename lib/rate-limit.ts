@@ -53,13 +53,16 @@ async function checkUpstashRate(
   max: number,
   windowSec: number
 ): Promise<{ count: number; allowed: boolean; retryAfter?: number } | null> {
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
+  // La integración de Upstash del Marketplace de Vercel inyecta las variables
+  // como KV_REST_API_*; una base creada en upstash.com usa UPSTASH_REDIS_REST_*.
+  // Se aceptan ambas para que conectar la integración funcione sin renombrar nada.
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN
 
   if (!url || !token) {
     if (process.env.NODE_ENV === 'production') {
       console.error(
-        'ERROR CRITICO DE SEGURIDAD: Faltan UPSTASH_REDIS_REST_URL o UPSTASH_REDIS_REST_TOKEN en producción. Rate limiting distribuido inactivo.'
+        'ERROR CRITICO DE SEGURIDAD: Faltan UPSTASH_REDIS_REST_URL/TOKEN (o KV_REST_API_URL/TOKEN) en producción. Rate limiting distribuido inactivo.'
       )
     }
     return null
