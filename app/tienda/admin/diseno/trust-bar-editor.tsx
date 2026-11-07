@@ -10,16 +10,18 @@
 'use client'
 
 import type { StoreSection, TrustBarItem, TrustBarSettings } from '@/types/database'
-import { TRUST_ICONS, MAX_TRUST_ITEMS, DEFAULT_TRUST_ITEMS, getTrustIcon } from '@/lib/trust-icons'
+import { TRUST_ICONS, MAX_TRUST_ITEMS, DEFAULT_TRUST_ITEMS, DEFAULT_TRUST_ITEMS_SERVICIOS, getTrustIcon } from '@/lib/trust-icons'
 import { Plus, Trash2, Eye, EyeOff, ShieldCheck, RotateCcw } from 'lucide-react'
 import StyledSelect from '@/components/styled-select'
 
 interface TrustBarEditorProps {
   section: StoreSection<TrustBarSettings, TrustBarItem[]>
   onChange: (updated: StoreSection<TrustBarSettings, TrustBarItem[]>) => void
+  /** En tiendas de servicios los mensajes de ejemplo hablan de turnos, no de envíos. */
+  soloServicios?: boolean
 }
 
-export default function TrustBarEditor({ section, onChange }: TrustBarEditorProps) {
+export default function TrustBarEditor({ section, onChange, soloServicios = false }: TrustBarEditorProps) {
   const items = section.content || []
   const settings = section.settings || { mostrar_en_producto: true }
 
@@ -115,7 +117,7 @@ export default function TrustBarEditor({ section, onChange }: TrustBarEditorProp
                       id={`trust-icon-${item.id}`}
                       value={item.icono}
                       onChange={(v) => updateItem(index, { icono: v })}
-                      options={Object.entries(TRUST_ICONS).map(([clave, { label }]) => ({ value: clave, label }))}
+                      options={Object.entries(TRUST_ICONS).map(([clave, { label, icon: Icono }]) => ({ value: clave, label, icon: <Icono className="w-4 h-4 shrink-0 text-amber-500" /> }))}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -161,7 +163,7 @@ export default function TrustBarEditor({ section, onChange }: TrustBarEditorProp
           </button>
           <button
             type="button"
-            onClick={() => updateItems(DEFAULT_TRUST_ITEMS.map((it) => ({ ...it, id: `${it.id}-${Date.now()}` })))}
+            onClick={() => updateItems((soloServicios ? DEFAULT_TRUST_ITEMS_SERVICIOS : DEFAULT_TRUST_ITEMS).map((it) => ({ ...it, id: `${it.id}-${Date.now()}` })))}
             className="min-h-11 px-4 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 opacity-75 hover:opacity-100 cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />

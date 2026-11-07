@@ -21,6 +21,8 @@ export interface SelectOption<T extends string | number = string> {
   label: string
   /** Opciones con el mismo grupo se muestran juntas bajo un título. */
   group?: string
+  /** Ícono opcional que se muestra a la izquierda del texto (en la lista y en el botón). */
+  icon?: React.ReactNode
   disabled?: boolean
 }
 
@@ -161,7 +163,10 @@ export default function StyledSelect<T extends string | number = string>({
         onKeyDown={alTeclear}
         className={`w-full min-h-11 px-3 rounded-xl border border-[var(--color-input-borde,var(--color-borde))] bg-[var(--color-input-bg,var(--color-fondo))] text-[var(--color-input-texto,var(--color-texto))] text-base sm:text-sm text-left flex items-center justify-between gap-2 cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FACC15] disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
       >
-        <span className={`truncate ${elegida ? '' : 'opacity-60'}`}>{elegida ? elegida.label : placeholder}</span>
+        <span className={`flex items-center gap-2 min-w-0 ${elegida ? '' : 'opacity-60'}`}>
+          {elegida?.icon}
+          <span className="truncate">{elegida ? elegida.label : placeholder}</span>
+        </span>
         <ChevronDown className={`w-4 h-4 shrink-0 opacity-60 transition-transform ${abierto ? 'rotate-180' : ''}`} />
       </button>
 
@@ -208,7 +213,10 @@ export default function StyledSelect<T extends string | number = string>({
                         o.disabled ? 'opacity-40 cursor-not-allowed' : esActiva ? 'bg-[#FACC15]/20' : ''
                       } ${esElegida ? 'font-semibold' : ''}`}
                     >
-                      <span>{o.label}</span>
+                      <span className="flex items-center gap-2">
+                        {o.icon}
+                        <span>{o.label}</span>
+                      </span>
                       {esElegida && <Check className="w-4 h-4 shrink-0 text-[#CA8A04] dark:text-[#FACC15]" />}
                     </li>
                   )

@@ -195,7 +195,7 @@ export function StoryEditor({
                       id={`pilar-icon-${pilar.id}`}
                       value={pilar.icono}
                       onChange={(v) => updatePillar(index, { icono: v })}
-                      options={Object.entries(TRUST_ICONS).map(([clave, { label }]) => ({ value: clave, label }))}
+                      options={Object.entries(TRUST_ICONS).map(([clave, { label, icon: Icono }]) => ({ value: clave, label, icon: <Icono className="w-4 h-4 shrink-0 text-amber-500" /> }))}
                     />
                 </div>
                 <TextField id={`pilar-titulo-${pilar.id}`} label="Título" value={pilar.titulo} onChange={(v) => updatePillar(index, { titulo: v })} placeholder="Ej: Atención cercana" maxLength={40} />

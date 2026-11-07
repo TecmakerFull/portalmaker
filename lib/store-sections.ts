@@ -245,13 +245,18 @@ export function getDefaultExtraSections(store: Store): StoreExtraSections {
       settings: {
         etiqueta: 'Por qué elegirnos',
         titulo: `Bienvenido a ${store.nombre}`,
-        texto: store.slogan
-          ? `${store.slogan}. Elegimos cada producto con cuidado y te acompañamos antes y después de tu compra.`
-          : 'Elegimos cada producto con cuidado y te acompañamos antes y después de tu compra.',
+        // En tiendas de servicios no se habla de productos ni de compras
+        texto: soloServicios
+          ? store.slogan
+            ? `${store.slogan}. Te atendemos con dedicación y cuidamos cada detalle de tu turno.`
+            : 'Te atendemos con dedicación y cuidamos cada detalle de tu turno.'
+          : store.slogan
+            ? `${store.slogan}. Elegimos cada producto con cuidado y te acompañamos antes y después de tu compra.`
+            : 'Elegimos cada producto con cuidado y te acompañamos antes y después de tu compra.',
         mostrar_link_historia: true,
       },
       content: [
-        { id: 'pilar-1', icono: 'BadgeCheck', titulo: 'Calidad en cada detalle', texto: 'Productos elegidos con cuidado.' },
+        { id: 'pilar-1', icono: 'BadgeCheck', titulo: 'Calidad en cada detalle', texto: soloServicios ? 'Trabajamos con dedicación en cada servicio.' : 'Productos elegidos con cuidado.' },
         { id: 'pilar-2', icono: 'Headphones', titulo: 'Atención cercana', texto: 'Respondemos tus consultas de forma rápida y personal.' },
       ],
     },

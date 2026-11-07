@@ -345,6 +345,7 @@ export function DisenoManager({
                 <TrustBarEditor
                   section={currentSection as StoreSection<TrustBarSettings, TrustBarItem[]>}
                   onChange={handleUpdateSection}
+                  soloServicios={store.tipo_negocio === 'servicios'}
                 />
               )}
 
