@@ -32,11 +32,15 @@ interface Props {
   requiereAprobacion: boolean
   cancelacionHoras: number
   tenantQuery: string
+  // Monto de la seña a pagar con Mercado Pago (0 = sin seña)
+  sena: number
 }
 
 const BLOQUE_DIAS = 14
 
-export default function BookingWidget({ storeId, storeNombre, service, zona, maxDias, requiereAprobacion, cancelacionHoras, tenantQuery }: Props) {
+const formatPesos = (monto: number) => '$' + monto.toLocaleString('es-AR')
+
+export default function BookingWidget({ storeId, storeNombre, service, zona, maxDias, requiereAprobacion, cancelacionHoras, tenantQuery, sena }: Props) {
   const supabase = createSupabaseBrowserClient()
   const hoy = fechaLocal(new Date(), zona)
   const claveSeleccion = `pm_turno_pendiente_${storeId}`
@@ -180,6 +184,25 @@ export default function BookingWidget({ storeId, storeNombre, service, zona, max
     const data = await res.json().catch(() => ({}))
     setEnviando(false)
 
+    if (res.ok && data.pago) {
+      // Seña: se crea la preferencia con el mismo endpoint del checkout y se
+      // redirige a Mercado Pago. Al volver, la página del turno muestra el estado.
+      setEnviando(true)
+      const pref = await fetch(`/api/checkout/mercadopago/preference${tenantQuery}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: data.pago.orderId, publicToken: data.pago.publicToken, storeId, returnOrigin: window.location.origin }),
+      })
+      const prefData = await pref.json().catch(() => ({}))
+      if (pref.ok && prefData.initPoint) {
+        window.location.href = prefData.initPoint
+        return
+      }
+      setEnviando(false)
+      setError('Reservamos tu horario pero no pudimos abrir Mercado Pago. Probá de nuevo desde el enlace de tu turno.')
+      setResultado({ estado: 'pendiente', starts_at: data.booking.starts_at, whatsappUrl: data.whatsappUrl, enlaceTurno: data.enlaceTurno })
+      return
+    }
     if (res.ok) {
       setResultado({ estado: data.booking.estado, starts_at: data.booking.starts_at, whatsappUrl: data.whatsappUrl, enlaceTurno: data.enlaceTurno })
       return
@@ -378,8 +401,13 @@ export default function BookingWidget({ storeId, storeNombre, service, zona, max
               <textarea className="w-full min-h-12 px-3 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-transparent text-sm" rows={2} maxLength={500} placeholder="¿Algo que la tienda deba saber? (opcional)" aria-label="Notas" value={notas} onChange={(e) => setNotas(e.target.value)} />
               <button type="button" disabled={enviando} onClick={confirmar} className="w-full min-h-12 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50">
                 {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                {requiereAprobacion ? 'Solicitar turno' : 'Confirmar turno'}
+                {sena > 0 ? `Pagar seña de ${formatPesos(sena)} y reservar` : requiereAprobacion ? 'Solicitar turno' : 'Confirmar turno'}
               </button>
+              {sena > 0 && (
+                <p className="text-[11px] opacity-70">
+                  Para confirmar el turno se paga una seña con Mercado Pago. Tenés 20 minutos para completar el pago; si no, el horario se libera.
+                </p>
+              )}
               <p className="text-[11px] opacity-60">
                 Reservás como {usuario.email}.{cancelacionHoras > 0 ? ` Podés cancelar hasta ${cancelacionHoras} h antes.` : ' Podés cancelar cuando quieras.'}
               </p>

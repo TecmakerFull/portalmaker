@@ -19,7 +19,8 @@ import { localAUtc, fechaLocal, sumarDias } from '@/lib/booking/availability'
 import { formatFechaTurno, formatHora } from '@/lib/booking/format'
 import type { Staff, StaffBlock, Store, StoreBookingSettings } from '@/types/database'
 import { AdminPageHeader } from '../components/admin-page-header'
-import { Clock, Save, Loader2, CheckCircle2, AlertCircle, CalendarOff, Trash2, Plus, Settings2 } from 'lucide-react'
+import { Clock, Save, Loader2, CheckCircle2, AlertCircle, CalendarOff, Trash2, Plus, Settings2, CreditCard, CalendarSync, Copy, RefreshCw } from 'lucide-react'
+import type { SenaModo } from '@/types/database'
 
 const card = 'bg-[var(--color-superficie)] border border-[var(--color-borde)] rounded-3xl p-5 sm:p-7 space-y-4 text-[var(--color-texto)]'
 const inputClass = 'min-h-11 px-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-sm'
@@ -36,6 +37,19 @@ const OPC_ANTICIPACION = [
 ]
 const OPC_MAX_DIAS = [7, 14, 30, 60, 90]
 const OPC_INTERVALO = [10, 15, 20, 30, 60]
+const OPC_RECORDATORIO = [
+  { v: 0, l: 'No mandar recordatorio' },
+  { v: 2, l: '2 horas antes' },
+  { v: 12, l: '12 horas antes' },
+  { v: 24, l: '24 horas antes (recomendado)' },
+  { v: 48, l: '48 horas antes' },
+]
+const OPC_SENA: { v: SenaModo; l: string }[] = [
+  { v: 'ninguna', l: 'Sin seña' },
+  { v: 'porcentaje', l: 'Un porcentaje del precio' },
+  { v: 'monto', l: 'Un monto fijo' },
+  { v: 'total', l: 'El precio completo' },
+]
 const OPC_CANCELACION = [
   { v: 0, l: 'Hasta el último momento' },
   { v: 2, l: '2 horas antes' },
@@ -77,11 +91,13 @@ export default function HorariosManager({
   initialSettings,
   initialStaff,
   initialBloqueos,
+  origin,
 }: {
   store: Store
   initialSettings: StoreBookingSettings
   initialStaff: Staff[]
   initialBloqueos: StaffBlock[]
+  origin: string
 }) {
   const router = useRouter()
   const supabase = createSupabaseBrowserClient()
@@ -187,12 +203,39 @@ export default function HorariosManager({
         intervalo_grilla_minutos: reglas.intervalo_grilla_minutos,
         requiere_aprobacion: reglas.requiere_aprobacion,
         cancelacion_hasta_horas: reglas.cancelacion_hasta_horas,
+        recordatorio_horas_antes: reglas.recordatorio_horas_antes ?? 24,
+        // Sin Mercado Pago no se puede cobrar seña: se guarda siempre "ninguna"
+        sena_modo: store.mp_connected ? reglas.sena_modo : 'ninguna',
+        sena_valor: store.mp_connected ? Math.max(0, Number(reglas.sena_valor) || 0) : 0,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'store_id' }
     )
     setSavingReglas(false)
     setMsgReglas(error ? { tipo: 'error', texto: 'No se pudieron guardar las reglas.' } : { tipo: 'ok', texto: 'Reglas guardadas.' })
+  }
+
+  // ---------------------------------------------------------------- Calendario (.ics)
+  const [icsToken, setIcsToken] = useState<string | undefined>(profesional?.ics_token)
+  const [copiado, setCopiado] = useState(false)
+  const icsUrl = icsToken ? `${origin}/api/calendario/${icsToken}.ics` : ''
+
+  const copiarIcs = async () => {
+    try {
+      await navigator.clipboard.writeText(icsUrl)
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 2000)
+    } catch {
+      // Si el navegador no deja copiar, el enlace igual queda visible para copiarlo a mano.
+    }
+  }
+
+  const regenerarIcs = async () => {
+    if (!profesional) return
+    if (!confirm('¿Generar un enlace nuevo? El anterior deja de funcionar y vas a tener que volver a agregarlo en tu calendario.')) return
+    const nuevo = crypto.randomUUID()
+    const { error } = await supabase.from('staff').update({ ics_token: nuevo }).eq('id', profesional.id)
+    if (!error) setIcsToken(nuevo)
   }
 
   const selectReglas = (label: string, value: number, onChange: (v: number) => void, opciones: { v: number; l: string }[], ayuda: string, id: string) => (
@@ -339,6 +382,50 @@ export default function HorariosManager({
           {selectReglas('El cliente puede cancelar', reglas.cancelacion_hasta_horas, (v) => setReglas((r) => ({ ...r, cancelacion_hasta_horas: v })), OPC_CANCELACION, 'Después de ese plazo, solo vos podés cancelar.', 'r-cancelacion')}
         </div>
 
+        {selectReglas('Recordatorio por email al cliente', reglas.recordatorio_horas_antes ?? 24, (v) => setReglas((r) => ({ ...r, recordatorio_horas_antes: v })), OPC_RECORDATORIO, 'Ayuda a que no se olviden del turno.', 'r-recordatorio')}
+
+        {/* Seña con Mercado Pago */}
+        <div className="p-4 rounded-2xl border border-[var(--color-borde)] space-y-3">
+          <p className="text-sm font-semibold flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-amber-500" /> Seña para reservar (opcional)
+          </p>
+          {store.mp_connected ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="space-y-1.5">
+                  <span className="text-xs font-semibold opacity-75 block">¿Cobrás seña?</span>
+                  <select className={`${inputClass} w-full cursor-pointer`} value={reglas.sena_modo} onChange={(e) => setReglas((r) => ({ ...r, sena_modo: e.target.value as SenaModo }))}>
+                    {OPC_SENA.map((o) => (
+                      <option key={o.v} value={o.v}>{o.l}</option>
+                    ))}
+                  </select>
+                </label>
+                {(reglas.sena_modo === 'porcentaje' || reglas.sena_modo === 'monto') && (
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-semibold opacity-75 block">{reglas.sena_modo === 'porcentaje' ? 'Porcentaje (%)' : 'Monto ($)'}</span>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      max={reglas.sena_modo === 'porcentaje' ? 100 : undefined}
+                      className={`${inputClass} w-full`}
+                      value={reglas.sena_valor}
+                      onChange={(e) => setReglas((r) => ({ ...r, sena_valor: Number(e.target.value) || 0 }))}
+                    />
+                  </label>
+                )}
+              </div>
+              <p className="text-[11px] opacity-60">
+                El cliente paga con Mercado Pago al reservar y el turno se confirma cuando se acredita. Si no paga en 20 minutos, el horario se libera. La seña va a tu cuenta de Mercado Pago.
+              </p>
+            </>
+          ) : (
+            <p className="text-xs opacity-75">
+              Para pedir seña primero conectá tu Mercado Pago en <a className="underline font-semibold" href="/tienda/admin/pagos">Cobros</a>.
+            </p>
+          )}
+        </div>
+
         <label className="flex items-start gap-3 p-3.5 rounded-2xl border border-[var(--color-borde)] cursor-pointer min-h-11">
           <input type="checkbox" className="w-5 h-5 mt-0.5 accent-[#FACC15] shrink-0" checked={reglas.requiere_aprobacion} onChange={(e) => setReglas((r) => ({ ...r, requiere_aprobacion: e.target.checked }))} />
           <span className="text-sm">
@@ -352,6 +439,39 @@ export default function HorariosManager({
           <BotonGuardar saving={savingReglas} label="Guardar reglas" onClick={guardarReglas} />
         </div>
       </section>
+
+      {/* 4. Turnos en el calendario del celular */}
+      {icsUrl && (
+        <section className={card}>
+          <div>
+            <h2 className="text-base font-semibold flex items-center gap-2">
+              <CalendarSync className="w-4 h-4 text-amber-500" /> Ver tus turnos en tu calendario
+            </h2>
+            <p className="text-xs opacity-70 mt-1">Agregá este enlace en Google Calendar y vas a ver tus turnos en el celular.</p>
+          </div>
+
+          <div className="flex items-center gap-2 p-2 pl-3 rounded-xl border border-[var(--color-borde)] bg-black/[0.02] dark:bg-white/[0.02]">
+            <span className="text-xs font-mono truncate flex-1" title={icsUrl}>{icsUrl}</span>
+            <button type="button" onClick={copiarIcs} className="min-h-11 px-3 rounded-lg border border-[var(--color-borde)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shrink-0">
+              {copiado ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+              {copiado ? 'Copiado' : 'Copiar'}
+            </button>
+          </div>
+
+          <ol className="text-xs opacity-80 space-y-1 list-decimal pl-5">
+            <li>Copiá el enlace de arriba.</li>
+            <li>En una computadora, abrí Google Calendar.</li>
+            <li>A la izquierda, en <strong>Otros calendarios</strong>, tocá el <strong>+</strong> y elegí <strong>Desde URL</strong>.</li>
+            <li>Pegá el enlace y tocá <strong>Agregar calendario</strong>. Listo: aparece también en tu celular.</li>
+          </ol>
+          <p className="text-[11px] opacity-60">
+            Google actualiza estos calendarios cada algunas horas, así que un turno recién reservado puede tardar en aparecer. La Agenda de este panel siempre está al día. No compartas el enlace: quien lo tenga ve tus turnos.
+          </p>
+          <button type="button" onClick={regenerarIcs} className="min-h-11 px-3 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 opacity-75 hover:opacity-100 cursor-pointer">
+            <RefreshCw className="w-4 h-4" /> Generar un enlace nuevo
+          </button>
+        </section>
+      )}
     </div>
   )
 }

@@ -79,7 +79,7 @@ export async function notifyStoreBookingEmail(params: {
   store: Store
   booking: Booking
   zona: string
-  tipo: 'nuevo' | 'cancelado'
+  tipo: 'nuevo' | 'cancelado' | 'pago_sin_lugar'
   enlacePanel: string
 }): Promise<void> {
   const { store, booking, zona, tipo, enlacePanel } = params
@@ -95,7 +95,9 @@ export async function notifyStoreBookingEmail(params: {
   if (!destino) return
 
   const titulo =
-    tipo === 'cancelado'
+    tipo === 'pago_sin_lugar'
+      ? 'Seña cobrada sin horario disponible: coordiná con el cliente'
+      : tipo === 'cancelado'
       ? 'Un cliente canceló su turno'
       : booking.estado === 'pendiente'
         ? 'Nueva solicitud de turno para confirmar'
@@ -158,6 +160,31 @@ export async function sendBookingCancelledByStoreEmail(params: { store: Store; b
   await sendStoreAuthEmail({
     to: booking.cliente_email,
     subject: `Tu turno en ${store.nombre} fue cancelado`,
+    html: layout(store.nombre, cuerpo),
+    fromName: String(store.nombre || 'Tu tienda').replace(/["<>\r\n]/g, '').slice(0, 80),
+  })
+}
+
+/** Recordatorio al cliente X horas antes del turno. */
+export async function sendBookingReminderEmail(params: {
+  store: Store
+  booking: Booking
+  zona: string
+  enlaceTurno: string
+}): Promise<boolean> {
+  const { store, booking, zona, enlaceTurno } = params
+  if (!booking.cliente_email) return false
+  const cuerpo = `
+    <h1>Te esperamos pronto</h1>
+    <p>Hola ${escapeHtml(booking.cliente_nombre)}, te recordamos tu turno en ${escapeHtml(store.nombre)}:</p>
+    ${detalleTurno(booking, zona)}
+    ${store.direccion ? `<p>Dirección: ${escapeHtml(store.direccion)}</p>` : ''}
+    <p>Si no podés asistir, avisanos así otra persona puede usar el horario.</p>
+    <a class="btn btn-sec" href="${escapeHtml(enlaceTurno)}">Ver o cancelar mi turno</a>`
+
+  return sendStoreAuthEmail({
+    to: booking.cliente_email,
+    subject: `Recordatorio: tu turno en ${store.nombre}`,
     html: layout(store.nombre, cuerpo),
     fromName: String(store.nombre || 'Tu tienda').replace(/["<>\r\n]/g, '').slice(0, 80),
   })

@@ -90,7 +90,8 @@ export default function AgendaManager({
     return mapa
   }, [turnos, zona])
 
-  const pendientes = turnos.filter((t) => t.estado === 'pendiente' && new Date(t.starts_at) > new Date())
+  // Por confirmar = esperan aprobación de la tienda (no los que esperan el pago de la seña)
+  const pendientes = turnos.filter((t) => t.estado === 'pendiente' && !t.pendiente_expira_at && new Date(t.starts_at) > new Date())
   const diasTira = Array.from({ length: 14 }, (_, i) => sumarDias(hoy, i))
   const delDia = (porDia.get(dia) ?? []).slice().sort((a, b) => a.starts_at.localeCompare(b.starts_at))
 
@@ -407,7 +408,8 @@ export default function AgendaManager({
           </p>
         )}
         {delDia.map((t) => {
-          const estado = ESTADOS[t.estado]
+          const esperandoSena = t.estado === 'pendiente' && Boolean(t.pendiente_expira_at)
+          const estado = esperandoSena ? { label: 'Esperando seña', clase: ESTADOS.pendiente.clase } : ESTADOS[t.estado]
           const activo = t.estado === 'pendiente' || t.estado === 'confirmado'
           const wa = waLink(t.cliente_telefono, `Hola ${t.cliente_nombre}, te escribimos de ${store.nombre} por tu turno de ${t.servicio_nombre} a las ${formatHora(t.starts_at, zona)} hs.`)
           return (

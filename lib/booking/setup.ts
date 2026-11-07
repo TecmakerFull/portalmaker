@@ -20,6 +20,7 @@ export const DEFAULT_BOOKING_SETTINGS: Omit<StoreBookingSettings, 'store_id' | '
   cancelacion_hasta_horas: 24,
   sena_modo: 'ninguna',
   sena_valor: 0,
+  recordatorio_horas_antes: 24,
 }
 
 export interface BookingConfig {

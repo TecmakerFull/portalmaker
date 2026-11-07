@@ -689,6 +689,8 @@ export interface StoreBookingSettings {
   cancelacion_hasta_horas: number;
   sena_modo: SenaModo;
   sena_valor: number;
+  // Horas antes del turno para el recordatorio por email (0 = sin recordatorio)
+  recordatorio_horas_antes: number;
   created_at?: Timestamp;
   updated_at?: Timestamp;
 }
@@ -721,6 +723,8 @@ export interface Staff {
   horarios: { dias?: Record<string, { activo: boolean; turno1: { desde: string; hasta: string }; dobleTurno: boolean; turno2: { desde: string; hasta: string } }> };
   activo: boolean;
   orden: number;
+  // Token secreto del calendario .ics para suscribirse desde Google Calendar
+  ics_token?: UUID;
   created_at: Timestamp;
   updated_at: Timestamp;
 }
@@ -762,6 +766,7 @@ export interface Booking {
   cancelado_at: Timestamp | null;
   pendiente_expira_at: Timestamp | null;
   google_event_id: string | null;
+  recordatorio_enviado_at?: Timestamp | null;
   created_at: Timestamp;
   updated_at: Timestamp;
 }

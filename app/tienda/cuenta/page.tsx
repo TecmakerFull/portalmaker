@@ -9,6 +9,8 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import StorefrontHeaderFlow from '../sections/storefront-header-flow'
 import StoreFooter from '../sections/store-footer'
 import CuentaClient from './cuenta-client'
+import MisTurnos from './mis-turnos'
+import { getBookingConfig } from '@/lib/booking/setup'
 import { getStoreSections } from '@/lib/store-sections'
 
 export default async function TiendaCuentaPage() {
@@ -40,6 +42,14 @@ export default async function TiendaCuentaPage() {
         />
 
         <main className="wrap py-12 sm:py-20">
+          {/* Turnos del cliente (solo tiendas que dan turnos y con sesión iniciada) */}
+          {(store.tipo_negocio ?? 'productos') !== 'productos' && (
+            <MisTurnos
+              storeId={store.id}
+              zona={(await getBookingConfig(store)).settings.zona_horaria}
+              tenantQuery={tenantQuery}
+            />
+          )}
           <CuentaClient store={store} tenantQuery={tenantQuery} />
         </main>
       </div>

@@ -12,6 +12,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { getBookingConfig } from '@/lib/booking/setup'
 import { formatFechaTurno, formatDuracion, googleCalendarUrl } from '@/lib/booking/format'
 import CancelarTurno from './cancelar-turno'
+import PagarSena from './pagar-sena'
 import type { Booking } from '@/types/database'
 import { CalendarCheck, CalendarPlus, MessageCircle, MapPin } from 'lucide-react'
 
@@ -34,8 +35,15 @@ function dentroDelPlazo(inicioIso: string, horas: number): boolean {
   return Date.now() <= new Date(inicioIso).getTime() - horas * 3600000
 }
 
-export default async function TurnoPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function TurnoPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ token: string }>
+  searchParams?: Promise<{ pago?: string }>
+}) {
   const { token } = await params
+  const pagoParam = (searchParams ? await searchParams : {}).pago
   if (!UUID_REGEX.test(token)) notFound()
 
   const tenant = await getTenantStore()
@@ -54,6 +62,18 @@ export default async function TurnoPage({ params }: { params: Promise<{ token: s
 
   const booking = data as Booking
   const { settings } = await getBookingConfig(store)
+
+  // Seña pendiente: el turno está retenido esperando el pago en Mercado Pago.
+  const esperandoSena = booking.estado === 'pendiente' && Boolean(booking.pendiente_expira_at) && Boolean(booking.order_id)
+  let ordenSena: { id: string; public_token: string; total: number } | null = null
+  if (esperandoSena && booking.order_id) {
+    const { data: orden } = await supabaseAdmin
+      .from('orders')
+      .select('id, public_token, total')
+      .eq('id', booking.order_id)
+      .maybeSingle()
+    ordenSena = orden ? { id: orden.id, public_token: orden.public_token, total: Number(orden.total) } : null
+  }
   const activo = booking.estado === 'pendiente' || booking.estado === 'confirmado'
   const puedeCancelar = activo && dentroDelPlazo(booking.starts_at, settings.cancelacion_hasta_horas)
 
@@ -84,9 +104,21 @@ export default async function TurnoPage({ params }: { params: Promise<{ token: s
               </p>
             )}
           </div>
-          <p className={`text-sm font-semibold ${activo ? 'text-emerald-600 dark:text-emerald-400' : 'opacity-70'}`}>
-            {ESTADO_TEXTO[booking.estado] ?? booking.estado}
+          <p className={`text-sm font-semibold ${activo && !esperandoSena ? 'text-emerald-600 dark:text-emerald-400' : 'opacity-70'}`}>
+            {esperandoSena ? 'Esperando el pago de la seña' : (ESTADO_TEXTO[booking.estado] ?? booking.estado)}
           </p>
+
+          {/* Vuelta desde Mercado Pago: el webhook puede tardar unos segundos en confirmar */}
+          {pagoParam === 'aprobado' && esperandoSena && (
+            <p className="text-xs p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              Recibimos tu pago. Estamos confirmando el turno: actualizá esta página en unos segundos. Te llega también un email.
+            </p>
+          )}
+          {pagoParam === 'rechazado' && esperandoSena && (
+            <p className="text-xs p-3 rounded-xl bg-red-500/10 border border-red-500/20">
+              El pago no se completó. Podés intentarlo de nuevo antes de que se libere el horario.
+            </p>
+          )}
 
           <div className="grid gap-2">
             {booking.estado === 'confirmado' && (
@@ -103,6 +135,9 @@ export default async function TurnoPage({ params }: { params: Promise<{ token: s
               <a href={waUrl} target="_blank" rel="noopener noreferrer" className="min-h-12 rounded-xl bg-[#25D366] text-white text-sm font-semibold inline-flex items-center justify-center gap-2">
                 <MessageCircle className="w-4 h-4" /> Escribirle a la tienda
               </a>
+            )}
+            {esperandoSena && ordenSena && pagoParam !== 'aprobado' && (
+              <PagarSena orderId={ordenSena.id} publicToken={ordenSena.public_token} storeId={store.id} monto={ordenSena.total} tenantQuery={tenantQuery} />
             )}
             {puedeCancelar && <CancelarTurno token={token} tenantQuery={tenantQuery} />}
             {activo && !puedeCancelar && (

@@ -91,7 +91,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const booking = await crearTurno({
+    const { booking, sena, order } = await crearTurno({
       store,
       serviceId,
       inicioIso: inicio,
@@ -119,14 +119,18 @@ export async function POST(req: Request) {
     const tenantQs = context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''
     const enlaceTurno = `${origin}/tienda/turno/${booking.public_token}${tenantQs}`
 
+    // Con seña, los emails salen cuando Mercado Pago acredita el pago
+    // (lib/mp-payments.ts); antes de eso el turno es solo una retención.
     // Se esperan antes de responder (en Vercel una promesa suelta puede cortarse),
     // pero con allSettled: un fallo de Resend no anula el turno.
-    await Promise.allSettled([
-      sendBookingConfirmationEmail({ store, booking, zona: settings.zona_horaria, enlaceTurno }),
-      manual
-        ? Promise.resolve()
-        : notifyStoreBookingEmail({ store, booking, zona: settings.zona_horaria, tipo: 'nuevo', enlacePanel: `${origin}/tienda/admin/agenda${tenantQs}` }),
-    ])
+    if (!order) {
+      await Promise.allSettled([
+        sendBookingConfirmationEmail({ store, booking, zona: settings.zona_horaria, enlaceTurno }),
+        manual
+          ? Promise.resolve()
+          : notifyStoreBookingEmail({ store, booking, zona: settings.zona_horaria, tipo: 'nuevo', enlacePanel: `${origin}/tienda/admin/agenda${tenantQs}` }),
+      ])
+    }
 
     return NextResponse.json({
       success: true,
@@ -136,6 +140,9 @@ export async function POST(req: Request) {
         starts_at: booking.starts_at,
         public_token: booking.public_token,
       },
+      // Seña: el navegador crea la preferencia de Mercado Pago con estos datos
+      // (mismo endpoint que el checkout) y redirige a pagar.
+      pago: order ? { orderId: order.id, publicToken: order.public_token, monto: sena } : null,
       // Las reservas le llegan al dueño por WhatsApp, igual que las ventas.
       whatsappUrl: manual
         ? null

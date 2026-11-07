@@ -247,6 +247,25 @@ export async function POST(req: Request) {
     // Validar y sanitizar origen de retorno (Anti Open Redirect)
     const safeOrigin = getSafeReturnOrigin(returnOrigin, store)
 
+    // Seña de un turno: la vuelta desde Mercado Pago va a la página del turno,
+    // no a "pedido confirmado" ni al checkout de productos.
+    const { data: turnoDeSena } = await supabaseAdmin
+      .from('bookings')
+      .select('public_token')
+      .eq('order_id', order.id)
+      .maybeSingle()
+    const backUrls = turnoDeSena
+      ? {
+          success: `${safeOrigin}/tienda/turno/${turnoDeSena.public_token}?pago=aprobado`,
+          failure: `${safeOrigin}/tienda/turno/${turnoDeSena.public_token}?pago=rechazado`,
+          pending: `${safeOrigin}/tienda/turno/${turnoDeSena.public_token}?pago=pendiente`,
+        }
+      : {
+          success: `${safeOrigin}/tienda/pedido-confirmado?order_id=${order.id}&token=${order.public_token || ''}&status=approved`,
+          failure: `${safeOrigin}/tienda/checkout?order_id=${order.id}&token=${order.public_token || ''}&status=failure`,
+          pending: `${safeOrigin}/tienda/pedido-confirmado?order_id=${order.id}&token=${order.public_token || ''}&status=pending`,
+        }
+
     // A1: notification_url con order_id explícito en query string
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.portalmaker.ar').replace(/\/$/, '')
     const webhookUrl = `${appUrl}/api/webhooks/mercadopago?order_id=${order.id}`
@@ -272,11 +291,7 @@ export async function POST(req: Request) {
         email: buyerEmail,
         ...(order.direccion_entrega ? { address: { street_name: order.direccion_entrega.trim() } } : {}),
       },
-      back_urls: {
-        success: `${safeOrigin}/tienda/pedido-confirmado?order_id=${order.id}&token=${order.public_token || ''}&status=approved`,
-        failure: `${safeOrigin}/tienda/checkout?order_id=${order.id}&token=${order.public_token || ''}&status=failure`,
-        pending: `${safeOrigin}/tienda/pedido-confirmado?order_id=${order.id}&token=${order.public_token || ''}&status=pending`,
-      },
+      back_urls: backUrls,
       auto_return: 'approved',
       external_reference: order.id,
       notification_url: webhookUrl,

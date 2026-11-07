@@ -245,8 +245,13 @@ Rubros sugeridos para servicios en el alta: Estética y belleza (pestañas, ceja
 
    Migración `20261106_turnos_lista_espera.sql`.
 8. [ ] Prueba completa con Totas.
-8b. [ ] "Mis turnos" en la cuenta del cliente (hoy se gestiona desde el enlace del email).
-9. [ ] Fase 2: seña con MP, recordatorios por email (pg_cron), feed `.ics` e inicio de la verificación de Google.
+8b. [x] "Mis turnos" en la cuenta del cliente (próximos turnos, con enlace a cada uno).
+9. [x] Fase 2 (programada el 2026-11-07, migraciones `20261107_turnos_fase2.sql` y `20261107_turnos_cron.sql`):
+   - **Seña con Mercado Pago:** porcentaje, monto fijo o total, solo con MP conectado. Se cobra como una orden común (mismo webhook, comisión y reconciliación). El horario se retiene 20 minutos y el turno se confirma solo al acreditarse el pago. Si alguien paga tarde y el horario ya se ocupó, se avisa a la tienda para coordinar o devolver la seña.
+   - **Recordatorios por email:** configurables (sin recordatorio, 2, 12, 24 o 48 h antes). No se envían a quien reservó dentro de ese plazo, y si un envío falla se reintenta.
+   - **Tarea `/api/cron/turnos`:** cada 10 minutos con Supabase `pg_cron` (secreto en Vault). Vence las señas sin pagar, avisa a la lista de espera y manda los recordatorios.
+   - **Calendario `.ics` por profesional:** se suscribe desde Google Calendar sin permisos de Google y el enlace se puede regenerar.
+   - **Pendiente:** iniciar la verificación de la app de Google para la fase 3.
 10. [ ] Fase 3: varios profesionales, OAuth de Google y modalidades.
 
 Cada paso se puede desplegar por separado sin romper las tiendas de productos: todo lo nuevo queda detrás de `tipo_negocio`.

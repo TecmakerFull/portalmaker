@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import { getTenantStore, isStoreAdmin } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { ensureBookingSetup } from '@/lib/booking/setup'
+import { getRequestOrigin } from '@/lib/store-metadata'
 import HorariosManager from './horarios-manager'
 import type { StaffBlock } from '@/types/database'
 
@@ -35,6 +36,7 @@ export default async function AdminHorariosPage() {
         initialSettings={settings}
         initialStaff={staff}
         initialBloqueos={(bloqueos as StaffBlock[]) ?? []}
+        origin={await getRequestOrigin()}
       />
     </div>
   )

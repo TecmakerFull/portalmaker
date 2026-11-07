@@ -19,6 +19,8 @@ import {
   type RangoOcupado,
   type ReglasReserva,
 } from '@/lib/booking/availability'
+import { calcularSena, SENA_MINUTOS_PARA_PAGAR } from '@/lib/booking/sena'
+import { formatFechaTurno } from '@/lib/booking/format'
 import type { Booking, Service, Staff, Store, StoreBookingSettings } from '@/types/database'
 
 export interface HorarioOfrecido {
@@ -49,7 +51,7 @@ async function cargarOcupados(staffIds: string[], desde: Date, hasta: Date): Pro
   const [{ data: turnos }, { data: bloqueos }] = await Promise.all([
     supabaseAdmin
       .from('bookings')
-      .select('staff_id, starts_at, ocupado_hasta')
+      .select('staff_id, starts_at, ocupado_hasta, estado, pendiente_expira_at')
       .in('staff_id', staffIds)
       .in('estado', ['pendiente', 'confirmado'])
       .lt('starts_at', hasta.toISOString())
@@ -62,7 +64,11 @@ async function cargarOcupados(staffIds: string[], desde: Date, hasta: Date): Pro
       .gt('ends_at', desde.toISOString()),
   ])
 
+  const ahora = Date.now()
   for (const t of turnos ?? []) {
+    // Una seña sin pagar cuyo plazo venció ya no ocupa el horario, aunque la
+    // tarea programada todavía no la haya marcado como vencida.
+    if (t.estado === 'pendiente' && t.pendiente_expira_at && new Date(t.pendiente_expira_at).getTime() < ahora) continue
     mapa.get(t.staff_id)?.push({ inicio: new Date(t.starts_at), fin: new Date(t.ocupado_hasta) })
   }
   for (const b of bloqueos ?? []) {
@@ -150,7 +156,7 @@ export async function crearTurno(params: {
   cliente: { userId: string | null; nombre: string; email: string | null; telefono: string | null }
   notas?: string | null
   origen: 'web' | 'manual'
-}): Promise<Booking> {
+}): Promise<{ booking: Booking; sena: number; order: { id: string; public_token: string } | null }> {
   const { store } = params
   const supabaseAdmin = createSupabaseAdminClient()
 
@@ -183,6 +189,18 @@ export async function crearTurno(params: {
 
   const fin = new Date(inicio.getTime() + service.duracion_minutos * 60000)
   const ocupadoHasta = new Date(fin.getTime() + (service.buffer_despues_minutos || 0) * 60000)
+
+  // Las señas sin pagar con plazo vencido se marcan como vencidas acá mismo:
+  // la restricción anti-superposición de la base las sigue contando mientras
+  // estén "pendiente", y no queremos depender de la tarea programada.
+  await supabaseAdmin
+    .from('bookings')
+    .update({ estado: 'expirado', updated_at: new Date().toISOString() })
+    .in('staff_id', staff.map((s) => s.id))
+    .eq('estado', 'pendiente')
+    .not('pendiente_expira_at', 'is', null)
+    .lt('pendiente_expira_at', new Date().toISOString())
+
   const ocupados = await cargarOcupados(
     staff.map((s) => s.id),
     new Date(inicio.getTime() - 24 * 3600000),
@@ -206,6 +224,20 @@ export async function crearTurno(params: {
     throw new BookingError('horario_ocupado', 'Ese horario se acaba de ocupar. Elegí otro, por favor.')
   }
 
+  // Seña: solo en reservas web, con Mercado Pago conectado y monto mayor a 0.
+  // La vista pública no trae la comisión, así que se lee la tienda completa.
+  const { data: storeFull } = await supabaseAdmin
+    .from('stores')
+    .select('mp_connected, comision_portalmaker')
+    .eq('id', store.id)
+    .maybeSingle()
+  const sena =
+    params.origen === 'web' && storeFull?.mp_connected
+      ? calcularSena(Number(service.precio) || 0, settings.sena_modo, Number(settings.sena_valor) || 0)
+      : 0
+  const conSena = sena > 0
+  const estadoInicial = conSena || (settings.requiere_aprobacion && params.origen === 'web') ? 'pendiente' : 'confirmado'
+
   const { data: booking, error } = await supabaseAdmin
     .from('bookings')
     .insert({
@@ -215,7 +247,9 @@ export async function crearTurno(params: {
       starts_at: inicio.toISOString(),
       ends_at: fin.toISOString(),
       ocupado_hasta: ocupadoHasta.toISOString(),
-      estado: settings.requiere_aprobacion && params.origen === 'web' ? 'pendiente' : 'confirmado',
+      estado: estadoInicial,
+      // Con seña, el horario queda retenido unos minutos mientras se paga.
+      pendiente_expira_at: conSena ? new Date(Date.now() + SENA_MINUTOS_PARA_PAGAR * 60000).toISOString() : null,
       servicio_nombre: service.nombre,
       servicio_duracion: service.duracion_minutos,
       precio: service.precio,
@@ -245,5 +279,54 @@ export async function crearTurno(params: {
     actor: params.origen === 'web' ? 'cliente' : 'tienda',
   })
 
-  return booking as Booking
+  if (!conSena) return { booking: booking as Booking, sena: 0, order: null }
+
+  // La seña se cobra como una orden normal para reutilizar todo el flujo de
+  // Mercado Pago (preferencia, webhook firmado, comisión, reconciliación).
+  // Sin recargo: es un adelanto, no una compra con tarjeta en cuotas.
+  const { data: order, error: orderErr } = await supabaseAdmin
+    .from('orders')
+    .insert({
+      store_id: store.id,
+      nombre_comprador: params.cliente.nombre,
+      email_comprador: params.cliente.email,
+      telefono_comprador: params.cliente.telefono,
+      tipo_entrega: 'acordar',
+      metodo_pago: 'mercadopago',
+      items: [
+        {
+          nombre: `Seña: ${service.nombre}`,
+          variante: formatFechaTurno(inicio, reglas.zonaHoraria),
+          cantidad: 1,
+          precio_unitario: sena,
+          subtotal: sena,
+          gestiona_stock: false,
+        },
+      ],
+      total: sena,
+      costo_envio: 0,
+      estado_pedido: 'nuevo',
+      estado_pago: 'pendiente',
+      stock_descontado: false,
+      notas: `Seña del turno ${booking.id}`,
+      comision_portalmaker_pct: Number(storeFull?.comision_portalmaker) || 0,
+      mp_recargo_pct: 0,
+    })
+    .select('id, public_token')
+    .single()
+
+  if (orderErr || !order) {
+    // Sin orden no hay forma de pagar: se libera el horario.
+    await supabaseAdmin.from('bookings').update({ estado: 'expirado' }).eq('id', booking.id)
+    throw orderErr ?? new Error('No se pudo crear el cobro de la seña')
+  }
+
+  const { data: conOrden } = await supabaseAdmin
+    .from('bookings')
+    .update({ order_id: order.id })
+    .eq('id', booking.id)
+    .select('*')
+    .single()
+
+  return { booking: (conOrden ?? booking) as Booking, sena, order }
 }

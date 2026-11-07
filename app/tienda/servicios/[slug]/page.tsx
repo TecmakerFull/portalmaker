@@ -10,6 +10,7 @@ import { getStoreSections } from '@/lib/store-sections'
 import { getStoreExtraSections } from '@/lib/store-extra-sections'
 import { getBookingConfig } from '@/lib/booking/setup'
 import { formatDuracion } from '@/lib/booking/format'
+import { calcularSena } from '@/lib/booking/sena'
 import StorefrontHeaderFlow from '../../sections/storefront-header-flow'
 import StoreFooter from '../../sections/store-footer'
 import BookingWidget from './booking-widget'
@@ -128,6 +129,8 @@ export default async function ServicioPage({ params }: PageProps) {
             maxDias={settings.anticipacion_max_dias}
             requiereAprobacion={settings.requiere_aprobacion}
             cancelacionHoras={settings.cancelacion_hasta_horas}
+            // La seña solo se cobra si la tienda tiene Mercado Pago conectado
+            sena={store.mp_connected ? calcularSena(Number(service.precio) || 0, settings.sena_modo, Number(settings.sena_valor) || 0) : 0}
             tenantQuery={tenantQuery}
           />
         </main>

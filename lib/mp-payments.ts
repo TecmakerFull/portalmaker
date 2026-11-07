@@ -2,6 +2,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { getValidMpAccessToken } from '@/lib/mercadopago'
 import { sendOrderPaidNotification, notifyPlatformAlert } from '@/lib/email-notifications'
 import { handlePostPaymentShipping } from '@/lib/shipping/post-payment'
+import { confirmarTurnoPorPago } from '@/lib/booking/payments'
 
 export interface ProcessMpPaymentResult {
   status: string
@@ -412,14 +413,24 @@ export async function processMpPayment(params: {
         ])
       ).catch((e: unknown) => console.error('Error registrando order_events de pago aprobado:', e))
 
-      sendOrderPaidNotification({ store, order }).catch((e) =>
-        console.error('Error enviando email de orden pagada:', e)
-      )
+      // Seña de un turno: se confirma el turno y se mandan sus propios emails.
+      // No aplica el email de "venta pagada" ni la automatización de envíos.
+      // Se espera (no queda suelto) para que el webhook no termine antes de confirmar.
+      const eraTurno = await confirmarTurnoPorPago(order.id, store).catch((e) => {
+        console.error('Error confirmando turno por pago de seña:', e)
+        return false
+      })
 
-      // Automatización Logística Post-Pago (Fase 5): emisión de envío sin demorar la respuesta de MP
-      handlePostPaymentShipping(order.id, store).catch((e) =>
-        console.error('Error en post-payment shipping automation:', e)
-      )
+      if (!eraTurno) {
+        sendOrderPaidNotification({ store, order }).catch((e) =>
+          console.error('Error enviando email de orden pagada:', e)
+        )
+
+        // Automatización Logística Post-Pago (Fase 5): emisión de envío sin demorar la respuesta de MP
+        handlePostPaymentShipping(order.id, store).catch((e) =>
+          console.error('Error en post-payment shipping automation:', e)
+        )
+      }
     }
 
     return finalizeEvent({
