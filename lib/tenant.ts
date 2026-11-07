@@ -72,7 +72,9 @@ export const getTenantStore = cache(async function getTenantStore(): Promise<Ten
     // Flags públicos/operativos de envíos (sin domicilio de taller ni CUIT fiscal)
     'envios_activo', 'origen_localidad', 'origen_provincia', 'origen_codigo_postal',
     'envio_gratis_desde', 'envio_markup_porcentaje', 'envio_tarifa_fallback',
-    'envio_retiro_local_activo', 'envio_comision_incluye_envio'
+    'envio_retiro_local_activo', 'envio_comision_incluye_envio',
+    // Productos / servicios / ambos: define qué secciones muestran la tienda y el panel
+    'tipo_negocio'
   ].join(',')
 
   // Intentar cargar store con perfil completo si el usuario autenticado es el dueño o superadmin

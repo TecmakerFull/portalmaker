@@ -17,6 +17,8 @@ export interface PlanLimits {
 
   // Catálogo & Productos
   limiteProductos: number
+  // Clientes registrados (para reservar un turno hay que tener cuenta en la tienda)
+  limiteClientes: number
   gestionaStock: boolean
   trazabilidadStock: boolean
 
@@ -58,6 +60,7 @@ export const PLANS_CONFIG: Record<PlanKey, PlanLimits> = {
     descripcion: 'Catálogo online y pedidos directos por WhatsApp para comenzar a mostrar piezas sin costo.',
 
     limiteProductos: 15,
+    limiteClientes: 15,
     gestionaStock: true,
     trazabilidadStock: false,
 
@@ -94,6 +97,7 @@ export const PLANS_CONFIG: Record<PlanKey, PlanLimits> = {
     descripcion: 'Tienda transaccional con carrito, tarifas de envío fijas y cobros integrados.',
 
     limiteProductos: 50,
+    limiteClientes: 50,
     gestionaStock: true,
     trazabilidadStock: true,
 
@@ -130,6 +134,7 @@ export const PLANS_CONFIG: Record<PlanKey, PlanLimits> = {
     descripcion: 'La herramienta definitiva para makers consolidados con couriers en vivo, dominio propio y mayor capacidad.',
 
     limiteProductos: 150,
+    limiteClientes: 100,
     gestionaStock: true,
     trazabilidadStock: true,
 
@@ -166,6 +171,7 @@ export const PLANS_CONFIG: Record<PlanKey, PlanLimits> = {
     descripcion: 'Para talleres y fabricantes a gran escala: catálogo ilimitado, 0% comisión y equipo ilimitado.',
 
     limiteProductos: 9999,
+    limiteClientes: 99999,
     gestionaStock: true,
     trazabilidadStock: true,
 
@@ -202,6 +208,7 @@ export const PLANS_CONFIG: Record<PlanKey, PlanLimits> = {
     descripcion: 'Cuenta bonificada para fundadores, partners estratégicos o beta testers con acceso completo.',
 
     limiteProductos: 9999,
+    limiteClientes: 99999,
     gestionaStock: true,
     trazabilidadStock: true,
 
@@ -533,7 +540,7 @@ export function isFeatureAllowed(
  */
 export function getStoreEffectiveLimit(
   store: Store | null | undefined,
-  limitKey: 'limite_productos' | 'max_colaboradores' | 'banners_max_slides' | 'comision_portalmaker' | 'dias_gracia'
+  limitKey: 'limite_productos' | 'limite_clientes' | 'max_colaboradores' | 'banners_max_slides' | 'comision_portalmaker' | 'dias_gracia'
 ): number {
   if (!store) return 0
   const plan = getPlanConfig(store.plan)
@@ -541,6 +548,10 @@ export function getStoreEffectiveLimit(
   switch (limitKey) {
     case 'limite_productos':
       return store.limite_productos ?? plan.limiteProductos
+    case 'limite_clientes': {
+      const overrideVal = store.features_override?.limite_clientes
+      return typeof overrideVal === 'number' ? overrideVal : plan.limiteClientes
+    }
     case 'max_colaboradores': {
       const overrideVal = store.features_override?.max_colaboradores
       return typeof overrideVal === 'number' ? overrideVal : plan.maxColaboradoresExtra

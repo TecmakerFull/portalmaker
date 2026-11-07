@@ -40,6 +40,9 @@ import {
   Info,
   Phone,
   Image as ImageIcon,
+  CalendarCheck,
+  ClipboardList,
+  Clock,
 } from 'lucide-react'
 import type { Store as StoreType } from '@/types/database'
 import ThemeToggle from '@/app/tienda/theme-toggle'
@@ -124,6 +127,15 @@ export default function AdminSidebar({
   const isDominio = pathname.includes('/tienda/admin/dominio')
   const isPerfil = pathname.includes('/tienda/admin/perfil')
   const isSuscripcion = pathname.includes('/tienda/admin/suscripcion')
+  const isAgenda = pathname.includes('/tienda/admin/agenda')
+  const isServicios = pathname.includes('/tienda/admin/servicios')
+  const isHorarios = pathname.includes('/tienda/admin/horarios')
+
+  // Qué ofrece la tienda: define qué grupos del menú se muestran.
+  // Cambiar de tipo no borra nada; solo oculta lo que no aplica.
+  const tipoNegocio = store.tipo_negocio ?? 'productos'
+  const vendeProductos = tipoNegocio !== 'servicios'
+  const daTurnos = tipoNegocio !== 'productos'
 
   const currentPlan = getPlanConfig(store.plan)
   const canEnvios = isFeatureAllowed(store, 'envios_zonas_fijas') || isFeatureAllowed(store, 'envios_couriers')
@@ -315,8 +327,8 @@ export default function AdminSidebar({
                 <span>Contacto & Ubicación</span>
               </Link>
 
-              {/* Envíos & Logística */}
-              {canEnvios ? (
+              {/* Envíos & Logística (no aplica a tiendas solo de servicios) */}
+              {!vendeProductos ? null : canEnvios ? (
                 <Link
                   href={`/tienda/admin/envios${tenantQuery}`}
                   prefetch={true}
@@ -395,7 +407,34 @@ export default function AdminSidebar({
           )}
         </div>
 
+        {/* Grupo: Turnos (tiendas de servicios o "ambos") */}
+        {daTurnos && (
+          <div className="pt-1 space-y-1">
+            <p className="px-3 pt-1 text-[10px] font-semibold uppercase tracking-wider opacity-50">Turnos</p>
+            {[
+              { href: '/tienda/admin/agenda', label: 'Agenda', icon: CalendarCheck, active: isAgenda },
+              { href: '/tienda/admin/servicios', label: 'Servicios', icon: ClipboardList, active: isServicios },
+              { href: '/tienda/admin/horarios', label: 'Horarios y reglas', icon: Clock, active: isHorarios },
+            ].map(({ href, label, icon: Icon, active }) => (
+              <Link
+                key={href}
+                href={`${href}${tenantQuery}`}
+                prefetch={true}
+                className={`min-h-[44px] flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                  active
+                    ? 'bg-[#FACC15] text-[#1F2937] shadow-xs'
+                    : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{label}</span>
+              </Link>
+            ))}
+          </div>
+        )}
+
         {/* 3. Grupo: Productos (Catálogo, inventario y categorías) */}
+        {vendeProductos && (
         <div className="pt-1">
           <button
             type="button"
@@ -455,9 +494,11 @@ export default function AdminSidebar({
           )}
         </div>
 
+        )}
+
         {/* 4. Gestión, métricas y operaciones */}
-        {/* Ventas & Pedidos */}
-        {canCheckout ? (
+        {/* Ventas & Pedidos (solo si la tienda vende productos) */}
+        {!vendeProductos ? null : canCheckout ? (
           <Link
             href={`/tienda/admin/ventas${tenantQuery}`}
             prefetch={true}

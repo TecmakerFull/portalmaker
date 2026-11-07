@@ -88,6 +88,41 @@ export const RUBROS_TIENDA = [
   { id: 'otro', label: 'Otro rubro' },
 ] as const;
 
+// Rubros para tiendas de servicios con turnos (tipo_negocio = 'servicios').
+export const RUBROS_SERVICIOS = [
+  { id: 'estetica', label: 'Estética y Belleza (pestañas, cejas, uñas)' },
+  { id: 'peluqueria', label: 'Peluquería y Barbería' },
+  { id: 'salud', label: 'Salud y Bienestar (kinesiología, nutrición, psicología)' },
+  { id: 'masajes', label: 'Masajes y Spa' },
+  { id: 'clases', label: 'Clases y Cursos' },
+  { id: 'fitness', label: 'Entrenamiento y Fitness' },
+  { id: 'profesionales', label: 'Profesionales y Consultoría' },
+  { id: 'mascotas_servicios', label: 'Mascotas (peluquería, paseos, veterinaria)' },
+  { id: 'tecnicos', label: 'Técnicos y Reparaciones' },
+  { id: 'tatuajes', label: 'Tatuajes y Piercing' },
+  { id: 'fotografia', label: 'Fotografía y Eventos' },
+  { id: 'otro_servicio', label: 'Otro servicio' },
+] as const;
+
+// Opciones de "¿Qué ofrecés?" en el alta y en Perfil.
+export const TIPOS_NEGOCIO = [
+  {
+    id: 'productos',
+    label: 'Productos',
+    descripcion: 'Vendo cosas: catálogo, carrito y envíos.',
+  },
+  {
+    id: 'servicios',
+    label: 'Servicios',
+    descripcion: 'Doy turnos: mis clientes reservan día y horario.',
+  },
+  {
+    id: 'ambos',
+    label: 'Ambos',
+    descripcion: 'Doy turnos y también vendo productos.',
+  },
+] as const;
+
 
 // =============================================================================
 // PALETAS DE COLOR PRESET (10 Paletas Oficiales)

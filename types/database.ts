@@ -58,6 +58,8 @@ export interface Store {
   estado_pago?: 'al_dia' | 'pendiente' | 'bonificado' | 'gracia' | 'vencido';
   limite_productos?: number;
   features_override?: Record<string, any> | null;
+  // Qué ofrece la tienda: productos (catálogo y envíos), servicios (turnos) o ambos
+  tipo_negocio?: TipoNegocio;
   notas_admin?: string | null;
   suscripcion_activa: boolean;
   fecha_inicio_suscripcion: DateString | null;
@@ -668,6 +670,118 @@ export interface NewsletterSettings {
   etiqueta: string;
   titulo: string;
   texto: string;
+}
+
+// =============================================================================
+// TURNOS — Tiendas de servicios (supabase/migrations/20261106_turnos_fase1.sql)
+// =============================================================================
+export type TipoNegocio = 'productos' | 'servicios' | 'ambos';
+
+export type SenaModo = 'ninguna' | 'porcentaje' | 'monto' | 'total';
+
+export interface StoreBookingSettings {
+  store_id: UUID;
+  zona_horaria: string;
+  anticipacion_min_minutos: number;
+  anticipacion_max_dias: number;
+  intervalo_grilla_minutos: number;
+  requiere_aprobacion: boolean;
+  cancelacion_hasta_horas: number;
+  sena_modo: SenaModo;
+  sena_valor: number;
+  created_at?: Timestamp;
+  updated_at?: Timestamp;
+}
+
+export interface Service {
+  id: UUID;
+  store_id: UUID;
+  category_id: UUID | null;
+  nombre: string;
+  slug: string;
+  descripcion: string | null;
+  imagenes: string[];
+  duracion_minutos: number;
+  buffer_despues_minutos: number;
+  precio: number;
+  precio_desde: boolean;
+  visible: boolean;
+  destacado: boolean;
+  orden: number;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface Staff {
+  id: UUID;
+  store_id: UUID;
+  nombre: string;
+  email: string | null;
+  foto_url: string | null;
+  horarios: { dias?: Record<string, { activo: boolean; turno1: { desde: string; hasta: string }; dobleTurno: boolean; turno2: { desde: string; hasta: string } }> };
+  activo: boolean;
+  orden: number;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface StaffBlock {
+  id: UUID;
+  store_id: UUID;
+  staff_id: UUID;
+  starts_at: Timestamp;
+  ends_at: Timestamp;
+  motivo: string | null;
+  created_at: Timestamp;
+}
+
+export type BookingEstado = 'pendiente' | 'confirmado' | 'cancelado' | 'completado' | 'ausente' | 'expirado';
+
+export interface Booking {
+  id: UUID;
+  store_id: UUID;
+  service_id: UUID | null;
+  staff_id: UUID;
+  starts_at: Timestamp;
+  ends_at: Timestamp;
+  ocupado_hasta: Timestamp;
+  estado: BookingEstado;
+  servicio_nombre: string;
+  servicio_duracion: number;
+  precio: number;
+  cliente_user_id: UUID | null;
+  cliente_nombre: string;
+  cliente_email: string | null;
+  cliente_telefono: string | null;
+  notas_cliente: string | null;
+  notas_admin: string | null;
+  origen: 'web' | 'manual';
+  public_token: UUID;
+  order_id: UUID | null;
+  cancelado_por: 'cliente' | 'tienda' | null;
+  cancelado_at: Timestamp | null;
+  pendiente_expira_at: Timestamp | null;
+  google_event_id: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export type WaitlistEstado = 'esperando' | 'avisado' | 'resuelto' | 'cancelado';
+
+export interface BookingWaitlist {
+  id: UUID;
+  store_id: UUID;
+  service_id: UUID;
+  fecha: string; // YYYY-MM-DD local de la tienda
+  cliente_user_id: UUID | null;
+  cliente_nombre: string;
+  cliente_email: string | null;
+  cliente_telefono: string | null;
+  estado: WaitlistEstado;
+  avisado_at: Timestamp | null;
+  notas_admin: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
 }
 
 // Interfaz Genérica de Sección en Base de Datos

@@ -17,6 +17,8 @@ import NewsletterSection from './sections/newsletter-section'
 import StoreFooter from './sections/store-footer'
 import { getStoreSections } from '@/lib/store-sections'
 import { getStoreExtraSections } from '@/lib/store-extra-sections'
+import ServicesCatalog from './sections/services-catalog'
+import type { Service } from '@/types/database'
 import { MessageSquare, Package } from 'lucide-react'
 
 interface TiendaPageProps {
@@ -81,6 +83,22 @@ export default async function TiendaPage({ searchParams }: TiendaPageProps) {
 
   // 5. Mensajes de confianza y footer configurables por la tienda
   const extraSections = await getStoreExtraSections(store)
+
+  // 6. Servicios con turno (tiendas de servicios o "ambos")
+  const tipoNegocio = store.tipo_negocio ?? 'productos'
+  const vendeProductos = tipoNegocio !== 'servicios'
+  const daTurnos = tipoNegocio !== 'productos'
+  let serviceList: Service[] = []
+  if (daTurnos) {
+    const { data: services } = await supabase
+      .from('services')
+      .select('*')
+      .eq('store_id', store.id)
+      .eq('visible', true)
+      .order('destacado', { ascending: false })
+      .order('orden', { ascending: true })
+    serviceList = (services as Service[]) ?? []
+  }
 
   const productList = products ?? []
   const categoryList = categories ?? []
@@ -160,19 +178,33 @@ export default async function TiendaPage({ searchParams }: TiendaPageProps) {
         {/* 3. Mensajes de confianza (configurables en Diseño; se ocultan si la tienda los desactiva) */}
         {extraSections.trust_bar.enabled && <TrustFeatures items={extraSections.trust_bar.content} />}
 
-        {/* 4. Colección Curada de Productos con Filtros y Buscador */}
-        <main id="catalogo" className="wrap pt-12 sm:pt-16 scroll-mt-24">
-          <CatalogView
-            products={productList}
-            categories={categoryList}
-            store={store}
+        {/* 4a. Servicios con turno. En tiendas solo de servicios usan el encabezado
+            del catálogo configurado en Diseño; en "ambos" van antes de los productos. */}
+        {daTurnos && (
+          <ServicesCatalog
+            services={serviceList}
             tenantQuery={tenantQuery}
-            initialQuery={initialQuery}
-            initialCategory={initialCategory}
-            initialOffer={initialOffer}
-            header={extraSections.catalog_header.settings}
+            etiqueta={vendeProductos ? 'Turnos online' : extraSections.catalog_header.settings.etiqueta}
+            titulo={vendeProductos ? 'Reservá tu turno' : extraSections.catalog_header.settings.titulo}
+            subtitulo={vendeProductos ? undefined : extraSections.catalog_header.settings.subtitulo}
           />
-        </main>
+        )}
+
+        {/* 4b. Colección de productos con filtros y buscador */}
+        {vendeProductos && (
+          <main id="catalogo" className="wrap pt-12 sm:pt-16 scroll-mt-24">
+            <CatalogView
+              products={productList}
+              categories={categoryList}
+              store={store}
+              tenantQuery={tenantQuery}
+              initialQuery={initialQuery}
+              initialCategory={initialCategory}
+              initialOffer={initialOffer}
+              header={extraSections.catalog_header.settings}
+            />
+          </main>
+        )}
 
         {/* 5. "Por qué elegirnos" (editable u oculta desde Diseño) */}
         {extraSections.story.enabled && (

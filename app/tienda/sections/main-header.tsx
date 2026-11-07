@@ -87,11 +87,15 @@ function MainHeaderInner({
     mostrar_slogan = true,
     tamano_slogan = 'mediano',
     mostrar_buscador = true,
-    mostrar_carrito = true,
+    mostrar_carrito: mostrarCarritoConfig = true,
     mostrar_tema_toggle = true,
     logo_posicion = 'centro',
     sticky = true,
   } = settings || {}
+
+  // Una tienda solo de servicios no vende productos: el carrito no tiene sentido
+  // (las reservas se confirman directo en la página de cada servicio).
+  const mostrar_carrito = mostrarCarritoConfig && store.tipo_negocio !== 'servicios'
 
   const logoSizeClasses = {
     chico: 'h-7 sm:h-8 max-w-[100px] sm:max-w-[130px]',

@@ -8,7 +8,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
-import type { Store } from '@/types/database'
+import type { Store, TipoNegocio } from '@/types/database'
+import { TIPOS_NEGOCIO } from '@/lib/constants'
 import {
   User,
   ShieldCheck,
@@ -49,6 +50,8 @@ export default function PerfilManager({
   // Datos de la tienda editables desde el perfil
   const [nombre, setNombre] = useState(store.nombre)
   const [slogan, setSlogan] = useState(store.slogan ?? '')
+  // Productos / servicios / ambos: se puede cambiar en cualquier momento sin perder datos
+  const [tipoNegocio, setTipoNegocio] = useState<TipoNegocio>(store.tipo_negocio ?? 'productos')
   const [savingStore, setSavingStore] = useState(false)
   const [storeSuccessMsg, setStoreSuccessMsg] = useState<string | null>(null)
   const [storeErrorMsg, setStoreErrorMsg] = useState<string | null>(null)
@@ -120,6 +123,7 @@ export default function PerfilManager({
         .update({
           nombre: nombre.trim(),
           slogan: slogan.trim() || null,
+          tipo_negocio: tipoNegocio,
           updated_at: new Date().toISOString(),
         })
         .eq('id', store.id)
@@ -226,6 +230,42 @@ export default function PerfilManager({
                   />
                 </div>
               </div>
+
+              {/* Tipo de negocio. Cambiarlo no borra nada: solo muestra u oculta
+                  secciones (envíos y carrito para productos, agenda para servicios). */}
+              <fieldset className="space-y-2">
+                <legend className="text-xs font-medium opacity-75 block mb-1.5">¿Qué ofrece tu tienda?</legend>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup">
+                  {TIPOS_NEGOCIO.map((opcion) => {
+                    const activo = tipoNegocio === opcion.id
+                    return (
+                      <button
+                        key={opcion.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={activo}
+                        onClick={() => setTipoNegocio(opcion.id)}
+                        className={`min-h-[56px] p-3 rounded-xl border text-left transition-colors cursor-pointer ${
+                          activo
+                            ? 'border-[#FACC15] bg-[#FACC15]/10'
+                            : 'border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5'
+                        }`}
+                      >
+                        <span className="flex items-center gap-1.5 text-sm font-semibold">
+                          {activo && <Check className="w-3.5 h-3.5 text-[#CA8A04] dark:text-[#FACC15]" />}
+                          {opcion.label}
+                        </span>
+                        <span className="block text-[11px] opacity-70 leading-snug mt-0.5">{opcion.descripcion}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                {tipoNegocio !== (store.tipo_negocio ?? 'productos') && (
+                  <p className="text-[11px] p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300">
+                    Al guardar cambia lo que se muestra en tu tienda y en este panel. No se borra nada: si volvés atrás, todo sigue como estaba.
+                  </p>
+                )}
+              </fieldset>
 
               <div className="flex items-center justify-end pt-1">
                 <button

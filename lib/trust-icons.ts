@@ -54,6 +54,18 @@ export const DEFAULT_TRUST_ITEMS: TrustBarItem[] = [
   { id: 'trust-4', icono: 'Headphones', titulo: 'Atención personalizada', texto: 'Estamos para ayudarte', activo: true },
 ]
 
+/**
+ * Mensajes por defecto para tiendas de servicios: hablan de turnos en lugar de
+ * envíos. Solo prometen lo que el sistema ya hace (reserva online,
+ * confirmación por email, cancelación desde el enlace del turno).
+ */
+export const DEFAULT_TRUST_ITEMS_SERVICIOS: TrustBarItem[] = [
+  { id: 'trust-s1', icono: 'Clock', titulo: 'Reservá online', texto: 'Elegí día y horario cuando quieras', activo: true },
+  { id: 'trust-s2', icono: 'BadgeCheck', titulo: 'Confirmación por email', texto: 'Con el detalle de tu turno', activo: true },
+  { id: 'trust-s3', icono: 'RotateCcw', titulo: 'Cancelación simple', texto: 'Desde el enlace de tu turno', activo: true },
+  { id: 'trust-s4', icono: 'Headphones', titulo: 'Atención personalizada', texto: 'Estamos para ayudarte', activo: true },
+]
+
 /** Medios de pago que se pueden mostrar en el pie de página. */
 export const MEDIOS_PAGO_FOOTER: Array<{ id: string; label: string }> = [
   { id: 'transferencia', label: 'Transferencia' },

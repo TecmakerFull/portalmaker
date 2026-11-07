@@ -22,7 +22,7 @@ import type {
   StoryPillar,
   NewsletterSettings,
 } from '@/types/database'
-import { DEFAULT_TRUST_ITEMS } from '@/lib/trust-icons'
+import { DEFAULT_TRUST_ITEMS, DEFAULT_TRUST_ITEMS_SERVICIOS } from '@/lib/trust-icons'
 
 export interface ResolvedStoreSections {
   top_bar: StoreSection<TopBarSettings, TopBarMessageItem[]>
@@ -106,7 +106,8 @@ export function getDefaultStoreSections(
   const navbarLinks: NavbarItem[] = [
     {
       id: 'nav-1',
-      texto: 'Productos',
+      // En tiendas solo de servicios el catálogo de la portada son servicios
+      texto: store.tipo_negocio === 'servicios' ? 'Servicios' : 'Productos',
       tipo_destino: 'catalogo',
       destino_url: '/tienda',
       destacado: false,
@@ -206,6 +207,7 @@ export const EXTRA_SECTION_TYPES = ['trust_bar', 'catalog_header', 'story', 'new
 
 export function getDefaultExtraSections(store: Store): StoreExtraSections {
   const now = new Date().toISOString()
+  const soloServicios = store.tipo_negocio === 'servicios'
   const base = (type: string, orden: number) => ({
     id: `default-${type}-${store.id}`,
     store_id: store.id,
@@ -220,15 +222,21 @@ export function getDefaultExtraSections(store: Store): StoreExtraSections {
     trust_bar: {
       ...base('trust_bar', 10),
       settings: { mostrar_en_producto: true },
-      content: DEFAULT_TRUST_ITEMS,
+      content: soloServicios ? DEFAULT_TRUST_ITEMS_SERVICIOS : DEFAULT_TRUST_ITEMS,
     },
     catalog_header: {
       ...base('catalog_header', 11),
-      settings: {
-        etiqueta: 'Nuestros productos',
-        titulo: 'Tus próximos favoritos',
-        subtitulo: 'Elegí lo que te guste y hacé tu pedido online.',
-      },
+      settings: soloServicios
+        ? {
+            etiqueta: 'Nuestros servicios',
+            titulo: 'Reservá tu turno',
+            subtitulo: 'Elegí el servicio, el día y el horario que te queden mejor.',
+          }
+        : {
+            etiqueta: 'Nuestros productos',
+            titulo: 'Tus próximos favoritos',
+            subtitulo: 'Elegí lo que te guste y hacé tu pedido online.',
+          },
       content: [],
     },
     story: {

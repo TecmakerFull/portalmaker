@@ -7,7 +7,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
-import { COLOR_PRESETS, RUBROS_TIENDA } from '@/lib/constants'
+import { COLOR_PRESETS, RUBROS_TIENDA, RUBROS_SERVICIOS, TIPOS_NEGOCIO } from '@/lib/constants'
+import type { TipoNegocio } from '@/types/database'
 import { PlusCircle, X, Loader2, Sparkles, AlertCircle } from 'lucide-react'
 
 export default function NuevaTiendaModal() {
@@ -19,6 +20,7 @@ export default function NuevaTiendaModal() {
   // Sin rubro preseleccionado para no crear tiendas con un slogan que no corresponde.
   const [rubro, setRubro] = useState<string>('')
   const [rubroPersonalizado, setRubroPersonalizado] = useState('')
+  const [tipo, setTipo] = useState<TipoNegocio>('productos')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -40,7 +42,7 @@ export default function NuevaTiendaModal() {
     setLoading(true)
 
     try {
-      const rubroFinal = rubro === 'Otro rubro'
+      const rubroFinal = rubro === 'Otro rubro' || rubro === 'Otro servicio'
         ? (rubroPersonalizado.trim() || 'Tienda online')
         : rubro
 
@@ -54,6 +56,7 @@ export default function NuevaTiendaModal() {
           slug: slug.trim().toLowerCase(),
           admin_email: adminEmail.trim().toLowerCase(),
           slogan: rubroFinal,
+          tipo_negocio: tipo,
           plan: 'maker_pro',
           precio_mensual: 0,
           estado_pago: 'al_dia',
@@ -183,6 +186,26 @@ export default function NuevaTiendaModal() {
 
               <div className="space-y-3">
                 <div>
+                  <label htmlFor="nt-tipo" className="block text-xs font-semibold uppercase tracking-wider opacity-80 mb-1.5">
+                    ¿Qué ofrece?
+                  </label>
+                  <select
+                    id="nt-tipo"
+                    value={tipo}
+                    onChange={(e) => {
+                      setTipo(e.target.value as TipoNegocio)
+                      setRubro('')
+                    }}
+                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]/25 focus:border-[#FF5500] transition-colors cursor-pointer"
+                  >
+                    {TIPOS_NEGOCIO.map((t) => (
+                      <option key={t.id} value={t.id} className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)]">
+                        {t.label} — {t.descripcion}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider opacity-80 mb-1.5">
                     Rubro Principal
                   </label>
@@ -195,7 +218,7 @@ export default function NuevaTiendaModal() {
                     <option value="" disabled className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)]">
                       Elegí el rubro de la tienda
                     </option>
-                    {RUBROS_TIENDA.map((r) => (
+                    {(tipo === 'productos' ? RUBROS_TIENDA : tipo === 'servicios' ? RUBROS_SERVICIOS : [...RUBROS_SERVICIOS, ...RUBROS_TIENDA]).map((r) => (
                       <option key={r.id} value={r.label} className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)]">
                         {r.label}
                       </option>
@@ -204,7 +227,7 @@ export default function NuevaTiendaModal() {
                 </div>
 
                 {/* Campo interactivo si elige 'Otro rubro' */}
-                {rubro === 'Otro rubro' && (
+                {(rubro === 'Otro rubro' || rubro === 'Otro servicio') && (
                   <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
                     <label className="block text-xs font-semibold uppercase tracking-wider opacity-80">
                       ¿Cuál es el rubro o actividad de la tienda?
