@@ -138,7 +138,7 @@ export default function ServiceReviews({ storeId, serviceId, serviceSlug, initia
               onChange={(e) => setComentario(e.target.value)}
               aria-label="Tu comentario"
               placeholder="Contá cómo fue tu experiencia."
-              className="w-full p-3.5 rounded-xl border border-black/15 dark:border-white/15 bg-transparent text-sm outline-none focus:border-[var(--color-primario)] leading-relaxed"
+              className="w-full p-3.5 rounded-xl border border-black/15 dark:border-white/15 bg-transparent text-base sm:text-sm outline-none focus:border-[var(--color-primario)] leading-relaxed"
             />
             <button
               type="submit"

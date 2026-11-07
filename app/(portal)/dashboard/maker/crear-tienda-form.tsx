@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { COLOR_PRESETS, RUBROS_TIENDA, RUBROS_SERVICIOS, TIPOS_NEGOCIO } from '@/lib/constants'
+import StyledSelect from '@/components/styled-select'
 import type { TipoNegocio } from '@/types/database'
 import { Loader2, ArrowRight, AlertCircle, Sparkles, Package, CalendarCheck, Layers, Check } from 'lucide-react'
 
@@ -154,7 +155,7 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
         <legend className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-texto)] opacity-80 mb-1.5">
           ¿Qué ofrecés?
         </legend>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup">
+        <div className={`grid grid-cols-1 gap-2 ${TIPOS_NEGOCIO.length > 2 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`} role="radiogroup">
           {TIPOS_NEGOCIO.map((opcion) => {
             const Icon = TIPO_ICONOS[opcion.id]
             const activo = tipo === opcion.id
@@ -194,35 +195,17 @@ export default function CrearTiendaForm({ userEmail }: { userEmail: string }) {
             <label htmlFor="rubro" className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-texto)] opacity-80 mb-1.5">
               {tipo === 'servicios' ? '¿Qué servicio das?' : '¿Qué vendés?'}
             </label>
-            <select
+            <StyledSelect
               id="rubro"
               required
               value={rubro}
-              onChange={(e) => setRubro(e.target.value)}
-              className="w-full min-h-[46px] px-4 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]/25 focus:border-[#FF5500] transition-colors cursor-pointer"
-            >
-              <option value="" disabled className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)]">
-                Elegí el rubro de tu tienda
-              </option>
-              {(tipo === 'servicios' || tipo === 'ambos') && (
-                <optgroup label="Servicios">
-                  {RUBROS_SERVICIOS.map((r) => (
-                    <option key={r.id} value={r.label} className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)]">
-                      {r.label}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {(tipo === 'productos' || tipo === 'ambos') && (
-                <optgroup label="Productos">
-                  {RUBROS_TIENDA.map((r) => (
-                    <option key={r.id} value={r.label} className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)]">
-                      {r.label}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
+              onChange={(v) => setRubro(v)}
+              placeholder="Elegí el rubro de tu tienda"
+              options={[
+                ...((tipo === 'servicios' || tipo === 'ambos') ? RUBROS_SERVICIOS.map((r) => ({ value: r.label, label: r.label, group: 'Servicios' })) : []),
+                ...((tipo === 'productos' || tipo === 'ambos') ? RUBROS_TIENDA.map((r) => ({ value: r.label, label: r.label, group: 'Productos' })) : []),
+              ]}
+            />
           </div>
 
           {/* Campo libre si elige "Otro" */}

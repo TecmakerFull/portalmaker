@@ -12,6 +12,7 @@
 import type { StoreSection, TrustBarItem, TrustBarSettings } from '@/types/database'
 import { TRUST_ICONS, MAX_TRUST_ITEMS, DEFAULT_TRUST_ITEMS, getTrustIcon } from '@/lib/trust-icons'
 import { Plus, Trash2, Eye, EyeOff, ShieldCheck, RotateCcw } from 'lucide-react'
+import StyledSelect from '@/components/styled-select'
 
 interface TrustBarEditorProps {
   section: StoreSection<TrustBarSettings, TrustBarItem[]>
@@ -110,16 +111,12 @@ export default function TrustBarEditor({ section, onChange }: TrustBarEditorProp
                 <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-3 text-xs">
                   <div className="space-y-1.5">
                     <label className="font-semibold opacity-75 block" htmlFor={`trust-icon-${item.id}`}>Ícono</label>
-                    <select
+                    <StyledSelect
                       id={`trust-icon-${item.id}`}
                       value={item.icono}
-                      onChange={(e) => updateItem(index, { icono: e.target.value })}
-                      className="w-full min-h-11 px-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] cursor-pointer"
-                    >
-                      {Object.entries(TRUST_ICONS).map(([key, { label }]) => (
-                        <option key={key} value={key}>{label}</option>
-                      ))}
-                    </select>
+                      onChange={(v) => updateItem(index, { icono: v })}
+                      options={Object.entries(TRUST_ICONS).map(([clave, { label }]) => ({ value: clave, label }))}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="font-semibold opacity-75 block" htmlFor={`trust-title-${item.id}`}>Título</label>

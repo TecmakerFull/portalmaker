@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { fechaLocal, sumarDias } from '@/lib/booking/availability'
-import { formatFechaTurno, formatDuracion, googleCalendarUrl } from '@/lib/booking/format'
+import { formatFechaTurno, formatDuracion, googleCalendarUrl, renglonesImporte } from '@/lib/booking/format'
 import { CalendarCheck, Loader2, LogIn, Check, AlertCircle, CalendarPlus, MessageCircle, ChevronRight, BellRing } from 'lucide-react'
 
 interface Horario {
@@ -26,7 +26,7 @@ interface Horario {
 interface Props {
   storeId: string
   storeNombre: string
-  service: { id: string; nombre: string; duracion: number }
+  service: { id: string; nombre: string; duracion: number; precio?: number }
   zona: string
   maxDias: number
   requiereAprobacion: boolean
@@ -235,6 +235,9 @@ export default function BookingWidget({ storeId, storeNombre, service, zona, max
           <p className="text-sm opacity-75 mt-1">
             {service.nombre} · <span className="capitalize">{formatFechaTurno(resultado.starts_at, zona)}</span>
           </p>
+          {renglonesImporte(service.precio ?? 0, 0).map((renglon) => (
+            <p key={renglon} className="text-sm opacity-75">{renglon}</p>
+          ))}
           <p className="text-sm opacity-75 mt-2">
             {pendiente
               ? `${storeNombre} va a confirmar tu turno. Te avisamos por email.`
@@ -395,10 +398,10 @@ export default function BookingWidget({ storeId, storeNombre, service, zona, max
           ) : (
             <div className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <input className="min-h-12 px-3 rounded-xl border border-black/15 dark:border-white/15 bg-transparent text-sm" maxLength={100} placeholder="Tu nombre" aria-label="Tu nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
-                <input className="min-h-12 px-3 rounded-xl border border-black/15 dark:border-white/15 bg-transparent text-sm" maxLength={30} inputMode="tel" placeholder="Tu WhatsApp" aria-label="Tu WhatsApp" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+                <input className="min-h-12 px-3 rounded-xl border border-black/15 dark:border-white/15 bg-transparent text-base sm:text-sm" maxLength={100} placeholder="Tu nombre" aria-label="Tu nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+                <input className="min-h-12 px-3 rounded-xl border border-black/15 dark:border-white/15 bg-transparent text-base sm:text-sm" maxLength={30} inputMode="tel" placeholder="Tu WhatsApp" aria-label="Tu WhatsApp" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
               </div>
-              <textarea className="w-full min-h-12 px-3 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-transparent text-sm" rows={2} maxLength={500} placeholder="¿Algo que la tienda deba saber? (opcional)" aria-label="Notas" value={notas} onChange={(e) => setNotas(e.target.value)} />
+              <textarea className="w-full min-h-12 px-3 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-transparent text-base sm:text-sm" rows={2} maxLength={500} placeholder="¿Algo que la tienda deba saber? (opcional)" aria-label="Notas" value={notas} onChange={(e) => setNotas(e.target.value)} />
               <button type="button" disabled={enviando} onClick={confirmar} className="w-full min-h-12 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50">
                 {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 {sena > 0 ? `Pagar seña de ${formatPesos(sena)} y reservar` : requiereAprobacion ? 'Solicitar turno' : 'Confirmar turno'}

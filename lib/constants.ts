@@ -104,8 +104,14 @@ export const RUBROS_SERVICIOS = [
   { id: 'otro_servicio', label: 'Otro servicio' },
 ] as const;
 
+// "Ambos" (productos y servicios a la vez) está PAUSADO en la interfaz hasta dejar
+// andando bien productos y servicios por separado (decisión del 2026-11-07).
+// Todo el soporte sigue en el código, y cada funcionalidad nueva debe contemplar
+// los tres tipos para que reactivarlo sea cambiar este valor a true.
+export const AMBOS_HABILITADO = false;
+
 // Opciones de "¿Qué ofrecés?" en el alta y en Perfil.
-export const TIPOS_NEGOCIO = [
+export const TIPOS_NEGOCIO_TODOS = [
   {
     id: 'productos',
     label: 'Productos',
@@ -122,6 +128,18 @@ export const TIPOS_NEGOCIO = [
     descripcion: 'Doy turnos y también vendo productos.',
   },
 ] as const;
+
+/**
+ * Opciones que se ofrecen hoy. Si una tienda ya está en "ambos" (por ejemplo,
+ * cargada por el superadmin), `tiposDisponibles('ambos')` la sigue mostrando
+ * para que no quede sin opción elegida.
+ */
+export function tiposDisponibles(actual?: string | null) {
+  return TIPOS_NEGOCIO_TODOS.filter((t) => t.id !== 'ambos' || AMBOS_HABILITADO || actual === 'ambos');
+}
+
+// Compatibilidad: lista pública de opciones (sin "ambos" mientras esté pausado).
+export const TIPOS_NEGOCIO = tiposDisponibles();
 
 
 // =============================================================================

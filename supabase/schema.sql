@@ -102,10 +102,10 @@ create table stores (
   whatsapp_numero  text,                          -- número para consultas (sin +, sin espacios: "5491123456789")
 
   -- Suscripción (gestionada solo por el developer desde /dashboard/admin)
-  plan                        text    default 'maker_pro', -- 'starter' | 'maker_pro' | 'enterprise' | 'bonificado'
+  plan                        text    default 'free', -- 'free' | 'starter' | 'maker_pro' | 'enterprise' | 'bonificado'
   precio_mensual              numeric(10,2) default 0,    -- valor mensual pactado
   estado_pago                 text    default 'al_dia',    -- 'al_dia' | 'pendiente' | 'bonificado' | 'gracia' | 'vencido'
-  limite_productos            int     default 50,          -- límite máximo de productos según el plan
+  limite_productos            int     default 15,           -- límite máximo de productos según el plan
   features_override           jsonb   default '{}'::jsonb, -- personalización explícita de módulos y límites del superadmin
   notas_admin                 text,                        -- notas internas del superadmin
   suscripcion_activa          boolean default true,
@@ -1615,6 +1615,47 @@ begin
 end;
 $$;
 
+-- Defensa en el INSERT: el trigger de columnas protegidas solo corre en UPDATE,
+-- así que un dueño podía mandar plan/comisión/checkout propios al crear la tienda.
+-- Para cualquiera que no sea superadmin o service_role se fuerzan los valores iniciales.
+create or replace function force_store_initial_values()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  if current_user in ('service_role', 'postgres', 'supabase_admin') or
+     (auth.jwt() ->> 'role') = 'service_role' or
+     auth.role() = 'service_role' or
+     is_platform_admin() then
+    return new;
+  end if;
+
+  new.plan := 'free';
+  new.precio_mensual := 0;
+  new.limite_productos := 15;
+  new.features_override := '{}'::jsonb;
+  new.modo_operacion := 'vitrina';
+  new.checkout_activo := false;
+  new.comision_portalmaker := 0;
+  new.estado_pago := 'al_dia';
+  new.suscripcion_activa := true;
+  new.fecha_proximo_vencimiento := null;
+  new.dias_gracia := 3;
+  new.notas_admin := null;
+  new.mp_connected := false;
+  new.custom_domain_verified := false;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_force_store_initial_values on stores;
+create trigger trg_force_store_initial_values
+  before insert on stores
+  for each row
+  execute function force_store_initial_values();
+
 drop trigger if exists trg_protect_store_columns on stores;
 create trigger trg_protect_store_columns
   before update on stores
@@ -1913,6 +1954,9 @@ create table if not exists public.services (
   precio                  numeric(10,2) not null default 0 check (precio >= 0),
   -- true = se muestra "Desde $X" (el precio final depende del caso)
   precio_desde            boolean not null default false,
+  -- Oferta: con oferta_activa, la reserva y la seña usan precio_oferta
+  precio_oferta           numeric(10,2) check (precio_oferta is null or precio_oferta >= 0),
+  oferta_activa           boolean not null default false,
   visible                 boolean not null default true,
   destacado               boolean not null default false,
   orden                   int not null default 0,

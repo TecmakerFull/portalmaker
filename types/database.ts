@@ -707,6 +707,8 @@ export interface Service {
   buffer_despues_minutos: number;
   precio: number;
   precio_desde: boolean;
+  precio_oferta: number | null;
+  oferta_activa: boolean;
   visible: boolean;
   destacado: boolean;
   orden: number;

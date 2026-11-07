@@ -68,6 +68,15 @@ localhost / *.vercel.app ?tenant=slug → simulación de tienda en desarrollo y 
 - **Envíos:** `lib/shipping/` (registry de proveedores, manual y Zipnova, credenciales cifradas con `SHIPPING_ENC_KEY`, automatización post-pago). Las etiquetas se guardan en el bucket privado `shipping-labels`.
 - **Infraestructura:** Resend (emails), Upstash (rate limit, con fallback en memoria), Turnstile (opcional en checkout), Vercel Domains API (`lib/vercel-domains.ts`), Georef (direcciones).
 
+## Tipos de negocio (productos, servicios, ambos)
+
+Cada tienda tiene `stores.tipo_negocio`: `productos` (catálogo, carrito y envíos), `servicios` (turnos; **sin envíos, carrito ni favoritos**) o `ambos`.
+
+- **"Ambos" está PAUSADO en la interfaz** (decisión del 2026-11-07): `AMBOS_HABILITADO = false` en `lib/constants.ts`. No aparece en el alta, en el modal de superadmin ni en Perfil (salvo que la tienda ya esté en `ambos`). El soporte sigue en el código.
+- **Toda funcionalidad nueva debe contemplar los tres tipos**, aunque hoy no se ofrezca el tercero, para que reactivarlo sea cambiar un valor. Regla práctica: lo de productos se muestra si `tipo !== 'servicios'`; lo de turnos si `tipo !== 'productos'`.
+- Detalle y avance del módulo de turnos: `documentacion/plan-turnos-servicios.md`.
+- No usar `<select>` nativo en pantallas nuevas: usar `components/styled-select.tsx` (y nunca dentro de un `<label>`).
+
 ## Supabase y seguridad (convenciones obligatorias)
 
 - `lib/supabase/server.ts` tiene `createSupabaseServerClient()` (sesión del usuario, respeta RLS) y `createSupabaseAdminClient()` (service_role, **solo en servidor**, saltea RLS y el trigger de columnas protegidas).

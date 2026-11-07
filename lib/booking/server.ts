@@ -20,7 +20,7 @@ import {
   type ReglasReserva,
 } from '@/lib/booking/availability'
 import { calcularSena, SENA_MINUTOS_PARA_PAGAR } from '@/lib/booking/sena'
-import { formatFechaTurno } from '@/lib/booking/format'
+import { formatFechaTurno, precioVigente } from '@/lib/booking/format'
 import type { Booking, Service, Staff, Store, StoreBookingSettings } from '@/types/database'
 
 export interface HorarioOfrecido {
@@ -233,7 +233,7 @@ export async function crearTurno(params: {
     .maybeSingle()
   const sena =
     params.origen === 'web' && storeFull?.mp_connected
-      ? calcularSena(Number(service.precio) || 0, settings.sena_modo, Number(settings.sena_valor) || 0)
+      ? calcularSena(precioVigente(service).vigente, settings.sena_modo, Number(settings.sena_valor) || 0)
       : 0
   const conSena = sena > 0
   const estadoInicial = conSena || (settings.requiere_aprobacion && params.origen === 'web') ? 'pendiente' : 'confirmado'
@@ -252,7 +252,7 @@ export async function crearTurno(params: {
       pendiente_expira_at: conSena ? new Date(Date.now() + SENA_MINUTOS_PARA_PAGAR * 60000).toISOString() : null,
       servicio_nombre: service.nombre,
       servicio_duracion: service.duracion_minutos,
-      precio: service.precio,
+      precio: precioVigente(service).vigente,
       cliente_user_id: params.cliente.userId,
       cliente_nombre: params.cliente.nombre,
       cliente_email: params.cliente.email,

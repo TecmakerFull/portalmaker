@@ -19,11 +19,12 @@ import { localAUtc, fechaLocal, sumarDias } from '@/lib/booking/availability'
 import { formatFechaTurno, formatHora } from '@/lib/booking/format'
 import type { Staff, StaffBlock, Store, StoreBookingSettings } from '@/types/database'
 import { AdminPageHeader } from '../components/admin-page-header'
+import StyledSelect from '@/components/styled-select'
 import { Clock, Save, Loader2, CheckCircle2, AlertCircle, CalendarOff, Trash2, Plus, Settings2, CreditCard, CalendarSync, Copy, RefreshCw } from 'lucide-react'
 import type { SenaModo } from '@/types/database'
 
 const card = 'bg-[var(--color-superficie)] border border-[var(--color-borde)] rounded-3xl p-5 sm:p-7 space-y-4 text-[var(--color-texto)]'
-const inputClass = 'min-h-11 px-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-sm'
+const inputClass = 'min-h-11 px-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-base sm:text-sm'
 
 const OPC_ANTICIPACION = [
   { v: 0, l: 'Sin mínimo' },
@@ -241,11 +242,12 @@ export default function HorariosManager({
   const selectReglas = (label: string, value: number, onChange: (v: number) => void, opciones: { v: number; l: string }[], ayuda: string, id: string) => (
     <div className="space-y-1.5">
       <label htmlFor={id} className="text-xs font-semibold opacity-75 block">{label}</label>
-      <select id={id} className={`${inputClass} w-full cursor-pointer`} value={value} onChange={(e) => onChange(Number(e.target.value))}>
-        {opciones.map((o) => (
-          <option key={o.v} value={o.v}>{o.l}</option>
-        ))}
-      </select>
+      <StyledSelect
+        id={id}
+        value={value}
+        onChange={onChange}
+        options={opciones.map((o) => ({ value: o.v, label: o.l }))}
+      />
       <p className="text-[11px] opacity-60">{ayuda}</p>
     </div>
   )
@@ -392,14 +394,15 @@ export default function HorariosManager({
           {store.mp_connected ? (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label className="space-y-1.5">
-                  <span className="text-xs font-semibold opacity-75 block">¿Cobrás seña?</span>
-                  <select className={`${inputClass} w-full cursor-pointer`} value={reglas.sena_modo} onChange={(e) => setReglas((r) => ({ ...r, sena_modo: e.target.value as SenaModo }))}>
-                    {OPC_SENA.map((o) => (
-                      <option key={o.v} value={o.v}>{o.l}</option>
-                    ))}
-                  </select>
-                </label>
+                <div className="space-y-1.5">
+                  <span id="r-sena-etiqueta" className="text-xs font-semibold opacity-75 block">¿Cobrás seña?</span>
+                  <StyledSelect
+                    aria-label="¿Cobrás seña?"
+                    value={reglas.sena_modo}
+                    onChange={(v) => setReglas((r) => ({ ...r, sena_modo: v as SenaModo }))}
+                    options={OPC_SENA.map((o) => ({ value: o.v, label: o.l }))}
+                  />
+                </div>
                 {(reglas.sena_modo === 'porcentaje' || reglas.sena_modo === 'monto') && (
                   <label className="space-y-1.5">
                     <span className="text-xs font-semibold opacity-75 block">{reglas.sena_modo === 'porcentaje' ? 'Porcentaje (%)' : 'Monto ($)'}</span>
@@ -451,7 +454,7 @@ export default function HorariosManager({
           </div>
 
           <div className="flex items-center gap-2 p-2 pl-3 rounded-xl border border-[var(--color-borde)] bg-black/[0.02] dark:bg-white/[0.02]">
-            <span className="text-xs font-mono truncate flex-1" title={icsUrl}>{icsUrl}</span>
+            <span className="text-xs font-mono truncate flex-1 min-w-0" title={icsUrl}>{icsUrl}</span>
             <button type="button" onClick={copiarIcs} className="min-h-11 px-3 rounded-lg border border-[var(--color-borde)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shrink-0">
               {copiado ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
               {copiado ? 'Copiado' : 'Copiar'}

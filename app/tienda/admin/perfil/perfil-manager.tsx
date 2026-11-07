@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { Store, TipoNegocio } from '@/types/database'
-import { TIPOS_NEGOCIO } from '@/lib/constants'
+import { tiposDisponibles } from '@/lib/constants'
 import {
   User,
   ShieldCheck,
@@ -235,8 +235,8 @@ export default function PerfilManager({
                   secciones (envíos y carrito para productos, agenda para servicios). */}
               <fieldset className="space-y-2">
                 <legend className="text-xs font-medium opacity-75 block mb-1.5">¿Qué ofrece tu tienda?</legend>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup">
-                  {TIPOS_NEGOCIO.map((opcion) => {
+                <div className={`grid grid-cols-1 gap-2 ${tiposDisponibles(store.tipo_negocio).length > 2 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`} role="radiogroup">
+                  {tiposDisponibles(store.tipo_negocio).map((opcion) => {
                     const activo = tipoNegocio === opcion.id
                     return (
                       <button

@@ -6,7 +6,7 @@
 
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { escapeHtml, sendStoreAuthEmail } from '@/lib/store-auth-email'
-import { formatFechaTurno, formatDuracion, googleCalendarUrl } from '@/lib/booking/format'
+import { formatFechaTurno, formatDuracion, googleCalendarUrl, renglonesImporte } from '@/lib/booking/format'
 import type { Booking, Store } from '@/types/database'
 
 function layout(storeName: string, cuerpo: string): string {
@@ -25,11 +25,26 @@ function layout(storeName: string, cuerpo: string): string {
 <body><div class="card">${cuerpo}</div><div class="footer">Enviado por <strong>${escapeHtml(storeName)}</strong> vía Portalmaker</div></body></html>`
 }
 
-function detalleTurno(booking: Booking, zona: string): string {
+/**
+ * Seña que el cliente ya pagó por este turno (0 si no hubo). Se lee de la orden
+ * vinculada, y solo cuenta si el pago está acreditado.
+ */
+async function senaAbonada(booking: Booking): Promise<number> {
+  if (!booking.order_id) return 0
+  const { data } = await createSupabaseAdminClient()
+    .from('orders')
+    .select('total, estado_pago')
+    .eq('id', booking.order_id)
+    .maybeSingle()
+  return data && data.estado_pago === 'aprobado' ? Number(data.total) || 0 : 0
+}
+
+function detalleTurno(booking: Booking, zona: string, sena = 0): string {
+  const importes = renglonesImporte(booking.precio, sena)
   return `<div class="box">
     <strong>${escapeHtml(booking.servicio_nombre)}</strong><br/>
     ${escapeHtml(formatFechaTurno(booking.starts_at, zona))}<br/>
-    Duración: ${escapeHtml(formatDuracion(booking.servicio_duracion))}
+    Duración: ${escapeHtml(formatDuracion(booking.servicio_duracion))}${importes.map((r) => `<br/>${escapeHtml(r)}`).join('')}
   </div>`
 }
 
@@ -44,6 +59,7 @@ export async function sendBookingConfirmationEmail(params: {
   if (!booking.cliente_email) return
 
   const pendiente = booking.estado === 'pendiente'
+  const sena = await senaAbonada(booking)
   const calendario = googleCalendarUrl({
     titulo: `${booking.servicio_nombre} — ${store.nombre}`,
     inicio: booking.starts_at,
@@ -59,7 +75,7 @@ export async function sendBookingConfirmationEmail(params: {
         ? `${escapeHtml(store.nombre)} va a revisar tu solicitud y te avisamos cuando la confirme.`
         : `te esperamos en ${escapeHtml(store.nombre)}.`
     }</p>
-    ${detalleTurno(booking, zona)}
+    ${detalleTurno(booking, zona, sena)}
     ${store.direccion ? `<p>Dirección: ${escapeHtml(store.direccion)}</p>` : ''}
     <div>
       ${pendiente ? '' : `<a class="btn" href="${escapeHtml(calendario)}">Agregar a mi calendario</a>`}
@@ -174,10 +190,11 @@ export async function sendBookingReminderEmail(params: {
 }): Promise<boolean> {
   const { store, booking, zona, enlaceTurno } = params
   if (!booking.cliente_email) return false
+  const sena = await senaAbonada(booking)
   const cuerpo = `
     <h1>Te esperamos pronto</h1>
     <p>Hola ${escapeHtml(booking.cliente_nombre)}, te recordamos tu turno en ${escapeHtml(store.nombre)}:</p>
-    ${detalleTurno(booking, zona)}
+    ${detalleTurno(booking, zona, sena)}
     ${store.direccion ? `<p>Dirección: ${escapeHtml(store.direccion)}</p>` : ''}
     <p>Si no podés asistir, avisanos así otra persona puede usar el horario.</p>
     <a class="btn btn-sec" href="${escapeHtml(enlaceTurno)}">Ver o cancelar mi turno</a>`

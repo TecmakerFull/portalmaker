@@ -4,6 +4,7 @@
 // =============================================================================
 
 import Link from 'next/link'
+import PrecioServicio from '@/components/precio-servicio'
 import { CalendarCheck, Clock, ImageIcon } from 'lucide-react'
 import type { Service } from '@/types/database'
 import { formatDuracion } from '@/lib/booking/format'
@@ -59,11 +60,7 @@ export default function ServicesCatalog({ services, tenantQuery, etiqueta, titul
                   <span className="text-xs opacity-70 inline-flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" /> {formatDuracion(s.duracion_minutos)}
                   </span>
-                  {Number(s.precio) > 0 && (
-                    <span className="text-sm font-semibold">
-                      {s.precio_desde ? 'Desde ' : ''}${Number(s.precio).toLocaleString('es-AR')}
-                    </span>
-                  )}
+                  <PrecioServicio servicio={s} className="text-sm" />
                 </div>
                 <span className="mt-1 min-h-11 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-sm font-semibold inline-flex items-center justify-center gap-2">
                   <CalendarCheck className="w-4 h-4" /> Reservar

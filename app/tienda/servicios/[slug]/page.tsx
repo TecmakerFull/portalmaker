@@ -3,13 +3,14 @@
 // =============================================================================
 
 import type { Metadata } from 'next'
+import PrecioServicio from '@/components/precio-servicio'
 import { notFound } from 'next/navigation'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getStoreSections } from '@/lib/store-sections'
 import { getStoreExtraSections } from '@/lib/store-extra-sections'
 import { getBookingConfig } from '@/lib/booking/setup'
-import { formatDuracion } from '@/lib/booking/format'
+import { formatDuracion, precioVigente } from '@/lib/booking/format'
 import { calcularSena } from '@/lib/booking/sena'
 import StorefrontHeaderFlow from '../../sections/storefront-header-flow'
 import StoreFooter from '../../sections/store-footer'
@@ -98,23 +99,42 @@ export default async function ServicioPage({ params }: PageProps) {
       <div>
         <StorefrontHeaderFlow store={store} resolvedSections={resolvedSections} tenantQuery={tenantQuery} />
 
-        <main className="wrap py-8 sm:py-12 grid gap-8 lg:grid-cols-[1fr_1.1fr] items-start">
-          {/* Detalle del servicio */}
-          <div className="space-y-4">
-            <ServiceGallery imagenes={service.imagenes ?? []} nombre={service.nombre} />
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-semibold font-[var(--font-heading)] leading-tight">{service.nombre}</h1>
-              <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
-                <span className="inline-flex items-center gap-1.5 opacity-75">
-                  <Clock className="w-4 h-4" /> {formatDuracion(service.duracion_minutos)}
-                </span>
-                {Number(service.precio) > 0 && (
-                  <span className="text-lg font-semibold">
-                    {service.precio_desde ? 'Desde ' : ''}${Number(service.precio).toLocaleString('es-AR')}
-                  </span>
-                )}
-              </div>
+        {/* Título y datos clave arriba de todo y en una línea; debajo, galería y
+            descripción a la izquierda y la reserva a la derecha. En el celular el
+            orden es: título, fotos, reserva y recién después el texto largo, para
+            que quien viene a sacar turno no tenga que bajar para encontrarlo. */}
+        <main className="wrap py-8 sm:py-12 grid gap-x-8 gap-y-6 lg:grid-cols-[1fr_1.1fr] items-start">
+          <header className="lg:col-span-2 border-b border-black/10 dark:border-white/10 pb-5">
+            <h1 className="text-2xl sm:text-3xl font-semibold font-[var(--font-heading)] leading-tight">{service.nombre}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+              <span className="inline-flex items-center gap-1.5 opacity-75">
+                <Clock className="w-4 h-4" /> {formatDuracion(service.duracion_minutos)}
+              </span>
+              <PrecioServicio servicio={service} className="text-lg" />
             </div>
+          </header>
+
+          <div className="lg:col-start-1 lg:row-start-2">
+            <ServiceGallery imagenes={service.imagenes ?? []} nombre={service.nombre} />
+          </div>
+
+          {/* Reserva: día, horario y confirmación */}
+          <div className="lg:col-start-2 lg:row-start-2 lg:row-span-2 lg:sticky lg:top-6">
+            <BookingWidget
+              storeId={store.id}
+              storeNombre={store.nombre}
+              service={{ id: service.id, nombre: service.nombre, duracion: service.duracion_minutos, precio: precioVigente(service).vigente }}
+              zona={settings.zona_horaria}
+              maxDias={settings.anticipacion_max_dias}
+              requiereAprobacion={settings.requiere_aprobacion}
+              cancelacionHoras={settings.cancelacion_hasta_horas}
+              // La seña solo se cobra si la tienda tiene Mercado Pago conectado
+              sena={store.mp_connected ? calcularSena(precioVigente(service).vigente, settings.sena_modo, Number(settings.sena_valor) || 0) : 0}
+              tenantQuery={tenantQuery}
+            />
+          </div>
+
+          <div className="lg:col-start-1 lg:row-start-3 space-y-4">
             {service.descripcion && <div className="max-w-none">{renderMarkdown(service.descripcion)}</div>}
 
             {trustItems.length > 0 && (
@@ -131,20 +151,6 @@ export default async function ServicioPage({ params }: PageProps) {
               </div>
             )}
           </div>
-
-          {/* Reserva: día, horario y confirmación */}
-          <BookingWidget
-            storeId={store.id}
-            storeNombre={store.nombre}
-            service={{ id: service.id, nombre: service.nombre, duracion: service.duracion_minutos }}
-            zona={settings.zona_horaria}
-            maxDias={settings.anticipacion_max_dias}
-            requiereAprobacion={settings.requiere_aprobacion}
-            cancelacionHoras={settings.cancelacion_hasta_horas}
-            // La seña solo se cobra si la tienda tiene Mercado Pago conectado
-            sena={store.mp_connected ? calcularSena(Number(service.precio) || 0, settings.sena_modo, Number(settings.sena_valor) || 0) : 0}
-            tenantQuery={tenantQuery}
-          />
         </main>
 
         <ServiceReviews

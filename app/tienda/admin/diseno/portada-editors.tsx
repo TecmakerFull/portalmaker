@@ -19,9 +19,10 @@ import type {
 } from '@/types/database'
 import { TRUST_ICONS, getTrustIcon } from '@/lib/trust-icons'
 import { Plus, Trash2, Type, Sparkles, Mail } from 'lucide-react'
+import StyledSelect from '@/components/styled-select'
 
 const inputClass =
-  'w-full min-h-11 px-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-sm'
+  'w-full min-h-11 px-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-base sm:text-sm'
 
 /** Campo de texto con etiqueta y ayuda corta. */
 function TextField({
@@ -190,16 +191,12 @@ export function StoryEditor({
               <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-3 text-xs">
                 <div className="space-y-1.5">
                   <label htmlFor={`pilar-icon-${pilar.id}`} className="font-semibold opacity-75 block">Ícono</label>
-                  <select
-                    id={`pilar-icon-${pilar.id}`}
-                    value={pilar.icono}
-                    onChange={(e) => updatePillar(index, { icono: e.target.value })}
-                    className={`${inputClass} cursor-pointer`}
-                  >
-                    {Object.entries(TRUST_ICONS).map(([key, { label }]) => (
-                      <option key={key} value={key}>{label}</option>
-                    ))}
-                  </select>
+                  <StyledSelect
+                      id={`pilar-icon-${pilar.id}`}
+                      value={pilar.icono}
+                      onChange={(v) => updatePillar(index, { icono: v })}
+                      options={Object.entries(TRUST_ICONS).map(([clave, { label }]) => ({ value: clave, label }))}
+                    />
                 </div>
                 <TextField id={`pilar-titulo-${pilar.id}`} label="Título" value={pilar.titulo} onChange={(v) => updatePillar(index, { titulo: v })} placeholder="Ej: Atención cercana" maxLength={40} />
               </div>

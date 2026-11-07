@@ -9,9 +9,11 @@
 'use client'
 
 import { useState } from 'react'
+import PrecioServicio from '@/components/precio-servicio'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import RichTextEditor from '../components/rich-text-editor'
+import CurrencyInput from '../components/currency-input'
 import ImageGalleryDropzone from '../components/image-gallery-dropzone'
 import { formatDuracion } from '@/lib/booking/format'
 import type { Service, Store } from '@/types/database'
@@ -39,6 +41,8 @@ interface FormState {
   duracion: number
   precio: string
   precioDesde: boolean
+  ofertaActiva: boolean
+  precioOferta: string
   descripcion: string
   buffer: number
   imagenes: string[]
@@ -51,6 +55,8 @@ const VACIO: FormState = {
   duracion: 60,
   precio: '',
   precioDesde: false,
+  ofertaActiva: false,
+  precioOferta: '',
   descripcion: '',
   buffer: 0,
   imagenes: [],
@@ -69,7 +75,7 @@ function slugify(text: string): string {
 }
 
 const inputClass =
-  'w-full min-h-11 px-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-sm'
+  'w-full min-h-11 px-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-base sm:text-sm'
 
 export default function ServiciosManager({
   store,
@@ -94,8 +100,10 @@ export default function ServiciosManager({
       id: s.id,
       nombre: s.nombre,
       duracion: s.duracion_minutos,
-      precio: String(s.precio ?? ''),
+      precio: Number(s.precio) > 0 ? String(s.precio).replace('.', ',') : '',
       precioDesde: s.precio_desde,
+      ofertaActiva: s.oferta_activa,
+      precioOferta: Number(s.precio_oferta) > 0 ? String(s.precio_oferta).replace('.', ',') : '',
       descripcion: s.descripcion ?? '',
       buffer: s.buffer_despues_minutos,
       imagenes: s.imagenes ?? [],
@@ -111,6 +119,11 @@ export default function ServiciosManager({
       return
     }
     const precio = Number(form.precio.replace(',', '.')) || 0
+    const precioOferta = Number(form.precioOferta.replace(',', '.')) || 0
+    if (form.ofertaActiva && !(precioOferta > 0 && precioOferta < precio)) {
+      setError('El precio de oferta tiene que ser mayor a 0 y menor al precio normal.')
+      return
+    }
 
     setSaving(true)
     setError(null)
@@ -122,6 +135,8 @@ export default function ServiciosManager({
       buffer_despues_minutos: form.buffer,
       precio,
       precio_desde: form.precioDesde,
+      oferta_activa: form.ofertaActiva,
+      precio_oferta: precioOferta > 0 ? precioOferta : null,
       imagenes: form.imagenes,
       visible: form.visible,
       updated_at: new Date().toISOString(),
@@ -253,7 +268,7 @@ export default function ServiciosManager({
                   step={5}
                   value={form.duracion}
                   onChange={(e) => set({ duracion: Math.min(720, Math.max(5, Number(e.target.value) || 5)) })}
-                  className="w-16 bg-transparent text-sm font-semibold"
+                  className="w-16 bg-transparent text-base sm:text-sm font-semibold"
                   aria-label="Duración en minutos"
                 />
                 <span className="opacity-70">min</span>
@@ -264,11 +279,22 @@ export default function ServiciosManager({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label htmlFor="srv-precio" className="text-xs font-semibold opacity-75 block">Precio</label>
-              <input id="srv-precio" inputMode="decimal" className={inputClass} value={form.precio} onChange={(e) => set({ precio: e.target.value })} placeholder="Ej: 15000" />
+              <CurrencyInput id="srv-precio" value={form.precio} onChange={(v) => set({ precio: v })} placeholder="Ej: 15.000" />
               <label className="flex items-center gap-2 text-xs min-h-11 cursor-pointer">
                 <input type="checkbox" className="w-5 h-5 accent-[#FACC15]" checked={form.precioDesde} onChange={(e) => set({ precioDesde: e.target.checked })} />
                 Mostrar como &quot;Desde $&quot; (el precio final puede variar)
               </label>
+              <label className="flex items-center gap-2 text-xs min-h-11 cursor-pointer">
+                <input type="checkbox" className="w-5 h-5 accent-[#FACC15]" checked={form.ofertaActiva} onChange={(e) => set({ ofertaActiva: e.target.checked })} />
+                Tiene precio de oferta
+              </label>
+              {form.ofertaActiva && (
+                <div className="space-y-1.5">
+                  <label htmlFor="srv-oferta" className="text-xs font-semibold opacity-75 block">Precio de oferta</label>
+                  <CurrencyInput id="srv-oferta" value={form.precioOferta} onChange={(v) => set({ precioOferta: v })} placeholder="Ej: 10.000" />
+                  <p className="text-[11px] opacity-70">Se muestra el precio normal tachado. La reserva y la seña se calculan con el de oferta.</p>
+                </div>
+              )}
             </div>
             <div className="space-y-1.5">
               <p className="text-xs font-semibold opacity-75">Tiempo libre después (opcional)</p>
@@ -355,7 +381,7 @@ export default function ServiciosManager({
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold truncate">{s.nombre}</p>
                 <p className="text-xs opacity-70">
-                  {formatDuracion(s.duracion_minutos)} · {s.precio_desde ? 'Desde ' : ''}${Number(s.precio).toLocaleString('es-AR')}
+                  {formatDuracion(s.duracion_minutos)} · <PrecioServicio servicio={s} className="text-xs" />
                 </p>
                 {!s.visible && <p className="text-[11px] opacity-70 mt-0.5">Oculto en la tienda</p>}
                 <div className="flex gap-1.5 mt-2">

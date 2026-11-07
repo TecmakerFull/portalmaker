@@ -10,11 +10,11 @@ import Link from 'next/link'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { getBookingConfig } from '@/lib/booking/setup'
-import { formatFechaTurno, formatDuracion, googleCalendarUrl } from '@/lib/booking/format'
+import { formatFechaTurno, formatDuracion, googleCalendarUrl, renglonesImporte } from '@/lib/booking/format'
 import CancelarTurno from './cancelar-turno'
 import PagarSena from './pagar-sena'
 import type { Booking } from '@/types/database'
-import { CalendarCheck, CalendarPlus, MessageCircle, MapPin } from 'lucide-react'
+import { CalendarCheck, CalendarPlus, MessageCircle, MapPin, ArrowLeft, Store as StoreIcon } from 'lucide-react'
 
 const UUID_REGEX = /^[0-9a-f-]{36}$/i
 
@@ -66,14 +66,20 @@ export default async function TurnoPage({
   // Seña pendiente: el turno está retenido esperando el pago en Mercado Pago.
   const esperandoSena = booking.estado === 'pendiente' && Boolean(booking.pendiente_expira_at) && Boolean(booking.order_id)
   let ordenSena: { id: string; public_token: string; total: number } | null = null
-  if (esperandoSena && booking.order_id) {
+  // Seña ya acreditada: se muestra el importe abonado y el saldo a pagar en el local
+  let senaPagada = 0
+  if (booking.order_id) {
     const { data: orden } = await supabaseAdmin
       .from('orders')
-      .select('id, public_token, total')
+      .select('id, public_token, total, estado_pago')
       .eq('id', booking.order_id)
       .maybeSingle()
-    ordenSena = orden ? { id: orden.id, public_token: orden.public_token, total: Number(orden.total) } : null
+    if (orden && esperandoSena) {
+      ordenSena = { id: orden.id, public_token: orden.public_token, total: Number(orden.total) }
+    }
+    if (orden && orden.estado_pago === 'aprobado') senaPagada = Number(orden.total) || 0
   }
+  const importes = renglonesImporte(booking.precio, senaPagada)
   const activo = booking.estado === 'pendiente' || booking.estado === 'confirmado'
   const puedeCancelar = activo && dentroDelPlazo(booking.starts_at, settings.cancelacion_hasta_horas)
 
@@ -98,6 +104,9 @@ export default async function TurnoPage({
             <p className="text-base font-semibold">{booking.servicio_nombre}</p>
             <p className="text-sm capitalize">{formatFechaTurno(booking.starts_at, settings.zona_horaria)}</p>
             <p className="text-xs opacity-70">Duración: {formatDuracion(booking.servicio_duracion)}</p>
+            {importes.map((renglon) => (
+              <p key={renglon} className="text-xs opacity-70">{renglon}</p>
+            ))}
             {store.direccion && (
               <p className="text-xs opacity-70 flex items-center gap-1.5 pt-1">
                 <MapPin className="w-3.5 h-3.5" /> {store.direccion}
@@ -146,6 +155,23 @@ export default async function TurnoPage({
               </p>
             )}
           </div>
+        </div>
+
+        {/* Salidas: esta página se abre desde "Mis turnos" o desde el email, y no tiene
+            el menú de la tienda, así que sin esto la persona quedaba sin cómo volver. */}
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Link
+            href={`/tienda/cuenta${tenantQuery}`}
+            className="min-h-12 rounded-xl border border-black/15 dark:border-white/15 text-sm font-semibold inline-flex items-center justify-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" /> Volver a mis turnos
+          </Link>
+          <Link
+            href={`/tienda${tenantQuery}`}
+            className="min-h-12 rounded-xl border border-black/15 dark:border-white/15 text-sm font-semibold inline-flex items-center justify-center gap-2"
+          >
+            <StoreIcon className="w-4 h-4" /> Ir a la tienda
+          </Link>
         </div>
       </div>
     </main>

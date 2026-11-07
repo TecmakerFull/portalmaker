@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { COLOR_PRESETS, RUBROS_TIENDA, RUBROS_SERVICIOS, TIPOS_NEGOCIO } from '@/lib/constants'
 import type { TipoNegocio } from '@/types/database'
+import StyledSelect from '@/components/styled-select'
 import { PlusCircle, X, Loader2, Sparkles, AlertCircle } from 'lucide-react'
 
 export default function NuevaTiendaModal() {
@@ -57,7 +58,7 @@ export default function NuevaTiendaModal() {
           admin_email: adminEmail.trim().toLowerCase(),
           slogan: rubroFinal,
           tipo_negocio: tipo,
-          plan: 'maker_pro',
+          plan: 'free',
           precio_mensual: 0,
           estado_pago: 'al_dia',
           fecha_inicio_suscripcion: new Date().toISOString().split('T')[0],
@@ -189,41 +190,30 @@ export default function NuevaTiendaModal() {
                   <label htmlFor="nt-tipo" className="block text-xs font-semibold uppercase tracking-wider opacity-80 mb-1.5">
                     ¿Qué ofrece?
                   </label>
-                  <select
+                  <StyledSelect
                     id="nt-tipo"
                     value={tipo}
-                    onChange={(e) => {
-                      setTipo(e.target.value as TipoNegocio)
+                    onChange={(v) => {
+                      setTipo(v as TipoNegocio)
                       setRubro('')
                     }}
-                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]/25 focus:border-[#FF5500] transition-colors cursor-pointer"
-                  >
-                    {TIPOS_NEGOCIO.map((t) => (
-                      <option key={t.id} value={t.id} className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)]">
-                        {t.label} — {t.descripcion}
-                      </option>
-                    ))}
-                  </select>
+                    options={TIPOS_NEGOCIO.map((t) => ({ value: t.id, label: `${t.label} — ${t.descripcion}` }))}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider opacity-80 mb-1.5">
                     Rubro Principal
                   </label>
-                  <select
+                  <StyledSelect
                     required
                     value={rubro}
-                    onChange={(e) => setRubro(e.target.value)}
-                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5500]/25 focus:border-[#FF5500] transition-colors cursor-pointer"
-                  >
-                    <option value="" disabled className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)]">
-                      Elegí el rubro de la tienda
-                    </option>
-                    {(tipo === 'productos' ? RUBROS_TIENDA : tipo === 'servicios' ? RUBROS_SERVICIOS : [...RUBROS_SERVICIOS, ...RUBROS_TIENDA]).map((r) => (
-                      <option key={r.id} value={r.label} className="bg-[var(--color-input-bg)] text-[var(--color-input-texto)]">
-                        {r.label}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setRubro(v)}
+                    placeholder="Elegí el rubro de la tienda"
+                    options={[
+                      ...((tipo === 'servicios' || tipo === 'ambos') ? RUBROS_SERVICIOS.map((r) => ({ value: r.label, label: r.label, group: 'Servicios' })) : []),
+                      ...((tipo === 'productos' || tipo === 'ambos') ? RUBROS_TIENDA.map((r) => ({ value: r.label, label: r.label, group: 'Productos' })) : []),
+                    ]}
+                  />
                 </div>
 
                 {/* Campo interactivo si elige 'Otro rubro' */}

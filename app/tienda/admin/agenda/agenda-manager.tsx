@@ -16,6 +16,7 @@ import { fechaLocal, sumarDias } from '@/lib/booking/availability'
 import { formatHora, formatDuracion } from '@/lib/booking/format'
 import type { Booking, BookingEstado, BookingWaitlist, Service, Store } from '@/types/database'
 import { AdminPageHeader } from '../components/admin-page-header'
+import StyledSelect from '@/components/styled-select'
 import {
   CalendarCheck,
   Plus,
@@ -39,7 +40,7 @@ const ESTADOS: Record<BookingEstado, { label: string; clase: string }> = {
   expirado: { label: 'Vencido', clase: 'bg-black/5 dark:bg-white/10 opacity-70 border-transparent' },
 }
 
-const inputClass = 'w-full min-h-11 px-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-sm'
+const inputClass = 'w-full min-h-11 px-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-base sm:text-sm'
 
 function etiquetaDia(fecha: string, hoy: string): { corta: string; numero: string } {
   const d = new Date(`${fecha}T12:00:00Z`)
@@ -314,14 +315,15 @@ export default function AgendaManager({
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <label className="space-y-1.5">
+            <div className="space-y-1.5">
               <span className="text-xs font-semibold opacity-75 block">Servicio</span>
-              <select className={`${inputClass} cursor-pointer`} value={manual.serviceId} onChange={(e) => buscarHorarios(e.target.value, manual.fecha)}>
-                {services.map((s) => (
-                  <option key={s.id} value={s.id}>{s.nombre} ({formatDuracion(s.duracion_minutos)})</option>
-                ))}
-              </select>
-            </label>
+              <StyledSelect
+                aria-label="Servicio"
+                value={manual.serviceId}
+                onChange={(v) => buscarHorarios(v, manual.fecha)}
+                options={services.map((sv) => ({ value: sv.id, label: `${sv.nombre} (${formatDuracion(sv.duracion_minutos)})` }))}
+              />
+            </div>
             <label className="space-y-1.5">
               <span className="text-xs font-semibold opacity-75 block">Día</span>
               <input type="date" className={inputClass} min={hoy} value={manual.fecha} onChange={(e) => buscarHorarios(manual.serviceId, e.target.value)} />
@@ -396,7 +398,7 @@ export default function AgendaManager({
         <label className="flex items-center gap-2 text-xs opacity-80">
           <CalendarDays className="w-4 h-4" />
           Ir a otra fecha:
-          <input type="date" className="min-h-11 px-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-sm" value={dia} onChange={(e) => e.target.value && setDia(e.target.value)} />
+          <input type="date" className="min-h-11 px-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-base sm:text-sm" value={dia} onChange={(e) => e.target.value && setDia(e.target.value)} />
         </label>
       </div>
 

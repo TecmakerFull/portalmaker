@@ -205,7 +205,7 @@ Rubros sugeridos para servicios en el alta: Estética y belleza (pestañas, ceja
 
 ## 9. Decisiones tomadas (2026-11-06)
 
-1. **"Ambos" está desde el alta:** Productos / Servicios / Ambos.
+1. **"Ambos" está desde el alta:** Productos / Servicios / Ambos. **Actualización 2026-11-07: "Ambos" queda PAUSADO en la interfaz** (`AMBOS_HABILITADO = false` en `lib/constants.ts`) hasta dejar andando bien productos y servicios por separado; el soporte sigue en el código y cada novedad debe contemplarlo.
 2. **Planes:** se mantienen los actuales y se agrega un **límite de clientes registrados**, porque para reservar hay que tener cuenta en la tienda. Valores iniciales en `lib/plans.ts` (`limiteClientes`), ajustables por tienda con `features_override.limite_clientes`:
    - Free: 15
    - Starter: 50

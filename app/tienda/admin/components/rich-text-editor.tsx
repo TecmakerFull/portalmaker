@@ -127,7 +127,7 @@ export default function RichTextEditor({ id, label, value, onChange, maxLength =
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full min-h-56 px-3 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-sm leading-relaxed resize-y"
+          className="w-full min-h-56 px-3 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-base sm:text-sm leading-relaxed resize-y"
         />
       )}
       <p className="text-[11px] opacity-60">Seleccioná un texto y tocá un botón para darle formato. Con &quot;Ver cómo queda&quot; ves el resultado final.</p>

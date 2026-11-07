@@ -19,6 +19,35 @@ export function formatHora(iso: string | Date, zona: string = TZ_DEFAULT): strin
   return new Intl.DateTimeFormat('es-AR', { timeZone: zona, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(fecha)
 }
 
+/** 50000 -> "$50.000"; 12500.5 -> "$12.500,50". */
+export function formatPesos(monto: number): string {
+  const tieneCentavos = Math.round(monto * 100) % 100 !== 0
+  return (
+    '$' +
+    monto.toLocaleString('es-AR', {
+      minimumFractionDigits: tieneCentavos ? 2 : 0,
+      maximumFractionDigits: 2,
+    })
+  )
+}
+
+/**
+ * Importes de un turno para mostrar al cliente: precio, seña abonada (si la
+ * hubo) y saldo a pagar en el local. Devuelve renglones listos para mostrar.
+ */
+export function renglonesImporte(precio: number, sena: number): string[] {
+  const p = Number(precio) || 0
+  const s = Math.max(0, Number(sena) || 0)
+  if (p <= 0 && s <= 0) return []
+  const renglones: string[] = []
+  if (p > 0) renglones.push(`Precio: ${formatPesos(p)}`)
+  if (s > 0) {
+    renglones.push(`Seña abonada: ${formatPesos(s)}`)
+    if (p > s) renglones.push(`Saldo a pagar en el local: ${formatPesos(p - s)}`)
+  }
+  return renglones
+}
+
 /** "1 h 30 min" a partir de minutos. */
 export function formatDuracion(minutos: number): string {
   const h = Math.floor(minutos / 60)
@@ -77,4 +106,19 @@ export function whatsappReservaUrl(params: {
   if (params.enlaceTurno) lineas.push(`Detalle: ${params.enlaceTurno}`)
 
   return `https://wa.me/${numero}?text=${encodeURIComponent(lineas.join('\n'))}`
+}
+
+/**
+ * Precio que se cobra hoy por un servicio: el de oferta solo si está activa y es
+ * menor al normal (una oferta mayor o igual no es una oferta y se ignora).
+ */
+export function precioVigente(s: { precio: number | string; precio_oferta?: number | string | null; oferta_activa?: boolean }): {
+  vigente: number
+  normal: number
+  enOferta: boolean
+} {
+  const normal = Number(s.precio) || 0
+  const oferta = Number(s.precio_oferta) || 0
+  const enOferta = Boolean(s.oferta_activa) && oferta > 0 && oferta < normal
+  return { vigente: enOferta ? oferta : normal, normal, enOferta }
 }
