@@ -29,6 +29,38 @@ import {
 
 type AuthMode = 'login' | 'register' | 'forgot'
 
+/**
+ * Traduce los errores de Supabase Auth a mensajes que entienda cualquier persona.
+ * Cuando Supabase responde con un error de servidor (5xx), supabase-js no logra
+ * leer el mensaje y devuelve literalmente "{}"; por eso se detecta ese caso y se
+ * muestra una explicación útil en lugar de un texto vacío.
+ */
+function mensajeDeError(err: unknown, porDefecto: string): string {
+  const e = err as { message?: string; status?: number; code?: string } | null
+  const msg = (e?.message || '').trim()
+  const status = e?.status ?? 0
+
+  if (!msg || msg === '{}' || status >= 500) {
+    return 'No pudimos enviar el correo de confirmación en este momento. Probá de nuevo en unos minutos o ingresá con Google.'
+  }
+  if (/already registered|user_already_exists/i.test(msg) || e?.code === 'user_already_exists') {
+    return 'Ese correo ya tiene una cuenta. Iniciá sesión o recuperá tu contraseña.'
+  }
+  if (/rate limit|too many/i.test(msg) || status === 429) {
+    return 'Hiciste demasiados intentos. Esperá unos minutos y probá de nuevo.'
+  }
+  if (/invalid login credentials/i.test(msg)) {
+    return 'El correo o la contraseña no son correctos.'
+  }
+  if (/email not confirmed/i.test(msg)) {
+    return 'Todavía no confirmaste tu correo. Revisá tu bandeja de entrada (y spam).'
+  }
+  if (/password should be at least|weak/i.test(msg)) {
+    return 'La contraseña es muy débil. Usá al menos 6 caracteres.'
+  }
+  return msg || porDefecto
+}
+
 function LoginFormContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -126,7 +158,7 @@ function LoginFormContent() {
         setResetEmailSent(true)
       }
     } catch (err: unknown) {
-      setErrorMsg((err as Error)?.message || 'Ocurrió un error al procesar la solicitud.')
+      setErrorMsg(mensajeDeError(err, 'Ocurrió un error al procesar la solicitud.'))
     } finally {
       setLoading(false)
     }
@@ -152,7 +184,7 @@ function LoginFormContent() {
       if (error) throw error
       setSuccessMsg('¡Correo de confirmación reenviado! Revisa tu casilla.')
     } catch (err: unknown) {
-      setErrorMsg((err as Error)?.message || 'No se pudo reenviar el correo.')
+      setErrorMsg(mensajeDeError(err, 'No se pudo reenviar el correo.'))
     } finally {
       setResending(false)
     }
@@ -174,7 +206,7 @@ function LoginFormContent() {
       if (error) throw error
       setSuccessMsg('¡Enlace de recuperación reenviado! Revisa tu casilla.')
     } catch (err: unknown) {
-      setErrorMsg((err as Error)?.message || 'No se pudo reenviar el enlace.')
+      setErrorMsg(mensajeDeError(err, 'No se pudo reenviar el enlace.'))
     } finally {
       setResending(false)
     }
@@ -199,7 +231,7 @@ function LoginFormContent() {
       })
       if (error) throw error
     } catch (err: unknown) {
-      setErrorMsg((err as Error)?.message || 'Error al conectar con Google.')
+      setErrorMsg(mensajeDeError(err, 'Error al conectar con Google.'))
       setLoading(false)
     }
   }
