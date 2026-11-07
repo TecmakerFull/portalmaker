@@ -492,6 +492,30 @@ Al activar Zipnova en tu tienda, accedes de forma inmediata a despachar con las 
    - **Tarifa de contingencia ($)**: Tarifa fija de respaldo en caso de interrupción temporal de los servidores del carrier.
    - **Retiro en local**: Mantenlo activo para que los clientes de tu misma ciudad puedan elegir retirar gratis por tu taller.
 
+### Si la etiqueta no aparece: falta saldo en Zipnova
+
+Zipnova descuenta el costo de cada envío del saldo que tenés cargado en **tu cuenta de Zipnova**. Si cobrás una venta con envío y tu cuenta no tiene saldo, la venta **no se pierde**: el envío queda creado en Zipnova pero sin etiqueta, y te llega un email con el título *"Tu venta se cobró: falta cargar saldo en Zipnova"*.
+
+Son **dos aplicaciones distintas**, y conviene no confundirlas:
+
+| | Zipnova | Portalmaker |
+|---|---|---|
+| Qué es | La plataforma del correo, donde está tu saldo | El panel de tu tienda |
+| Dónde se entra | `app.zipnova.com.ar` | `tu-tienda.portalmaker.ar/admin` |
+| Qué hacés ahí | **Cargar saldo** | **Imprimir la etiqueta** |
+
+Paso a paso:
+
+1. **En Zipnova** (`app.zipnova.com.ar`): iniciá sesión y tocá **"Agregar crédito ahora"** (aparece en rojo arriba de todo cuando no hay saldo). Cargá el monto con el medio de pago que prefieras. Con el dinero de la venta que acabás de cobrar alcanza.
+2. **En Portalmaker**: entrá al panel de tu tienda (`tu-tienda.portalmaker.ar/admin`) y, en el menú de la izquierda, tocá **Ventas & Pedidos**. Ojo: no es el menú "Ventas" de Zipnova.
+3. Abrí el pedido con envío (tocá la fila del pedido). Dentro vas a ver la sección **Envío**.
+4. Tocá el botón azul **"Imprimir Etiqueta PDF"**. Si recién cargaste el saldo y todavía no aparece, esperá unos minutos y volvé a tocarlo.
+5. Imprimí la etiqueta, pegala en el paquete y seguí con el despacho (siguiente apartado).
+
+> Si el pedido muestra un cartel rojo **"Error registrado"** en la sección Envío, además de "Imprimir Etiqueta PDF" va a aparecer el botón **"Reintentar Emisión"**: tocalo para que Portalmaker vuelva a pedirle el envío a Zipnova.
+>
+> Zipnova cancela los envíos que no se despachan a los 18 días de creados. Cargá el saldo antes de ese plazo.
+
 ### El paso a paso diario para despachar un pedido (Operatoria en 4 pasos)
 Para el dueño del taller, despachar cada pedido se reduce a:
 1. **Recepción del pedido**: El cliente completa la compra en tu tienda y el pedido ingresa en **Ventas & Pedidos** con la dirección de entrega y el servicio seleccionado.

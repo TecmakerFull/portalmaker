@@ -237,6 +237,10 @@ export default function GuiaView({
           desc: '1) Recepción: el cliente paga y la orden entra con la dirección cargada. 2) Imprimir etiqueta: desde el panel de Ventas tocás "Imprimir Etiqueta PDF". 3) Embalar: pegás la guía en el paquete. 4) Despacho: dejás el paquete en cualquier sucursal de Andreani o Correo Argentino (Drop-off) sin hacer fila porque ya está pago y rotulado, o solicitás retiro en tu local (Pick-up) si tu zona lo habilita.',
         },
         {
+          sub: 'Si la etiqueta no aparece: falta saldo en Zipnova',
+          desc: 'Si cobrás una venta con envío y tu cuenta de Zipnova no tiene saldo, la venta no se pierde: te llega un email avisando. Son dos aplicaciones distintas. 1) EN ZIPNOVA (app.zipnova.com.ar): tocá "Agregar crédito ahora" y cargá saldo. 2) EN PORTALMAKER, en el panel de tu tienda: menú Ventas & Pedidos (no el "Ventas" de Zipnova), abrí el pedido y tocá el botón azul "Imprimir Etiqueta PDF". Si recién cargaste saldo y no aparece, esperá unos minutos y volvé a tocarlo. Zipnova cancela los envíos que no se despachan a los 18 días.',
+        },
+        {
           sub: '4. Preguntas Frecuentes y Dudas Habituales',
           desc: '¿Quién paga el envío? El comprador lo abona en el checkout al momento de pagar. ¿Cómo rastrea el cliente el paquete? Recibe un email con el número de guía y el link de seguimiento oficial. ¿Y si quieren retirar en mi local? Podés mantener activa la opción "Retiro en local" sin costo adicional.',
         },

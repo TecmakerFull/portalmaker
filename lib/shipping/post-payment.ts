@@ -11,6 +11,7 @@ import {
   sendBuyerOrderDispatchedEmail,
 } from './emails'
 import { notifyPlatformAlert } from '@/lib/email-notifications'
+import { getStorePublicOrigin } from '@/lib/booking/links'
 import type { Store, Order } from '@/types/database'
 import type { ShipmentInput } from './types'
 
@@ -367,6 +368,44 @@ export async function handlePostPaymentShipping(
     a: finalState,
     actor: 'system',
   })
+
+  // 12b. Zipnova no devuelve error cuando la cuenta no tiene saldo (o está
+  // suspendida): crea el envío igual y lo deja en estado "new", sin número de
+  // guía ni documentación (docs.zipnova.com, "Estados de envío"). Si no hay
+  // guía ni etiqueta, se avisa al dueño con los pasos a seguir en vez de dejar
+  // el caso en silencio. Cuando cargue saldo, "Imprimir etiqueta" en Ventas
+  // consulta a Zipnova en el momento y obtiene la etiqueta.
+  if (providerName === 'zipnova' && !creationResult.tracking && !savedLabelPath) {
+    const aviso =
+      'Zipnova creó el envío pero todavía no generó la guía. Suele pasar cuando la cuenta de Zipnova no tiene saldo suficiente o está suspendida.'
+    await supabaseAdmin
+      .from('shipments')
+      .update({ error_message: aviso, updated_at: new Date().toISOString() })
+      .eq('id', shipmentId)
+
+    await supabaseAdmin.from('shipment_events').insert({
+      shipment_id: shipmentId,
+      store_id: store.id,
+      estado: finalState,
+      descripcion: 'Envío creado sin número de guía: posible falta de saldo en Zipnova.',
+      source: 'system',
+    })
+
+    await notifyPlatformAlert({
+      type: 'shipping_pending_balance',
+      store,
+      order,
+      details:
+        `La venta del pedido #${order.id.slice(0, 8)} ya se cobró, pero Zipnova todavía no generó la etiqueta de envío. ` +
+        'Suele ocurrir cuando la cuenta de Zipnova no tiene saldo. ' +
+        'QUÉ HACER, en este orden: ' +
+        '1) EN ZIPNOVA (app.zipnova.com.ar): cargá saldo con el botón "Agregar crédito ahora". ' +
+        `2) EN PORTALMAKER (no en Zipnova): entrá al panel de tu tienda, ${getStorePublicOrigin(store)}/admin/ventas, ` +
+        'abrí este pedido y tocá el botón azul "Imprimir Etiqueta PDF". ' +
+        '3) Imprimí la etiqueta, pegala en el paquete y llevalo al correo. ' +
+        'Si pasados unos minutos de cargar el saldo la etiqueta no aparece, avisanos.',
+    }).catch((err) => console.error('Error enviando alerta de saldo pendiente:', err))
+  }
 
   // 13. Despachar emails
   sendBuyerOrderConfirmationEmail({

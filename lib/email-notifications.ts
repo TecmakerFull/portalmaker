@@ -171,6 +171,7 @@ export interface PlatformAlertParams {
     | 'seller_token_revoked'
     | 'unrecognized_fee_type'
     | 'shipping_carrier_error'
+    | 'shipping_pending_balance'
   store: Store | null
   order?: Order | null
   details: string
@@ -203,6 +204,7 @@ export async function notifyPlatformAlert({
     seller_token_revoked: 'ALERTA: Token de Mercado Pago revocado o desconectado',
     unrecognized_fee_type: 'ADVERTENCIA: Tipo de fee no reconocido en Mercado Pago',
     shipping_carrier_error: 'ALERTA LOGÍSTICA: Error al emitir envío con el transportista',
+    shipping_pending_balance: 'Tu venta se cobró: falta cargar saldo en Zipnova para generar la etiqueta',
   }
 
   const subject = `[Portalmaker ${type.toUpperCase()}] ${alertTitles[type] || 'Alerta de Plataforma'} — ${store?.nombre || 'Portal'}`
