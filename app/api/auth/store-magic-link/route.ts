@@ -61,9 +61,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ useFallbackOtp: true }, { status: 200 })
     }
 
+    // El action_link de Supabase entrega la sesión en el fragmento (#access_token),
+    // que el servidor no puede leer: /auth/callback no recibía nada y mandaba al
+    // cliente a una página inexistente. Con el hashed_token armamos un enlace que
+    // vuelve a /auth/callback con token_hash, que sí se verifica en el servidor.
+    // El redirectTo ya fue validado como origen confiable (y trae next y store_origin).
+    let actionLink = linkData.properties.action_link
+    const hashedToken = linkData.properties.hashed_token
+    if (safeRedirect && hashedToken) {
+      try {
+        const directo = new URL(safeRedirect)
+        directo.searchParams.set('token_hash', hashedToken)
+        directo.searchParams.set('type', 'magiclink')
+        actionLink = directo.toString()
+      } catch {
+        // redirectTo malformado: se usa el enlace estándar de Supabase
+      }
+    }
+
     const message = buildStoreAuthEmail({
       store,
-      actionLink: linkData.properties.action_link,
+      actionLink,
       kind: 'magiclink',
     })
     const sent = await sendStoreAuthEmail({ to: cleanEmail, ...message })

@@ -34,6 +34,11 @@ export async function GET(request: NextRequest) {
     !currentHostNorm.includes('127.0.0.1') &&
     !currentHostNorm.endsWith('.vercel.app')
 
+  // Subdominio de tienda (xxx.portalmaker.ar): también es "dominio de tienda".
+  // /login y /dashboard solo existen en el portal; mandar ahí desde una tienda da 404.
+  const esSubdominioTienda = /^[a-z0-9-]+\.portalmaker\.(ar|com\.ar)$/.test(requestUrl.host.toLowerCase()) && !/^www\./.test(requestUrl.host.toLowerCase())
+  const enTienda = isStoreDomain || esSubdominioTienda
+
   // A. Puente Multi-Tenant para dominios propios (ej: armoniashop.com.ar)
   // Si la autenticación se originó en una tienda con dominio propio y Supabase
   // redirigió a portalmaker.ar, reenviamos el código a la tienda para que
@@ -101,7 +106,7 @@ export async function GET(request: NextRequest) {
       // 1. Destino por defecto según contexto de dominio.
       // `next` absoluto solo se acepta hacia orígenes confiables (evita open redirect);
       // los relativos deben empezar con una sola "/" para no convertirse en "//evil.com".
-      const defaultTarget = isStoreDomain ? `${origin}/tienda/cuenta` : `${origin}/dashboard/maker`
+      const defaultTarget = enTienda ? `${origin}/tienda/cuenta` : `${origin}/dashboard/maker`
       let targetUrl = defaultTarget
       if (nextParam) {
         if (/^https?:\/\//i.test(nextParam)) {
@@ -112,7 +117,7 @@ export async function GET(request: NextRequest) {
       }
 
       // 2. Si estamos en el portal central y no se especificó ?next=..., enrutar inteligentemente por rol
-      if (!isStoreDomain && user?.email && !nextParam) {
+      if (!enTienda && user?.email && !nextParam) {
         const userEmail = user.email.trim().toLowerCase()
 
         // A. Verificar si es Superadmin de Portalmaker
@@ -169,6 +174,6 @@ export async function GET(request: NextRequest) {
   }
 
   // Si falló el intercambio, volver a la pantalla adecuada según el dominio
-  const errorTarget = isStoreDomain ? `${origin}/tienda/cuenta?error=auth_error` : `${origin}/login?error=auth_error`
+  const errorTarget = enTienda ? `${origin}/tienda/cuenta?error=auth_error` : `${origin}/login?error=auth_error`
   return NextResponse.redirect(errorTarget)
 }

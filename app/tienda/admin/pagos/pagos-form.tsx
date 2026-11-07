@@ -249,14 +249,17 @@ export default function PagosForm({
       {/* Encabezado */}
       <AdminPageHeader
         title="Cobros & Transferencia"
-        description="Configura cómo reciben el dinero de las ventas: vinculá tu cuenta de Mercado Pago para cobros automáticos o carga tus datos bancarios para transferencias directas."
+        description={
+          store.tipo_negocio === 'servicios'
+            ? 'Conectá tu cuenta de Mercado Pago para cobrar la seña de tus turnos de forma automática.'
+            : 'Configura cómo reciben el dinero de las ventas: vinculá tu cuenta de Mercado Pago para cobros automáticos o carga tus datos bancarios para transferencias directas.'
+        }
         icon={CreditCard}
       />
 
       <div className="space-y-6">
-        {/* =========================================================================
-            0. MODALIDAD DE VENTA Y CHECKOUT ONLINE
-        ========================================================================== */}
+        {/* El carrito y el checkout solo existen para productos; en servicios se cobra la seña */}
+        {store.tipo_negocio !== 'servicios' && (
         <div className="bg-[var(--color-superficie)] rounded-3xl border border-[var(--color-borde)] p-5 sm:p-7 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
@@ -283,9 +286,7 @@ export default function PagosForm({
                 </div>
                 <p className="text-xs opacity-70 mt-1 max-w-2xl">
                   {checkoutActivo
-                    ? (store.tipo_negocio === 'servicios'
-                        ? 'Tus clientes pueden pagar una seña con Mercado Pago al reservar un turno.'
-                        : 'Tus clientes pueden agregar productos al carrito, calcular envíos y pagar directamente con Mercado Pago o Transferencia Bancaria.')
+                    ? 'Tus clientes pueden agregar productos al carrito, calcular envíos y pagar directamente con Mercado Pago o Transferencia Bancaria.'
                     : 'La tienda opera como catálogo vidriera: el botón de comprar y consultar conecta directamente a los compradores a tu WhatsApp con el producto preseleccionado.'}
                 </p>
               </div>
@@ -319,6 +320,7 @@ export default function PagosForm({
             </div>
           )}
         </div>
+        )}
 
         {/* =========================================================================
             1. MERCADO PAGO INTEGRATION CARD

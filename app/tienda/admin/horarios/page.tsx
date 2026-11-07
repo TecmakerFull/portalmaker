@@ -14,7 +14,8 @@ export default async function AdminHorariosPage() {
   const tenant = await getTenantStore()
   if (!tenant) notFound()
 
-  const { store } = tenant
+  const { store, context } = tenant
+  const tenantQuery = context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''
   // Revalidación de permisos: ensureBookingSetup usa service_role y las
   // páginas se ejecutan en paralelo con el layout que hace el chequeo.
   if (!(await isStoreAdmin(store))) notFound()
@@ -37,6 +38,7 @@ export default async function AdminHorariosPage() {
         initialStaff={staff}
         initialBloqueos={(bloqueos as StaffBlock[]) ?? []}
         origin={await getRequestOrigin()}
+        tenantQuery={tenantQuery}
       />
     </div>
   )

@@ -93,12 +93,15 @@ export default function HorariosManager({
   initialStaff,
   initialBloqueos,
   origin,
+  tenantQuery = '',
 }: {
   store: Store
   initialSettings: StoreBookingSettings
   initialStaff: Staff[]
   initialBloqueos: StaffBlock[]
   origin: string
+  /** Con ?tenant=slug cuando se entra desde portalmaker.ar: sin esto los enlaces internos dan 404. */
+  tenantQuery?: string
 }) {
   const router = useRouter()
   const supabase = createSupabaseBrowserClient()
@@ -424,7 +427,7 @@ export default function HorariosManager({
             </>
           ) : (
             <p className="text-xs opacity-75">
-              Para pedir seña primero conectá tu Mercado Pago en <a className="underline font-semibold" href="/tienda/admin/pagos">Cobros</a>.
+              Para pedir seña primero conectá tu Mercado Pago en <a className="underline font-semibold" href={`/tienda/admin/pagos${tenantQuery}`}>Cobros</a>.
             </p>
           )}
         </div>
