@@ -96,6 +96,7 @@ function MainHeaderInner({
   // Una tienda solo de servicios no vende productos: el carrito no tiene sentido
   // (las reservas se confirman directo en la página de cada servicio).
   const mostrar_carrito = mostrarCarritoConfig && store.tipo_negocio !== 'servicios'
+  const vendeProductos = store.tipo_negocio !== 'servicios'
 
   const logoSizeClasses = {
     chico: 'h-7 sm:h-8 max-w-[100px] sm:max-w-[130px]',
@@ -303,6 +304,8 @@ function MainHeaderInner({
                   )}
                 </Link>
 
+                {/* Favoritos es de productos: una tienda solo de servicios no lo muestra */}
+                {vendeProductos && (
                 <Link
                   href={withTenant('/tienda/favoritos')}
                   title="Favoritos"
@@ -316,6 +319,7 @@ function MainHeaderInner({
                     </span>
                   )}
                 </Link>
+                )}
               </>
             )}
 
@@ -392,6 +396,8 @@ function MainHeaderInner({
                   )}
                 </Link>
 
+                {/* Favoritos es de productos: una tienda solo de servicios no lo muestra */}
+                {vendeProductos && (
                 <Link
                   href={withTenant('/tienda/favoritos')}
                   title="Favoritos"
@@ -405,6 +411,7 @@ function MainHeaderInner({
                     </span>
                   )}
                 </Link>
+                )}
               </>
             )}
 
@@ -484,9 +491,10 @@ function MainHeaderInner({
               href={withTenant('/tienda')}
               className="py-2.5 px-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-between"
             >
-              <span>Todos los productos</span>
+              <span>{vendeProductos ? 'Todos los productos' : 'Servicios y turnos'}</span>
               <ArrowRight className="w-3.5 h-3.5 opacity-40" />
             </Link>
+            {vendeProductos && (
             <Link
               href={withTenant('/tienda/favoritos')}
               className="py-2.5 px-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-between"
@@ -496,6 +504,7 @@ function MainHeaderInner({
                 {favorites.length}
               </span>
             </Link>
+            )}
             <Link
               href={withTenant('/tienda/sobre-nosotros')}
               className="py-2.5 px-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-between"
