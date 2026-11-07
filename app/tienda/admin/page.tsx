@@ -28,6 +28,8 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { AdminPageHeader } from './components/admin-page-header'
+import ClientesUso from './components/clientes-uso'
+import { getStoreEffectiveLimit } from '@/lib/plans'
 
 interface Paso {
   id: string
@@ -59,7 +61,7 @@ export default async function AdminHomePage() {
   const supabase = await createSupabaseServerClient()
 
   // Solo se consulta lo que corresponde al tipo de tienda
-  const [productos, servicios, profesional] = await Promise.all([
+  const [productos, servicios, profesional, clientes] = await Promise.all([
     vendeProductos
       ? supabase.from('products').select('*', { count: 'exact', head: true }).eq('store_id', store.id)
       : Promise.resolve({ count: 0 }),
@@ -70,7 +72,12 @@ export default async function AdminHomePage() {
     daTurnos
       ? supabase.from('staff').select('id', { count: 'exact', head: true }).eq('store_id', store.id)
       : Promise.resolve({ count: 0 }),
+    // Clientes registrados: cada uno ocupa un lugar del tope del plan
+    daTurnos
+      ? supabase.from('store_customers').select('id', { count: 'exact', head: true }).eq('store_id', store.id)
+      : Promise.resolve({ count: 0 }),
   ])
+  const limiteClientes = getStoreEffectiveLimit(store, 'limite_clientes')
 
   const hasProducts = (productos.count ?? 0) > 0
   const hasServices = (servicios.count ?? 0) > 0
@@ -170,6 +177,8 @@ export default async function AdminHomePage() {
           </Link>
         }
       />
+
+      {daTurnos && <ClientesUso usados={clientes.count ?? 0} limite={limiteClientes} tenantQuery={tenantQuery} modo="aviso" />}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna Izquierda: Checklist de Pasos (2 columnas de ancho) */}

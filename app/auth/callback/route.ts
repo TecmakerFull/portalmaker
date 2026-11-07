@@ -166,9 +166,38 @@ export async function GET(request: NextRequest) {
 
       // Redirigir al destino preservando todas las cookies de sesión
       const response = NextResponse.redirect(targetUrl)
+
+      // Las cookies de sesión deben tener los mismos atributos que usa el middleware
+      // (dominio compartido entre subdominios, 1 año). Si acá se guardaran solo para el
+      // host, convivirían con la cookie compartida del mismo nombre (por ejemplo, la del
+      // panel en portalmaker.ar) y el navegador mandaría la vieja: la clienta volvía a la
+      // tienda "sin sesión" después de tocar el enlace.
+      const host = requestUrl.hostname.toLowerCase()
+      const cookieDomain = host.endsWith('portalmaker.com.ar')
+        ? '.portalmaker.com.ar'
+        : host.endsWith('portalmaker.ar')
+          ? '.portalmaker.ar'
+          : undefined
+
       cookiesToSet.forEach(({ name, value, options }) => {
-        response.cookies.set(name, value, options)
+        response.cookies.set(name, value, {
+          ...options,
+          sameSite: 'lax',
+          path: '/',
+          ...(options?.maxAge === 0 ? {} : { maxAge: 60 * 60 * 24 * 365 }),
+          ...(cookieDomain ? { domain: cookieDomain } : {}),
+        })
       })
+
+      // Limpieza: si quedó una cookie de sesión solo del host (de un intento anterior),
+      // se vence para que no tape a la compartida. Va como encabezado aparte porque
+      // response.cookies usa el nombre como clave y pisaría a la cookie con dominio.
+      if (cookieDomain) {
+        cookiesToSet.forEach(({ name, options }) => {
+          if (options?.maxAge === 0) return
+          response.headers.append('set-cookie', `${name}=; Path=/; Max-Age=0; SameSite=Lax`)
+        })
+      }
       return response
     }
   }

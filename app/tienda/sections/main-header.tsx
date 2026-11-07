@@ -494,6 +494,16 @@ function MainHeaderInner({
               <span>{vendeProductos ? 'Todos los productos' : 'Servicios y turnos'}</span>
               <ArrowRight className="w-3.5 h-3.5 opacity-40" />
             </Link>
+            {/* En "ambos" los servicios tienen su propia sección en la portada */}
+            {vendeProductos && store.tipo_negocio === 'ambos' && (
+              <Link
+                href={withTenant('/tienda') + '#servicios'}
+                className="py-2.5 px-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-between"
+              >
+                <span>Servicios y turnos</span>
+                <ArrowRight className="w-3.5 h-3.5 opacity-40" />
+              </Link>
+            )}
             {vendeProductos && (
             <Link
               href={withTenant('/tienda/favoritos')}

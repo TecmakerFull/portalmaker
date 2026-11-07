@@ -36,6 +36,37 @@ export interface ResolvedStoreSections {
  * Genera la configuración por defecto de secciones para cualquier tienda.
  * Garantiza retrocompatibilidad total si la tienda no tiene filas en store_sections.
  */
+/**
+ * Enlaces del menú hacia el catálogo según lo que vende la tienda: productos,
+ * servicios o ambos (en ese caso, los dos, porque en la portada conviven).
+ */
+export function itemsCatalogoNavbar(tipo: string | null | undefined): NavbarItem[] {
+  const base = { tipo_destino: 'catalogo' as const, destacado: false, badge_texto: null, activo: true }
+  if (tipo === 'servicios') {
+    return [{ ...base, id: 'nav-1', texto: 'Servicios', destino_url: '/tienda', orden: 1 }]
+  }
+  if (tipo === 'ambos') {
+    return [
+      { ...base, id: 'nav-1', texto: 'Productos', destino_url: '/tienda', orden: 1 },
+      // La portada de "ambos" tiene los servicios en su propia sección (#servicios)
+      { ...base, id: 'nav-1b', texto: 'Servicios', destino_url: '/tienda#servicios', tipo_destino: 'pagina' as const, orden: 1.5 },
+    ]
+  }
+  return [{ ...base, id: 'nav-1', texto: 'Productos', destino_url: '/tienda', orden: 1 }]
+}
+
+/**
+ * Los menús ya guardados traen el texto "Productos" fijo, aunque la tienda haya
+ * pasado a servicios después. Si el enlace es el automático (nunca renombrado por
+ * la dueña: id nav-1 con el texto original), se reemplaza por el que corresponde.
+ */
+function ajustarCatalogoAlTipo(items: NavbarItem[], tipo: string | null | undefined): NavbarItem[] {
+  const auto = items.find((it) => it.id === 'nav-1' && it.tipo_destino === 'catalogo' && (it.texto === 'Productos' || it.texto === 'Servicios'))
+  if (!auto) return items
+  const resto = items.filter((it) => it.id !== 'nav-1' && it.id !== 'nav-1b')
+  return [...itemsCatalogoNavbar(tipo).map((it) => ({ ...it, activo: auto.activo })), ...resto].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0))
+}
+
 export function getDefaultStoreSections(
   store: Store,
   hasSobreNosotros: boolean = false
@@ -104,19 +135,7 @@ export function getDefaultStoreSections(
   }
 
   // 3. Navbar Default
-  const navbarLinks: NavbarItem[] = [
-    {
-      id: 'nav-1',
-      // En tiendas solo de servicios el catálogo de la portada son servicios
-      texto: store.tipo_negocio === 'servicios' ? 'Servicios' : 'Productos',
-      tipo_destino: 'catalogo',
-      destino_url: '/tienda',
-      destacado: false,
-      badge_texto: null,
-      activo: true,
-      orden: 1,
-    },
-  ]
+  const navbarLinks: NavbarItem[] = itemsCatalogoNavbar(store.tipo_negocio)
 
   if (hasSobreNosotros) {
     navbarLinks.push({
@@ -355,7 +374,10 @@ export async function getStoreSections(
           ...defaults.navbar,
           ...navbarSec,
           settings: { ...defaults.navbar.settings, ...(navbarSec.settings || {}) },
-          content: Array.isArray(navbarSec.content) && navbarSec.content.length > 0 ? navbarSec.content : defaults.navbar.content,
+          content:
+            Array.isArray(navbarSec.content) && navbarSec.content.length > 0
+              ? ajustarCatalogoAlTipo(navbarSec.content, store.tipo_negocio)
+              : defaults.navbar.content,
         }
       : defaults.navbar
 

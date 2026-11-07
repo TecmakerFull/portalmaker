@@ -26,10 +26,12 @@ import {
   Calendar,
   Shield,
   Loader2,
+  Trash2,
   ExternalLink,
   MessageCircle,
 } from 'lucide-react'
 import { AdminPageHeader } from '../components/admin-page-header'
+import ClientesUso from '../components/clientes-uso'
 
 interface ClientesManagerProps {
   store: Store
@@ -38,6 +40,12 @@ interface ClientesManagerProps {
   initialReviews: ProductReview[]
   initialCollaborators: StoreCollaborator[]
   tenantQuery: string
+  /** Tope de clientes del plan (solo en tiendas con turnos). */
+  limiteClientes?: number | null
+  /** Turnos futuros activos por email, para avisar antes de borrar. */
+  turnosPorEmail?: Record<string, number>
+  /** El plan permite sumar colaboradores. */
+  puedeColaboradores?: boolean
 }
 
 export default function ClientesManager({
@@ -47,6 +55,9 @@ export default function ClientesManager({
   initialReviews,
   initialCollaborators,
   tenantQuery,
+  limiteClientes = null,
+  turnosPorEmail = {},
+  puedeColaboradores = true,
 }: ClientesManagerProps) {
   const router = useRouter()
   const supabase = createSupabaseBrowserClient()
@@ -57,6 +68,9 @@ export default function ClientesManager({
   const [selectedCustomer, setSelectedCustomer] = useState<StoreCustomer | null>(null)
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null)
   const [loadingAction, setLoadingAction] = useState<string | null>(null)
+  // Cliente que se está por borrar (pide confirmación antes)
+  const [porBorrar, setPorBorrar] = useState<StoreCustomer | null>(null)
+  const [errorBorrado, setErrorBorrado] = useState<string | null>(null)
 
   // Pestaña activa seleccionada (por tarjeta o pill)
   type ActiveTab = 'clientes' | 'pedidos' | 'resenas' | 'colaboradores'
@@ -169,6 +183,25 @@ export default function ClientesManager({
     }
   }
 
+  // Borrar un cliente libera su lugar en el tope del plan. No borra su cuenta ni sus
+  // pedidos o turnos: si vuelve a reservar, se registra de nuevo. Los permisos los
+  // valida la base (solo dueño o admin de la tienda pueden borrar).
+  const handleBorrarCliente = async () => {
+    if (!porBorrar) return
+    setLoadingAction(porBorrar.id)
+    setErrorBorrado(null)
+    const { error } = await supabase.from('store_customers').delete().eq('id', porBorrar.id).eq('store_id', store.id)
+    setLoadingAction(null)
+    if (error) {
+      setErrorBorrado('No pudimos borrar al cliente. Probá de nuevo.')
+      return
+    }
+    setCustomers((lista) => lista.filter((c) => c.id !== porBorrar.id))
+    setSelectedCustomer((s) => (s?.id === porBorrar.id ? null : s))
+    setPorBorrar(null)
+    router.refresh()
+  }
+
   // Alternar estado de colaborador (Hacer / Quitar colaborador)
   const handleToggleCollaborator = async (customer: StoreCustomer) => {
     const cleanEmail = customer.email.toLowerCase()
@@ -240,6 +273,10 @@ export default function ClientesManager({
           </div>
         }
       />
+
+      {limiteClientes !== null && (
+        <ClientesUso usados={customers.length} limite={limiteClientes} tenantQuery={tenantQuery} mostrarEnlaceClientes />
+      )}
 
       {/* Resumen de Métricas (Clickeables como pestañas interactivas) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -691,7 +728,7 @@ export default function ClientesManager({
                           </button>
 
                           {/* Botón Promover / Quitar de Colaborador */}
-                          {!isOwner && (
+                          {!isOwner && (puedeColaboradores || isCollab) && (
                             <button
                               type="button"
                               onClick={() => handleToggleCollaborator(cust)}
@@ -718,6 +755,22 @@ export default function ClientesManager({
                               )}
                             </button>
                           )}
+
+                          {/* Borrar: libera el lugar del cliente. No aplica a la dueña ni a colaboradores. */}
+                          {!isOwner && !isCollab && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setErrorBorrado(null)
+                                setPorBorrar(cust)
+                              }}
+                              aria-label={`Borrar a ${cust.nombre || cust.email}`}
+                              title="Borrar cliente"
+                              className="min-h-11 min-w-11 rounded-xl border border-red-500/30 text-red-600 dark:text-red-400 inline-flex items-center justify-center hover:bg-red-500/10 cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -728,6 +781,43 @@ export default function ClientesManager({
           </div>
         )}
       </div>
+      )}
+
+      {/* Confirmación de borrado */}
+      {porBorrar && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60" role="dialog" aria-modal="true" aria-labelledby="borrar-cliente-titulo">
+          <div className="bg-[var(--color-superficie)] text-[var(--color-texto)] border border-[var(--color-borde)] rounded-2xl w-full max-w-md p-5 sm:p-6 space-y-4 shadow-2xl">
+            <h3 id="borrar-cliente-titulo" className="text-base font-semibold">¿Borrar a {porBorrar.nombre || porBorrar.email}?</h3>
+            <div className="text-sm space-y-2 opacity-80 leading-relaxed">
+              <p>Libera su lugar entre tus clientes registrados. Sus pedidos y turnos anteriores no se borran, y si vuelve a reservar se registra de nuevo.</p>
+              {(turnosPorEmail[porBorrar.email.toLowerCase()] ?? 0) > 0 && (
+                <p className="font-semibold text-amber-700 dark:text-amber-400">
+                  Tiene {turnosPorEmail[porBorrar.email.toLowerCase()]} turno(s) próximo(s). No se cancelan: revisalos en la Agenda.
+                </p>
+              )}
+            </div>
+            {errorBorrado && <p className="text-xs text-red-600 dark:text-red-400">{errorBorrado}</p>}
+            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setPorBorrar(null)}
+                disabled={loadingAction === porBorrar.id}
+                className="min-h-11 px-4 rounded-xl border border-[var(--color-borde)] text-sm font-semibold cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleBorrarCliente}
+                disabled={loadingAction === porBorrar.id}
+                className="min-h-11 px-4 rounded-xl bg-red-600 text-white text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+              >
+                {loadingAction === porBorrar.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                Borrar cliente
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal / Drawer de Historial Detallado del Cliente */}
