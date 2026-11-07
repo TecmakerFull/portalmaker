@@ -11,7 +11,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
-import { compressImageFile } from '@/lib/image-compression'
+import RichTextEditor from '../components/rich-text-editor'
+import ImageGalleryDropzone from '../components/image-gallery-dropzone'
 import { formatDuracion } from '@/lib/booking/format'
 import type { Service, Store } from '@/types/database'
 import { AdminPageHeader } from '../components/admin-page-header'
@@ -25,7 +26,6 @@ import {
   Loader2,
   Save,
   X,
-  ImagePlus,
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react'
@@ -41,7 +41,7 @@ interface FormState {
   precioDesde: boolean
   descripcion: string
   buffer: number
-  imagen: string | null
+  imagenes: string[]
   visible: boolean
 }
 
@@ -53,7 +53,7 @@ const VACIO: FormState = {
   precioDesde: false,
   descripcion: '',
   buffer: 0,
-  imagen: null,
+  imagenes: [],
   visible: true,
 }
 
@@ -84,7 +84,6 @@ export default function ServiciosManager({
   const [services, setServices] = useState<Service[]>(initialServices)
   const [form, setForm] = useState<FormState | null>(null)
   const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [ok, setOk] = useState<string | null>(null)
 
@@ -99,33 +98,9 @@ export default function ServiciosManager({
       precioDesde: s.precio_desde,
       descripcion: s.descripcion ?? '',
       buffer: s.buffer_despues_minutos,
-      imagen: s.imagenes?.[0] ?? null,
+      imagenes: s.imagenes ?? [],
       visible: s.visible,
     })
-
-  const subirFoto = async (file: File) => {
-    setUploading(true)
-    setError(null)
-    try {
-      let archivo = file
-      try {
-        archivo = await compressImageFile(file, { maxWidth: 1200, maxHeight: 1200, format: 'image/webp' })
-      } catch {
-        // Si no se puede comprimir, se sube el original.
-      }
-      const bucket = process.env.NEXT_PUBLIC_STORAGE_BUCKET || 'portalmaker-media'
-      // tiendas/{store_id}/... es la ruta que permite la política de Storage.
-      const path = `tiendas/${store.id}/servicios/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`
-      const { error: upErr } = await supabase.storage.from(bucket).upload(path, archivo, { cacheControl: '31536000', upsert: true })
-      if (upErr) throw upErr
-      const { data } = supabase.storage.from(bucket).getPublicUrl(path)
-      set({ imagen: data.publicUrl })
-    } catch {
-      setError('No se pudo subir la foto. Probá con otra imagen.')
-    } finally {
-      setUploading(false)
-    }
-  }
 
   const guardar = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -147,7 +122,7 @@ export default function ServiciosManager({
       buffer_despues_minutos: form.buffer,
       precio,
       precio_desde: form.precioDesde,
-      imagenes: form.imagen ? [form.imagen] : [],
+      imagenes: form.imagenes,
       visible: form.visible,
       updated_at: new Date().toISOString(),
     }
@@ -315,28 +290,25 @@ export default function ServiciosManager({
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="srv-desc" className="text-xs font-semibold opacity-75 block">Descripción (opcional)</label>
-            <textarea id="srv-desc" rows={3} maxLength={1000} className={`${inputClass} py-2.5`} value={form.descripcion} onChange={(e) => set({ descripcion: e.target.value })} placeholder="Contá en qué consiste y qué incluye." />
-          </div>
+          {/* Descripción con formato: el dueño detalla en qué consiste el trabajo (títulos, viñetas, pasos, negritas) */}
+          <RichTextEditor
+            id="srv-desc"
+            label="Descripción (opcional)"
+            value={form.descripcion}
+            onChange={(v) => set({ descripcion: v })}
+            maxLength={5000}
+            placeholder={'Contá en qué consiste el servicio, qué incluye, cuánto demora y si el cliente tiene que traer algo o prepararse.\n\nUsá los botones de arriba para ordenar la información con títulos, viñetas o pasos.'}
+          />
 
           <div className="space-y-1.5">
-            <p className="text-xs font-semibold opacity-75">Foto (opcional)</p>
-            <div className="flex items-center gap-3">
-              {form.imagen && (
-                <img src={form.imagen} alt="" className="w-20 h-20 rounded-xl object-cover border border-[var(--color-borde)]" />
-              )}
-              <label className="min-h-11 px-4 rounded-xl border border-[var(--color-borde)] inline-flex items-center gap-2 text-sm font-semibold cursor-pointer hover:bg-black/5 dark:hover:bg-white/5">
-                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
-                {form.imagen ? 'Cambiar foto' : 'Subir foto'}
-                <input type="file" accept="image/*" className="sr-only" onChange={(e) => e.target.files?.[0] && subirFoto(e.target.files[0])} />
-              </label>
-              {form.imagen && (
-                <button type="button" onClick={() => set({ imagen: null })} className="min-h-11 px-3 text-xs opacity-70 hover:opacity-100 cursor-pointer">
-                  Quitar
-                </button>
-              )}
-            </div>
+            <p className="text-xs font-semibold opacity-75">Fotos (opcional): la primera es la portada</p>
+            <ImageGalleryDropzone
+              storeId={store.id}
+              carpeta="servicios"
+              values={form.imagenes}
+              onChange={(urls) => set({ imagenes: urls })}
+              onError={(mensaje) => setError(mensaje)}
+            />
           </div>
 
           <label className="flex items-center gap-2 text-sm min-h-11 cursor-pointer">
@@ -348,7 +320,7 @@ export default function ServiciosManager({
             <button type="button" onClick={() => setForm(null)} className="min-h-11 px-4 rounded-xl border border-[var(--color-borde)] text-sm font-semibold cursor-pointer">
               Cancelar
             </button>
-            <button type="submit" disabled={saving || uploading} className="min-h-11 px-5 rounded-xl bg-[#FACC15] hover:bg-[#EAB308] disabled:opacity-50 text-[#1F2937] text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-pointer">
+            <button type="submit" disabled={saving} className="min-h-11 px-5 rounded-xl bg-[#FACC15] hover:bg-[#EAB308] disabled:opacity-50 text-[#1F2937] text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-pointer">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Guardar servicio
             </button>

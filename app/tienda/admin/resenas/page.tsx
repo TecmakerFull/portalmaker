@@ -47,7 +47,8 @@ export default async function ResenasAdminPage() {
     .from('product_reviews')
     .select(`
       *,
-      product:products (id, nombre, slug, imagenes)
+      product:products (id, nombre, slug, imagenes),
+      service:services (id, nombre, slug, imagenes)
     `)
     .eq('store_id', store.id)
     .order('created_at', { ascending: false })

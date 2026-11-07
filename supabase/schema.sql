@@ -2188,3 +2188,20 @@ create index if not exists idx_bookings_recordatorio_pendiente
 create index if not exists idx_bookings_sena_por_vencer
   on public.bookings(pendiente_expira_at)
   where estado = 'pendiente' and pendiente_expira_at is not null;
+
+
+-- =============================================================================
+-- RESEÑAS DE SERVICIOS (2026-11-07). Copia de
+-- supabase/migrations/20261107_resenas_servicios.sql
+-- =============================================================================
+alter table public.product_reviews alter column product_id drop not null;
+
+alter table public.product_reviews
+  add column if not exists service_id uuid references public.services(id) on delete cascade;
+
+alter table public.product_reviews drop constraint if exists product_reviews_un_destino;
+alter table public.product_reviews
+  add constraint product_reviews_un_destino
+  check (num_nonnulls(product_id, service_id) = 1);
+
+create index if not exists idx_product_reviews_service on public.product_reviews(service_id) where service_id is not null;

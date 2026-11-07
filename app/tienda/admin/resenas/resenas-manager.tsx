@@ -32,6 +32,13 @@ interface ReviewWithProduct extends ProductReview {
     slug: string
     imagenes?: string[]
   } | null
+  // Las reseñas también pueden ser de un servicio
+  service?: {
+    id: string
+    nombre: string
+    slug: string
+    imagenes?: string[]
+  } | null
 }
 
 interface ResenasManagerProps {
@@ -78,7 +85,8 @@ export default function ResenasManager({
         r.user_name.toLowerCase().includes(q) ||
         r.user_email.toLowerCase().includes(q) ||
         r.comentario.toLowerCase().includes(q) ||
-        (r.product?.nombre && r.product.nombre.toLowerCase().includes(q))
+        (r.product?.nombre && r.product.nombre.toLowerCase().includes(q)) ||
+        (r.service?.nombre && r.service.nombre.toLowerCase().includes(q))
 
       const matchesRating = filterRating === 'all' || r.rating === filterRating
       const matchesVisibility =
@@ -235,22 +243,27 @@ export default function ResenasManager({
                 <div className="space-y-2 flex-1">
                   {/* Producto de referencia */}
                   <div className="flex items-center gap-2.5 text-xs font-semibold">
-                    {rev.product?.imagenes?.[0] ? (
+                    {(rev.product ?? rev.service)?.imagenes?.[0] ? (
                       <img
-                        src={rev.product.imagenes[0]}
-                        alt={rev.product.nombre}
+                        src={(rev.product ?? rev.service)!.imagenes![0]}
+                        alt={(rev.product ?? rev.service)!.nombre}
                         className="w-7 h-7 rounded-lg object-cover border border-[var(--color-borde)] shrink-0"
                       />
                     ) : (
                       <Package className="w-3.5 h-3.5 text-[var(--color-primario)] shrink-0" />
                     )}
-                    {rev.product ? (
+                    {rev.product || rev.service ? (
                       <Link
-                        href={withTenant(`/tienda/productos/${rev.product.slug}`)}
+                        href={withTenant(
+                          rev.product
+                            ? `/tienda/productos/${rev.product.slug}`
+                            : `/tienda/servicios/${rev.service!.slug}`
+                        )}
                         target="_blank"
                         className="text-[var(--color-primario)] hover:underline flex items-center gap-1"
                       >
-                        <span>{rev.product.nombre}</span>
+                        <span>{(rev.product ?? rev.service)!.nombre}</span>
+                        {rev.service && <span className="opacity-60 font-normal">(servicio)</span>}
                         <ExternalLink className="w-3 h-3 opacity-60" />
                       </Link>
                     ) : (

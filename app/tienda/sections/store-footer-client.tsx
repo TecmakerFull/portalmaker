@@ -118,6 +118,11 @@ export default function StoreFooterClient({ store, tenantQuery, mediosPago }: St
 
   const currentYear = new Date().getFullYear()
 
+  // Qué ofrece la tienda (productos, servicios o ambos)
+  const tipoNegocio = store.tipo_negocio ?? 'productos'
+  const vendeProductos = tipoNegocio !== 'servicios'
+  const daTurnos = tipoNegocio !== 'productos'
+
   const instagramHref = formatSocialUrl(store.instagram_url, 'instagram')
   const facebookHref = formatSocialUrl(store.facebook_url, 'facebook')
   const tiktokHref = formatSocialUrl(store.tiktok_url, 'tiktok')
@@ -198,18 +203,31 @@ export default function StoreFooterClient({ store, tenantQuery, mediosPago }: St
               Explora
             </h3>
             <div className="grid gap-2.5 text-xs opacity-75">
-              <Link href={withTenant('/tienda')} className="hover:opacity-100 hover:text-[var(--color-primario)] transition-colors">
-                Todos los productos
-              </Link>
-              <Link href={withTenant('/tienda')} className="hover:opacity-100 hover:text-[var(--color-primario)] transition-colors">
-                Ofertas especiales
-              </Link>
+              {/* Los enlaces dependen de lo que ofrece la tienda: una tienda solo de
+                  servicios no tiene productos, ofertas ni favoritos. */}
+              {daTurnos && (
+                <Link href={withTenant('/tienda')} className="hover:opacity-100 hover:text-[var(--color-primario)] transition-colors">
+                  Servicios y turnos
+                </Link>
+              )}
+              {vendeProductos && (
+                <>
+                  <Link href={withTenant('/tienda')} className="hover:opacity-100 hover:text-[var(--color-primario)] transition-colors">
+                    Todos los productos
+                  </Link>
+                  <Link href={withTenant('/tienda')} className="hover:opacity-100 hover:text-[var(--color-primario)] transition-colors">
+                    Ofertas especiales
+                  </Link>
+                </>
+              )}
               <Link href={withTenant('/tienda/sobre-nosotros')} className="hover:opacity-100 hover:text-[var(--color-primario)] transition-colors">
                 Sobre nosotros
               </Link>
-              <Link href={withTenant('/tienda/favoritos')} className="hover:opacity-100 hover:text-[var(--color-primario)] transition-colors">
-                Favoritos
-              </Link>
+              {vendeProductos && (
+                <Link href={withTenant('/tienda/favoritos')} className="hover:opacity-100 hover:text-[var(--color-primario)] transition-colors">
+                  Favoritos
+                </Link>
+              )}
             </div>
           </div>
 
@@ -230,9 +248,11 @@ export default function StoreFooterClient({ store, tenantQuery, mediosPago }: St
                   />
                 )}
               </Link>
-              <Link href={withTenant('/tienda/ayuda')} className="hover:opacity-100 hover:text-[var(--color-primario)] transition-colors">
-                Envíos y devoluciones
-              </Link>
+              {vendeProductos && (
+                <Link href={withTenant('/tienda/ayuda')} className="hover:opacity-100 hover:text-[var(--color-primario)] transition-colors">
+                  Envíos y devoluciones
+                </Link>
+              )}
               <Link href={withTenant('/tienda/ayuda')} className="hover:opacity-100 hover:text-[var(--color-primario)] transition-colors">
                 Preguntas frecuentes
               </Link>

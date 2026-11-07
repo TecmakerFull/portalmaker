@@ -2,7 +2,7 @@
 // PORTALMAKER — Panel de Administración: Métodos y Opciones de Envío (Fase 3)
 // =============================================================================
 
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getTenantStore, isStoreAdmin } from '@/lib/tenant'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import type { Store } from '@/types/database'
@@ -22,6 +22,12 @@ export default async function EnviosAdminPage() {
 
   if (!isAdmin) {
     notFound()
+  }
+
+  // Una tienda solo de servicios no envía nada: se la devuelve al inicio del panel
+  // (el menú ya no muestra Envíos, esto cubre quien entre con la URL directa).
+  if ((store.tipo_negocio ?? 'productos') === 'servicios') {
+    redirect(`/tienda/admin${context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''}`)
   }
 
   // Traer la tienda con createSupabaseAdminClient para asegurar columnas logísticas completas

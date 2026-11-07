@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { CalendarCheck, Clock, ImageIcon } from 'lucide-react'
 import type { Service } from '@/types/database'
 import { formatDuracion } from '@/lib/booking/format'
+import { textoPlano } from '@/lib/markdown'
 
 interface ServicesCatalogProps {
   services: Service[]
@@ -53,7 +54,7 @@ export default function ServicesCatalog({ services, tenantQuery, etiqueta, titul
               </div>
               <div className="p-4 flex flex-col gap-2 flex-1 text-[var(--color-texto)]">
                 <h3 className="text-sm sm:text-base font-semibold leading-snug">{s.nombre}</h3>
-                {s.descripcion && <p className="text-xs opacity-70 line-clamp-2">{s.descripcion}</p>}
+                {s.descripcion && <p className="text-xs opacity-70 line-clamp-2">{textoPlano(s.descripcion)}</p>}
                 <div className="mt-auto flex items-center justify-between gap-2 pt-2">
                   <span className="text-xs opacity-70 inline-flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" /> {formatDuracion(s.duracion_minutos)}

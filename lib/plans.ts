@@ -765,6 +765,14 @@ export const SUBSCRIPTION_MATRIX: MatrixCategory[] = [
         enterprise: 'Ilimitados',
       },
       {
+        nombre: 'Clientes registrados',
+        descripcion: 'Personas con cuenta en tu tienda. Para reservar un turno o comprar hay que tener cuenta, y cada plan tiene un tope.',
+        free: 'Hasta 15',
+        starter: 'Hasta 50',
+        maker_pro: 'Hasta 100',
+        enterprise: 'Ilimitados',
+      },
+      {
         nombre: 'CRM de Clientes Registrados',
         descripcion: 'Listado y seguimiento de compradores frecuentes',
         free: false,

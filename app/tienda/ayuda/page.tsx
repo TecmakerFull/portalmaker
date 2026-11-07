@@ -9,6 +9,7 @@ import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import StorefrontHeaderFlow from '../sections/storefront-header-flow'
 import StoreFooter from '../sections/store-footer'
+import { getBookingConfig } from '@/lib/booking/setup'
 import { getStoreSections } from '@/lib/store-sections'
 import { ChevronDown, ArrowRight, HelpCircle } from 'lucide-react'
 
@@ -37,7 +38,40 @@ export default async function TiendaAyudaPage() {
     return `${path}${sep}${tenantQuery.replace('?', '')}`
   }
 
-  const faqs = [
+  // Preguntas sobre turnos (tiendas de servicios o "ambos")
+  const tipoNegocio = store.tipo_negocio ?? 'productos'
+  const vendeProductos = tipoNegocio !== 'servicios'
+  const daTurnos = tipoNegocio !== 'productos'
+  const { settings: reservas } = daTurnos ? await getBookingConfig(store) : { settings: null }
+
+  const faqsServicios: string[][] = reservas
+    ? [
+        [
+          '¿Cómo reservo un turno?',
+          `Elegí el servicio, el día y el horario que más te convenga. Para reservar necesitás tu cuenta en ${store.nombre} (es gratis y se crea en un minuto). Al confirmar te llega un email con el detalle de tu turno.`,
+        ],
+        [
+          '¿Puedo cancelar o cambiar mi turno?',
+          reservas.cancelacion_hasta_horas > 0
+            ? `Sí. Desde el enlace del email o desde Mi cuenta podés cancelar hasta ${reservas.cancelacion_hasta_horas} horas antes del turno. Después de ese plazo, escribinos para coordinar.`
+            : 'Sí. Desde el enlace del email o desde Mi cuenta podés cancelar tu turno cuando quieras. Si necesitás cambiarlo, cancelalo y reservá otro horario.',
+        ],
+        [
+          '¿Qué pasa si el día que quiero está lleno?',
+          'Tocá "Avisarme si se libera un turno" en ese día. Si alguien cancela, te mandamos un email para que puedas reservar ese lugar.',
+        ],
+        ...(reservas.sena_modo !== 'ninguna' && store.mp_connected
+          ? [
+              [
+                '¿Tengo que pagar una seña?',
+                'Algunos servicios piden una seña con Mercado Pago para confirmar el turno. Tenés unos minutos para completar el pago; si no, el horario se libera para otra persona.',
+              ],
+            ]
+          : []),
+      ]
+    : []
+
+  const faqsProductos = [
     [
       '¿Cómo puedo hacer un pedido o encargo?',
       `Elegí un producto de nuestro catálogo, seleccioná la variante que prefieras y agregalo al carrito. Al finalizar la compra podrás elegir entre envío a domicilio, retiro en el local o acordar directamente con ${store.nombre}.`,
@@ -70,6 +104,14 @@ export default async function TiendaAyudaPage() {
     ],
   ]
 
+  // Una tienda solo de servicios no tiene carrito, envíos ni favoritos: solo
+  // se mantienen las preguntas generales (medios de pago y contacto).
+  const preguntasGenerales = ['Métodos de pago disponibles', '¿Cómo me contacto con la tienda?']
+  const faqs = [
+    ...(daTurnos ? faqsServicios : []),
+    ...(vendeProductos ? faqsProductos : faqsProductos.filter(([pregunta]) => preguntasGenerales.includes(pregunta))),
+  ]
+
   return (
     <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] transition-colors duration-200 flex flex-col justify-between">
       <div>
@@ -87,7 +129,9 @@ export default async function TiendaAyudaPage() {
                 ¿Cómo podemos ayudarte?
               </h1>
               <p className="mt-3 text-xs sm:text-sm opacity-70 text-[var(--color-texto)] leading-relaxed">
-                Condiciones de envío, fabricación, medios de pago y pedidos en {store.nombre}.
+                {vendeProductos
+                  ? `Condiciones de envío, medios de pago y pedidos en ${store.nombre}.`
+                  : `Cómo reservar, cancelar y pagar tus turnos en ${store.nombre}.`}
               </p>
             </div>
 

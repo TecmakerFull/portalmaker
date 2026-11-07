@@ -30,6 +30,7 @@ export default function PricingSection() {
         'Dirección propia: tutienda.portalmaker.ar',
         'Ficha técnica con tiempo de fabricación',
         'Sin comisiones por venta (0%)',
+        'Hasta 15 clientes registrados',
       ],
       ctaText: 'Crear tienda gratis',
       ctaHref: '/login?mode=register&plan=free',
@@ -49,6 +50,7 @@ export default function PricingSection() {
         'Cobros integrados: Mercado Pago y Alias/CBU',
         'Tarifas fijas de envío por zona o moto',
         '1 colaborador de equipo para atender',
+        'Hasta 50 clientes registrados',
         'CRM de clientes y registro de valoraciones',
       ],
       ctaText: 'Elegir Starter',
@@ -69,6 +71,7 @@ export default function PricingSection() {
         'Etiquetas de despacho listas para imprimir',
         'Tu propio dominio web (tutienda.com.ar)',
         'Hasta 3 colaboradores de equipo',
+        'Hasta 100 clientes registrados',
         'Comisión reducida de plataforma (2.5%)',
       ],
       ctaText: 'Elegir Maker Pro',
@@ -86,7 +89,7 @@ export default function PricingSection() {
       destacados: [
         'Catálogo ilimitado de productos',
         '0% de comisión por venta de Portalmaker',
-        'Colaboradores y usuarios ilimitados',
+        'Colaboradores y clientes registrados ilimitados',
         'Estadísticas avanzadas y analítica',
         'Soporte prioritario por WhatsApp y videollamada',
         'Migración asistida de productos',
@@ -263,6 +266,12 @@ export default function PricingSection() {
               ¿Puedo empezar gratis y cambiar después?
             </strong>
             Sí. Podés abrir tu tienda hoy sin tarjeta ni compromisos. Cuando necesites cobrar online, emitir etiquetas de envío o sumar colaboradores, cambiás de plan con un clic.
+          </div>
+          <div>
+            <strong className="block text-[var(--color-texto)] opacity-90 mb-0.5">
+              ¿Qué es un cliente registrado?
+            </strong>
+            Es una persona que creó su cuenta en tu tienda para comprar o reservar un turno. Cada plan tiene un tope de clientes registrados; los que ya tienen cuenta siempre pueden volver a entrar.
           </div>
           <div>
             <strong className="block text-[var(--color-texto)] opacity-90 mb-0.5">

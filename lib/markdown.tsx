@@ -13,10 +13,48 @@ import React from 'react'
  *  - Enlaces: [texto](url)
  *  - Encabezados: #, ##, ###
  *  - Listas de viñetas: - o *
+ *  - Listas numeradas: 1. 2. 3.
  *  - Saltos de línea y párrafos múltiples
  */
+/**
+ * Devuelve el texto sin símbolos de formato, para resúmenes (tarjetas del
+ * catálogo, descripción para Google y WhatsApp). Solo quita los marcadores de
+ * formato: los guiones y paréntesis del texto normal se conservan.
+ */
+export function textoPlano(content: string | null | undefined): string {
+  return (content || '')
+    .replace(/^\s*#{1,3}\s+/gm, '')
+    .replace(/^\s*([-*•]|\d+[.)])\s+/gm, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * Quien escribe no siempre deja un renglón en blanco entre un párrafo, un título
+ * y una lista. Se inserta ese renglón cuando cambia el tipo de renglón, para que
+ * cada bloque se interprete por separado.
+ */
+function separarBloques(content: string): string {
+  const tipo = (linea: string) =>
+    /^\s*$/.test(linea) ? 'blanco' : /^#{1,3}\s/.test(linea) ? 'titulo' : /^\s*[-*•]\s+/.test(linea) ? 'viñeta' : /^\s*\d+[.)]\s+/.test(linea) ? 'numero' : 'texto'
+  const salida: string[] = []
+  let anterior = 'blanco'
+  for (const linea of content.split('\n')) {
+    const actual = tipo(linea)
+    // Un título siempre queda solo; entre listas y texto distintos se separa
+    if (actual !== 'blanco' && anterior !== 'blanco' && (actual !== anterior || actual === 'titulo')) salida.push('')
+    salida.push(linea)
+    anterior = actual
+  }
+  return salida.join('\n')
+}
+
 export function renderMarkdown(content: string): React.ReactNode {
   if (!content) return null
+  content = separarBloques(content)
 
   // Dividir por bloques de párrafos (dos o más saltos de línea)
   const blocks = content.split(/\n\s*\n/)
@@ -64,6 +102,20 @@ export function renderMarkdown(content: string): React.ReactNode {
             </li>
           ))}
         </ul>
+      )
+    }
+
+    // 4b. Listas numeradas (1. paso, 2. paso...)
+    const isOrdered = lines.every((line) => /^\s*\d+[.)]\s+/.test(line))
+    if (isOrdered) {
+      return (
+        <ol key={blockIdx} className="list-decimal pl-5 space-y-1.5 text-sm leading-relaxed opacity-90 my-2.5">
+          {lines.map((line, lineIdx) => (
+            <li key={lineIdx}>
+              {renderInline(line.replace(/^\s*\d+[.)]\s+/, ''))}
+            </li>
+          ))}
+        </ol>
       )
     }
 

@@ -118,6 +118,16 @@ function LoginFormContent() {
 
         if (error) throw error
 
+        // Supabase no avisa cuando el correo ya está registrado (para no revelar
+        // qué correos existen): devuelve un usuario "falso" sin identidades y no
+        // manda ningún email. Se detecta acá para no dejar al cliente esperando
+        // un correo que nunca va a llegar.
+        if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          setMode('login')
+          setErrorMsg('Ese correo ya tiene una cuenta. Ingresá con tu contraseña o tocá "Olvidé mi contraseña" para recuperarla.')
+          return
+        }
+
         if (data.session) {
           router.push(nextParam || '/dashboard/maker')
           router.refresh()

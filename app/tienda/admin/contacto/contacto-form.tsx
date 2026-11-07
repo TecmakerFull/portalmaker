@@ -123,6 +123,8 @@ interface ContactoFormProps {
 }
 
 export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) {
+  // Una tienda solo de servicios no envía nada: no necesita origen de envíos ni datos de despacho
+  const vendeProductos = (store.tipo_negocio ?? 'productos') !== 'servicios'
   const router = useRouter()
   const effectiveQuery = tenantQuery || (store?.slug ? `?tenant=${store.slug}` : '')
 
@@ -360,7 +362,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
 
       setFeedbackUbicacion({
         type: 'ok',
-        message: '¡Ubicación y origen de envíos guardados correctamente!',
+        message: vendeProductos ? '¡Ubicación y origen de envíos guardados correctamente!' : '¡Ubicación guardada correctamente!',
       })
       router.refresh()
       setTimeout(() => setFeedbackUbicacion(null), 4000)
@@ -744,16 +746,20 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--color-borde)] pb-3">
           <div className="flex items-center gap-2 text-sm font-bold opacity-90">
             <MapPin className="w-4 h-4 text-[#CA8A04] dark:text-[#FACC15]" />
-            <span>Ubicación del Local y Origen de Envíos</span>
+            <span>{vendeProductos ? 'Ubicación del Local y Origen de Envíos' : 'Ubicación del Local'}</span>
           </div>
-          <span className="text-[11px] font-medium opacity-60 flex items-center gap-1.5">
-            <Truck className="w-3.5 h-3.5 text-amber-500" />
-            <span>Alimenta automáticamente las cotizaciones de logística</span>
-          </span>
+          {vendeProductos && (
+            <span className="text-[11px] font-medium opacity-60 flex items-center gap-1.5">
+              <Truck className="w-3.5 h-3.5 text-amber-500" />
+              <span>Alimenta automáticamente las cotizaciones de logística</span>
+            </span>
+          )}
         </div>
 
         <p className="text-xs opacity-70">
-          Ingresá la dirección de tu local, depósito o showroom. Se mostrará a tus compradores para retiros presenciales y se utilizará como punto de origen para calcular tarifas de paquetería (Correo Argentino, Andreani, etc.).
+          {vendeProductos
+            ? 'Ingresá la dirección de tu local, depósito o showroom. Se mostrará a tus compradores para retiros presenciales y se utilizará como punto de origen para calcular tarifas de paquetería (Correo Argentino, Andreani, etc.).'
+            : 'Ingresá la dirección de tu local o consultorio. Se muestra a tus clientes en la tienda y en el email de confirmación de cada turno.'}
         </p>
 
         {/* Campos estructurados de dirección con autocompletado en tiempo real Georef */}
@@ -870,7 +876,8 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
           </p>
         </div>
 
-        {/* Acordeón de datos fiscales y etiquetado oficial de envíos (opcional) */}
+        {/* Acordeón de datos fiscales y etiquetado oficial de envíos (solo tiendas con productos) */}
+        {vendeProductos && (
         <div className="pt-3 border-t border-[var(--color-borde)]">
           <button
             type="button"
@@ -918,6 +925,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
             </div>
           )}
         </div>
+        )}
 
         {/* Feedback y Botón Guardar propio */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[var(--color-borde)]">

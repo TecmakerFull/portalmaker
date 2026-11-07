@@ -58,8 +58,9 @@ export function getDefaultStoreSections(
     content: [
       {
         id: 'msg-1',
-        texto: 'Envíos a todo el país',
-        icono: 'Truck',
+        // Una tienda solo de servicios no envía nada
+        texto: store.tipo_negocio === 'servicios' ? 'Reservá tu turno online' : 'Envíos a todo el país',
+        icono: store.tipo_negocio === 'servicios' ? 'Clock' : 'Truck',
         link_url: '',
         activo: true,
         orden: 1,

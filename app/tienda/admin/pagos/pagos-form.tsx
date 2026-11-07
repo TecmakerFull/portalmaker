@@ -283,7 +283,9 @@ export default function PagosForm({
                 </div>
                 <p className="text-xs opacity-70 mt-1 max-w-2xl">
                   {checkoutActivo
-                    ? 'Tus clientes pueden agregar productos al carrito, calcular envíos y pagar directamente con Mercado Pago o Transferencia Bancaria.'
+                    ? (store.tipo_negocio === 'servicios'
+                        ? 'Tus clientes pueden pagar una seña con Mercado Pago al reservar un turno.'
+                        : 'Tus clientes pueden agregar productos al carrito, calcular envíos y pagar directamente con Mercado Pago o Transferencia Bancaria.')
                     : 'La tienda opera como catálogo vidriera: el botón de comprar y consultar conecta directamente a los compradores a tu WhatsApp con el producto preseleccionado.'}
                 </p>
               </div>

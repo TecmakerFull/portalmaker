@@ -11,6 +11,7 @@ import {
   Palette,
   FolderTree,
   Package,
+  CalendarCheck,
   Layers,
   ShoppingBag,
   CreditCard,
@@ -85,8 +86,43 @@ export default function GuiaView({
       ],
     },
     {
+      num: 14,
+      category: 'tienda' as const,
+      soloServicios: true,
+      title: 'Servicios, Horarios y Turnos (Tu agenda)',
+      tag: 'La parte más importante',
+      icon: CalendarCheck,
+      color: 'from-emerald-500/20 to-emerald-500/5 text-emerald-600 dark:text-emerald-400 border-emerald-400/30',
+      href: `/tienda/admin/servicios${tenantQuery}`,
+      buttonText: 'Cargar mis servicios',
+      summary: 'Cargá lo que ofrecés, definí cuándo atendés y recibí turnos online sin llamadas.',
+      details: [
+        {
+          sub: '1. Cargá tus servicios',
+          desc: 'En Servicios tocá "Nuevo servicio". Poné el nombre, cuánto dura (30 min, 1 h...), el precio y, si lo necesitás, un tiempo libre después para preparar al siguiente cliente. Cada servicio tiene su propia duración.',
+        },
+        {
+          sub: '2. Definí tus horarios',
+          desc: 'En Horarios y reglas elegí los días y las horas en que atendés. Podés cargar dos horarios por día (por ejemplo mañana y tarde) y bloquear vacaciones o feriados.',
+        },
+        {
+          sub: '3. Reglas de reserva',
+          desc: 'Elegí con cuánta anticipación se puede reservar, hasta cuándo se ve tu agenda, cuánto antes puede cancelar el cliente y si querés aprobar cada turno antes de confirmarlo.',
+        },
+        {
+          sub: '4. Cobrar una seña (opcional)',
+          desc: 'Con Mercado Pago conectado podés pedir un porcentaje, un monto fijo o el total para confirmar el turno. Si no pagan a tiempo, el horario se libera solo.',
+        },
+        {
+          sub: '5. Tu agenda',
+          desc: 'En Agenda ves los turnos día por día: podés confirmar, marcar si asistieron, cancelar y cargar a mano los que te piden por teléfono o WhatsApp. Si alguien cancela, avisamos por email a quienes esperaban ese día.',
+        },
+      ],
+    },
+    {
       num: 2,
       category: 'tienda' as const,
+      soloProductos: true,
       title: 'Crea tus Categorías (Los cajones)',
       tag: 'Organización del catálogo',
       icon: FolderTree,
@@ -108,6 +144,7 @@ export default function GuiaView({
     {
       num: 3,
       category: 'tienda' as const,
+      soloProductos: true,
       title: 'Productos y Variantes (Tu vidriera)',
       tag: 'La parte más importante',
       icon: Package,
@@ -216,6 +253,7 @@ export default function GuiaView({
     {
       num: 7,
       category: 'tienda' as const,
+      soloProductos: true,
       title: 'Envíos a Todo el País con Zipnova (Multicourier)',
       tag: 'Andreani, Correo Argentino y OCA',
       icon: Truck,
@@ -394,8 +432,20 @@ export default function GuiaView({
     },
   ]
 
+  // Qué ofrece la tienda: se ocultan los pasos que no aplican (por ejemplo, una
+  // tienda solo de servicios no tiene productos, envíos ni reseñas de productos).
+  const tipoNegocio = store.tipo_negocio ?? 'productos'
+  const vendeProductos = tipoNegocio !== 'servicios'
+  const daTurnos = tipoNegocio !== 'productos'
+  const stepsDelTipo = steps.filter((s) => {
+    const paso = s as { soloProductos?: boolean; soloServicios?: boolean }
+    if (paso.soloProductos && !vendeProductos) return false
+    if (paso.soloServicios && !daTurnos) return false
+    return true
+  })
+
   // Filtrado por categoría temática
-  const filteredSteps = steps.filter((s) => {
+  const filteredSteps = stepsDelTipo.filter((s) => {
     if (filterCategory === 'todos') return true
     if (filterCategory === 'tienda') return s.category === 'tienda'
     if (filterCategory === 'avanzado') return s.category === 'avanzado'
@@ -498,7 +548,7 @@ export default function GuiaView({
 
       {/* Lista de Pasos con Acordeón Desplegable */}
       <div className="space-y-3.5">
-        {filteredSteps.map((step) => {
+        {filteredSteps.map((step, indice) => {
           const Icon = step.icon
           const isExpanded = expandedStep === step.num
 
@@ -534,7 +584,7 @@ export default function GuiaView({
                   <div className="space-y-0.5">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                        Paso {step.num}
+                        Paso {indice + 1}
                       </span>
                       <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
                         {step.tag}

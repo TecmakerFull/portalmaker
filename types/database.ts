@@ -834,7 +834,9 @@ export interface StoreCustomer {
 export interface ProductReview {
   id: UUID;
   store_id: UUID;
-  product_id: UUID;
+  // Una reseña es de un producto o de un servicio (exactamente uno de los dos)
+  product_id: UUID | null;
+  service_id?: UUID | null;
   user_email: string;
   user_name: string;
   rating: number; // 1 a 5

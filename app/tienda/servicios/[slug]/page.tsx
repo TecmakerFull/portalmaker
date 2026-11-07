@@ -15,8 +15,11 @@ import StorefrontHeaderFlow from '../../sections/storefront-header-flow'
 import StoreFooter from '../../sections/store-footer'
 import BookingWidget from './booking-widget'
 import { getTrustIcon } from '@/lib/trust-icons'
+import { renderMarkdown, textoPlano } from '@/lib/markdown'
+import ServiceReviews from './service-reviews'
+import ServiceGallery from './service-gallery'
 import { Clock } from 'lucide-react'
-import type { Service } from '@/types/database'
+import type { Service, ProductReview } from '@/types/database'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -44,7 +47,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { service } = await getService(slug)
   if (!service) return {}
 
-  const description = service.descripcion?.slice(0, 160) || `Reservá ${service.nombre} online en ${tenant.store.nombre}.`
+  // El texto puede tener formato: para el resumen de Google y WhatsApp se quitan los símbolos
+  const plano = textoPlano(service.descripcion)
+  const description = plano.slice(0, 160) || `Reservá ${service.nombre} online en ${tenant.store.nombre}.`
   const path = `/tienda/servicios/${slug}`
   const images = service.imagenes?.[0] ? [{ url: service.imagenes[0], alt: service.nombre }] : []
   return {
@@ -68,6 +73,15 @@ export default async function ServicioPage({ params }: PageProps) {
   if (!service) notFound()
 
   const supabase = await createSupabaseServerClient()
+  // Reseñas visibles del servicio (sin el email de quien las escribió)
+  const { data: reseñasRaw } = await supabase
+    .from('product_reviews')
+    .select('id, store_id, product_id, service_id, user_name, rating, comentario, visible, created_at')
+    .eq('service_id', service.id)
+    .eq('visible', true)
+    .order('created_at', { ascending: false })
+  const reseñas = (reseñasRaw ?? []).map((r) => ({ ...r, user_email: '' })) as ProductReview[]
+
   const [resolvedSections, extraSections, { settings }] = await Promise.all([
     getStoreSections(supabase, store.id, store, false),
     getStoreExtraSections(store),
@@ -87,9 +101,7 @@ export default async function ServicioPage({ params }: PageProps) {
         <main className="wrap py-8 sm:py-12 grid gap-8 lg:grid-cols-[1fr_1.1fr] items-start">
           {/* Detalle del servicio */}
           <div className="space-y-4">
-            {service.imagenes?.[0] && (
-              <img src={service.imagenes[0]} alt={service.nombre} className="w-full aspect-[4/3] object-cover rounded-2xl border border-black/10 dark:border-white/10" />
-            )}
+            <ServiceGallery imagenes={service.imagenes ?? []} nombre={service.nombre} />
             <div>
               <h1 className="text-2xl sm:text-3xl font-semibold font-[var(--font-heading)] leading-tight">{service.nombre}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
@@ -103,7 +115,7 @@ export default async function ServicioPage({ params }: PageProps) {
                 )}
               </div>
             </div>
-            {service.descripcion && <p className="text-sm leading-relaxed opacity-80 whitespace-pre-line">{service.descripcion}</p>}
+            {service.descripcion && <div className="max-w-none">{renderMarkdown(service.descripcion)}</div>}
 
             {trustItems.length > 0 && (
               <div className="grid gap-3 border-t border-black/10 dark:border-white/10 pt-4 text-xs opacity-75">
@@ -134,6 +146,14 @@ export default async function ServicioPage({ params }: PageProps) {
             tenantQuery={tenantQuery}
           />
         </main>
+
+        <ServiceReviews
+          storeId={store.id}
+          serviceId={service.id}
+          serviceSlug={service.slug}
+          initialReviews={reseñas}
+          tenantQuery={tenantQuery}
+        />
       </div>
 
       <StoreFooter store={store} tenantQuery={tenantQuery} />

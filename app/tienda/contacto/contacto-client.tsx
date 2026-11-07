@@ -298,7 +298,9 @@ export default function ContactoClient({ store, tenantQuery }: ContactoClientPro
               ¿Una duda sobre tu pedido?
             </h2>
             <p className="mt-1.5 text-xs sm:text-sm leading-relaxed opacity-75 text-[var(--color-texto)]">
-              Consulta información de envíos, devoluciones y tiempos de producción.
+              {store.tipo_negocio === 'servicios'
+                ? 'Consultá por tu turno, cambios de horario o cualquier duda sobre nuestros servicios.'
+                : 'Consulta información de envíos, devoluciones y tiempos de producción.'}
             </p>
             <div className="mt-3">
               <Link
@@ -452,10 +454,20 @@ export default function ContactoClient({ store, tenantQuery }: ContactoClientPro
                   onChange={(e) => setMotivo(e.target.value)}
                   className="w-full h-11 px-3.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-superficie)] text-xs sm:text-sm outline-none focus:border-[var(--color-primario)] focus:ring-1 focus:ring-[var(--color-primario)] text-[var(--color-texto)]"
                 >
-                  <option value="Información de un producto">Información de un producto</option>
-                  <option value="Presupuesto / Cotización especial">Presupuesto / Cotización especial</option>
-                  <option value="Estado de mi pedido">Estado de mi pedido</option>
-                  <option value="Envíos y devoluciones">Envíos y devoluciones</option>
+                  {store.tipo_negocio === 'servicios' ? (
+                    <>
+                      <option value="Información de un servicio">Información de un servicio</option>
+                      <option value="Presupuesto / Cotización especial">Presupuesto / Cotización especial</option>
+                      <option value="Mi turno">Consulta sobre mi turno</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="Información de un producto">Información de un producto</option>
+                      <option value="Presupuesto / Cotización especial">Presupuesto / Cotización especial</option>
+                      <option value="Estado de mi pedido">Estado de mi pedido</option>
+                      <option value="Envíos y devoluciones">Envíos y devoluciones</option>
+                    </>
+                  )}
                   <option value="Otro motivo">Otro motivo</option>
                 </select>
               </label>
