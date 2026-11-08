@@ -103,7 +103,7 @@ export default async function ServicioPage({ params }: PageProps) {
             descripción a la izquierda y la reserva a la derecha. En el celular el
             orden es: título, fotos, reserva y recién después el texto largo, para
             que quien viene a sacar turno no tenga que bajar para encontrarlo. */}
-        <main className="wrap py-8 sm:py-12 grid gap-x-8 gap-y-6 lg:grid-cols-[1fr_1.1fr] items-start">
+        <main className="wrap py-8 sm:py-12 grid gap-x-8 gap-y-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] items-start">
           <header className="lg:col-span-2 border-b border-black/10 dark:border-white/10 pb-5">
             <h1 className="text-2xl sm:text-3xl font-semibold font-[var(--font-heading)] leading-tight">{service.nombre}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
@@ -114,12 +114,12 @@ export default async function ServicioPage({ params }: PageProps) {
             </div>
           </header>
 
-          <div className="lg:col-start-1 lg:row-start-2">
+          <div className="min-w-0 lg:col-start-1 lg:row-start-2">
             <ServiceGallery imagenes={service.imagenes ?? []} nombre={service.nombre} />
           </div>
 
           {/* Reserva: día, horario y confirmación */}
-          <div className="lg:col-start-2 lg:row-start-2 lg:row-span-2 lg:sticky lg:top-6">
+          <div className="min-w-0 lg:col-start-2 lg:row-start-2 lg:row-span-2 lg:sticky lg:top-6">
             <BookingWidget
               storeId={store.id}
               storeNombre={store.nombre}
@@ -134,7 +134,7 @@ export default async function ServicioPage({ params }: PageProps) {
             />
           </div>
 
-          <div className="lg:col-start-1 lg:row-start-3 space-y-4">
+          <div className="min-w-0 lg:col-start-1 lg:row-start-3 space-y-4">
             {service.descripcion && <div className="max-w-none">{renderMarkdown(service.descripcion)}</div>}
 
             {trustItems.length > 0 && (

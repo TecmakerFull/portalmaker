@@ -281,7 +281,9 @@ export default function BookingWidget({ storeId, storeNombre, service, zona, max
       {/* 1. Día */}
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wider opacity-60">1. Elegí el día</p>
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+        {/* Cuadrícula que baja de renglón: sin scroll hacia los costados, que en el celular
+            ensanchaba toda la página */}
+        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
           {diasTira.map((f) => {
             const libres = dias[f]?.length ?? 0
             const lleno = libres === 0 && completos.has(f)
@@ -298,7 +300,7 @@ export default function BookingWidget({ storeId, storeNombre, service, zona, max
                   setError(null)
                   setEspera({ enviando: false, ok: null })
                 }}
-                className={`shrink-0 min-w-[58px] min-h-[68px] rounded-2xl border flex flex-col items-center justify-center gap-0.5 transition-colors ${
+                className={`w-full min-h-[68px] rounded-2xl border flex flex-col items-center justify-center gap-0.5 transition-colors ${
                   activo
                     ? 'border-[var(--color-primario)] bg-[var(--color-primario)] text-[var(--color-primario-texto)]'
                     : libres > 0
@@ -319,7 +321,7 @@ export default function BookingWidget({ storeId, storeNombre, service, zona, max
               type="button"
               disabled={cargando}
               onClick={() => cargarDias(diasCargados)}
-              className="shrink-0 min-w-[72px] min-h-[68px] rounded-2xl border border-dashed border-black/20 dark:border-white/20 text-xs font-semibold cursor-pointer"
+              className="w-full min-h-[68px] rounded-2xl border border-dashed border-black/20 dark:border-white/20 text-xs font-semibold cursor-pointer"
             >
               {cargando ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Más días'}
             </button>
