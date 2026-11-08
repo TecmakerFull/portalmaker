@@ -49,6 +49,9 @@ function MainHeaderInner({
 
   // Estado del cliente con sesión activa
   const [activeCustomer, setActiveCustomer] = useState<{ email: string; nombre?: string } | null>(null)
+  // Turnos próximos del cliente con sesión: se muestran como aviso sobre el ícono de cuenta
+  const [turnosProximos, setTurnosProximos] = useState(0)
+  const daTurnos = (store.tipo_negocio ?? 'productos') !== 'productos'
 
   useEffect(() => {
     // 1. Obtener sesión actual
@@ -79,6 +82,35 @@ function MainHeaderInner({
       subscription.unsubscribe()
     }
   }, [])
+
+  // La política de la base deja a cada cliente leer solo sus propios turnos, así que el
+  // conteo es siempre el suyo. Se refresca al volver a la pestaña (por si reservó en otra).
+  useEffect(() => {
+    if (!daTurnos || !activeCustomer?.email) return
+    let cancelado = false
+    const contar = async () => {
+      const { count } = await supabase
+        .from('bookings')
+        .select('id', { count: 'exact', head: true })
+        .eq('store_id', store.id)
+        .in('estado', ['pendiente', 'confirmado'])
+        .gte('starts_at', new Date().toISOString())
+      if (!cancelado) setTurnosProximos(count ?? 0)
+    }
+    contar()
+    const alVolver = () => {
+      if (document.visibilityState === 'visible') contar()
+    }
+    document.addEventListener('visibilitychange', alVolver)
+    return () => {
+      cancelado = true
+      document.removeEventListener('visibilitychange', alVolver)
+    }
+  }, [daTurnos, activeCustomer?.email, store.id])
+
+  // Al cerrar sesión no queda el número anterior
+  const turnosMostrados = daTurnos && activeCustomer ? turnosProximos : 0
+  const textoTurnos = turnosMostrados === 1 ? 'Tenés 1 turno próximo' : `Tenés ${turnosMostrados} turnos próximos`
 
   const {
     mostrar_logo = true,
@@ -255,13 +287,16 @@ function MainHeaderInner({
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               type="button"
-              className={`min-w-[40px] min-h-[40px] -ml-1 rounded-xl items-center justify-center text-[var(--color-texto)] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer ${
+              className={`relative min-w-[40px] min-h-[40px] -ml-1 rounded-xl items-center justify-center text-[var(--color-texto)] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer ${
                 isMobile ? 'flex' : 'flex md:hidden'
               }`}
               aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú de navegación'}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {!mobileMenuOpen && turnosMostrados > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-[var(--color-primario)] ring-2 ring-[var(--color-fondo)]" aria-hidden="true" />
+              )}
             </button>
 
             {!isMobile && mostrar_buscador && renderSearchBar('w-full max-w-[240px] lg:max-w-[320px]')}
@@ -288,10 +323,10 @@ function MainHeaderInner({
                   }
                   aria-label={
                     activeCustomer
-                      ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email})`
+                      ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email})${turnosMostrados > 0 ? `. ${textoTurnos}` : ''}`
                       : 'Ingresar a mi cuenta'
                   }
-                  className={`hidden md:flex min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border items-center justify-center transition-all active:scale-95 cursor-pointer ${
+                  className={`relative hidden md:flex min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border items-center justify-center transition-all active:scale-95 cursor-pointer ${
                     activeCustomer
                       ? 'border-[var(--color-primario)]/50 bg-[var(--color-primario)]/15 text-[var(--color-primario)] ring-1 ring-[var(--color-primario)]/30'
                       : 'border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)]'
@@ -301,6 +336,14 @@ function MainHeaderInner({
                     <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primario)]" />
                   ) : (
                     <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-90" />
+                  )}
+                  {turnosMostrados > 0 && (
+                    <span
+                      className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[11px] font-semibold flex items-center justify-center shadow-xs"
+                      aria-hidden="true"
+                    >
+                      {turnosMostrados}
+                    </span>
                   )}
                 </Link>
 
@@ -350,13 +393,16 @@ function MainHeaderInner({
           <div className="flex min-w-0 items-center gap-2 sm:gap-4">
             <button
               type="button"
-              className={`min-w-[40px] min-h-[40px] -ml-2 rounded-xl items-center justify-center text-[var(--color-texto)] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer ${
+              className={`relative min-w-[40px] min-h-[40px] -ml-2 rounded-xl items-center justify-center text-[var(--color-texto)] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer ${
                 isMobile ? 'flex' : 'flex md:hidden'
               }`}
               aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú de navegación'}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {!mobileMenuOpen && turnosMostrados > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-[var(--color-primario)] ring-2 ring-[var(--color-fondo)]" aria-hidden="true" />
+              )}
             </button>
 
             {renderLogoAndBrand(false)}
@@ -380,10 +426,10 @@ function MainHeaderInner({
                   }
                   aria-label={
                     activeCustomer
-                      ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email})`
+                      ? `Mi cuenta (${activeCustomer.nombre || activeCustomer.email})${turnosMostrados > 0 ? `. ${textoTurnos}` : ''}`
                       : 'Ingresar a mi cuenta'
                   }
-                  className={`hidden md:flex min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border items-center justify-center transition-all active:scale-95 cursor-pointer ${
+                  className={`relative hidden md:flex min-w-[40px] min-h-[40px] w-10 h-10 rounded-xl border items-center justify-center transition-all active:scale-95 cursor-pointer ${
                     activeCustomer
                       ? 'border-[var(--color-primario)]/50 bg-[var(--color-primario)]/15 text-[var(--color-primario)] ring-1 ring-[var(--color-primario)]/30'
                       : 'border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-texto)]'
@@ -393,6 +439,14 @@ function MainHeaderInner({
                     <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-primario)]" />
                   ) : (
                     <UserRound className="w-4 h-4 sm:w-5 sm:h-5 opacity-90" />
+                  )}
+                  {turnosMostrados > 0 && (
+                    <span
+                      className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-[11px] font-semibold flex items-center justify-center shadow-xs"
+                      aria-hidden="true"
+                    >
+                      {turnosMostrados}
+                    </span>
                   )}
                 </Link>
 
@@ -547,6 +601,11 @@ function MainHeaderInner({
                 {activeCustomer && (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-primario)]/15 text-[var(--color-primario)] font-medium">
                     Conectado
+                  </span>
+                )}
+                {turnosMostrados > 0 && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-primario)] text-[var(--color-primario-texto)] font-semibold">
+                    {turnosMostrados === 1 ? '1 turno' : `${turnosMostrados} turnos`}
                   </span>
                 )}
               </div>

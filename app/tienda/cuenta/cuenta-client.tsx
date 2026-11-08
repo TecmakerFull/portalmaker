@@ -10,9 +10,10 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import type { Store, ProductReview } from '@/types/database'
+import type { Store, ProductReview, Booking } from '@/types/database'
 import { createSupabaseBrowserClient, cerrarSesionCompleta } from '@/lib/supabase/client'
 import { useCart } from '@/lib/cart-context'
+import { formatFechaTurno } from '@/lib/booking/format'
 import {
   UserRound,
   Heart,
@@ -37,16 +38,29 @@ import {
   CheckCircle2,
   Sparkles,
   RotateCcw,
+  CalendarCheck,
+  ChevronRight,
 } from 'lucide-react'
 
 interface CuentaClientProps {
   store: Store
   tenantQuery: string
+  /** Zona horaria de la tienda, para mostrar los turnos a la hora correcta. */
+  zonaHoraria?: string
+}
+
+const ESTADO_TURNO: Record<string, string> = {
+  pendiente: 'Por confirmar',
+  confirmado: 'Confirmado',
+  completado: 'Realizado',
+  ausente: 'No asististe',
+  cancelado: 'Cancelado',
+  expirado: 'Vencido',
 }
 
 type AuthMode = 'login' | 'register' | 'recover' | 'magic-link' | 'reset'
 
-export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) {
+export default function CuentaClient({ store, tenantQuery, zonaHoraria = 'America/Argentina/Buenos_Aires' }: CuentaClientProps) {
   const router = useRouter()
   const supabase = createSupabaseBrowserClient()
   const { favorites } = useCart()
@@ -69,7 +83,11 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
   const [orders, setOrders] = useState<any[]>([])
   const [reviews, setReviews] = useState<(ProductReview & { product?: { nombre: string; slug: string } | null })[]>([])
   const [loadingData, setLoadingData] = useState(false)
-  const [activeTab, setActiveTab] = useState<'resumen' | 'pedidos' | 'datos' | 'resenas'>('resumen')
+  const [activeTab, setActiveTab] = useState<'resumen' | 'pedidos' | 'turnos' | 'datos' | 'resenas'>('resumen')
+  // Qué ofrece la tienda: pedidos solo si vende productos, turnos solo si da turnos
+  const vendeProductos = (store.tipo_negocio ?? 'productos') !== 'servicios'
+  const daTurnos = (store.tipo_negocio ?? 'productos') !== 'productos'
+  const [turnos, setTurnos] = useState<Booking[]>([])
 
   // Datos de perfil y envío del usuario para administrar
   const [profileNombre, setProfileNombre] = useState('')
@@ -118,6 +136,17 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
         .eq('store_id', store.id)
         .eq('user_email', cleanEmail)
         .order('created_at', { ascending: false })
+
+      // Turnos del cliente: la base solo devuelve los suyos (política client_read_own_bookings)
+      if (daTurnos) {
+        const { data: tur } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('store_id', store.id)
+          .order('starts_at', { ascending: false })
+          .limit(60)
+        setTurnos((tur as Booking[]) || [])
+      }
 
       setOrders(ords || [])
       setReviews((revs as any[]) || [])
@@ -563,6 +592,13 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
     }
   }
 
+  // Turnos separados en próximos (activos y futuros) y anteriores
+  const ahora = new Date()
+  const esProximo = (t: Booking) => ['pendiente', 'confirmado'].includes(t.estado) && new Date(t.starts_at) >= ahora
+  const turnosProximosLista = turnos.filter(esProximo).sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+  const turnosAnteriores = turnos.filter((t) => !esProximo(t))
+  const proximoTurno = turnosProximosLista[0] ?? null
+
   // Cerrar sesión
   const handleLogout = async () => {
     await cerrarSesionCompleta()
@@ -667,6 +703,7 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
             >
               Mi Espacio
             </button>
+            {vendeProductos && (
             <button
               type="button"
               onClick={() => setActiveTab('pedidos')}
@@ -681,6 +718,23 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
                 {orders.length}
               </span>
             </button>
+            )}
+            {daTurnos && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('turnos')}
+                className={`min-h-[44px] pb-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  activeTab === 'turnos'
+                    ? 'border-[var(--color-primario)] text-[var(--color-primario)]'
+                    : 'border-transparent opacity-60 hover:opacity-100'
+                }`}
+              >
+                <span>Mis Turnos</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/5 dark:bg-white/10 font-bold">
+                  {turnos.filter((t) => ['pendiente', 'confirmado'].includes(t.estado) && new Date(t.starts_at) >= new Date()).length}
+                </span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setActiveTab('datos')}
@@ -711,7 +765,23 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
           {/* Pestaña: Mi Espacio / Resumen */}
           {activeTab === 'resumen' && (
             <div className="space-y-4">
-              {/* Acceso a Favoritos */}
+              {/* Próximo turno (tiendas con turnos) */}
+              {daTurnos && proximoTurno && (
+                <Link
+                  href={withTenant(`/tienda/turno/${proximoTurno.public_token}`)}
+                  className="w-full min-h-[52px] px-4 py-3 rounded-xl border border-[var(--color-primario)]/40 bg-[var(--color-primario)]/10 flex items-center justify-between gap-3 text-xs sm:text-sm"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-[11px] font-semibold uppercase tracking-wider text-[var(--color-primario)]">Tu próximo turno</span>
+                    <span className="block font-semibold truncate">{proximoTurno.servicio_nombre}</span>
+                    <span className="block text-xs opacity-75 capitalize">{formatFechaTurno(proximoTurno.starts_at, zonaHoraria)}</span>
+                  </span>
+                  <ArrowRight className="w-4 h-4 opacity-60 shrink-0" />
+                </Link>
+              )}
+
+              {/* Acceso a Favoritos (solo tiendas con productos) */}
+              {vendeProductos && (
               <Link
                 href={withTenant('/tienda/favoritos')}
                 className="w-full min-h-[52px] px-4 rounded-xl border border-black/15 dark:border-white/15 flex items-center justify-between hover:bg-black/5 dark:hover:bg-white/5 transition-all text-xs sm:text-sm font-semibold cursor-pointer"
@@ -727,6 +797,7 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
                   <ArrowRight className="w-4 h-4 opacity-50" />
                 </div>
               </Link>
+              )}
 
               {/* Botón Seguir explorando */}
               <Link
@@ -735,7 +806,7 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
               >
                 <span className="flex items-center gap-2.5">
                   <ShoppingBag className="w-4 h-4 text-[var(--color-primario)]" />
-                  <span>Seguir explorando el catálogo</span>
+                  <span>{vendeProductos ? 'Seguir explorando el catálogo' : 'Ver servicios y reservar un turno'}</span>
                 </span>
                 <ArrowRight className="w-4 h-4 opacity-50" />
               </Link>
@@ -744,14 +815,69 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
               <div className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 text-xs opacity-75 leading-relaxed flex items-start gap-2.5">
                 <ShieldCheck className="w-4 h-4 text-[var(--color-primario)] shrink-0 mt-0.5" />
                 <span>
-                  Tus datos están protegidos y vinculados a tus compras en <strong>{store.nombre}</strong>. Todos los pedidos se coordinan y despachan directamente desde la tienda.
+                  {vendeProductos
+                    ? <>Tus datos están protegidos y vinculados a tus compras en <strong>{store.nombre}</strong>. Todos los pedidos se coordinan y despachan directamente desde la tienda.</>
+                    : <>Tus datos están protegidos y vinculados a tus turnos en <strong>{store.nombre}</strong>.</>}
                 </span>
               </div>
             </div>
           )}
 
+          {/* Pestaña: Mis Turnos */}
+          {activeTab === 'turnos' && daTurnos && (
+            <div className="space-y-6">
+              {loadingData ? (
+                <div className="p-8 text-center text-xs opacity-60 flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-[var(--color-primario)]" />
+                  <span>Cargando tus turnos...</span>
+                </div>
+              ) : turnos.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl border border-black/10 dark:border-white/10 text-xs opacity-60 space-y-2">
+                  <CalendarCheck className="w-8 h-8 mx-auto opacity-30" />
+                  <p className="font-semibold text-sm">Todavía no tenés turnos</p>
+                  <p>Cuando reserves un turno con este correo, lo vas a ver acá para consultarlo o cancelarlo.</p>
+                </div>
+              ) : (
+                <>
+                  {[
+                    { titulo: 'Próximos', lista: turnosProximosLista },
+                    { titulo: 'Anteriores', lista: turnosAnteriores },
+                  ].map(({ titulo, lista }) =>
+                    lista.length === 0 ? null : (
+                      <section key={titulo} className="space-y-2">
+                        <h3 className="text-xs font-semibold uppercase tracking-wider opacity-60">{titulo}</h3>
+                        <ul className="space-y-2">
+                          {lista.map((t) => {
+                            const esperandoSena = t.estado === 'pendiente' && Boolean(t.pendiente_expira_at)
+                            return (
+                              <li key={t.id}>
+                                <Link
+                                  href={withTenant(`/tienda/turno/${t.public_token}`)}
+                                  className="min-h-14 flex items-center justify-between gap-3 p-3 rounded-xl border border-black/10 dark:border-white/10 hover:border-[var(--color-primario)] transition-colors"
+                                >
+                                  <span className="min-w-0">
+                                    <span className="block text-sm font-semibold truncate">{t.servicio_nombre}</span>
+                                    <span className="block text-xs opacity-70 capitalize">{formatFechaTurno(t.starts_at, zonaHoraria)}</span>
+                                  </span>
+                                  <span className="flex items-center gap-1.5 shrink-0 text-xs opacity-80">
+                                    {esperandoSena ? 'Falta pagar la seña' : (ESTADO_TURNO[t.estado] ?? t.estado)}
+                                    <ChevronRight className="w-4 h-4" />
+                                  </span>
+                                </Link>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      </section>
+                    )
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
           {/* Pestaña: Mis Pedidos con detalle de productos */}
-          {activeTab === 'pedidos' && (
+          {activeTab === 'pedidos' && vendeProductos && (
             <div className="space-y-4">
               {loadingData ? (
                 <div className="p-8 text-center text-xs opacity-60 flex items-center justify-center gap-2">
@@ -907,7 +1033,9 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
                   Administrar mis datos
                 </h2>
                 <p className="text-xs opacity-70 mt-1">
-                  Mantén tu información actualizada. Estos datos se precargarán automáticamente en el checkout para agilizar tus compras en {store.nombre}.
+                  {vendeProductos
+                    ? <>Mantén tu información actualizada. Estos datos se precargarán automáticamente en el checkout para agilizar tus compras en {store.nombre}.</>
+                    : <>Mantené tu información actualizada. {store.nombre} la usa para contactarte por tus turnos.</>}
                 </p>
               </div>
 
@@ -957,7 +1085,7 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
                 <div className="pt-2 border-t border-black/5 dark:border-white/5 space-y-3.5">
                   <p className="text-xs font-semibold opacity-70 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-[var(--color-primario)]" />
-                    <span>Dirección habitual de entrega (opcional)</span>
+                    <span>{vendeProductos ? 'Dirección habitual de entrega (opcional)' : 'Dirección (opcional)'}</span>
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
@@ -1071,7 +1199,7 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
                 <div className="p-8 text-center rounded-2xl border border-black/10 dark:border-white/10 text-xs opacity-60 space-y-2">
                   <Star className="w-8 h-8 mx-auto opacity-30" />
                   <p className="font-semibold text-sm">No has dejado reseñas todavía</p>
-                  <p>Visita cualquier producto del catálogo para compartir tu opinión y calificación.</p>
+                  <p>{vendeProductos ? 'Visita cualquier producto del catálogo para compartir tu opinión y calificación.' : 'Entrá a cualquier servicio para compartir tu opinión y calificación.'}</p>
                 </div>
               ) : (
                 reviews.map((r) => (
