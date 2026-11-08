@@ -60,7 +60,10 @@ export function createSupabaseBrowserClient() {
 export async function cerrarSesionCompleta(): Promise<void> {
   const supabase = createSupabaseBrowserClient()
   try {
-    await supabase.auth.signOut()
+    // signOut puede quedar esperando un candado interno de Supabase (por ejemplo, si
+    // otra parte de la página lo tiene tomado). Si en 1,5 s no respondió se sigue igual:
+    // lo que de verdad cierra la sesión en el navegador es borrar las cookies, más abajo.
+    await Promise.race([supabase.auth.signOut(), new Promise((resolver) => setTimeout(resolver, 1500))])
   } catch {
     // Aun si falla la red, se limpian las cookies locales
   }
