@@ -2169,6 +2169,8 @@ create table if not exists public.booking_waitlist (
     check (estado in ('esperando', 'avisado', 'resuelto', 'cancelado')),
   avisado_at        timestamptz,
   notas_admin       text,
+  -- Horario que quería al anotarse (opcional, "HH:MM" local): migración 20261108_lista_espera_hora
+  hora_preferida    text check (hora_preferida is null or hora_preferida ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'),
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now()
 );

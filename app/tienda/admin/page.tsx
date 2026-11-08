@@ -61,7 +61,7 @@ export default async function AdminHomePage() {
   const supabase = await createSupabaseServerClient()
 
   // Solo se consulta lo que corresponde al tipo de tienda
-  const [productos, servicios, profesional, clientes] = await Promise.all([
+  const [productos, servicios, profesional, clientes, porConfirmar] = await Promise.all([
     vendeProductos
       ? supabase.from('products').select('*', { count: 'exact', head: true }).eq('store_id', store.id)
       : Promise.resolve({ count: 0 }),
@@ -74,6 +74,16 @@ export default async function AdminHomePage() {
       : Promise.resolve({ count: 0 }),
     // Clientes registrados: cada uno ocupa un lugar del tope del plan
     supabase.from('store_customers').select('id', { count: 'exact', head: true }).eq('store_id', store.id),
+    // Turnos que esperan la aprobación de la tienda: son lo primero que hay que atender
+    daTurnos
+      ? supabase
+          .from('bookings')
+          .select('id', { count: 'exact', head: true })
+          .eq('store_id', store.id)
+          .eq('estado', 'pendiente')
+          .is('pendiente_expira_at', null)
+          .gte('starts_at', new Date().toISOString())
+      : Promise.resolve({ count: 0 }),
   ])
   const limiteClientes = getStoreEffectiveLimit(store, 'limite_clientes')
 
@@ -175,6 +185,23 @@ export default async function AdminHomePage() {
           </Link>
         }
       />
+
+      {(porConfirmar.count ?? 0) > 0 && (
+        <Link
+          href={`/tienda/admin/agenda${tenantQuery}`}
+          className="min-h-14 px-4 py-3 rounded-2xl border border-red-500/30 bg-red-500/5 flex items-center justify-between gap-3 text-sm"
+        >
+          <span className="flex items-center gap-3 min-w-0">
+            <span className="min-w-7 h-7 px-2 rounded-full bg-red-500 text-white text-xs font-semibold flex items-center justify-center shrink-0">
+              {porConfirmar.count}
+            </span>
+            <span className="font-semibold">
+              {porConfirmar.count === 1 ? 'Tenés 1 turno por confirmar' : `Tenés ${porConfirmar.count} turnos por confirmar`}
+            </span>
+          </span>
+          <ArrowRight className="w-4 h-4 opacity-60 shrink-0" />
+        </Link>
+      )}
 
       <ClientesUso usados={clientes.count ?? 0} limite={limiteClientes} tenantQuery={tenantQuery} modo="aviso" />
 

@@ -22,6 +22,8 @@ import { AdminPageHeader } from '../components/admin-page-header'
 import StyledSelect from '@/components/styled-select'
 import { Clock, Save, Loader2, CheckCircle2, AlertCircle, CalendarOff, Trash2, Plus, Settings2, CreditCard, CalendarSync, Copy, RefreshCw } from 'lucide-react'
 import type { SenaModo } from '@/types/database'
+import DatePicker from '@/components/date-picker'
+import TimeSelect from '@/components/time-select'
 
 const card = 'bg-[var(--color-superficie)] border border-[var(--color-borde)] rounded-3xl p-5 sm:p-7 space-y-4 text-[var(--color-texto)]'
 const inputClass = 'min-h-11 px-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-base sm:text-sm'
@@ -278,15 +280,15 @@ export default function HorariosManager({
                   </label>
                   {d.activo ? (
                     <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <input type="time" aria-label={`${label} desde`} className={inputClass} value={d.turno1.desde} onChange={(e) => setDia(key, { turno1: { ...d.turno1, desde: e.target.value } })} />
+                      <TimeSelect aria-label={`${label} desde`} value={d.turno1.desde} onChange={(v) => setDia(key, { turno1: { ...d.turno1, desde: v } })} />
                       <span className="opacity-60">a</span>
-                      <input type="time" aria-label={`${label} hasta`} className={inputClass} value={d.turno1.hasta} onChange={(e) => setDia(key, { turno1: { ...d.turno1, hasta: e.target.value } })} />
+                      <TimeSelect aria-label={`${label} hasta`} value={d.turno1.hasta} onChange={(v) => setDia(key, { turno1: { ...d.turno1, hasta: v } })} />
                       {d.dobleTurno ? (
                         <>
                           <span className="opacity-60">y</span>
-                          <input type="time" aria-label={`${label} segundo horario desde`} className={inputClass} value={d.turno2.desde} onChange={(e) => setDia(key, { turno2: { ...d.turno2, desde: e.target.value } })} />
+                          <TimeSelect aria-label={`${label} segundo horario desde`} value={d.turno2.desde} onChange={(v) => setDia(key, { turno2: { ...d.turno2, desde: v } })} />
                           <span className="opacity-60">a</span>
-                          <input type="time" aria-label={`${label} segundo horario hasta`} className={inputClass} value={d.turno2.hasta} onChange={(e) => setDia(key, { turno2: { ...d.turno2, hasta: e.target.value } })} />
+                          <TimeSelect aria-label={`${label} segundo horario hasta`} value={d.turno2.hasta} onChange={(v) => setDia(key, { turno2: { ...d.turno2, hasta: v } })} />
                           <button type="button" onClick={() => setDia(key, { dobleTurno: false })} className="min-h-11 px-2 text-xs opacity-70 hover:opacity-100 cursor-pointer">Quitar</button>
                         </>
                       ) : (
@@ -322,20 +324,20 @@ export default function HorariosManager({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <label className="space-y-1.5">
             <span className="text-xs font-semibold opacity-75 block">{nuevo.todoElDia ? 'Desde el día' : 'Día'}</span>
-            <input type="date" className={`${inputClass} w-full`} min={hoy} value={nuevo.desde} onChange={(e) => setNuevo((n) => ({ ...n, desde: e.target.value, hasta: n.hasta < e.target.value ? e.target.value : n.hasta }))} />
+            <DatePicker min={hoy} value={nuevo.desde} onChange={(v) => setNuevo((n) => ({ ...n, desde: v, hasta: n.hasta < v ? v : n.hasta }))} />
           </label>
           {nuevo.todoElDia ? (
             <label className="space-y-1.5">
               <span className="text-xs font-semibold opacity-75 block">Hasta el día</span>
-              <input type="date" className={`${inputClass} w-full`} min={nuevo.desde} value={nuevo.hasta} onChange={(e) => setNuevo((n) => ({ ...n, hasta: e.target.value }))} />
+              <DatePicker min={nuevo.desde} value={nuevo.hasta} onChange={(v) => setNuevo((n) => ({ ...n, hasta: v }))} />
             </label>
           ) : (
             <div className="space-y-1.5">
               <span className="text-xs font-semibold opacity-75 block">Horario</span>
               <div className="flex items-center gap-2">
-                <input type="time" aria-label="Desde" className={inputClass} value={nuevo.horaDesde} onChange={(e) => setNuevo((n) => ({ ...n, horaDesde: e.target.value }))} />
+                <TimeSelect aria-label="Desde" value={nuevo.horaDesde} onChange={(v) => setNuevo((n) => ({ ...n, horaDesde: v }))} />
                 <span className="opacity-60">a</span>
-                <input type="time" aria-label="Hasta" className={inputClass} value={nuevo.horaHasta} onChange={(e) => setNuevo((n) => ({ ...n, horaHasta: e.target.value }))} />
+                <TimeSelect aria-label="Hasta" value={nuevo.horaHasta} onChange={(v) => setNuevo((n) => ({ ...n, horaHasta: v }))} />
               </div>
             </div>
           )}

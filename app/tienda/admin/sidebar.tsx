@@ -138,6 +138,38 @@ export default function AdminSidebar({
   const vendeProductos = tipoNegocio !== 'servicios'
   const daTurnos = tipoNegocio !== 'productos'
 
+  // Turnos esperando la aprobación de la tienda (no cuenta los que esperan el pago de la seña).
+  // Se muestra como un número sobre "Agenda", igual que los correos sin abrir: es algo que
+  // la dueña tiene que resolver. Se actualiza al navegar, al volver a la pestaña, cada
+  // minuto y cuando la Agenda aprueba o rechaza un turno.
+  const [porConfirmar, setPorConfirmar] = useState(0)
+  useEffect(() => {
+    if (!daTurnos) return
+    let cancelado = false
+    const contar = async () => {
+      const { count } = await supabase
+        .from('bookings')
+        .select('id', { count: 'exact', head: true })
+        .eq('store_id', store.id)
+        .eq('estado', 'pendiente')
+        .is('pendiente_expira_at', null)
+        .gte('starts_at', new Date().toISOString())
+      if (!cancelado) setPorConfirmar(count ?? 0)
+    }
+    contar()
+    const alVolver = () => document.visibilityState === 'visible' && contar()
+    const cadaMinuto = setInterval(contar, 60000)
+    document.addEventListener('visibilitychange', alVolver)
+    window.addEventListener('pm-turnos-actualizados', contar)
+    return () => {
+      cancelado = true
+      clearInterval(cadaMinuto)
+      document.removeEventListener('visibilitychange', alVolver)
+      window.removeEventListener('pm-turnos-actualizados', contar)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [daTurnos, store.id, pathname])
+
   const currentPlan = getPlanConfig(store.plan)
   const canEnvios = isFeatureAllowed(store, 'envios_zonas_fijas') || isFeatureAllowed(store, 'envios_couriers')
   const canCheckout = isFeatureAllowed(store, 'checkout_online') || isFeatureAllowed(store, 'mercado_pago')
@@ -430,7 +462,18 @@ export default function AdminSidebar({
                 }`}
               >
                 <Icon className="w-4 h-4" />
-                <span>{label}</span>
+                <span className="flex-1">{label}</span>
+                {href.endsWith('/agenda') && porConfirmar > 0 && (
+                  <span
+                    className={`min-w-6 h-6 px-1.5 rounded-full text-[11px] font-semibold flex items-center justify-center ${
+                      active ? 'bg-[#1F2937] text-[#FACC15]' : 'bg-red-500 text-white'
+                    }`}
+                    title={`${porConfirmar} por confirmar`}
+                    aria-label={`${porConfirmar} turnos por confirmar`}
+                  >
+                    {porConfirmar}
+                  </span>
+                )}
               </Link>
             ))}
           </div>
@@ -749,9 +792,12 @@ export default function AdminSidebar({
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/50 text-[var(--color-texto)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+            className="relative min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)]/50 text-[var(--color-texto)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {!mobileMenuOpen && porConfirmar > 0 && (
+              <span className="absolute top-1 right-1 w-3 h-3 rounded-full bg-red-500 ring-2 ring-[var(--color-superficie)]" aria-hidden="true" />
+            )}
           </button>
 
           {/* Logo + Nombre */}

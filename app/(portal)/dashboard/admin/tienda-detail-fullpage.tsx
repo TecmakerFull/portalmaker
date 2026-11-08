@@ -64,6 +64,7 @@ import {
 } from 'lucide-react'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 import Select from '@/components/native-select'
+import DatePicker from '@/components/date-picker'
 
 interface StoreLiveMetrics {
   totalOrders: number
@@ -1298,13 +1299,9 @@ export default function SuperadminTiendaDetailFullpage({
                       <label className="block font-medium mb-1.5 opacity-80">
                         Próximo Vencimiento
                       </label>
-                      <input
-                        type="date"
+                      <DatePicker
                         value={subEditForm.fecha_proximo_vencimiento || ''}
-                        onChange={(e) =>
-                          setSubEditForm({ ...subEditForm, fecha_proximo_vencimiento: e.target.value })
-                        }
-                        className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                        onChange={(v) => setSubEditForm({ ...subEditForm, fecha_proximo_vencimiento: v })}
                       />
                     </div>
 
@@ -2265,26 +2262,14 @@ export default function SuperadminTiendaDetailFullpage({
 
                   <div>
                     <label className="block font-medium mb-1.5 opacity-80">Fecha de Cobro Real</label>
-                    <input
-                      type="date"
-                      required
-                      value={paymentFecha}
-                      onChange={(e) => setPaymentFecha(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                    />
+                    <DatePicker value={paymentFecha} onChange={setPaymentFecha} />
                   </div>
 
                   <div>
                     <label className="block font-medium mb-1.5 opacity-80">
                       Nuevo Vencimiento (Hasta)
                     </label>
-                    <input
-                      type="date"
-                      required
-                      value={paymentPeriodoHasta}
-                      onChange={(e) => setPaymentPeriodoHasta(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
-                    />
+                    <DatePicker value={paymentPeriodoHasta} onChange={setPaymentPeriodoHasta} />
                   </div>
 
                   <div className="sm:col-span-2 lg:col-span-4">

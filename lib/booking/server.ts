@@ -88,7 +88,13 @@ export async function getHorariosDisponibles(params: {
   desde: string
   dias: number
   ahora?: Date
-}): Promise<{ zonaHoraria: string; dias: Record<string, HorarioOfrecido[]>; completos: string[] }> {
+}): Promise<{
+  zonaHoraria: string
+  dias: Record<string, HorarioOfrecido[]>
+  completos: string[]
+  /** Horarios del día que están ocupados: se muestran sombreados para anotarse en la lista de espera. */
+  ocupados: Record<string, { inicio: string; etiqueta: string }[]>
+}> {
   const { store, service } = params
   const ahora = params.ahora ?? new Date()
   const dias = Math.min(Math.max(params.dias, 1), 42)
@@ -96,9 +102,10 @@ export async function getHorariosDisponibles(params: {
   const reglas = reglasDesde(settings)
 
   const resultado: Record<string, HorarioOfrecido[]> = {}
+  const ocupadosPorDia: Record<string, { inicio: string; etiqueta: string }[]> = {}
   // Días en que se atiende pero no queda lugar: ahí se ofrece la lista de espera.
   const completos: string[] = []
-  if (staff.length === 0) return { zonaHoraria: reglas.zonaHoraria, dias: resultado, completos }
+  if (staff.length === 0) return { zonaHoraria: reglas.zonaHoraria, dias: resultado, completos, ocupados: ocupadosPorDia }
 
   const rangoDesde = localAUtc(params.desde, '00:00', reglas.zonaHoraria)
   const rangoHasta = localAUtc(sumarDias(params.desde, dias), '00:00', reglas.zonaHoraria)
@@ -107,6 +114,8 @@ export async function getHorariosDisponibles(params: {
   for (let i = 0; i < dias; i++) {
     const fecha = sumarDias(params.desde, i)
     const porInicio = new Map<number, HorarioOfrecido>()
+    // Todos los horarios que la agenda ofrecería sin turnos ocupados (de cualquier profesional)
+    const grilla = new Map<number, { inicio: string; etiqueta: string }>()
 
     for (const profesional of staff) {
       const horarios = calcularHorariosDisponibles({
@@ -118,6 +127,18 @@ export async function getHorariosDisponibles(params: {
         reglas,
         ahora,
       })
+      // Misma cuenta sin ocupados: lo que falte en `horarios` es un horario tomado
+      for (const h of calcularHorariosDisponibles({
+        fecha,
+        disponibilidad: disponibilidadDe(profesional),
+        duracionMinutos: service.duracion_minutos,
+        bufferMinutos: service.buffer_despues_minutos,
+        ocupados: [],
+        reglas,
+        ahora,
+      })) {
+        if (!grilla.has(h.inicio.getTime())) grilla.set(h.inicio.getTime(), { inicio: h.inicio.toISOString(), etiqueta: h.etiqueta })
+      }
       for (const h of horarios) {
         if (!porInicio.has(h.inicio.getTime())) {
           porInicio.set(h.inicio.getTime(), { inicio: h.inicio.toISOString(), etiqueta: h.etiqueta, staff_id: profesional.id })
@@ -126,6 +147,11 @@ export async function getHorariosDisponibles(params: {
     }
 
     const lista = Array.from(porInicio.values()).sort((a, b) => a.inicio.localeCompare(b.inicio))
+    const tomados = Array.from(grilla.entries())
+      .filter(([t]) => !porInicio.has(t))
+      .map(([, h]) => h)
+      .sort((a, b) => a.inicio.localeCompare(b.inicio))
+    if (tomados.length > 0) ocupadosPorDia[fecha] = tomados
     if (lista.length > 0) {
       resultado[fecha] = lista
     } else if (staff.some((p) => disponibilidadDe(p)[diaSemana(fecha)]?.activo)) {
@@ -133,7 +159,7 @@ export async function getHorariosDisponibles(params: {
     }
   }
 
-  return { zonaHoraria: reglas.zonaHoraria, dias: resultado, completos }
+  return { zonaHoraria: reglas.zonaHoraria, dias: resultado, completos, ocupados: ocupadosPorDia }
 }
 
 export class BookingError extends Error {

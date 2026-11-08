@@ -41,6 +41,9 @@ export async function POST(req: Request) {
   const email = user.email.trim().toLowerCase()
   const nombre = clean(body?.nombre, 100) || clean(user.user_metadata?.full_name, 100) || email.split('@')[0]
   const telefono = clean(body?.telefono, 30) || null
+  // Horario que quería (opcional): solo se guarda si tiene formato HH:MM
+  const horaBruta = clean(body?.hora, 5)
+  const horaPreferida = /^([01]\d|2[0-3]):[0-5]\d$/.test(horaBruta) ? horaBruta : null
 
   if (!FECHA_REGEX.test(fecha)) return NextResponse.json({ error: 'Fecha inválida' }, { status: 400 })
 
@@ -70,6 +73,7 @@ export async function POST(req: Request) {
     cliente_nombre: nombre,
     cliente_email: email,
     cliente_telefono: telefono,
+    hora_preferida: horaPreferida,
   })
 
   // 23505: ya estaba anotado para ese servicio y día (índice único parcial).

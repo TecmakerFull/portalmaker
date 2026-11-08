@@ -30,6 +30,7 @@ import {
   BellRing,
   CheckCircle2,
 } from 'lucide-react'
+import DatePicker from '@/components/date-picker'
 
 const ESTADOS: Record<BookingEstado, { label: string; clase: string }> = {
   pendiente: { label: 'Por confirmar', clase: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
@@ -115,6 +116,8 @@ export default function AgendaManager({
       setError(data?.error || 'No se pudo actualizar el turno. Probá de nuevo.')
     } else {
       setTurnos((list) => list.map((t) => (t.id === turno.id ? (data.booking as Booking) : t)))
+      // Refresca el número de turnos por confirmar del menú
+      window.dispatchEvent(new Event('pm-turnos-actualizados'))
       if (data.avisadosEspera > 0) {
         setAviso(`Se liberó el lugar: avisamos por email a ${data.avisadosEspera} ${data.avisadosEspera === 1 ? 'persona' : 'personas'} de la lista de espera.`)
         setEspera((list) =>
@@ -275,6 +278,7 @@ export default function AgendaManager({
                       <span className="capitalize">
                         {new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${e.fecha}T12:00:00Z`))}
                       </span>
+                      {e.hora_preferida ? ` · quería las ${e.hora_preferida}` : ''}
                     </p>
                   </div>
                   <span className={`shrink-0 text-[11px] px-2 py-1 rounded-full font-semibold border ${e.estado === 'avisado' ? 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30' : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'}`}>
@@ -328,7 +332,7 @@ export default function AgendaManager({
             </div>
             <label className="space-y-1.5">
               <span className="text-xs font-semibold opacity-75 block">Día</span>
-              <input type="date" className={inputClass} min={hoy} value={manual.fecha} onChange={(e) => buscarHorarios(manual.serviceId, e.target.value)} />
+              <DatePicker min={hoy} value={manual.fecha} onChange={(v) => buscarHorarios(manual.serviceId, v)} />
             </label>
           </div>
 
@@ -400,7 +404,7 @@ export default function AgendaManager({
         <label className="flex items-center gap-2 text-xs opacity-80">
           <CalendarDays className="w-4 h-4" />
           Ir a otra fecha:
-          <input type="date" className="min-h-11 px-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-base sm:text-sm" value={dia} onChange={(e) => e.target.value && setDia(e.target.value)} />
+          <DatePicker  value={dia} onChange={(v) => v && setDia(v)} />
         </label>
       </div>
 

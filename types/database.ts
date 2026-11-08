@@ -787,6 +787,7 @@ export interface BookingWaitlist {
   estado: WaitlistEstado;
   avisado_at: Timestamp | null;
   notas_admin: string | null;
+  hora_preferida: string | null; // HH:MM local
   created_at: Timestamp;
   updated_at: Timestamp;
 }

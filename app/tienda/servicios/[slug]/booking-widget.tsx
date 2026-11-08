@@ -48,6 +48,9 @@ export default function BookingWidget({ storeId, storeNombre, service, zona, max
   const [dias, setDias] = useState<Record<string, Horario[]>>({})
   // Días en que se atiende pero no queda lugar: se ofrece la lista de espera
   const [completos, setCompletos] = useState<Set<string>>(new Set())
+  // Horarios ya tomados de cada día: se muestran sombreados, y se pueden elegir para la lista de espera
+  const [ocupadosPorDia, setOcupadosPorDia] = useState<Record<string, { inicio: string; etiqueta: string }[]>>({})
+  const [horarioEspera, setHorarioEspera] = useState<{ inicio: string; etiqueta: string } | null>(null)
   const [espera, setEspera] = useState<{ enviando: boolean; ok: string | null }>({ enviando: false, ok: null })
   const [diasCargados, setDiasCargados] = useState(0)
   const [cargando, setCargando] = useState(true)
@@ -72,6 +75,7 @@ export default function BookingWidget({ storeId, storeNombre, service, zona, max
       const data = await res.json().catch(() => ({}))
       if (res.ok) {
         setDias((prev) => ({ ...prev, ...(data.dias ?? {}) }))
+        setOcupadosPorDia((prev) => ({ ...prev, ...(data.ocupados ?? {}) }))
         setCompletos((prev) => {
           const next = new Set(prev)
           for (const f of Object.keys(data.dias ?? {})) next.delete(f)
@@ -170,11 +174,11 @@ export default function BookingWidget({ storeId, storeNombre, service, zona, max
     const res = await fetch(`/api/turnos/espera${tenantQuery}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ serviceId: service.id, fecha: diaSel, nombre, telefono }),
+      body: JSON.stringify({ serviceId: service.id, fecha: diaSel, nombre, telefono, hora: horarioEspera?.etiqueta }),
     })
     const data = await res.json().catch(() => ({}))
     if (res.ok) {
-      setEspera({ enviando: false, ok: data.yaAnotado ? 'Ya estabas anotado para ese día. Te avisamos por email si se libera un lugar.' : 'Listo: si se libera un turno ese día te avisamos por email.' })
+      setEspera({ enviando: false, ok: data.yaAnotado ? 'Ya estabas anotado para ese día. Te avisamos por email si se libera un lugar.' : horarioEspera ? `Listo: si se libera un turno ese día te avisamos por email (anotamos que querías las ${horarioEspera.etiqueta}).` : 'Listo: si se libera un turno ese día te avisamos por email.' })
       return
     }
     if (res.status === 401) {
@@ -287,6 +291,12 @@ export default function BookingWidget({ storeId, storeNombre, service, zona, max
 
   const diasTira = Array.from({ length: Math.min(diasCargados || BLOQUE_DIAS, maxDias) }, (_, i) => sumarDias(hoy, i))
   const horariosDia = diaSel ? dias[diaSel] ?? [] : []
+  const ocupadosDia = diaSel ? ocupadosPorDia[diaSel] ?? [] : []
+  // Libres y ocupados juntos, en orden: el cliente ve toda la jornada de un vistazo
+  const grillaDia = [
+    ...horariosDia.map((h) => ({ inicio: h.inicio, etiqueta: h.etiqueta, ocupado: false })),
+    ...ocupadosDia.map((h) => ({ inicio: h.inicio, etiqueta: h.etiqueta, ocupado: true })),
+  ].sort((a, b) => a.inicio.localeCompare(b.inicio))
 
   return (
     <div className={`${tarjeta} space-y-5`}>
@@ -314,6 +324,7 @@ export default function BookingWidget({ storeId, storeNombre, service, zona, max
                 onClick={() => {
                   setDiaSel(f)
                   setHorarioSel(null)
+                  setHorarioEspera(null)
                   setError(null)
                   setEspera({ enviando: false, ok: null })
                 }}
@@ -353,48 +364,88 @@ export default function BookingWidget({ storeId, storeNombre, service, zona, max
           <Loader2 className="w-5 h-5 animate-spin opacity-60" />
         ) : !diaSel ? (
           <p className="text-sm opacity-70">No hay turnos libres en los próximos días. Probá con &quot;Más días&quot; o escribile a la tienda.</p>
-        ) : horariosDia.length === 0 ? (
-          <div className="space-y-2">
-            <p className="text-sm opacity-70">Ese día ya no tiene horarios libres.</p>
-            {completos.has(diaSel) &&
-              (espera.ok ? (
-                <p className="text-sm text-emerald-600 dark:text-emerald-400 flex items-start gap-2">
-                  <Check className="w-4 h-4 shrink-0 mt-0.5" /> {espera.ok}
-                </p>
-              ) : (
-                <button
-                  type="button"
-                  disabled={espera.enviando}
-                  onClick={anotarseEnEspera}
-                  className="w-full min-h-12 rounded-xl border border-[var(--color-primario)] text-[var(--color-primario)] text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {espera.enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <BellRing className="w-4 h-4" />}
-                  Avisarme si se libera un turno
-                </button>
-              ))}
-          </div>
+        ) : horariosDia.length === 0 && ocupadosDia.length === 0 ? (
+          <p className="text-sm opacity-70">Ese día no hay horarios para mostrar. Probá con otra fecha.</p>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-            {horariosDia.map((h) => (
-              <button
-                key={h.inicio}
-                type="button"
-                onClick={() => {
-                  setHorarioSel(h)
-                  setError(null)
-                }}
-                className={`min-h-12 rounded-xl border text-sm font-semibold transition-colors cursor-pointer ${
-                  horarioSel?.inicio === h.inicio
-                    ? 'border-[var(--color-primario)] bg-[var(--color-primario)] text-[var(--color-primario-texto)]'
-                    : 'border-black/15 dark:border-white/15 hover:border-[var(--color-primario)]'
-                }`}
-              >
-                {h.etiqueta}
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {grillaDia.map((h) =>
+                h.ocupado ? (
+                  <button
+                    key={h.inicio}
+                    type="button"
+                    onClick={() => {
+                      setHorarioEspera({ inicio: h.inicio, etiqueta: h.etiqueta })
+                      setHorarioSel(null)
+                      setError(null)
+                      setEspera({ enviando: false, ok: null })
+                    }}
+                    aria-label={`${h.etiqueta}, ocupado. Anotarme en la lista de espera`}
+                    className={`min-h-12 rounded-xl border text-sm transition-colors cursor-pointer flex flex-col items-center justify-center leading-tight ${
+                      horarioEspera?.inicio === h.inicio
+                        ? 'border-[var(--color-primario)] border-dashed bg-[var(--color-primario)]/15 font-semibold'
+                        : 'border-dashed border-black/15 dark:border-white/15 bg-black/[0.05] dark:bg-white/[0.05] opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <span className="line-through decoration-1">{h.etiqueta}</span>
+                    <span className="text-[10px] uppercase tracking-wide">Ocupado</span>
+                  </button>
+                ) : (
+                  <button
+                    key={h.inicio}
+                    type="button"
+                    onClick={() => {
+                      setHorarioSel(horariosDia.find((x) => x.inicio === h.inicio) ?? null)
+                      setHorarioEspera(null)
+                      setError(null)
+                    }}
+                    className={`min-h-12 rounded-xl border text-sm font-semibold transition-colors cursor-pointer ${
+                      horarioSel?.inicio === h.inicio
+                        ? 'border-[var(--color-primario)] bg-[var(--color-primario)] text-[var(--color-primario-texto)]'
+                        : 'border-black/15 dark:border-white/15 hover:border-[var(--color-primario)]'
+                    }`}
+                  >
+                    {h.etiqueta}
+                  </button>
+                )
+              )}
+            </div>
+            {ocupadosDia.length > 0 && (
+              <p className="text-xs opacity-60">Los horarios sombreados están ocupados: podés elegirlos para anotarte en la lista de espera.</p>
+            )}
+          </>
         )}
       </div>
+
+      {/* Lista de espera para un horario ocupado */}
+      {horarioEspera && diaSel && (
+        <div className="space-y-3 border-t border-black/10 dark:border-white/10 pt-4">
+          <p className="text-xs font-semibold uppercase tracking-wider opacity-60">Lista de espera</p>
+          <p className="text-sm">
+            Las <strong>{horarioEspera.etiqueta}</strong> ya están ocupadas. Si se libera un turno ese día, te avisamos por email y el primero que reserva se queda el lugar.
+          </p>
+          {espera.ok ? (
+            <p className="text-sm text-emerald-600 dark:text-emerald-400 flex items-start gap-2">
+              <Check className="w-4 h-4 shrink-0 mt-0.5" /> {espera.ok}
+            </p>
+          ) : (
+            <button
+              type="button"
+              disabled={espera.enviando}
+              onClick={anotarseEnEspera}
+              className="w-full min-h-12 rounded-xl border border-[var(--color-primario)] text-[var(--color-primario)] text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {espera.enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <BellRing className="w-4 h-4" />}
+              {usuario === null ? 'Ingresar para anotarme en la lista de espera' : 'Anotarme en la lista de espera'}
+            </button>
+          )}
+          {error && (
+            <p className="text-sm text-red-600 dark:text-red-400 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /> {error}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* 3. Confirmar */}
       {horarioSel && (
