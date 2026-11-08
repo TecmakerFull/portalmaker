@@ -299,16 +299,21 @@ export default function PagosForm({
                 disabled={loadingCheckout}
                 aria-checked={checkoutActivo}
                 onClick={handleToggleCheckout}
-                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none min-h-[44px] min-w-[44px] items-center p-0.5 disabled:opacity-50 ${
-                  checkoutActivo ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
-                }`}
+                className="relative inline-flex h-11 w-14 shrink-0 cursor-pointer items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50"
                 title={checkoutActivo ? 'Click para cambiar a Modo Vitrina' : 'Click para activar Checkout Online'}
               >
+                {/* El botón mide 44px para el dedo; lo que se ve es la pista de 28px, bien proporcionada */}
                 <span
-                  className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                    checkoutActivo ? 'translate-x-5' : 'translate-x-0'
+                  className={`relative inline-flex h-7 w-12 items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
+                    checkoutActivo ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
                   }`}
-                />
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                      checkoutActivo ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </span>
               </button>
             </div>
           </div>
@@ -534,16 +539,21 @@ export default function PagosForm({
                 role="switch"
                 aria-checked={transferenciaActiva}
                 onClick={() => setTransferenciaActiva((prev) => !prev)}
-                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none min-h-[44px] min-w-[44px] items-center p-0.5 ${
-                  transferenciaActiva ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
-                }`}
+                className="relative inline-flex h-11 w-14 shrink-0 cursor-pointer items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50"
                 title={transferenciaActiva ? 'Click para deshabilitar transferencia' : 'Click para habilitar transferencia'}
               >
+                {/* El botón mide 44px para el dedo; lo que se ve es la pista de 28px, bien proporcionada */}
                 <span
-                  className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                    transferenciaActiva ? 'translate-x-5' : 'translate-x-0'
+                  className={`relative inline-flex h-7 w-12 items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
+                    transferenciaActiva ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
                   }`}
-                />
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
+                      transferenciaActiva ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </span>
               </button>
             </div>
           </div>
