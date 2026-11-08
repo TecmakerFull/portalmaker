@@ -5,6 +5,7 @@ import type { Store, HeaderSettings } from "@/types/database";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import StoreThemeSync from "./theme-sync";
 import CartProviderClient from "./cart-provider-client";
+import CustomerSync from "./customer-sync";
 import { getTenantCSSVars } from "@/lib/color-utils";
 import { isStoreCheckoutActive, isFeatureAllowed } from "@/lib/plans";
 import {
@@ -104,6 +105,9 @@ export default async function TiendaLayout({
         defaultTheme={store.tema_por_defecto}
         faviconUrl={store.favicon_url || store.icono_url || store.logo_url || "/logo.png"}
       />
+
+      {/* Anota como cliente a quien inicia sesión, por cualquier camino */}
+      <CustomerSync storeId={store.id} />
 
       {/* Google Analytics */}
       {store.ga_measurement_id && isFeatureAllowed(store, 'analytics') && (

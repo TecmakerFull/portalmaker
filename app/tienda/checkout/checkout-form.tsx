@@ -81,9 +81,16 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
   const [quoteError, setQuoteError] = useState<string | null>(null)
   const [esEnvioGratis, setEsEnvioGratis] = useState(false)
 
+  // Para comprar hay que estar registrado en la tienda: hasta saber si hay sesión no se
+  // muestra el formulario, y sin sesión se pide ingresar (el servidor también lo exige).
+  const [sesionLista, setSesionLista] = useState(false)
+  const [haySesion, setHaySesion] = useState(false)
+
   // Precargar datos del usuario logueado si tiene sesión activa
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
+      setHaySesion(Boolean(user?.email))
+      setSesionLista(true)
       if (user?.email) {
         setEmail(user.email)
         const meta = user.user_metadata || {}
@@ -458,16 +465,6 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (user && user.email?.toLowerCase() === email.trim().toLowerCase()) {
-          await supabase.from('store_customers').upsert(
-            {
-              store_id: store.id,
-              email: email.trim().toLowerCase(),
-              nombre: nombre.trim(),
-              telefono: telefono.trim() || null,
-              ultimo_login: new Date().toISOString(),
-            },
-            { onConflict: 'store_id,email' }
-          )
           await supabase.auth.updateUser({
             data: {
               nombre: nombre.trim(),
@@ -763,6 +760,39 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
     )
   }
 
+  // Sin sesión no se puede comprar: se invita a ingresar y se vuelve acá
+  if (sesionLista && !haySesion) {
+    const volver = `/tienda/cuenta?next=${encodeURIComponent('/tienda/checkout')}${tenantQuery ? `&${tenantQuery.replace('?', '')}` : ''}`
+    return (
+      <div className="max-w-md mx-auto text-center py-12 sm:py-16 border border-black/10 dark:border-white/10 rounded-3xl p-6 sm:p-8 space-y-4">
+        <div className="w-14 h-14 rounded-2xl bg-[var(--color-primario)]/15 text-[var(--color-primario)] flex items-center justify-center mx-auto">
+          <User className="w-7 h-7" />
+        </div>
+        <div className="space-y-1.5">
+          <h2 className="text-lg font-semibold">Ingresá para finalizar tu compra</h2>
+          <p className="text-sm opacity-70 leading-relaxed">
+            Para comprar tenés que tener una cuenta en {store.nombre}. Podés ingresar sin contraseña: te mandamos un enlace a tu correo. Tu carrito se mantiene.
+          </p>
+        </div>
+        <Link
+          href={volver}
+          className="min-h-12 px-6 rounded-xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-sm font-semibold inline-flex items-center justify-center gap-2 w-full sm:w-auto"
+        >
+          Ingresar o crear mi cuenta
+        </Link>
+      </div>
+    )
+  }
+
+  // Mientras se verifica la sesión no se muestra el formulario (evita un destello)
+  if (!sesionLista) {
+    return (
+      <div className="flex items-center justify-center py-24 opacity-60">
+        <Loader2 className="w-6 h-6 animate-spin" />
+      </div>
+    )
+  }
+
   const hasBankData = Boolean(
     bankDetails?.alias ||
     bankDetails?.cbuCvu ||
@@ -840,12 +870,14 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
                 type="email"
                 required
                 value={email}
+                // El pedido va siempre al correo de la cuenta con la que ingresaste
+                readOnly
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="tu@email.com"
-                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-[var(--color-texto)] text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-[var(--color-primario)] transition-all"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-black/[0.03] dark:bg-white/[0.04] text-[var(--color-texto)] text-xs sm:text-sm focus:outline-hidden transition-all"
               />
               <span className="text-[10px] opacity-60 block">
-                Para recibir la confirmación y avisos de estado de tu compra.
+                Es el correo de tu cuenta: ahí recibís la confirmación y los avisos de tu compra.
               </span>
             </div>
           </div>

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import crypto from 'node:crypto'
-import { createSupabaseAdminClient } from '@/lib/supabase/server'
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server'
+import { sincronizarClienteTienda } from '@/lib/booking/customers'
+import type { Store } from '@/types/database'
 import { checkRateLimit, getClientIp, verifyTurnstileToken, isTurnstileConfigured } from '@/lib/rate-limit'
 
 // =============================================================================
@@ -173,6 +175,36 @@ export async function POST(req: Request) {
 
     if (!store.suscripcion_activa) {
       return NextResponse.json({ error: 'La tienda se encuentra temporalmente inactiva' }, { status: 403 })
+    }
+
+    // Para comprar hay que estar registrado en la tienda: el comprador sale de la sesión,
+    // no de lo que escriba en el formulario (así el correo es siempre uno verificado).
+    const supabaseSesion = await createSupabaseServerClient()
+    const {
+      data: { user: sesionUser },
+    } = await supabaseSesion.auth.getUser()
+    if (!sesionUser?.email) {
+      return NextResponse.json(
+        { error: 'Para comprar tenés que ingresar a tu cuenta de la tienda.', code: 'login_requerido' },
+        { status: 401 }
+      )
+    }
+    const emailComprador = sesionUser.email.trim().toLowerCase()
+
+    // Alta como cliente de la tienda, con el control del tope del plan. Si no hay lugar,
+    // el pedido no se crea y a la dueña le llega un aviso.
+    const { data: tiendaCompleta } = await supabaseAdmin.from('stores').select('*').eq('id', store.id).single()
+    if (tiendaCompleta) {
+      const registro = await sincronizarClienteTienda({
+        store: tiendaCompleta as Store,
+        email: emailComprador,
+        nombre: cleanNombre,
+        telefono: cleanTelefono || null,
+        motivo: 'comprar',
+      })
+      if (!registro.ok) {
+        return NextResponse.json({ error: registro.error, code: registro.code }, { status: 403 })
+      }
     }
 
     const isCheckoutActive = Boolean(store.checkout_activo || store.modo_operacion === 'tienda')
@@ -389,7 +421,7 @@ export async function POST(req: Request) {
       .insert({
         store_id: store.id,
         nombre_comprador: cleanNombre,
-        email_comprador: cleanEmail,
+        email_comprador: emailComprador,
         telefono_comprador: cleanTelefono || null,
         direccion_entrega: resolvedDireccion,
         tipo_entrega: tipoEntrega || 'acordar',
@@ -430,24 +462,6 @@ export async function POST(req: Request) {
     if (insertError || !createdOrder) {
       console.error('Error al insertar pedido en base de datos:', insertError)
       return NextResponse.json({ error: 'No se pudo crear el pedido. Intenta nuevamente.' }, { status: 500 })
-    }
-
-    // 7. Sincronizar cliente en CRM de la tienda (store_customers) desde servidor con service_role
-    if (cleanEmail) {
-      try {
-        await supabaseAdmin.from('store_customers').upsert(
-          {
-            store_id: store.id,
-            email: cleanEmail,
-            nombre: cleanNombre,
-            telefono: cleanTelefono || null,
-            ultimo_login: new Date().toISOString(),
-          },
-          { onConflict: 'store_id,email' }
-        )
-      } catch (crmErr) {
-        console.warn('Aviso no bloqueante registrando cliente en CRM:', crmErr)
-      }
     }
 
     return NextResponse.json({

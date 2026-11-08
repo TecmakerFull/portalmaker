@@ -141,9 +141,9 @@ export default function AdminSidebar({
   const canEnvios = isFeatureAllowed(store, 'envios_zonas_fijas') || isFeatureAllowed(store, 'envios_couriers')
   const canCheckout = isFeatureAllowed(store, 'checkout_online') || isFeatureAllowed(store, 'mercado_pago')
   const canColaboradores = isFeatureAllowed(store, 'colaboradores')
-  // Con turnos, los clientes registrados cuentan para el tope del plan: la dueña tiene
-  // que poder verlos y borrarlos aunque el CRM completo sea de un plan superior.
-  const canClientes = isFeatureAllowed(store, 'crm_clientes') || (store.tipo_negocio ?? 'productos') !== 'productos'
+  // Los clientes registrados cuentan para el tope del plan en todas las tiendas: la dueña
+  // tiene que poder verlos y borrarlos en cualquier plan.
+  const canClientes = true
   const canResenas = isFeatureAllowed(store, 'resenas')
   const canDominio = isFeatureAllowed(store, 'dominio_propio')
 

@@ -166,18 +166,17 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
   }
 
   // Registrar login en store_customers para CRM de la tienda
-  const syncCustomerCrm = async (email: string, nombre?: string, telefono?: string) => {
+  // El alta y la edición del cliente pasan por el servidor: el navegador ya no escribe
+  // store_customers (ahí se controla el tope de clientes del plan). El email sale de la
+  // sesión, por eso el primer parámetro solo se conserva por compatibilidad con las
+  // llamadas existentes. `actualizar` = la persona editó su perfil.
+  const syncCustomerCrm = async (_email: string, nombre?: string, telefono?: string, actualizar = false) => {
     try {
-      await supabase.from('store_customers').upsert(
-        {
-          store_id: store.id,
-          email: email.toLowerCase(),
-          nombre: nombre || email.split('@')[0],
-          telefono: telefono || null,
-          ultimo_login: new Date().toISOString(),
-        },
-        { onConflict: 'store_id,email' }
-      )
+      await fetch(`/api/store/customer-sync${tenantQuery}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, telefono, actualizar }),
+      })
     } catch (e) {
       console.error('Error sincronizando CRM de cliente:', e)
     }
@@ -551,7 +550,7 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
       if (authErr) throw authErr
 
       // 2. Guardar en store_customers de la tienda
-      await syncCustomerCrm(currentUser.email, profileNombre.trim(), profileTelefono.trim())
+      await syncCustomerCrm(currentUser.email, profileNombre.trim(), profileTelefono.trim(), true)
 
       setCurrentUser((prev) => (prev ? { ...prev, nombre: profileNombre.trim() } : null))
       setProfileSavedFeedback(true)

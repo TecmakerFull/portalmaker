@@ -5,6 +5,7 @@
 // =============================================================================
 
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
+import { checkRateLimit } from '@/lib/rate-limit'
 import { escapeHtml, sendStoreAuthEmail } from '@/lib/store-auth-email'
 import { formatFechaTurno, formatDuracion, googleCalendarUrl, renglonesImporte } from '@/lib/booking/format'
 import type { Booking, Store } from '@/types/database'
@@ -204,5 +205,49 @@ export async function sendBookingReminderEmail(params: {
     subject: `Recordatorio: tu turno en ${store.nombre}`,
     html: layout(store.nombre, cuerpo),
     fromName: String(store.nombre || 'Tu tienda').replace(/["<>\r\n]/g, '').slice(0, 80),
+  })
+}
+
+/**
+ * Aviso a la dueña: una persona no pudo comprar, reservar o crear su cuenta porque la
+ * tienda llegó al tope de clientes de su plan. Es la señal para que mire sus clientes
+ * o cambie de plan. Se manda como máximo una vez por día y por tienda, para no inundar
+ * la casilla si varias personas lo intentan.
+ */
+export async function avisarCupoClientesLleno(params: {
+  store: Store
+  motivo: 'comprar' | 'reservar' | 'cuenta'
+  enlacePanel: string
+  enlacePlanes: string
+}): Promise<void> {
+  const { store, motivo } = params
+  const permitido = await checkRateLimit({ ip: `cupo-lleno:${store.id}`, maxPerIp: 1, windowMs: 24 * 60 * 60 * 1000 })
+  if (!permitido.allowed) return
+
+  const supabaseAdmin = createSupabaseAdminClient()
+  const { data } = await supabaseAdmin.from('stores').select('admin_email, email_contacto').eq('id', store.id).maybeSingle()
+  const destino = data?.email_contacto?.trim() || data?.admin_email?.trim()
+  if (!destino) return
+
+  const quePaso =
+    motivo === 'comprar'
+      ? 'Alguien quiso comprar en tu tienda'
+      : motivo === 'reservar'
+        ? 'Alguien quiso reservar un turno en tu tienda'
+        : 'Alguien quiso crear una cuenta en tu tienda'
+
+  const cuerpo = `
+    <h1>${quePaso} y no pudo</h1>
+    <p>Tu tienda llegó al límite de clientes registrados de su plan, así que las personas nuevas no pueden crear su cuenta. Para comprar o reservar hay que estar registrado.</p>
+    <p>Podés liberar lugar borrando clientes que ya no uses, o pasar a un plan con más capacidad. Los clientes que ya tienen cuenta pueden seguir comprando y reservando con normalidad.</p>
+    <a class="btn" href="${escapeHtml(params.enlacePanel)}">Ver mis clientes</a>
+    <a class="btn btn-sec" href="${escapeHtml(params.enlacePlanes)}">Ver planes</a>
+    <p style="font-size:12px;color:#94a3b8;margin-top:16px">Te avisamos como máximo una vez por día.</p>`
+
+  await sendStoreAuthEmail({
+    to: destino,
+    subject: 'Tu tienda llegó al límite de clientes',
+    html: layout(store.nombre, cuerpo),
+    fromName: 'Portalmaker',
   })
 }

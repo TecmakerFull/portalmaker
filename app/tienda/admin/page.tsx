@@ -73,9 +73,7 @@ export default async function AdminHomePage() {
       ? supabase.from('staff').select('id', { count: 'exact', head: true }).eq('store_id', store.id)
       : Promise.resolve({ count: 0 }),
     // Clientes registrados: cada uno ocupa un lugar del tope del plan
-    daTurnos
-      ? supabase.from('store_customers').select('id', { count: 'exact', head: true }).eq('store_id', store.id)
-      : Promise.resolve({ count: 0 }),
+    supabase.from('store_customers').select('id', { count: 'exact', head: true }).eq('store_id', store.id),
   ])
   const limiteClientes = getStoreEffectiveLimit(store, 'limite_clientes')
 
@@ -178,7 +176,7 @@ export default async function AdminHomePage() {
         }
       />
 
-      {daTurnos && <ClientesUso usados={clientes.count ?? 0} limite={limiteClientes} tenantQuery={tenantQuery} modo="aviso" />}
+      <ClientesUso usados={clientes.count ?? 0} limite={limiteClientes} tenantQuery={tenantQuery} modo="aviso" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna Izquierda: Checklist de Pasos (2 columnas de ancho) */}

@@ -8,7 +8,6 @@ import { notFound } from 'next/navigation'
 import { getTenantStore, isStoreAdmin } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import ClientesManager from './clientes-manager'
-import LockedFeatureCard from '../components/locked-feature-card'
 import { isFeatureAllowed, getStoreEffectiveLimit } from '@/lib/plans'
 import type { StoreCustomer, StoreCollaborator, ProductReview } from '@/types/database'
 
@@ -30,19 +29,8 @@ export default async function ClientesAdminPage() {
 
   const daTurnos = (store.tipo_negocio ?? 'productos') !== 'productos'
 
-  // El CRM completo depende del plan, pero en tiendas con turnos la lista de clientes
-  // se habilita siempre: ahí cada cliente nuevo ocupa un lugar del tope del plan.
-  if (!isFeatureAllowed(store, 'crm_clientes') && !daTurnos) {
-    return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
-        <LockedFeatureCard
-          featureKey="crm_clientes"
-          storePlan={store.plan}
-          tenantQuery={tenantQuery}
-        />
-      </div>
-    )
-  }
+  // La lista de clientes está disponible en todos los planes: cada cliente nuevo ocupa
+  // un lugar del tope del plan y la dueña necesita poder verlos y borrarlos.
 
   const supabase = await createSupabaseServerClient()
 
@@ -96,7 +84,7 @@ export default async function ClientesAdminPage() {
       initialReviews={(reviews as ProductReview[]) ?? []}
       initialCollaborators={(collaborators as StoreCollaborator[]) ?? []}
       tenantQuery={tenantQuery}
-      limiteClientes={daTurnos ? getStoreEffectiveLimit(store, 'limite_clientes') : null}
+      limiteClientes={getStoreEffectiveLimit(store, 'limite_clientes')}
       turnosPorEmail={turnosPorEmail}
       puedeColaboradores={isFeatureAllowed(store, 'colaboradores')}
     />

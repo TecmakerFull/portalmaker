@@ -1171,13 +1171,14 @@ create policy "store_customers_select" on store_customers
     or lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
   );
 
+-- Los clientes solo se crean y editan desde el servidor (tope de clientes del plan):
+-- ver migración 20261107_clientes_solo_servidor. El cliente solo lee su propia fila.
 create policy "store_customers_insert" on store_customers
   for insert to authenticated
   with check (
     is_platform_admin()
     or public.is_store_owner(store_id)
     or public.is_store_collaborator(store_id)
-    or lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
   );
 
 create policy "store_customers_update" on store_customers
@@ -1186,13 +1187,11 @@ create policy "store_customers_update" on store_customers
     is_platform_admin()
     or public.is_store_owner(store_id)
     or public.is_store_collaborator(store_id)
-    or lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
   )
   with check (
     is_platform_admin()
     or public.is_store_owner(store_id)
     or public.is_store_collaborator(store_id)
-    or lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
   );
 
 create policy "store_customers_delete" on store_customers
