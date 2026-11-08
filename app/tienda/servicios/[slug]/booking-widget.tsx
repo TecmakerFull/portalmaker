@@ -120,10 +120,27 @@ export default function BookingWidget({ storeId, storeNombre, service, zona, max
       const { data } = await supabase.auth.getUser()
       if (cancelado) return
       if (data.user?.email) {
-        const nombreMeta = (data.user.user_metadata?.full_name || data.user.user_metadata?.nombre || '') as string
+        let nombreMeta = (data.user.user_metadata?.full_name || data.user.user_metadata?.nombre || '') as string
+        let telefonoMeta = (data.user.user_metadata?.telefono as string) || ''
+        // Quien entró con el enlace del correo no tiene nombre ni teléfono en la cuenta:
+        // se usan los que ya dejó en esta tienda (su ficha de cliente). Al reservar se
+        // guardan ahí, así la próxima vez ya vienen completos.
+        if (!nombreMeta || !telefonoMeta) {
+          const { data: ficha } = await supabase
+            .from('store_customers')
+            .select('nombre, telefono')
+            .eq('store_id', storeId)
+            .eq('email', data.user.email.toLowerCase())
+            .maybeSingle()
+          // Si la ficha tiene solo el prefijo del correo (alta automática), no es un nombre real
+          const nombreFicha = ficha?.nombre && ficha.nombre !== data.user.email.split('@')[0] ? ficha.nombre : ''
+          nombreMeta = nombreMeta || nombreFicha
+          telefonoMeta = telefonoMeta || ficha?.telefono || ''
+        }
+        if (cancelado) return
         setUsuario({ email: data.user.email, nombre: nombreMeta })
         setNombre(nombreMeta)
-        setTelefono((data.user.user_metadata?.telefono as string) || '')
+        setTelefono(telefonoMeta)
       } else {
         setUsuario(null)
       }

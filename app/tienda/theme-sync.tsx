@@ -15,7 +15,8 @@ export default function StoreThemeSync({
   faviconUrl?: string | null
 }) {
   const pathname = usePathname()
-  const isAdmin = pathname?.startsWith('/tienda/admin')
+  // En un subdominio de tienda el panel se ve como /admin/... (sin /tienda)
+  const isAdmin = pathname?.startsWith('/tienda/admin') || pathname?.startsWith('/admin')
 
   // 1. Sincronizar tema claro / oscuro de la tienda
   useEffect(() => {

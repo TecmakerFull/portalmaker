@@ -75,6 +75,9 @@ export default function AgendaManager({
   const [turnos, setTurnos] = useState<Booking[]>(initialTurnos)
   const [dia, setDia] = useState(hoy)
   const [accionando, setAccionando] = useState<string | null>(null)
+  // Turno que se está por rechazar o cancelar, con el motivo opcional para el cliente
+  const [porCancelar, setPorCancelar] = useState<Booking | null>(null)
+  const [motivoCancelacion, setMotivoCancelacion] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
   const [pestana, setPestana] = useState<'turnos' | 'espera'>('turnos')
@@ -98,15 +101,14 @@ export default function AgendaManager({
 
   // Pasa por el servidor para que se envíen los avisos (confirmación o
   // cancelación al cliente y aviso a la lista de espera si se libera el lugar).
-  const cambiarEstado = async (turno: Booking, estado: BookingEstado) => {
-    if (estado === 'cancelado' && !confirm(`¿Cancelar el turno de ${turno.cliente_nombre}? Le avisamos por email.`)) return
+  const cambiarEstado = async (turno: Booking, estado: BookingEstado, motivo?: string) => {
     setAccionando(turno.id)
     setError(null)
     setAviso(null)
     const res = await fetch(`/api/turnos/estado${tenantQuery}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bookingId: turno.id, estado }),
+      body: JSON.stringify({ bookingId: turno.id, estado, motivo }),
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
@@ -448,7 +450,7 @@ export default function AgendaManager({
                   </>
                 )}
                 {activo && (
-                  <button type="button" disabled={accionando === t.id} onClick={() => cambiarEstado(t, 'cancelado')} className="min-h-11 px-3 rounded-xl border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-red-500/10 disabled:opacity-50">
+                  <button type="button" disabled={accionando === t.id} onClick={() => { setMotivoCancelacion(''); setPorCancelar(t) }} className="min-h-11 px-3 rounded-xl border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-red-500/10 disabled:opacity-50">
                     <X className="w-4 h-4" /> {t.estado === 'pendiente' ? 'Rechazar' : 'Cancelar'}
                   </button>
                 )}
@@ -458,6 +460,47 @@ export default function AgendaManager({
         })}
       </div>
       </>)}
+
+      {/* Rechazar o cancelar: el motivo es opcional y se le envía al cliente por email */}
+      {porCancelar && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60" role="dialog" aria-modal="true" aria-labelledby="cancelar-turno-titulo">
+          <div className="bg-[var(--color-superficie)] text-[var(--color-texto)] border border-[var(--color-borde)] rounded-2xl w-full max-w-md p-5 sm:p-6 space-y-4 shadow-2xl">
+            <h3 id="cancelar-turno-titulo" className="text-base font-semibold">
+              {porCancelar.estado === 'pendiente' ? 'Rechazar' : 'Cancelar'} el turno de {porCancelar.cliente_nombre}
+            </h3>
+            <p className="text-sm opacity-80">Le avisamos por email.</p>
+            <div className="space-y-1.5">
+              <label htmlFor="motivo-cancelacion" className="text-xs font-semibold opacity-75 block">Motivo (opcional)</label>
+              <textarea
+                id="motivo-cancelacion"
+                value={motivoCancelacion}
+                onChange={(e) => setMotivoCancelacion(e.target.value)}
+                maxLength={300}
+                rows={3}
+                placeholder="Ej: ese día no atendemos, te propongo otro horario"
+                className="w-full px-3 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-base sm:text-sm"
+              />
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+              <button type="button" onClick={() => setPorCancelar(null)} className="min-h-11 px-4 rounded-xl border border-[var(--color-borde)] text-sm font-semibold cursor-pointer">
+                Volver
+              </button>
+              <button
+                type="button"
+                disabled={accionando === porCancelar.id}
+                onClick={async () => {
+                  const turno = porCancelar
+                  setPorCancelar(null)
+                  await cambiarEstado(turno, 'cancelado', motivoCancelacion.trim() || undefined)
+                }}
+                className="min-h-11 px-4 rounded-xl bg-red-600 text-white text-sm font-semibold cursor-pointer disabled:opacity-60"
+              >
+                {porCancelar.estado === 'pendiente' ? 'Rechazar turno' : 'Cancelar turno'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

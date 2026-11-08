@@ -27,10 +27,15 @@ export async function confirmarTurnoPorPago(orderId: string, store: Store): Prom
   const enlacePanel = `${origin}/tienda/admin/agenda`
 
   if (!['pendiente', 'expirado'].includes(turno.estado)) return true // ya procesado
+  // Con aprobación manual, un turno ya pagado queda "pendiente" sin vencimiento hasta que
+  // la tienda lo apruebe: si el aviso de pago llega de nuevo, no se repite nada.
+  if (settings.requiere_aprobacion && turno.estado === 'pendiente' && !turno.pendiente_expira_at) return true
 
   const { data: confirmado, error } = await supabaseAdmin
     .from('bookings')
-    .update({ estado: 'confirmado', pendiente_expira_at: null, updated_at: new Date().toISOString() })
+    // Si la tienda aprueba cada turno a mano, la seña no lo confirma: queda pendiente (ya
+    // pagado, sin vencimiento) esperando la aprobación. Si no, se confirma al acreditarse.
+    .update({ estado: settings.requiere_aprobacion ? 'pendiente' : 'confirmado', pendiente_expira_at: null, updated_at: new Date().toISOString() })
     .eq('id', turno.id)
     .in('estado', ['pendiente', 'expirado'])
     .select('*')
@@ -64,8 +69,8 @@ export async function confirmarTurnoPorPago(orderId: string, store: Store): Prom
   await supabaseAdmin.from('booking_events').insert({
     booking_id: turno.id,
     store_id: store.id,
-    tipo: 'confirmado',
-    detalle: 'Seña acreditada en Mercado Pago',
+    tipo: settings.requiere_aprobacion ? 'sena_acreditada' : 'confirmado',
+    detalle: settings.requiere_aprobacion ? 'Seña acreditada en Mercado Pago; falta la aprobación de la tienda' : 'Seña acreditada en Mercado Pago',
     actor: 'sistema',
   })
 

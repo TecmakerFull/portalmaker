@@ -43,6 +43,8 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}))
   const bookingId = String(body?.bookingId || '')
   const estado = String(body?.estado || '') as BookingEstado
+  // Motivo opcional al rechazar o cancelar: se le muestra al cliente
+  const motivo = String(body?.motivo ?? '').trim().slice(0, 300) || null
 
   const supabaseAdmin = createSupabaseAdminClient()
   const { data: actual } = await supabaseAdmin
@@ -73,7 +75,13 @@ export async function POST(req: Request) {
     .maybeSingle()
   if (!actualizado) return NextResponse.json({ error: 'El turno cambió recién. Actualizá la agenda.' }, { status: 409 })
 
-  await supabaseAdmin.from('booking_events').insert({ booking_id: actual.id, store_id: store.id, tipo: estado, actor: 'tienda' })
+  await supabaseAdmin.from('booking_events').insert({
+    booking_id: actual.id,
+    store_id: store.id,
+    tipo: estado,
+    actor: 'tienda',
+    detalle: estado === 'cancelado' ? motivo : null,
+  })
 
   const { settings } = await getBookingConfig(store)
   const origin = await getRequestOrigin()
@@ -92,7 +100,7 @@ export async function POST(req: Request) {
 
   if (estado === 'cancelado') {
     const [, espera] = await Promise.allSettled([
-      sendBookingCancelledByStoreEmail({ store, booking, zona: settings.zona_horaria }),
+      sendBookingCancelledByStoreEmail({ store, booking, zona: settings.zona_horaria, motivo, rechazado: actual.estado === 'pendiente' }),
       notificarListaEspera({ store, booking, zona: settings.zona_horaria, origin, tenantQs }),
     ])
     if (espera.status === 'fulfilled') avisadosEspera = espera.value

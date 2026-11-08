@@ -422,7 +422,7 @@ export default function HorariosManager({
                 )}
               </div>
               <p className="text-[11px] opacity-60">
-                El cliente paga con Mercado Pago al reservar y el turno se confirma cuando se acredita. Si no paga en 20 minutos, el horario se libera. La seña va a tu cuenta de Mercado Pago.
+                El cliente paga con Mercado Pago al reservar. Cuando se acredita, el turno se confirma (o, si aprobás cada turno, queda esperando tu aprobación con la seña ya cobrada). Si no paga en 20 minutos, el horario se libera. La seña va a tu cuenta de Mercado Pago.
               </p>
             </>
           ) : (

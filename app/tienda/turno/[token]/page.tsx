@@ -79,6 +79,20 @@ export default async function TurnoPage({
     }
     if (orden && orden.estado_pago === 'aprobado') senaPagada = Number(orden.total) || 0
   }
+  // Motivo que escribió la tienda al rechazar o cancelar (si lo hubo)
+  let motivoTienda: string | null = null
+  if (booking.estado === 'cancelado' && booking.cancelado_por === 'tienda') {
+    const { data: evento } = await supabaseAdmin
+      .from('booking_events')
+      .select('detalle')
+      .eq('booking_id', booking.id)
+      .eq('tipo', 'cancelado')
+      .eq('actor', 'tienda')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    motivoTienda = evento?.detalle ?? null
+  }
   const importes = renglonesImporte(booking.precio, senaPagada)
   const activo = booking.estado === 'pendiente' || booking.estado === 'confirmado'
   const puedeCancelar = activo && dentroDelPlazo(booking.starts_at, settings.cancelacion_hasta_horas)
@@ -116,6 +130,13 @@ export default async function TurnoPage({
           <p className={`text-sm font-semibold ${activo && !esperandoSena ? 'text-emerald-600 dark:text-emerald-400' : 'opacity-70'}`}>
             {esperandoSena ? 'Esperando el pago de la seña' : (ESTADO_TEXTO[booking.estado] ?? booking.estado)}
           </p>
+
+          {motivoTienda && (
+            <p className="text-xs p-3 rounded-xl bg-black/[0.04] dark:bg-white/[0.06]">
+              <span className="font-semibold">Motivo: </span>
+              {motivoTienda}
+            </p>
+          )}
 
           {/* Vuelta desde Mercado Pago: el webhook puede tardar unos segundos en confirmar */}
           {pagoParam === 'aprobado' && esperandoSena && (

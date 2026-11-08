@@ -55,7 +55,8 @@ export default function AdminSidebar({
   store: StoreType
   tenantQuery: string
 }) {
-  const pathname = usePathname()
+  // En un subdominio de tienda el panel se ve como /admin/...; se normaliza para marcar el menú activo
+  const pathname = (usePathname() ?? '').replace(/^\/admin(?=\/|$)/, '/tienda/admin')
   const router = useRouter()
   const supabase = createSupabaseBrowserClient()
 

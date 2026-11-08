@@ -163,20 +163,29 @@ export async function sendWaitlistAvailableEmail(params: {
 }
 
 /** Aviso al cliente de que la tienda canceló o rechazó su turno. */
-export async function sendBookingCancelledByStoreEmail(params: { store: Store; booking: Booking; zona: string }): Promise<void> {
-  const { store, booking, zona } = params
+export async function sendBookingCancelledByStoreEmail(params: {
+  store: Store
+  booking: Booking
+  zona: string
+  /** Motivo escrito por la tienda (opcional). */
+  motivo?: string | null
+  /** true si el turno todavía no estaba confirmado: se rechazó la solicitud. */
+  rechazado?: boolean
+}): Promise<void> {
+  const { store, booking, zona, motivo, rechazado } = params
   if (!booking.cliente_email) return
   const whatsapp = (store.whatsapp_numero || '').replace(/[^0-9]/g, '')
   const cuerpo = `
-    <h1>Tu turno fue cancelado</h1>
-    <p>Hola ${escapeHtml(booking.cliente_nombre)}, ${escapeHtml(store.nombre)} canceló este turno:</p>
+    <h1>${rechazado ? 'No pudimos confirmar tu turno' : 'Tu turno fue cancelado'}</h1>
+    <p>Hola ${escapeHtml(booking.cliente_nombre)}, ${escapeHtml(store.nombre)} ${rechazado ? 'no pudo confirmar' : 'canceló'} este turno:</p>
     ${detalleTurno(booking, zona)}
+    ${motivo ? `<p><strong>Motivo:</strong> ${escapeHtml(motivo)}</p>` : ''}
     <p>Si querés, podés reservar otro horario o escribirle a la tienda.</p>
     ${whatsapp ? `<a class="btn" href="https://wa.me/${whatsapp}">Escribirle por WhatsApp</a>` : ''}`
 
   await sendStoreAuthEmail({
     to: booking.cliente_email,
-    subject: `Tu turno en ${store.nombre} fue cancelado`,
+    subject: rechazado ? `No pudimos confirmar tu turno en ${store.nombre}` : `Tu turno en ${store.nombre} fue cancelado`,
     html: layout(store.nombre, cuerpo),
     fromName: String(store.nombre || 'Tu tienda').replace(/["<>\r\n]/g, '').slice(0, 80),
   })
