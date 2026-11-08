@@ -63,6 +63,7 @@ export default async function AdminAgendaPage() {
         services={(services as Service[]) ?? []}
         initialEspera={(espera as BookingWaitlist[]) ?? []}
         tenantQuery={tenantQuery}
+        puedeCobrarSena={Boolean(store.mp_connected) && settings.sena_modo !== 'ninguna'}
       />
     </div>
   )

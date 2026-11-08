@@ -7,7 +7,7 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { escapeHtml, sendStoreAuthEmail } from '@/lib/store-auth-email'
-import { formatFechaTurno, formatDuracion, googleCalendarUrl, renglonesImporte } from '@/lib/booking/format'
+import { formatFechaTurno, formatDuracion, googleCalendarUrl, renglonesImporte, formatPesos } from '@/lib/booking/format'
 import type { Booking, Store } from '@/types/database'
 
 function layout(storeName: string, cuerpo: string): string {
@@ -328,5 +328,31 @@ export async function notifyStoreWaitlistEmail(params: {
     subject: `Nueva persona en la lista de espera: ${params.servicio}`,
     html: layout(store.nombre, cuerpo),
     fromName: 'Portalmaker',
+  })
+}
+
+/** Turno reservado por la tienda que espera la seña: el cliente la paga desde el enlace. */
+export async function sendSenaPendienteEmail(params: {
+  store: Store
+  booking: Booking
+  zona: string
+  enlaceTurno: string
+  sena: number
+  horas: number
+}): Promise<void> {
+  const { store, booking, zona } = params
+  if (!booking.cliente_email) return
+  const cuerpo = `
+    <h1>Te reservamos un turno</h1>
+    <p>Hola ${escapeHtml(booking.cliente_nombre)}, se liberó un lugar y ${escapeHtml(store.nombre)} te lo reservó:</p>
+    ${detalleTurno(booking, zona)}
+    <p>Para confirmarlo, pagá la seña de <strong>${escapeHtml(formatPesos(params.sena))}</strong> con Mercado Pago. Tenés ${params.horas} horas: si no la pagás, el horario se libera para otra persona.</p>
+    <a class="btn" href="${escapeHtml(params.enlaceTurno)}">Pagar la seña</a>`
+
+  await sendStoreAuthEmail({
+    to: booking.cliente_email,
+    subject: `Pagá la seña para confirmar tu turno en ${store.nombre}`,
+    html: layout(store.nombre, cuerpo),
+    fromName: String(store.nombre || 'Tu tienda').replace(/["<>\r\n]/g, '').slice(0, 80),
   })
 }

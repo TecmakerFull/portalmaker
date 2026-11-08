@@ -182,6 +182,10 @@ export async function crearTurno(params: {
   cliente: { userId: string | null; nombre: string; email: string | null; telefono: string | null }
   notas?: string | null
   origen: 'web' | 'manual'
+  /** Carga manual que igual cobra seña (turno asignado desde la lista de espera). */
+  cobrarSena?: boolean
+  /** Minutos que se retiene el horario esperando la seña (por defecto, el plazo de una reserva web). */
+  retencionMinutos?: number
 }): Promise<{ booking: Booking; sena: number; order: { id: string; public_token: string } | null }> {
   const { store } = params
   const supabaseAdmin = createSupabaseAdminClient()
@@ -258,7 +262,7 @@ export async function crearTurno(params: {
     .eq('id', store.id)
     .maybeSingle()
   const sena =
-    params.origen === 'web' && storeFull?.mp_connected
+    (params.origen === 'web' || params.cobrarSena) && storeFull?.mp_connected
       ? calcularSena(precioVigente(service).vigente, settings.sena_modo, Number(settings.sena_valor) || 0)
       : 0
   const conSena = sena > 0
@@ -275,7 +279,7 @@ export async function crearTurno(params: {
       ocupado_hasta: ocupadoHasta.toISOString(),
       estado: estadoInicial,
       // Con seña, el horario queda retenido unos minutos mientras se paga.
-      pendiente_expira_at: conSena ? new Date(Date.now() + SENA_MINUTOS_PARA_PAGAR * 60000).toISOString() : null,
+      pendiente_expira_at: conSena ? new Date(Date.now() + (params.retencionMinutos ?? SENA_MINUTOS_PARA_PAGAR) * 60000).toISOString() : null,
       servicio_nombre: service.nombre,
       servicio_duracion: service.duracion_minutos,
       precio: precioVigente(service).vigente,

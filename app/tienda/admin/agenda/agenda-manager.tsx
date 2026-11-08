@@ -70,6 +70,7 @@ export default function AgendaManager({
   initialTurnos,
   services,
   initialEspera,
+  puedeCobrarSena = false,
   tenantQuery,
 }: {
   store: Store
@@ -77,6 +78,8 @@ export default function AgendaManager({
   initialTurnos: Booking[]
   services: Service[]
   initialEspera: BookingWaitlist[]
+  /** La tienda tiene Mercado Pago conectado y una seña configurada. */
+  puedeCobrarSena?: boolean
   tenantQuery: string
 }) {
   const router = useRouter()
@@ -91,6 +94,8 @@ export default function AgendaManager({
   const [motivoCancelacion, setMotivoCancelacion] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
+  // Enlace de pago del último turno asignado con seña, para mandarlo por WhatsApp
+  const [enlaceSena, setEnlaceSena] = useState<{ url: string; telefono: string; nombre: string } | null>(null)
   const [pestana, setPestana] = useState<'turnos' | 'espera'>('turnos')
   const [espera, setEspera] = useState<BookingWaitlist[]>(initialEspera)
   const nombreServicio = (id: string | null) => services.find((s) => s.id === id)?.nombre ?? 'Servicio'
@@ -176,6 +181,10 @@ export default function AgendaManager({
     nombre: string
     telefono: string
     email: string
+    /** Si se carga desde la lista de espera: la persona a la que se le asigna el turno. */
+    espera?: { id: string; horaPreferida: string | null; conCuenta: boolean }
+    /** Pedirle la seña a quien se le asigna el turno. */
+    cobrarSena?: boolean
     cargando: boolean
     guardando: boolean
     error: string | null
@@ -189,9 +198,34 @@ export default function AgendaManager({
     const sep = tenantQuery ? `${tenantQuery}&` : '?'
     const res = await fetch(`/api/turnos/disponibilidad${sep}service_id=${serviceId}&desde=${fecha}&dias=1`)
     const data = await res.json().catch(() => ({}))
-    setManual((m) =>
-      m ? { ...m, cargando: false, horarios: res.ok ? (data?.dias?.[fecha] ?? []) : [], error: res.ok ? null : data?.error || 'No se pudieron cargar los horarios.' } : m
-    )
+    setManual((m) => {
+      if (!m) return m
+      const horarios: { inicio: string; etiqueta: string }[] = res.ok ? (data?.dias?.[fecha] ?? []) : []
+      // Desde la lista de espera, si el horario que buscaba la persona está libre, ya queda elegido
+      const preferido = m.espera?.horaPreferida ? horarios.find((h) => h.etiqueta === m.espera?.horaPreferida) : undefined
+      return { ...m, cargando: false, horarios, inicio: preferido?.inicio ?? '', error: res.ok ? null : data?.error || 'No se pudieron cargar los horarios.' }
+    })
+  }
+
+  // Asignarle un turno a alguien de la lista de espera: abre la carga con sus datos y el
+  // servicio y día que quería; al guardar, queda resuelto y le llega la confirmación.
+  const asignarDesdeEspera = (e: BookingWaitlist) => {
+    setPestana('turnos')
+    setManual({
+      serviceId: e.service_id,
+      fecha: e.fecha,
+      horarios: null,
+      inicio: '',
+      nombre: e.cliente_nombre,
+      telefono: e.cliente_telefono ?? '',
+      email: e.cliente_email ?? '',
+      espera: { id: e.id, horaPreferida: e.hora_preferida, conCuenta: Boolean(e.cliente_user_id) },
+      cobrarSena: puedeCobrarSena,
+      cargando: false,
+      guardando: false,
+      error: null,
+    })
+    buscarHorarios(e.service_id, e.fecha)
   }
 
   const guardarManual = async () => {
@@ -211,12 +245,23 @@ export default function AgendaManager({
         clienteNombre: manual.nombre,
         clienteTelefono: manual.telefono,
         clienteEmail: manual.email,
+        waitlistId: manual.espera?.id,
+        cobrarSena: manual.espera ? Boolean(manual.cobrarSena) : undefined,
       }),
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
       setManual((m) => (m ? { ...m, guardando: false, error: data?.error || 'No se pudo cargar el turno.' } : m))
       return
+    }
+    if (manual.espera) setEspera((list) => list.filter((x) => x.id !== manual.espera?.id))
+    if (data.pago) {
+      setAviso(
+        manual.email
+          ? 'Turno reservado a la espera de la seña. Le enviamos el enlace de pago por email; tiene 24 horas para pagar.'
+          : 'Turno reservado a la espera de la seña. Como no tiene email, mandale el enlace por WhatsApp (abajo).'
+      )
+      setEnlaceSena({ url: data.enlaceTurno, telefono: manual.telefono, nombre: manual.nombre })
     }
     setManual(null)
     setDia(fechaLocal(new Date(data.booking.starts_at), zona))
@@ -256,6 +301,23 @@ export default function AgendaManager({
         <p className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-sm flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 shrink-0" /> {aviso}
         </p>
+      )}
+      {enlaceSena && (
+        <div className="flex flex-col sm:flex-row gap-2">
+          {waLink(enlaceSena.telefono, `Hola ${enlaceSena.nombre}, te reservamos un turno en ${store.nombre}. Para confirmarlo pagá la seña desde acá (tenés 24 horas): ${enlaceSena.url}`) && (
+            <a
+              href={waLink(enlaceSena.telefono, `Hola ${enlaceSena.nombre}, te reservamos un turno en ${store.nombre}. Para confirmarlo pagá la seña desde acá (tenés 24 horas): ${enlaceSena.url}`)!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="min-h-11 px-4 rounded-xl border border-[var(--color-borde)] text-sm font-semibold inline-flex items-center justify-center gap-2 hover:bg-black/5 dark:hover:bg-white/5"
+            >
+              <Phone className="w-4 h-4" /> Mandar el enlace de pago por WhatsApp
+            </a>
+          )}
+          <button type="button" onClick={() => setEnlaceSena(null)} className="min-h-11 px-4 rounded-xl text-sm font-semibold opacity-70 hover:opacity-100 cursor-pointer">
+            Ocultar
+          </button>
+        </div>
       )}
 
       {/* Pestañas: turnos del día / lista de espera */}
@@ -305,8 +367,8 @@ export default function AgendaManager({
                       <Phone className="w-4 h-4" /> Avisar por WhatsApp
                     </a>
                   )}
-                  <button type="button" onClick={() => actualizarEspera(e, 'resuelto')} className="min-h-11 px-3 rounded-xl border border-[var(--color-borde)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer">
-                    <Check className="w-4 h-4" /> Resuelto
+                  <button type="button" onClick={() => asignarDesdeEspera(e)} className="min-h-11 px-3 rounded-xl bg-[#FACC15] hover:bg-[#EAB308] text-[#1F2937] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer">
+                    <CalendarCheck className="w-4 h-4" /> Asignar turno
                   </button>
                   <button type="button" onClick={() => actualizarEspera(e, 'cancelado')} className="min-h-11 px-3 rounded-xl border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-red-500/10">
                     <X className="w-4 h-4" /> Quitar
@@ -329,7 +391,7 @@ export default function AgendaManager({
       {manual && (
         <div className="bg-[var(--color-superficie)] border border-[var(--color-borde)] rounded-3xl p-5 sm:p-7 space-y-4 text-[var(--color-texto)]">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold">Cargar un turno</h2>
+            <h2 className="text-base font-semibold">{manual.espera ? `Asignar turno a ${manual.nombre}` : 'Cargar un turno'}</h2>
             <button type="button" onClick={() => setManual(null)} aria-label="Cerrar" className="min-h-11 min-w-11 inline-flex items-center justify-center rounded-xl hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
               <X className="w-5 h-5" />
             </button>
@@ -379,6 +441,15 @@ export default function AgendaManager({
             <input className={inputClass} maxLength={30} inputMode="tel" placeholder="WhatsApp (opcional)" value={manual.telefono} onChange={(e) => setManual({ ...manual, telefono: e.target.value })} aria-label="WhatsApp del cliente" />
             <input className={inputClass} maxLength={150} type="email" placeholder="Email (opcional)" value={manual.email} onChange={(e) => setManual({ ...manual, email: e.target.value })} aria-label="Email del cliente" />
           </div>
+          {manual.espera && puedeCobrarSena && (
+            <label className="flex items-start gap-3 p-3 rounded-xl border border-[var(--color-borde)] cursor-pointer min-h-11">
+              <input type="checkbox" className="w-5 h-5 mt-0.5 accent-[#FACC15] shrink-0" checked={Boolean(manual.cobrarSena)} onChange={(e) => setManual({ ...manual, cobrarSena: e.target.checked })} />
+              <span className="text-sm">
+                <span className="font-semibold block">Pedir la seña</span>
+                <span className="opacity-70 text-xs">Le mandamos el enlace para pagarla con Mercado Pago. Tiene 24 horas: si no paga, el horario se libera. Hasta que pague, el turno queda pendiente.</span>
+              </span>
+            </label>
+          )}
           {manual.error && <p className="text-sm text-red-600 dark:text-red-400">{manual.error}</p>}
           <div className="flex justify-end">
             <button type="button" onClick={guardarManual} disabled={manual.guardando} className="w-full sm:w-auto min-h-11 px-5 rounded-xl bg-[#FACC15] hover:bg-[#EAB308] disabled:opacity-50 text-[#1F2937] text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-pointer">

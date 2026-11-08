@@ -13,6 +13,12 @@ import type { SenaModo } from '@/types/database'
 export const SENA_MINUTOS_PARA_PAGAR = 20
 
 /**
+ * Plazo para pagar la seña cuando la tienda asigna el turno a alguien de la lista de espera:
+ * la persona no está en la pantalla de reserva, así que se le da tiempo para ver el email.
+ */
+export const SENA_MINUTOS_ASIGNADO = 24 * 60
+
+/**
  * Monto de la seña según la configuración de la tienda.
  * - porcentaje: X% del precio del servicio
  * - monto: monto fijo, nunca mayor al precio (si el precio es 0, se cobra el monto)

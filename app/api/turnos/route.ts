@@ -16,8 +16,9 @@ import { verifyStoreAccess } from '@/lib/store-auth'
 import { registrarClienteTurnos } from '@/lib/booking/customers'
 import { getRequestOrigin } from '@/lib/store-metadata'
 import { crearTurno, BookingError } from '@/lib/booking/server'
+import { SENA_MINUTOS_ASIGNADO } from '@/lib/booking/sena'
 import { getBookingConfig } from '@/lib/booking/setup'
-import { sendBookingConfirmationEmail, notifyStoreBookingEmail } from '@/lib/booking/emails'
+import { sendBookingConfirmationEmail, notifyStoreBookingEmail, sendSenaPendienteEmail } from '@/lib/booking/emails'
 import { whatsappReservaUrl } from '@/lib/booking/format'
 import { fechaLocal } from '@/lib/booking/availability'
 
@@ -55,6 +56,8 @@ export async function POST(req: Request) {
   const notas = clean(body?.notas, 500) || null
 
   let cliente: { userId: string | null; nombre: string; email: string | null; telefono: string | null }
+  // Entrada de la lista de espera a la que la tienda le está asignando este turno
+  let asignadoDeEspera: string | null = null
 
   if (manual) {
     const auth = await verifyStoreAccess(user.email, store.id, {
@@ -69,6 +72,26 @@ export async function POST(req: Request) {
       nombre: clean(body?.clienteNombre, 100),
       email: clean(body?.clienteEmail, 150).toLowerCase() || null,
       telefono: clean(body?.clienteTelefono, 30) || null,
+    }
+
+    // Turno asignado a alguien de la lista de espera: se vincula a su cuenta (así lo ve en
+    // "Mis turnos") y el aviso de confirmación le llega por email. La entrada se valida
+    // contra esta tienda: nunca se confía en el id que mande el navegador.
+    const waitlistId = clean(body?.waitlistId, 40)
+    if (/^[0-9a-f-]{36}$/i.test(waitlistId)) {
+      const { data: entrada } = await createSupabaseAdminClient()
+        .from('booking_waitlist')
+        .select('cliente_user_id, cliente_email, cliente_telefono')
+        .eq('id', waitlistId)
+        .eq('store_id', store.id)
+        .in('estado', ['esperando', 'avisado'])
+        .maybeSingle()
+      if (entrada) {
+        cliente.userId = entrada.cliente_user_id
+        cliente.email = cliente.email || entrada.cliente_email
+        cliente.telefono = cliente.telefono || entrada.cliente_telefono
+        asignadoDeEspera = waitlistId
+      }
     }
   } else {
     const email = user.email.trim().toLowerCase()
@@ -99,9 +122,20 @@ export async function POST(req: Request) {
       cliente,
       notas,
       origen: manual ? 'manual' : 'web',
+      // Turno asignado desde la lista de espera: puede pedir seña, con más plazo para pagarla
+      cobrarSena: Boolean(asignadoDeEspera) && body?.cobrarSena === true,
+      retencionMinutos: asignadoDeEspera ? SENA_MINUTOS_ASIGNADO : undefined,
     })
 
     const { settings } = await getBookingConfig(store)
+
+    if (asignadoDeEspera) {
+      await createSupabaseAdminClient()
+        .from('booking_waitlist')
+        .update({ estado: 'resuelto', updated_at: new Date().toISOString() })
+        .eq('id', asignadoDeEspera)
+        .eq('store_id', store.id)
+    }
 
     // Si estaba en lista de espera para ese servicio y ese día, ya consiguió turno.
     if (cliente.userId && booking.service_id) {
@@ -123,6 +157,12 @@ export async function POST(req: Request) {
     // (lib/mp-payments.ts); antes de eso el turno es solo una retención.
     // Se esperan antes de responder (en Vercel una promesa suelta puede cortarse),
     // pero con allSettled: un fallo de Resend no anula el turno.
+    if (order && manual) {
+      // Seña pedida por la tienda: el cliente recibe el enlace para pagarla
+      await Promise.allSettled([
+        sendSenaPendienteEmail({ store, booking, zona: settings.zona_horaria, enlaceTurno, sena, horas: SENA_MINUTOS_ASIGNADO / 60 }),
+      ])
+    }
     if (!order) {
       await Promise.allSettled([
         sendBookingConfirmationEmail({ store, booking, zona: settings.zona_horaria, enlaceTurno }),
