@@ -706,8 +706,12 @@ export default function ProductDetailView({
             </div>
           )}
 
-          {/* Consulta por WhatsApp */}
-          {whatsappUrl && (
+          {/* Consulta por WhatsApp secundaria: solo se muestra cuando el botón principal
+              es de compra directa (gestiona stock, hay unidades y checkout activo),
+              para permitir al cliente sacarse dudas sin salir al checkout.
+              Si el botón principal ya es de WhatsApp (sin stock, vitrina o sin gestión de stock),
+              no se duplica. */}
+          {whatsappUrl && product.gestiona_stock && (currentStock ?? 0) > 0 && isCheckoutActive && (
             <a
               href={whatsappUrl}
               target="_blank"
@@ -717,8 +721,8 @@ export default function ProductDetailView({
               <WhatsAppIcon className="w-4 h-4" />
               <span>
                 {selectedVariant
-                  ? `Consultar disponibilidad de "${selectedVariant.nombre}" por WhatsApp`
-                  : 'Consultar disponibilidad por WhatsApp'}
+                  ? `Consultar por WhatsApp sobre "${selectedVariant.nombre}"`
+                  : 'Consultar por WhatsApp'}
               </span>
             </a>
           )}
