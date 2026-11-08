@@ -22,6 +22,7 @@ import {
   FolderPlus,
 } from 'lucide-react'
 import { AdminPageHeader } from '../components/admin-page-header'
+import Select from '@/components/native-select'
 
 interface CategoriasManagerProps {
   store: Store
@@ -396,7 +397,7 @@ export default function CategoriasManager({
                   ¿Es una subcategoría? (Opcional)
                 </label>
                 <div className="relative">
-                  <select
+                  <Select
                     value={parentId}
                     onChange={(e) => setParentId(e.target.value)}
                     className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 cursor-pointer transition-all shadow-2xs"
@@ -411,7 +412,7 @@ export default function CategoriasManager({
                           Dentro de: {c.nombre}
                         </option>
                       ))}
-                  </select>
+                  </Select>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
                   Déjala en <strong>"Ninguna"</strong> si es un grupo principal (ej: <em>Lámparas</em>), o elige la categoría padre para anidarla como subcategoría (ej: <em>Lámparas → Luna 3D</em>).

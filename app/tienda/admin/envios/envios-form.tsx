@@ -39,6 +39,7 @@ import {
   formatCuit,
   isValidCuit,
 } from '@/lib/shipping-validators'
+import Select from '@/components/native-select'
 
 const PROVINCIAS = [
   'Ciudad Autónoma de Buenos Aires',
@@ -711,7 +712,7 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
                 </div>
                 <div>
                   <label className={labelClass}>Provincia</label>
-                  <select
+                  <Select
                     value={origenProvincia}
                     onChange={(e) => setOrigenProvincia(e.target.value)}
                     required
@@ -723,7 +724,7 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
                         {p}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
               </div>
 

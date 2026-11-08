@@ -41,6 +41,7 @@ import {
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 import { resolveMeasures, hasCompleteMeasures, type ShippingMeasures } from '@/lib/shipping-validators'
 import { AdminPageHeader } from '../components/admin-page-header'
+import Select from '@/components/native-select'
 
 // Select compartido: incluye las medidas del producto para poder avisar cuáles
 // no se pueden cotizar. Se reutiliza en los re-fetch para no perder `details`.
@@ -565,7 +566,7 @@ export default function ProductosTable({
 
           {/* Filtro por Categoría */}
           <div className="sm:col-span-3">
-            <select
+            <Select
               value={selectedCategoryFilter}
               onChange={(e) => setSelectedCategoryFilter(e.target.value)}
               className="w-full min-h-[42px] px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 cursor-pointer transition-all"
@@ -578,12 +579,12 @@ export default function ProductosTable({
                   {c.nombre}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           {/* Filtro por Estado */}
           <div className="sm:col-span-3">
-            <select
+            <Select
               value={selectedStatusFilter}
               onChange={(e) => setSelectedStatusFilter(e.target.value as any)}
               className="w-full min-h-[42px] px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 cursor-pointer transition-all"
@@ -597,7 +598,7 @@ export default function ProductosTable({
               <option value="hidden" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white py-1">
                 Solo ocultos ({products.length - visibleCount})
               </option>
-            </select>
+            </Select>
           </div>
         </div>
       </div>
@@ -747,7 +748,7 @@ export default function ProductosTable({
 
                         {/* Categoría Rápida */}
                         <td className="py-3 px-3">
-                          <select
+                          <Select
                             value={product.category_id || ''}
                             onChange={(e) =>
                               handleQuickUpdate(product.id, 'category_id', e.target.value || null)
@@ -766,7 +767,7 @@ export default function ProductosTable({
                                 {cat.nombre}
                               </option>
                             ))}
-                          </select>
+                          </Select>
                         </td>
 
                         {/* Precio Base Editable In-Line */}

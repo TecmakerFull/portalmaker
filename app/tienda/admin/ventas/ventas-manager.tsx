@@ -41,6 +41,7 @@ import {
   Check,
 } from 'lucide-react'
 import { AdminPageHeader } from '../components/admin-page-header'
+import Select from '@/components/native-select'
 
 export interface ProductSummaryForSale {
   id: string
@@ -1113,7 +1114,7 @@ export default function VentasManager({
             {/* Filtro Temporal */}
             <div className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 opacity-50 shrink-0" />
-              <select
+              <Select
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value as DateRangeFilter)}
                 className="min-h-[38px] px-3 py-1.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 cursor-pointer transition-all shadow-2xs"
@@ -1123,7 +1124,7 @@ export default function VentasManager({
                 <option value="7dias" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Últimos 7 días</option>
                 <option value="30dias" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Últimos 30 días</option>
                 <option value="este_mes" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Este mes</option>
-              </select>
+              </Select>
             </div>
 
             {/* Orden Asc / Desc */}
@@ -1854,7 +1855,7 @@ export default function VentasManager({
                   {clienteTipo === 'existente' && (
                     <div className="pt-2 space-y-1.5">
                       <label className="text-[11px] font-semibold opacity-70 block">Seleccionar cliente registrado:</label>
-                      <select
+                      <Select
                         value={selectedCustomerId}
                         onChange={(e) => setSelectedCustomerId(e.target.value)}
                         className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 cursor-pointer transition-all shadow-2xs"
@@ -1865,7 +1866,7 @@ export default function VentasManager({
                             {c.nombre} {c.telefono ? `(${c.telefono})` : ''} {c.email ? `· ${c.email}` : ''}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                     </div>
                   )}
 
@@ -2117,7 +2118,7 @@ export default function VentasManager({
                     <label className="font-bold uppercase tracking-wider opacity-70 block">
                       Forma de Cobro
                     </label>
-                    <select
+                    <Select
                       value={manualMetodoPago}
                       onChange={(e) => setManualMetodoPago(e.target.value)}
                       className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 cursor-pointer transition-all shadow-2xs"
@@ -2126,14 +2127,14 @@ export default function VentasManager({
                       <option value="transferencia" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Transferencia Bancaria</option>
                       <option value="mercadopago" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Mercado Pago / Débito</option>
                       <option value="acordar" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">A convenir / Cuenta Corriente</option>
-                    </select>
+                    </Select>
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="font-bold uppercase tracking-wider opacity-70 block">
                       Entrega
                     </label>
-                    <select
+                    <Select
                       value={manualTipoEntrega}
                       onChange={(e) => setManualTipoEntrega(e.target.value as any)}
                       className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 cursor-pointer transition-all shadow-2xs"
@@ -2141,7 +2142,7 @@ export default function VentasManager({
                       <option value="retiro" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Entregado en local / Retiro</option>
                       <option value="envio" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Envío a domicilio</option>
                       <option value="acordar" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">A coordinar</option>
-                    </select>
+                    </Select>
                   </div>
 
                   {/* Checkbox Descontar Stock */}

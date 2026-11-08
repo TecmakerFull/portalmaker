@@ -11,7 +11,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { Store, ProductReview } from '@/types/database'
-import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import { createSupabaseBrowserClient, cerrarSesionCompleta } from '@/lib/supabase/client'
 import { useCart } from '@/lib/cart-context'
 import {
   UserRound,
@@ -565,9 +565,13 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
 
   // Cerrar sesión
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    await cerrarSesionCompleta()
     try {
       localStorage.removeItem(`pm_device_cust_${store.id}`)
+      // Fuerza que el próximo ingreso vuelva a registrarse como cliente
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith(`pm_cust_sync_${store.id}_`))
+        .forEach((k) => localStorage.removeItem(k))
     } catch {}
     setIsLoggedIn(false)
     setCurrentUser(null)
@@ -577,6 +581,8 @@ export default function CuentaClient({ store, tenantQuery }: CuentaClientProps) 
     setPasswordInput('')
     setNombreInput('')
     setAuthMode('magic-link')
+    // Recarga completa: garantiza que no quede ningún estado de la sesión anterior
+    window.location.href = withTenant('/tienda/cuenta')
   }
 
   // Helper para renderizar items de una orden de forma segura

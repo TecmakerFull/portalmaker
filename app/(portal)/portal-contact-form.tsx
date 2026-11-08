@@ -8,6 +8,7 @@
 
 import { useState } from 'react'
 import { Send, Check, Loader2, AlertCircle } from 'lucide-react'
+import Select from '@/components/native-select'
 
 export default function PortalContactForm() {
   const [nombre, setNombre] = useState('')
@@ -112,7 +113,7 @@ export default function PortalContactForm() {
         <label className="block text-xs font-medium mb-1 opacity-80">
           Motivo de consulta
         </label>
-        <select
+        <Select
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
           className="w-full h-11 px-3.5 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-xs sm:text-sm outline-none focus:border-[#FF5500] text-[var(--color-texto)]"
@@ -121,7 +122,7 @@ export default function PortalContactForm() {
           <option value="Planes y suscripciones">Planes y suscripciones</option>
           <option value="Soporte técnico">Soporte técnico</option>
           <option value="Plan Enterprise / A medida">Plan Enterprise / A medida</option>
-        </select>
+        </Select>
       </div>
 
       <div>

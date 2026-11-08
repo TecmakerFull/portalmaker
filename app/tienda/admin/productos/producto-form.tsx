@@ -50,6 +50,7 @@ import {
   MAX_DIMENSION_CM,
   MAX_VALOR_DECLARADO,
 } from '@/lib/shipping-validators'
+import Select from '@/components/native-select'
 
 interface LocalVariant {
   id?: string
@@ -1008,7 +1009,7 @@ export default function ProductoForm({
                     <span>Nueva categoría</span>
                   </button>
                 </div>
-                <select
+                <Select
                   value={selectedParentCatId}
                   onChange={(e) => {
                     setSelectedParentCatId(e.target.value)
@@ -1024,7 +1025,7 @@ export default function ProductoForm({
                       {cat.nombre}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
 
               {/* Subcategoría Anidada */}
@@ -1047,7 +1048,7 @@ export default function ProductoForm({
                     </button>
                   )}
                 </div>
-                <select
+                <Select
                   value={selectedSubCatId}
                   disabled={!selectedParentCatId || subCategories.length === 0}
                   onChange={(e) => setSelectedSubCatId(e.target.value)}
@@ -1065,7 +1066,7 @@ export default function ProductoForm({
                       {sub.nombre}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
             </div>
           </div>
@@ -2409,7 +2410,7 @@ export default function ProductoForm({
                   ¿Es una subcategoría? (Opcional)
                 </label>
                 <div className="relative">
-                  <select
+                  <Select
                     value={nuevaCatParentId}
                     onChange={(e) => setNuevaCatParentId(e.target.value)}
                     className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 cursor-pointer transition-all shadow-xs"
@@ -2422,7 +2423,7 @@ export default function ProductoForm({
                         Dentro de: {c.nombre}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
                   Déjala en <strong>"Ninguna"</strong> si es un grupo principal, o elige la categoría padre para anidarla como subcategoría.

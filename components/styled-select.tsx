@@ -37,6 +37,8 @@ interface Props<T extends string | number> {
   disabled?: boolean
   /** Clases extra para el botón (por ejemplo, para cambiar colores del portal). */
   className?: string
+  /** Estilos en línea del botón (por ejemplo, mostrar cada opción en su propia tipografía). */
+  style?: React.CSSProperties
 }
 
 export default function StyledSelect<T extends string | number = string>({
@@ -48,13 +50,16 @@ export default function StyledSelect<T extends string | number = string>({
   required,
   disabled,
   className = '',
+  style,
   ...resto
 }: Props<T>) {
   const idAuto = useId()
   const listaId = `${id ?? idAuto}-lista`
   const contenedor = useRef<HTMLDivElement>(null)
   const [abierto, setAbierto] = useState(false)
-  const [arriba, setArriba] = useState(false)
+  // La lista se posiciona con coordenadas de pantalla (fixed) para que no la recorten
+  // tablas con scroll ni ventanas modales con overflow.
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; left: number; width: number; maxH: number } | null>(null)
   const [activo, setActivo] = useState(-1)
 
   const seleccionable = useMemo(() => options.filter((o) => !o.disabled), [options])
@@ -74,7 +79,15 @@ export default function StyledSelect<T extends string | number = string>({
     if (disabled) return
     // Se abre hacia arriba si abajo hay poco lugar y arriba hay más
     const rect = contenedor.current?.getBoundingClientRect()
-    if (rect) setArriba(window.innerHeight - rect.bottom < 280 && rect.top > window.innerHeight - rect.bottom)
+    if (rect) {
+      const abajo = window.innerHeight - rect.bottom
+      const arriba = abajo < 280 && rect.top > abajo
+      setPos(
+        arriba
+          ? { bottom: window.innerHeight - rect.top + 4, left: rect.left, width: rect.width, maxH: Math.min(256, rect.top - 12) }
+          : { top: rect.bottom + 4, left: rect.left, width: rect.width, maxH: Math.min(256, abajo - 12) }
+      )
+    }
     setActivo(Math.max(0, seleccionable.findIndex((o) => o.value === value)))
     setAbierto(true)
   }
@@ -91,11 +104,21 @@ export default function StyledSelect<T extends string | number = string>({
     const fuera = (e: MouseEvent | TouchEvent) => {
       if (contenedor.current && !contenedor.current.contains(e.target as Node)) setAbierto(false)
     }
+    // Con posición fija, la lista no acompaña un scroll de la página: se cierra
+    const cerrarPorScroll = (e: Event) => {
+      if (contenedor.current?.contains(e.target as Node)) return
+      setAbierto(false)
+    }
+    const cerrar = () => setAbierto(false)
     document.addEventListener('mousedown', fuera)
     document.addEventListener('touchstart', fuera)
+    window.addEventListener('scroll', cerrarPorScroll, true)
+    window.addEventListener('resize', cerrar)
     return () => {
       document.removeEventListener('mousedown', fuera)
       document.removeEventListener('touchstart', fuera)
+      window.removeEventListener('scroll', cerrarPorScroll, true)
+      window.removeEventListener('resize', cerrar)
     }
   }, [abierto])
 
@@ -159,6 +182,7 @@ export default function StyledSelect<T extends string | number = string>({
         aria-controls={listaId}
         aria-label={resto['aria-label']}
         disabled={disabled}
+        style={style}
         onClick={() => (abierto ? setAbierto(false) : abrir())}
         onKeyDown={alTeclear}
         className={`w-full min-h-11 px-3 rounded-xl border border-[var(--color-input-borde,var(--color-borde))] bg-[var(--color-input-bg,var(--color-fondo))] text-[var(--color-input-texto,var(--color-texto))] text-base sm:text-sm text-left flex items-center justify-between gap-2 cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FACC15] disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
@@ -182,13 +206,12 @@ export default function StyledSelect<T extends string | number = string>({
         />
       )}
 
-      {abierto && (
+      {abierto && pos && (
         <ul
           id={listaId}
           role="listbox"
-          className={`absolute z-50 left-0 right-0 max-h-64 overflow-auto rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] shadow-xl py-1 ${
-            arriba ? 'bottom-full mb-1' : 'top-full mt-1'
-          }`}
+          style={{ position: 'fixed', top: pos.top, bottom: pos.bottom, left: pos.left, width: pos.width, maxHeight: pos.maxH }}
+          className="z-[100] overflow-auto rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] shadow-xl py-1"
         >
           {grupos.map(([grupo, items]) => (
             <li key={grupo || 'sin-grupo'} role="presentation">

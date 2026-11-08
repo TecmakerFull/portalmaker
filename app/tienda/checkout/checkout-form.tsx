@@ -35,6 +35,7 @@ import {
 import WhatsAppIcon from '../sections/whatsapp-icon'
 import GeorefAddressInput from '@/components/georef-address-input'
 import { inferirProvinciaYCiudadDesdeCP } from '@/lib/shipping-validators'
+import Select from '@/components/native-select'
 
 interface CheckoutFormProps {
   store: Store
@@ -1161,7 +1162,7 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
                       <span>Buscando sucursales habilitadas cerca de tu código postal...</span>
                     </div>
                   ) : branchesList.length > 0 ? (
-                    <select
+                    <Select
                       value={selectedBranch?.branchId || ''}
                       onChange={(e) => {
                         const b = branchesList.find((x) => x.branchId === e.target.value)
@@ -1174,7 +1175,7 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
                           {b.nombre} — {b.direccion} ({b.localidad})
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   ) : (
                     <p className="text-xs opacity-70 italic">
                       No se encontraron sucursales de retiro para este código postal. Te recomendamos elegir entrega a domicilio.

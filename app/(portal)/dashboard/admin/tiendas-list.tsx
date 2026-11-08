@@ -50,6 +50,7 @@ import {
   Sliders,
 } from 'lucide-react'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
+import Select from '@/components/native-select'
 
 export type SuperadminStoreItem = {
   id: string
@@ -379,7 +380,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
 
           <div className="flex items-center gap-2 flex-wrap">
             {/* Filtro por Estado */}
-            <select
+            <Select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="min-h-[42px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-[#FF5500] focus:ring-1 focus:ring-[#FF5500] cursor-pointer"
@@ -390,10 +391,10 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
               <option value="en_gracia">En período de gracia</option>
               <option value="vencida">Vencidas / En mora</option>
               <option value="pausada">Pausadas</option>
-            </select>
+            </Select>
 
             {/* Filtro por Plan */}
-            <select
+            <Select
               value={planFilter}
               onChange={(e) => setPlanFilter(e.target.value)}
               className="min-h-[42px] px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-[#FF5500] focus:ring-1 focus:ring-[#FF5500] cursor-pointer"
@@ -403,7 +404,7 @@ export default function SuperadminTiendasList({ initialStores }: { initialStores
               <option value="starter">Starter</option>
               <option value="enterprise">Enterprise</option>
               <option value="bonificado">Bonificado / Beta</option>
-            </select>
+            </Select>
 
             {/* Selector de Modo de Vista */}
             <div className="flex items-center p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-[var(--color-borde)]">

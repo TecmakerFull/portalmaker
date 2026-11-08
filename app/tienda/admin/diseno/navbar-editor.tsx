@@ -31,6 +31,7 @@ import type {
   Product,
   StorePage
 } from '@/types/database';
+import Select from '@/components/native-select'
 
 interface NavbarEditorProps {
   section: StoreSection<NavbarSettings, NavbarItem[]>;
@@ -370,7 +371,7 @@ export function NavbarEditor({
                             Tipo de destino
                           </label>
                           <div className="relative">
-                            <select
+                            <Select
                               value={item.tipo_destino}
                               onChange={(e) => handleUpdateItem(item.id, { tipo_destino: e.target.value as any })}
                               className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
@@ -380,7 +381,7 @@ export function NavbarEditor({
                               <option value="producto">Producto específico</option>
                               <option value="pagina">Página informativa</option>
                               <option value="custom">URL personalizada / Externa</option>
-                            </select>
+                            </Select>
                             <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           </div>
                         </div>
@@ -393,7 +394,7 @@ export function NavbarEditor({
                             Seleccionar Categoría
                           </label>
                           <div className="relative">
-                            <select
+                            <Select
                               value={item.destino_valor || ''}
                               onChange={(e) => handleUpdateItem(item.id, { destino_valor: e.target.value })}
                               className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
@@ -404,7 +405,7 @@ export function NavbarEditor({
                                   {cat.nombre}
                                 </option>
                               ))}
-                            </select>
+                            </Select>
                             <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           </div>
                         </div>
@@ -416,7 +417,7 @@ export function NavbarEditor({
                             Seleccionar Producto
                           </label>
                           <div className="relative">
-                            <select
+                            <Select
                               value={item.destino_valor || ''}
                               onChange={(e) => handleUpdateItem(item.id, { destino_valor: e.target.value })}
                               className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
@@ -427,7 +428,7 @@ export function NavbarEditor({
                                   {prod.nombre}
                                 </option>
                               ))}
-                            </select>
+                            </Select>
                             <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           </div>
                         </div>
@@ -439,7 +440,7 @@ export function NavbarEditor({
                             Seleccionar Página
                           </label>
                           <div className="relative">
-                            <select
+                            <Select
                               value={item.destino_valor || ''}
                               onChange={(e) => handleUpdateItem(item.id, { destino_valor: e.target.value })}
                               className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
@@ -450,7 +451,7 @@ export function NavbarEditor({
                                   {pg.titulo}
                                 </option>
                               ))}
-                            </select>
+                            </Select>
                             <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           </div>
                         </div>

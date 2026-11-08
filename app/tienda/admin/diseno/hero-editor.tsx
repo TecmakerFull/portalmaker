@@ -31,6 +31,7 @@ import type {
   Product,
   StorePage
 } from '@/types/database';
+import Select from '@/components/native-select'
 
 interface HeroEditorProps {
   section: StoreSection<HeroBannerSettings, HeroBannerSlide[]>;
@@ -488,7 +489,7 @@ export function HeroEditor({
                               Destino del clic
                             </label>
                             <div className="relative">
-                              <select
+                              <Select
                                 value={slide.cta_destino_tipo || 'catalogo'}
                                 onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_tipo: e.target.value as any })}
                                 className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
@@ -498,7 +499,7 @@ export function HeroEditor({
                                 <option value="producto">Producto</option>
                                 <option value="pagina">Página</option>
                                 <option value="custom">URL personalizada</option>
-                              </select>
+                              </Select>
                               <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                             </div>
                           </div>
@@ -509,7 +510,7 @@ export function HeroEditor({
                             </label>
                             {slide.cta_destino_tipo === 'categoria' ? (
                               <div className="relative">
-                                <select
+                                <Select
                                   value={slide.cta_destino_valor || ''}
                                   onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_valor: e.target.value })}
                                   className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
@@ -518,12 +519,12 @@ export function HeroEditor({
                                   {categories.map((c) => (
                                     <option key={c.id} value={c.id}>{c.nombre}</option>
                                   ))}
-                                </select>
+                                </Select>
                                 <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                               </div>
                             ) : slide.cta_destino_tipo === 'producto' ? (
                               <div className="relative">
-                                <select
+                                <Select
                                   value={slide.cta_destino_valor || ''}
                                   onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_valor: e.target.value })}
                                   className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
@@ -532,12 +533,12 @@ export function HeroEditor({
                                   {products.map((p) => (
                                     <option key={p.id} value={p.slug}>{p.nombre}</option>
                                   ))}
-                                </select>
+                                </Select>
                                 <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                               </div>
                             ) : slide.cta_destino_tipo === 'pagina' ? (
                               <div className="relative">
-                                <select
+                                <Select
                                   value={slide.cta_destino_valor || ''}
                                   onChange={(e) => handleUpdateSlide(slide.id, { cta_destino_valor: e.target.value })}
                                   className="w-full appearance-none pl-3 pr-9 py-2 text-xs rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer font-medium"
@@ -546,7 +547,7 @@ export function HeroEditor({
                                   {pages.map((pg) => (
                                     <option key={pg.id} value={pg.slug}>{pg.titulo}</option>
                                   ))}
-                                </select>
+                                </Select>
                                 <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                               </div>
                             ) : (

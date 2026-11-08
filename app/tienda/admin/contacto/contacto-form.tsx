@@ -42,6 +42,7 @@ import {
 } from '@/lib/horarios'
 import GeorefAddressInput from '@/components/georef-address-input'
 import { AdminPageHeader } from '../components/admin-page-header'
+import Select from '@/components/native-select'
 
 // Provincias argentinas normalizadas según el estándar de carriers
 const PROVINCIAS = [
@@ -101,7 +102,7 @@ function TimeSelect24h({
 }) {
   const opciones = getOpcionesHoras(value)
   return (
-    <select
+    <Select
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
@@ -113,7 +114,7 @@ function TimeSelect24h({
           {h} hs
         </option>
       ))}
-    </select>
+    </Select>
   )
 }
 
@@ -830,7 +831,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
 
           <div className="sm:col-span-4">
             <label className={labelClass}>Provincia</label>
-            <select
+            <Select
               value={provincia}
               onChange={(e) => setProvincia(e.target.value)}
               className={inputClass}
@@ -842,7 +843,7 @@ export default function ContactoForm({ store, tenantQuery }: ContactoFormProps) 
                   {p}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div className="sm:col-span-3">

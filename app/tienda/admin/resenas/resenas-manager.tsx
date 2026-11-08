@@ -24,6 +24,7 @@ import {
   Package,
 } from 'lucide-react'
 import { AdminPageHeader } from '../components/admin-page-header'
+import Select from '@/components/native-select'
 
 interface ReviewWithProduct extends ProductReview {
   product?: {
@@ -194,7 +195,7 @@ export default function ResenasManager({
 
         <div className="flex items-center gap-2">
           {/* Filtro por Estrellas */}
-          <select
+          <Select
             value={filterRating}
             onChange={(e) => setFilterRating(e.target.value === 'all' ? 'all' : Number(e.target.value))}
             className="h-11 px-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-xs sm:text-sm outline-none focus:border-[var(--color-primario)] text-[var(--color-texto)]"
@@ -205,10 +206,10 @@ export default function ResenasManager({
             <option value="3">3 Estrellas</option>
             <option value="2">2 Estrellas</option>
             <option value="1">1 Estrella</option>
-          </select>
+          </Select>
 
           {/* Filtro por Visibilidad */}
-          <select
+          <Select
             value={filterVisibility}
             onChange={(e) => setFilterVisibility(e.target.value as any)}
             className="h-11 px-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-xs sm:text-sm outline-none focus:border-[var(--color-primario)] text-[var(--color-texto)]"
@@ -216,7 +217,7 @@ export default function ResenasManager({
             <option value="all">Todas las reseñas</option>
             <option value="visible">Solo Visibles</option>
             <option value="hidden">Solo Ocultas</option>
-          </select>
+          </Select>
         </div>
       </div>
 

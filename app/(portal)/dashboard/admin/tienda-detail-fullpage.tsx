@@ -63,6 +63,7 @@ import {
   Info,
 } from 'lucide-react'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
+import Select from '@/components/native-select'
 
 interface StoreLiveMetrics {
   totalOrders: number
@@ -1084,14 +1085,14 @@ export default function SuperadminTiendaDetailFullpage({
                 <div className="space-y-4 text-xs">
                   <div>
                     <label className="block font-medium mb-1.5 opacity-80">Modo de Operación</label>
-                    <select
+                    <Select
                       value={subEditForm.modo_operacion || 'vitrina'}
                       onChange={(e) => setSubEditForm({ ...subEditForm, modo_operacion: e.target.value })}
                       className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     >
                       <option value="vitrina">Solo Vitrina (pedidos y consultas por WhatsApp)</option>
                       <option value="tienda">Tienda Completa (con carrito y checkout online)</option>
-                    </select>
+                    </Select>
                     <p className="text-[11px] opacity-60 mt-1">
                       En vitrina los compradores coordinan el pago directamente con el maker.
                     </p>
@@ -1099,26 +1100,26 @@ export default function SuperadminTiendaDetailFullpage({
 
                   <div>
                     <label className="block font-medium mb-1.5 opacity-80">Checkout y Carrito Online</label>
-                    <select
+                    <Select
                       value={subEditForm.checkout_activo ? 'true' : 'false'}
                       onChange={(e) => setSubEditForm({ ...subEditForm, checkout_activo: e.target.value === 'true' })}
                       className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     >
                       <option value="true">Habilitado (permite procesar compras en la web)</option>
                       <option value="false">Deshabilitado (solo cotizaciones por WhatsApp)</option>
-                    </select>
+                    </Select>
                   </div>
 
                   <div>
                     <label className="block font-medium mb-1.5 opacity-80">Envíos y Despacho Automatizado</label>
-                    <select
+                    <Select
                       value={subEditForm.envios_activo ? 'true' : 'false'}
                       onChange={(e) => setSubEditForm({ ...subEditForm, envios_activo: e.target.value === 'true' })}
                       className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     >
                       <option value="true">Habilitado (cotización en tiempo real y etiquetas)</option>
                       <option value="false">Deshabilitado (envíos a coordinar con el comprador)</option>
-                    </select>
+                    </Select>
                   </div>
 
                   <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-[var(--color-borde)] flex items-center justify-between">
@@ -1158,7 +1159,7 @@ export default function SuperadminTiendaDetailFullpage({
                         Ajusta sugerencias automáticamente
                       </span>
                     </div>
-                    <select
+                    <Select
                       value={subEditForm.plan || 'maker_pro'}
                       onChange={(e) => {
                         const newPlan = e.target.value
@@ -1181,7 +1182,7 @@ export default function SuperadminTiendaDetailFullpage({
                       <option value="maker_pro">Maker Pro (Nivel 3)</option>
                       <option value="enterprise">Enterprise (Nivel 4 — 0% Comisión)</option>
                       <option value="bonificado">Bonificado / Especial</option>
-                    </select>
+                    </Select>
                     <p className="text-[11px] opacity-60 mt-1">
                       {PLAN_LABELS[subEditForm.plan || 'maker_pro']?.desc || planMeta.desc}
                     </p>
@@ -1338,7 +1339,7 @@ export default function SuperadminTiendaDetailFullpage({
 
                   <div>
                     <label className="block font-medium mb-1.5 opacity-80">Estado de Pago Manual</label>
-                    <select
+                    <Select
                       value={subEditForm.estado_pago || 'al_dia'}
                       onChange={(e) => setSubEditForm({ ...subEditForm, estado_pago: e.target.value })}
                       className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
@@ -1348,7 +1349,7 @@ export default function SuperadminTiendaDetailFullpage({
                       <option value="bonificado">Bonificado</option>
                       <option value="gracia">En Gracia</option>
                       <option value="vencido">Vencido / En mora</option>
-                    </select>
+                    </Select>
                   </div>
                 </div>
               </div>
@@ -2249,7 +2250,7 @@ export default function SuperadminTiendaDetailFullpage({
 
                   <div>
                     <label className="block font-medium mb-1.5 opacity-80">Método de Cobro</label>
-                    <select
+                    <Select
                       value={paymentMetodo}
                       onChange={(e) => setPaymentMetodo(e.target.value)}
                       className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
@@ -2259,7 +2260,7 @@ export default function SuperadminTiendaDetailFullpage({
                       <option value="mercadopago">Mercado Pago</option>
                       <option value="debito_automatico">Débito automático</option>
                       <option value="otro">Otro acuerdo</option>
-                    </select>
+                    </Select>
                   </div>
 
                   <div>

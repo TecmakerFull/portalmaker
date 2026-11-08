@@ -25,6 +25,7 @@ import {
   MessageCircle,
 } from 'lucide-react'
 import { AdminPageHeader } from '../components/admin-page-header'
+import Select from '@/components/native-select'
 
 interface ColaboradoresManagerProps {
   store: Store
@@ -299,14 +300,14 @@ export default function ColaboradoresManager({
             <label className="block text-xs font-medium mb-1.5 opacity-80">
               Rol / Permisos
             </label>
-            <select
+            <Select
               value={rolInput}
               onChange={(e) => setRolInput(e.target.value as 'colaborador' | 'admin')}
               className="w-full h-11 px-3 rounded-xl border border-[var(--color-borde)] bg-[var(--color-fondo)] text-xs sm:text-sm outline-none focus:border-[var(--color-primario)] text-[var(--color-texto)]"
             >
               <option value="colaborador">Colaborador (Catálogo y Pedidos)</option>
               <option value="admin">Administrador (Acceso Completo)</option>
-            </select>
+            </Select>
           </div>
 
           <div className="sm:col-span-3">

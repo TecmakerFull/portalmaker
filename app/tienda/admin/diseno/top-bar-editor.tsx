@@ -20,6 +20,7 @@ import {
   Link as LinkIcon,
   Layers,
 } from 'lucide-react'
+import Select from '@/components/native-select'
 
 interface TopBarEditorProps {
   section: StoreSection<TopBarSettings, TopBarMessageItem[]>
@@ -116,7 +117,7 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
           <div className="space-y-1.5">
             <label className="font-semibold opacity-75 block">Modo de visualización</label>
             <div className="relative">
-              <select
+              <Select
                 value={settings.modo}
                 onChange={(e) => handleSettingChange('modo', e.target.value)}
                 className="w-full appearance-none pl-3 pr-9 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer"
@@ -124,7 +125,7 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
                 <option value="rotativo">Rotativo (Pasa de mensaje en mensaje)</option>
                 <option value="ticker">Ticker / Marquee (Desplazamiento continuo)</option>
                 <option value="estatico">Estático (Mensajes fijos)</option>
-              </select>
+              </Select>
               <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
@@ -133,7 +134,7 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
           <div className="space-y-1.5">
             <label className="font-semibold opacity-75 block">Color de fondo</label>
             <div className="relative">
-              <select
+              <Select
                 value={settings.fondo_color}
                 onChange={(e) => handleSettingChange('fondo_color', e.target.value)}
                 className="w-full appearance-none pl-3 pr-9 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer"
@@ -141,7 +142,7 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
                 <option value="primario">Color Primario de la Tienda</option>
                 <option value="superficie">Superficie Sutil (Gris claro / Oscuro)</option>
                 <option value="contraste">Alto Contraste (Negro / Blanco)</option>
-              </select>
+              </Select>
               <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
@@ -299,7 +300,7 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
                         <SectionIcon name={item.icono} className="w-4 h-4 text-amber-500" />
                       </div>
                       <div className="relative flex-1">
-                        <select
+                        <Select
                           value={item.icono || ''}
                           onChange={(e) => handleUpdateMessage(idx, 'icono', e.target.value)}
                           className="w-full appearance-none pl-2.5 pr-8 py-2 rounded-xl border border-[var(--color-borde)] bg-[var(--color-superficie)] text-[var(--color-texto)] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all cursor-pointer"
@@ -310,7 +311,7 @@ export default function TopBarEditor({ section, onChange }: TopBarEditorProps) {
                               {icon}
                             </option>
                           ))}
-                        </select>
+                        </Select>
                         <ChevronDown className="w-3.5 h-3.5 opacity-60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     </div>

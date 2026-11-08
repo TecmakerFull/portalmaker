@@ -46,6 +46,7 @@ import {
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 import { compressImageFile } from '@/lib/image-compression'
 import LogoCropperModal from './logo-cropper-modal'
+import Select from '@/components/native-select'
 
 interface BrandingFormProps {
   store: Store
@@ -480,7 +481,7 @@ export default function BrandingForm({ store, tenantQuery, initialSections = [] 
               <label className="block text-xs font-semibold uppercase tracking-wider opacity-75 mb-1.5">
                 Tamaño del Logo en Cabecera
               </label>
-              <select
+              <Select
                 value={logoTamano}
                 onChange={(e) => setLogoTamano(e.target.value as any)}
                 className="w-full min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--color-input-borde)] bg-[var(--color-input-bg)] text-[var(--color-input-texto)] text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 dark:focus:border-amber-400 cursor-pointer transition-all shadow-2xs"
@@ -489,7 +490,7 @@ export default function BrandingForm({ store, tenantQuery, initialSections = [] 
                 <option value="mediano" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Mediano (estándar, 40px)</option>
                 <option value="grande" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Grande (destacado, 56px)</option>
                 <option value="xl" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-1.5">Extra Grande (máximo, 72px)</option>
-              </select>
+              </Select>
             </div>
 
             <div className="flex items-center pt-2 sm:pt-6">
@@ -1111,7 +1112,7 @@ export default function BrandingForm({ store, tenantQuery, initialSections = [] 
               Fuente para Títulos
             </label>
             <div className="relative">
-              <select
+              <Select
                 value={fontHeading}
                 onChange={(e) => setFontHeading(e.target.value)}
                 style={{
@@ -1153,7 +1154,7 @@ export default function BrandingForm({ store, tenantQuery, initialSections = [] 
                     {f.label} ({f.style})
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             {/* Muestra visual en vivo del título */}
@@ -1184,7 +1185,7 @@ export default function BrandingForm({ store, tenantQuery, initialSections = [] 
               Fuente para Textos de Cuerpo
             </label>
             <div className="relative">
-              <select
+              <Select
                 value={fontBody}
                 onChange={(e) => setFontBody(e.target.value)}
                 style={{
@@ -1226,7 +1227,7 @@ export default function BrandingForm({ store, tenantQuery, initialSections = [] 
                     {f.label} ({f.style})
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             {/* Muestra visual en vivo del texto */}

@@ -33,6 +33,7 @@ import {
 } from 'lucide-react'
 import { compressImageFile } from '@/lib/image-compression'
 import { AdminPageHeader } from '../components/admin-page-header'
+import Select from '@/components/native-select'
 
 interface ProductOption {
   id: string
@@ -711,7 +712,7 @@ export default function BannersManager({
                               <div className="pt-1">
                                 {products.length > 0 ? (
                                   <div className="relative">
-                                    <select
+                                    <Select
                                       value={slide.cta_destino_valor}
                                       onChange={(e) => handleUpdateSlide(idx, 'cta_destino_valor', e.target.value)}
                                       className="w-full min-h-[42px] appearance-none pl-3.5 pr-10 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-white dark:bg-zinc-900 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer"
@@ -721,7 +722,7 @@ export default function BannersManager({
                                           {p.nombre} {p.visible ? '' : '(Oculto)'}
                                         </option>
                                       ))}
-                                    </select>
+                                    </Select>
                                     <ChevronDown className="w-4 h-4 text-zinc-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                                   </div>
                                 ) : (
@@ -736,7 +737,7 @@ export default function BannersManager({
                               <div className="pt-1">
                                 {categories.length > 0 ? (
                                   <div className="relative">
-                                    <select
+                                    <Select
                                       value={slide.cta_destino_valor}
                                       onChange={(e) => handleUpdateSlide(idx, 'cta_destino_valor', e.target.value)}
                                       className="w-full min-h-[42px] appearance-none pl-3.5 pr-10 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-white dark:bg-zinc-900 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all cursor-pointer"
@@ -746,7 +747,7 @@ export default function BannersManager({
                                           {c.nombre}
                                         </option>
                                       ))}
-                                    </select>
+                                    </Select>
                                     <ChevronDown className="w-4 h-4 text-zinc-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                                   </div>
                                 ) : (

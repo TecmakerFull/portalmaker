@@ -18,6 +18,7 @@ import {
   normalizeCodigoPostal,
 } from '@/lib/shipping-validators'
 import GeorefAddressInput from '@/components/georef-address-input'
+import Select from '@/components/native-select'
 
 // Provincias argentinas (nombres tal cual los esperan los carriers, sin abreviar)
 const PROVINCIAS = [
@@ -180,12 +181,12 @@ export default function OrigenDespachoForm({ store }: { store: Store }) {
         </div>
         <div className="sm:col-span-4">
           <label className={labelClass}>Provincia</label>
-          <select className={inputClass} value={provincia} onChange={(e) => setProvincia(e.target.value)}>
+          <Select className={inputClass} value={provincia} onChange={(e) => setProvincia(e.target.value)}>
             <option value="">Seleccionar…</option>
             {PROVINCIAS.map((p) => (
               <option key={p} value={p}>{p}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="sm:col-span-3">
           <label className={labelClass}>Código postal *</label>

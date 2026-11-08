@@ -25,6 +25,7 @@ import {
   DIAS_SEMANA,
   limpiarTextoHorario,
 } from '@/lib/horarios'
+import Select from '@/components/native-select'
 
 // Iconos vectoriales de Redes Sociales alineados a Lucide (24x24, 2px stroke)
 function InstagramIcon({ className = 'w-4 h-4' }: { className?: string }) {
@@ -449,7 +450,7 @@ export default function ContactoClient({ store, tenantQuery }: ContactoClientPro
                 <span className="block text-xs font-medium mb-1.5 opacity-80">
                   ¿En qué podemos ayudarte?
                 </span>
-                <select
+                <Select
                   value={motivo}
                   onChange={(e) => setMotivo(e.target.value)}
                   className="w-full h-11 px-3.5 rounded-xl border border-black/15 dark:border-white/15 bg-[var(--color-superficie)] text-xs sm:text-sm outline-none focus:border-[var(--color-primario)] focus:ring-1 focus:ring-[var(--color-primario)] text-[var(--color-texto)]"
@@ -469,7 +470,7 @@ export default function ContactoClient({ store, tenantQuery }: ContactoClientPro
                     </>
                   )}
                   <option value="Otro motivo">Otro motivo</option>
-                </select>
+                </Select>
               </label>
 
               <label className="block">
