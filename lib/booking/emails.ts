@@ -260,3 +260,73 @@ export async function avisarCupoClientesLleno(params: {
     fromName: 'Portalmaker',
   })
 }
+
+function fechaLarga(fecha: string): string {
+  return new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(
+    new Date(`${fecha}T12:00:00Z`)
+  )
+}
+
+/** Confirmación al cliente: quedó anotado en la lista de espera. */
+export async function sendWaitlistJoinedEmail(params: {
+  store: Store
+  to: string
+  nombre: string
+  servicio: string
+  fecha: string
+  hora?: string | null
+}): Promise<void> {
+  const { store } = params
+  const cuerpo = `
+    <h1>Quedaste en la lista de espera</h1>
+    <p>Hola ${escapeHtml(params.nombre)}, te anotamos en la lista de espera de ${escapeHtml(store.nombre)}:</p>
+    <div class="box">
+      <strong>${escapeHtml(params.servicio)}</strong><br/>
+      ${escapeHtml(fechaLarga(params.fecha))}${params.hora ? `, buscabas las ${escapeHtml(params.hora)} hs` : ''}
+    </div>
+    <p>Si se libera un turno ese día, te avisamos por email. Se avisa a todas las personas en espera y el primero que reserva se queda el lugar.</p>`
+
+  await sendStoreAuthEmail({
+    to: params.to,
+    subject: `Estás en la lista de espera de ${store.nombre}`,
+    html: layout(store.nombre, cuerpo),
+    fromName: String(store.nombre || 'Tu tienda').replace(/["<>\r\n]/g, '').slice(0, 80),
+  })
+}
+
+/** Aviso a la tienda: alguien se anotó en la lista de espera. */
+export async function notifyStoreWaitlistEmail(params: {
+  store: Store
+  clienteNombre: string
+  clienteTelefono?: string | null
+  clienteEmail?: string | null
+  servicio: string
+  fecha: string
+  hora?: string | null
+  enlacePanel: string
+}): Promise<void> {
+  const { store } = params
+  const supabaseAdmin = createSupabaseAdminClient()
+  const { data } = await supabaseAdmin.from('stores').select('admin_email, email_contacto').eq('id', store.id).maybeSingle()
+  const destino = data?.email_contacto?.trim() || data?.admin_email?.trim()
+  if (!destino) return
+
+  const cuerpo = `
+    <h1>Alguien se anotó en tu lista de espera</h1>
+    <div class="box">
+      <strong>${escapeHtml(params.servicio)}</strong><br/>
+      ${escapeHtml(fechaLarga(params.fecha))}${params.hora ? `, quería las ${escapeHtml(params.hora)} hs` : ''}
+    </div>
+    <p>Cliente: <strong>${escapeHtml(params.clienteNombre)}</strong>${
+      params.clienteTelefono ? `<br/>Teléfono: ${escapeHtml(params.clienteTelefono)}` : ''
+    }${params.clienteEmail ? `<br/>Email: ${escapeHtml(params.clienteEmail)}` : ''}</p>
+    <p>Si se libera un turno ese día, se le avisa automáticamente por email. También podés escribirle vos desde la Agenda.</p>
+    <a class="btn" href="${escapeHtml(params.enlacePanel)}">Ver lista de espera</a>`
+
+  await sendStoreAuthEmail({
+    to: destino,
+    subject: `Nueva persona en la lista de espera: ${params.servicio}`,
+    html: layout(store.nombre, cuerpo),
+    fromName: 'Portalmaker',
+  })
+}

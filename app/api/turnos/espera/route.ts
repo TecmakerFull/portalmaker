@@ -12,6 +12,8 @@ import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { getBookingConfig } from '@/lib/booking/setup'
 import { registrarClienteTurnos } from '@/lib/booking/customers'
 import { fechaLocal, sumarDias } from '@/lib/booking/availability'
+import { getRequestOrigin } from '@/lib/store-metadata'
+import { sendWaitlistJoinedEmail, notifyStoreWaitlistEmail } from '@/lib/booking/emails'
 
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
 const clean = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max)
@@ -56,7 +58,7 @@ export async function POST(req: Request) {
   const supabaseAdmin = createSupabaseAdminClient()
   const { data: service } = await supabaseAdmin
     .from('services')
-    .select('id, visible')
+    .select('id, visible, nombre')
     .eq('id', serviceId)
     .eq('store_id', store.id)
     .maybeSingle()
@@ -81,5 +83,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'No pudimos anotarte. Probá de nuevo.' }, { status: 500 })
   }
 
-  return NextResponse.json({ success: true, yaAnotado: error?.code === '23505' })
+  const yaAnotado = error?.code === '23505'
+
+  // Avisos: confirmación a quien se anotó y aviso a la tienda. Si el envío falla no se
+  // rompe el alta (la persona ya quedó en la lista).
+  if (!yaAnotado) {
+    const origin = await getRequestOrigin()
+    await Promise.allSettled([
+      sendWaitlistJoinedEmail({ store, to: email, nombre, servicio: service.nombre, fecha, hora: horaPreferida }),
+      notifyStoreWaitlistEmail({
+        store,
+        clienteNombre: nombre,
+        clienteTelefono: telefono,
+        clienteEmail: email,
+        servicio: service.nombre,
+        fecha,
+        hora: horaPreferida,
+        enlacePanel: `${origin}/tienda/admin/agenda`,
+      }),
+    ])
+  }
+
+  return NextResponse.json({ success: true, yaAnotado })
 }

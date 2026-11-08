@@ -54,6 +54,16 @@ function waLink(telefono: string | null, texto: string): string | null {
   return numero ? `https://wa.me/${numero}?text=${encodeURIComponent(texto)}` : null
 }
 
+// Puntito que pulsa para llamar la atención sobre algo que la dueña tiene que resolver
+function PuntoAviso({ titulo }: { titulo: string }) {
+  return (
+    <span className="relative flex w-2.5 h-2.5 shrink-0" title={titulo} role="img" aria-label={titulo}>
+      <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75 animate-ping motion-reduce:animate-none" />
+      <span className="relative inline-flex w-2.5 h-2.5 rounded-full bg-red-500" />
+    </span>
+  )
+}
+
 export default function AgendaManager({
   store,
   zona,
@@ -96,6 +106,8 @@ export default function AgendaManager({
   }, [turnos, zona])
 
   // Por confirmar = esperan aprobación de la tienda (no los que esperan el pago de la seña)
+  // Personas en lista de espera a las que todavía no se les avisó: es algo para mirar
+  const esperando = espera.filter((e) => e.estado === 'esperando').length
   const pendientes = turnos.filter((t) => t.estado === 'pendiente' && !t.pendiente_expira_at && new Date(t.starts_at) > new Date())
   const diasTira = Array.from({ length: 14 }, (_, i) => sumarDias(hoy, i))
   const delDia = (porDia.get(dia) ?? []).slice().sort((a, b) => a.starts_at.localeCompare(b.starts_at))
@@ -248,11 +260,13 @@ export default function AgendaManager({
 
       {/* Pestañas: turnos del día / lista de espera */}
       <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-black/5 dark:bg-white/5" role="tablist">
-        <button type="button" role="tab" aria-selected={pestana === 'turnos'} onClick={() => setPestana('turnos')} className={`min-h-11 rounded-xl text-sm font-semibold cursor-pointer ${pestana === 'turnos' ? 'bg-[var(--color-superficie)] shadow-xs' : 'opacity-70'}`}>
+        <button type="button" role="tab" aria-selected={pestana === 'turnos'} onClick={() => setPestana('turnos')} className={`min-h-11 rounded-xl text-sm font-semibold cursor-pointer inline-flex items-center justify-center gap-2 ${pestana === 'turnos' ? 'bg-[var(--color-superficie)] shadow-xs' : 'opacity-70'}`}>
           Turnos
+          {pendientes.length > 0 && <PuntoAviso titulo={`${pendientes.length} por confirmar`} />}
         </button>
         <button type="button" role="tab" aria-selected={pestana === 'espera'} onClick={() => setPestana('espera')} className={`min-h-11 rounded-xl text-sm font-semibold cursor-pointer inline-flex items-center justify-center gap-1.5 ${pestana === 'espera' ? 'bg-[var(--color-superficie)] shadow-xs' : 'opacity-70'}`}>
           <BellRing className="w-4 h-4" /> Lista de espera{espera.length > 0 ? ` (${espera.length})` : ''}
+          {esperando > 0 && <PuntoAviso titulo={`${esperando} esperando`} />}
         </button>
       </div>
 
