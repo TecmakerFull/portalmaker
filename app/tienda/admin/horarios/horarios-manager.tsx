@@ -136,7 +136,7 @@ export default function HorariosManager({
   // ---------------------------------------------------------------- Bloqueos
   const hoy = fechaLocal(new Date(), zona)
   const [bloqueos, setBloqueos] = useState<StaffBlock[]>(initialBloqueos)
-  const [nuevo, setNuevo] = useState({ desde: hoy, hasta: hoy, todoElDia: true, horaDesde: '09:00', horaHasta: '13:00', motivo: '' })
+  const [nuevo, setNuevo] = useState({ desde: hoy, hasta: hoy, todoElDia: false, horaDesde: '09:00', horaHasta: '13:00', motivo: '' })
   const [savingBloqueo, setSavingBloqueo] = useState(false)
   const [msgBloqueo, setMsgBloqueo] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
 
@@ -321,40 +321,100 @@ export default function HorariosManager({
           <p className="text-xs opacity-70 mt-1">Vacaciones, feriados o un trámite: en ese período nadie va a poder reservar.</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-          <label className="space-y-1.5">
-            <span className="text-xs font-semibold opacity-75 block">{nuevo.todoElDia ? 'Desde el día' : 'Día'}</span>
-            <DatePicker min={hoy} value={nuevo.desde} onChange={(v) => setNuevo((n) => ({ ...n, desde: v, hasta: n.hasta < v ? v : n.hasta }))} />
-          </label>
-          {nuevo.todoElDia ? (
-            <label className="space-y-1.5">
-              <span className="text-xs font-semibold opacity-75 block">Hasta el día</span>
-              <DatePicker min={nuevo.desde} value={nuevo.hasta} onChange={(v) => setNuevo((n) => ({ ...n, hasta: v }))} />
+        {/* Formulario de bloqueo: en desktop (lg:) todo entra en una sola línea; en mobile se apila con touch targets cómodos */}
+        <div className="flex flex-col lg:flex-row lg:items-end gap-3 text-sm">
+          {/* Día */}
+          <div className="space-y-1.5 lg:w-44 shrink-0">
+            <label htmlFor="b-dia" className="text-xs font-semibold opacity-75 block">
+              Día
             </label>
-          ) : (
-            <div className="space-y-1.5">
+            <DatePicker
+              id="b-dia"
+              min={hoy}
+              value={nuevo.desde}
+              onChange={(v) =>
+                setNuevo((n) => ({
+                  ...n,
+                  desde: v,
+                  hasta: n.hasta < v ? v : n.hasta,
+                }))
+              }
+            />
+          </div>
+
+          {/* Horario (desde / hasta) o Fecha fin si es rango de días */}
+          {!nuevo.todoElDia ? (
+            <div className="space-y-1.5 shrink-0">
               <span className="text-xs font-semibold opacity-75 block">Horario</span>
-              <div className="flex items-center gap-2">
-                <TimeSelect aria-label="Desde" value={nuevo.horaDesde} onChange={(v) => setNuevo((n) => ({ ...n, horaDesde: v }))} />
-                <span className="opacity-60">a</span>
-                <TimeSelect aria-label="Hasta" value={nuevo.horaHasta} onChange={(v) => setNuevo((n) => ({ ...n, horaHasta: v }))} />
+              <div className="flex items-center gap-1.5">
+                <TimeSelect
+                  aria-label="Hora desde"
+                  value={nuevo.horaDesde}
+                  onChange={(v) => setNuevo((n) => ({ ...n, horaDesde: v }))}
+                />
+                <span className="text-xs opacity-60">a</span>
+                <TimeSelect
+                  aria-label="Hora hasta"
+                  value={nuevo.horaHasta}
+                  onChange={(v) => setNuevo((n) => ({ ...n, horaHasta: v }))}
+                />
               </div>
             </div>
+          ) : (
+            <div className="space-y-1.5 lg:w-44 shrink-0">
+              <label htmlFor="b-hasta" className="text-xs font-semibold opacity-75 block">
+                Hasta el día <span className="font-normal opacity-60">(opcional)</span>
+              </label>
+              <DatePicker
+                id="b-hasta"
+                min={nuevo.desde}
+                value={nuevo.hasta}
+                onChange={(v) => setNuevo((n) => ({ ...n, hasta: v }))}
+              />
+            </div>
           )}
-          <label className="flex items-center gap-2 min-h-11 cursor-pointer">
-            <input type="checkbox" className="w-5 h-5 accent-[#FACC15]" checked={nuevo.todoElDia} onChange={(e) => setNuevo((n) => ({ ...n, todoElDia: e.target.checked }))} />
-            <span className="text-sm">Todo el día</span>
+
+          {/* Todo el día */}
+          <label className="flex items-center gap-2 min-h-11 px-1 cursor-pointer shrink-0 select-none">
+            <input
+              type="checkbox"
+              className="w-5 h-5 accent-[#FACC15] cursor-pointer"
+              checked={nuevo.todoElDia}
+              onChange={(e) => setNuevo((n) => ({ ...n, todoElDia: e.target.checked }))}
+            />
+            <span className="text-sm font-medium">Todo el día</span>
           </label>
-          <label className="space-y-1.5">
-            <span className="text-xs font-semibold opacity-75 block">Motivo (opcional, solo lo ves vos)</span>
-            <input className={`${inputClass} w-full`} maxLength={80} value={nuevo.motivo} onChange={(e) => setNuevo((n) => ({ ...n, motivo: e.target.value }))} placeholder="Ej: Vacaciones" />
-          </label>
+
+          {/* Motivo */}
+          <div className="space-y-1.5 flex-1 min-w-[150px]">
+            <label htmlFor="b-motivo" className="text-xs font-semibold opacity-75 block">
+              Motivo <span className="font-normal opacity-60">(opcional)</span>
+            </label>
+            <input
+              id="b-motivo"
+              className={`${inputClass} w-full`}
+              maxLength={80}
+              value={nuevo.motivo}
+              onChange={(e) => setNuevo((n) => ({ ...n, motivo: e.target.value }))}
+              placeholder="Ej: Trámite, Vacaciones..."
+            />
+          </div>
+
+          {/* Botón Bloquear */}
+          <div className="shrink-0">
+            <button
+              type="button"
+              onClick={agregarBloqueo}
+              disabled={savingBloqueo}
+              className="w-full sm:w-auto min-h-11 px-5 rounded-xl bg-[#FACC15] hover:bg-[#EAB308] disabled:opacity-50 text-[#1F2937] text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-colors"
+            >
+              <CalendarOff className="w-4 h-4 shrink-0" />
+              <span>{savingBloqueo ? 'Bloqueando...' : 'Bloquear'}</span>
+            </button>
+          </div>
         </div>
 
         {msgBloqueo && <Aviso {...msgBloqueo} />}
-        <div className="flex justify-end">
-          <BotonGuardar saving={savingBloqueo} label="Bloquear" onClick={agregarBloqueo} />
-        </div>
 
         {bloqueos.length > 0 && (
           <ul className="space-y-2 pt-2">
