@@ -317,6 +317,8 @@ export default function CuentaClient({ store, tenantQuery, zonaHoraria = 'Americ
           localStorage.setItem(cacheKey, JSON.stringify({ email: session.user.email, nombre: name }))
         } catch {}
         await populateProfileData(session.user)
+        await syncCustomerCrm(session.user.email, name, session.user.user_metadata?.telefono)
+        await loadCustomerData(session.user.email)
       } else if (event === 'SIGNED_OUT') {
         setIsLoggedIn(false)
         setCurrentUser(null)

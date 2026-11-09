@@ -43,7 +43,8 @@ export default function CustomerSync({ storeId }: { storeId: string }) {
           headers: { 'Content-Type': 'application/json' },
           body: '{}',
         })
-        if (res.ok && !cancelado) {
+        const data = await res.json().catch(() => null)
+        if (res.ok && data?.registrado && !cancelado) {
           try {
             localStorage.setItem(clave, String(Date.now()))
           } catch {}

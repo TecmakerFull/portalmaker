@@ -21,38 +21,16 @@ export async function registrarClienteTurnos(params: {
   nombre: string
   telefono: string | null
 }): Promise<RegistroCliente> {
-  const { store } = params
-  const email = params.email.trim().toLowerCase()
-  const supabaseAdmin = createSupabaseAdminClient()
-
-  const { data: existente } = await supabaseAdmin
-    .from('store_customers')
-    .select('id')
-    .eq('store_id', store.id)
-    .eq('email', email)
-    .maybeSingle()
-
-  if (!existente) {
-    const limite = getStoreEffectiveLimit(store, 'limite_clientes')
-    const { count } = await supabaseAdmin
-      .from('store_customers')
-      .select('id', { count: 'exact', head: true })
-      .eq('store_id', store.id)
-    if ((count ?? 0) >= limite) {
-      await avisarCupoLleno(store, 'reservar')
-      return {
-        ok: false,
-        code: 'limite_clientes',
-        error: mensajeCupoLleno('reservar'),
-      }
-    }
+  const res = await sincronizarClienteTienda({
+    store: params.store,
+    email: params.email,
+    nombre: params.nombre,
+    telefono: params.telefono,
+    motivo: 'reservar',
+  })
+  if (!res.ok) {
+    return { ok: false, code: res.code, error: res.error }
   }
-
-  await supabaseAdmin.from('store_customers').upsert(
-    { store_id: store.id, email, nombre: params.nombre, telefono: params.telefono, ultimo_login: new Date().toISOString() },
-    { onConflict: 'store_id,email' }
-  )
-
   return { ok: true }
 }
 
