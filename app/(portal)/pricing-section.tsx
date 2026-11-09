@@ -31,6 +31,7 @@ export default function PricingSection() {
         'Ficha técnica con tiempo de fabricación',
         'Sin comisiones por venta (0%)',
         'Hasta 15 clientes registrados',
+        'CRM de clientes y seguimiento de compras',
       ],
       ctaText: 'Crear tienda gratis',
       ctaHref: '/login?mode=register&plan=free',

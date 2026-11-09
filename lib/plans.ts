@@ -82,7 +82,7 @@ export const PLANS_CONFIG: Record<PlanKey, PlanLimits> = {
     paginasInstitucionales: true,
 
     maxColaboradoresExtra: 0, // Solo el dueño
-    crmClientes: false,
+    crmClientes: true,
     resenasProductos: false,
     analyticsTracking: false,
     diasGraciaDefault: 3,
@@ -314,8 +314,8 @@ export const FEATURE_REQUIREMENTS: Record<PlanFeatureKey, FeatureRequirement> = 
     id: 'crm_clientes',
     nombre: 'Clientes Registrados en CRM',
     categoria: 'gestion',
-    minPlan: 'starter',
-    minPlanNombre: 'Plan Starter',
+    minPlan: 'free',
+    minPlanNombre: 'Plan Free / Vitrina',
     descripcion: 'Base de datos de compradores con historial de pedidos e información de contacto.',
   },
   resenas: {
@@ -774,8 +774,8 @@ export const SUBSCRIPTION_MATRIX: MatrixCategory[] = [
       },
       {
         nombre: 'CRM de Clientes Registrados',
-        descripcion: 'Listado y seguimiento de compradores frecuentes',
-        free: false,
+        descripcion: 'Listado y seguimiento de compras',
+        free: true,
         starter: true,
         maker_pro: true,
         enterprise: true,
