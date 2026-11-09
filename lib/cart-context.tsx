@@ -21,6 +21,9 @@ export interface CartItem {
   gestionaStock: boolean
   stockDisponible: number | null // null si no se gestiona stock
   isReserva: boolean // true si gestionaStock == false o stockDisponible <= 0
+  depositEnabled?: boolean
+  depositType?: 'percent' | 'fixed' | null
+  depositValue?: number | null
 }
 
 interface CartContextType {

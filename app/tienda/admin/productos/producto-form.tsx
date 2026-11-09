@@ -128,6 +128,11 @@ export default function ProductoForm({
   const [precioOferta, setPrecioOferta] = useState(initialProduct?.precio_oferta?.toString() ?? '')
   const [ofertaActiva, setOfertaActiva] = useState(initialProduct?.oferta_activa ?? false)
 
+  // Seña / Pago parcial
+  const [depositEnabled, setDepositEnabled] = useState(Boolean(initialProduct?.deposit_enabled))
+  const [depositType, setDepositType] = useState<'percent' | 'fixed'>(initialProduct?.deposit_type === 'fixed' ? 'fixed' : 'percent')
+  const [depositValue, setDepositValue] = useState(initialProduct?.deposit_value?.toString() ?? '')
+
   // 5. Stock & SKU
   const [gestionaStock, setGestionaStock] = useState(initialProduct?.gestiona_stock ?? false)
   const [stock, setStock] = useState(initialProduct?.stock?.toString() ?? '')
@@ -773,6 +778,9 @@ export default function ProductoForm({
         destacado: destacado,
         imagenes: imagenes,
         visible: true,
+        deposit_enabled: !sinPrecio && depositEnabled,
+        deposit_type: !sinPrecio && depositEnabled ? depositType : null,
+        deposit_value: !sinPrecio && depositEnabled && depositValue ? parseFloat(depositValue) || 0 : null,
       }
 
       let targetProductId = initialProduct?.id
@@ -1397,6 +1405,87 @@ export default function ProductoForm({
                 </span>
               </label>
             </div>
+
+            {/* Seña / Pago Parcial */}
+            {!sinPrecio && (
+              <div className="sm:col-span-2 p-3.5 rounded-2xl bg-amber-500/5 dark:bg-amber-950/20 border border-amber-500/20 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 block">
+                      Seña / Pago Parcial con Mercado Pago
+                    </label>
+                    <p className="text-[11px] opacity-70 mt-0.5">
+                      Permite que el cliente abone un anticipo online y liquide el saldo restante contra entrega.
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={depositEnabled}
+                      onChange={(e) => setDepositEnabled(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                  </label>
+                </div>
+
+                {depositEnabled && (
+                  <div className="pt-2 border-t border-amber-500/20 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider opacity-75 mb-1.5">
+                        Modalidad de Seña
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setDepositType('percent')}
+                          className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                            depositType === 'percent'
+                              ? 'bg-amber-500 text-slate-900 border-amber-500 shadow-xs'
+                              : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 opacity-70'
+                          }`}
+                        >
+                          Porcentaje (%)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDepositType('fixed')}
+                          className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                            depositType === 'fixed'
+                              ? 'bg-amber-500 text-slate-900 border-amber-500 shadow-xs'
+                              : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 opacity-70'
+                          }`}
+                        >
+                          Monto Fijo ($)
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider opacity-75 mb-1.5">
+                        {depositType === 'percent' ? 'Porcentaje de seña' : 'Monto de la seña'} *
+                      </label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3.5 text-sm opacity-50 font-semibold">
+                          {depositType === 'percent' ? '%' : '$'}
+                        </span>
+                        <input
+                          type="number"
+                          required={depositEnabled}
+                          min="1"
+                          max={depositType === 'percent' ? '100' : undefined}
+                          step={depositType === 'percent' ? '1' : 'any'}
+                          value={depositValue}
+                          onChange={(e) => setDepositValue(e.target.value)}
+                          placeholder={depositType === 'percent' ? '50' : '10000'}
+                          className="w-full min-h-[44px] pl-8 pr-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-semibold focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all shadow-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Stock */}
             <div>

@@ -213,18 +213,35 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'El monto total a cobrar debe ser mayor a 0' }, { status: 400 })
     }
 
-    // Ronda 7: Si el total recalculado difiere del order.total mostrado en más de $1, responder 409
-    if (Math.abs(Number(order.total) - totalCobro) > 1.00) {
-      console.warn(`Discrepancia de total detectada: order.total=${order.total} vs totalCobro=${totalCobro} en pedido ${order.id}`)
-      return NextResponse.json(
+    // Adaptar para pedidos con seña inicial
+    let preferenceItems = validatedItems
+    let finalMontoCobro = totalCobro
+
+    if (order.is_deposit && Number(order.deposit_amount) > 0 && order.estado_pago === 'pendiente') {
+      finalMontoCobro = Number(Number(order.deposit_amount).toFixed(2))
+      preferenceItems = [
         {
-          error: 'El total del pedido difiere del cálculo actual debido a una actualización de precios. Por favor recarga el checkout.',
-          code: 'TOTAL_MISMATCH',
-          expected: Number(order.total),
-          calculated: totalCobro,
+          id: `sena_${order.id}`,
+          title: `Seña / Anticipo pedido #${order.id.slice(0, 8)} (${store.nombre})`,
+          quantity: 1,
+          unit_price: finalMontoCobro,
+          currency_id: 'ARS',
         },
-        { status: 409 }
-      )
+      ]
+    } else {
+      // Ronda 7: Si el total recalculado difiere del order.total mostrado en más de $1, responder 409
+      if (Math.abs(Number(order.total) - totalCobro) > 1.00) {
+        console.warn(`Discrepancia de total detectada: order.total=${order.total} vs totalCobro=${totalCobro} en pedido ${order.id}`)
+        return NextResponse.json(
+          {
+            error: 'El total del pedido difiere del cálculo actual debido a una actualización de precios. Por favor recarga el checkout.',
+            code: 'TOTAL_MISMATCH',
+            expected: Number(order.total),
+            calculated: totalCobro,
+          },
+          { status: 409 }
+        )
+      }
     }
 
     // Ronda 7: Reutilizar preferencia solo si tiene menos de 24h según mp_preference_created_at, está pendiente y el total no cambió
@@ -242,16 +259,16 @@ export async function POST(req: Request) {
     }
 
     // D3c, AB3: Comisión de Portalmaker (marketplace_fee) calculada con getEffectiveStoreConfig
-    // Calculado sobre el monto total cobrado por MP (incluido recargo)
+    // Calculado sobre el monto cobrado por MP (si es seña, se calcula sobre el monto de la seña)
     const comisionPortalmakerPct = Number(storeConfig.commission_pct) || 0
     let marketplaceFee = 0
 
     if (comisionPortalmakerPct > 0) {
-      marketplaceFee = calcularMarketplaceFeeSobreTotal(totalCobro, comisionPortalmakerPct)
+      marketplaceFee = calcularMarketplaceFeeSobreTotal(finalMontoCobro, comisionPortalmakerPct)
 
       // C6, AB2: Salvaguarda si la comisión supera el total con warning explícito
-      if (marketplaceFee >= totalCobro) {
-        console.warn(`marketplaceFee (${marketplaceFee}) >= totalCobro (${totalCobro}) en pedido ${order.id}, omitiendo fee.`)
+      if (marketplaceFee >= finalMontoCobro) {
+        console.warn(`marketplaceFee (${marketplaceFee}) >= finalMontoCobro (${finalMontoCobro}) en pedido ${order.id}, omitiendo fee.`)
         marketplaceFee = 0
       }
     }
@@ -297,7 +314,7 @@ export async function POST(req: Request) {
     const safeStoreName = ((store.nombre || 'Tienda').trim()).slice(0, 16)
 
     const preferencePayload: any = {
-      items: validatedItems,
+      items: preferenceItems,
       payer: {
         name: order.nombre_comprador?.trim() || 'Cliente',
         email: buyerEmail,

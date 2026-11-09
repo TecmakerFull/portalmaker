@@ -256,6 +256,9 @@ export default function ProductDetailView({
       gestionaStock: product.gestiona_stock,
       stockDisponible: currentStock,
       isReserva: isReserva,
+      depositEnabled: product.deposit_enabled,
+      depositType: product.deposit_type,
+      depositValue: product.deposit_value,
     }
 
     const res = addItem(itemToAdd, quantity)

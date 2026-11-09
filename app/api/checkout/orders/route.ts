@@ -260,6 +260,8 @@ export async function POST(req: Request) {
       subtotal: number
       gestiona_stock: boolean
       is_reserva: boolean
+      deposit_enabled?: boolean
+      deposit_amount?: number
     }> = []
 
     for (const group of groupedItemsMap.values()) {
@@ -268,7 +270,7 @@ export async function POST(req: Request) {
       // Consultar producto oficial en la tienda
       const { data: product, error: prodErr } = await supabaseAdmin
         .from('products')
-        .select('id, nombre, precio_base, precio_oferta, oferta_activa, gestiona_stock, stock, visible')
+        .select('id, nombre, precio_base, precio_oferta, oferta_activa, gestiona_stock, stock, visible, deposit_enabled, deposit_type, deposit_value')
         .eq('id', productId)
         .eq('store_id', store.id)
         .eq('visible', true)
@@ -326,6 +328,18 @@ export async function POST(req: Request) {
       effectiveUnitPrice = Number(effectiveUnitPrice.toFixed(2))
       const itemSubtotal = Number((effectiveUnitPrice * quantity).toFixed(2))
 
+      // Cálculo de seña por ítem (Regla: productos con seña aplican porcentaje o monto fijo; sin seña aplican 100%)
+      const isDepositItem = Boolean(storeConfig.deposit_payments && product.deposit_enabled)
+      let itemDeposit = itemSubtotal
+      if (isDepositItem && product.deposit_value != null && Number(product.deposit_value) > 0) {
+        if (product.deposit_type === 'percent') {
+          const pct = Math.min(Math.max(Number(product.deposit_value), 1), 100)
+          itemDeposit = Number(((itemSubtotal * pct) / 100).toFixed(2))
+        } else if (product.deposit_type === 'fixed') {
+          itemDeposit = Math.min(Number(product.deposit_value) * quantity, itemSubtotal)
+        }
+      }
+
       verifiedSnapshotItems.push({
         product_id: product.id,
         variant_id: variantId,
@@ -336,6 +350,8 @@ export async function POST(req: Request) {
         subtotal: itemSubtotal,
         gestiona_stock: isVariant ? true : Boolean(product.gestiona_stock),
         is_reserva: false,
+        deposit_enabled: isDepositItem,
+        deposit_amount: itemDeposit,
       })
     }
 
@@ -435,6 +451,26 @@ export async function POST(req: Request) {
 
     const finalTotal = Number(totalPedido.toFixed(2))
 
+    // Regla de carrito para seña:
+    // La seña total es la suma de las señas de los productos que la tengan más el 100% de los que no la tengan.
+    const anyHasDeposit = verifiedSnapshotItems.some((it) => it.deposit_enabled)
+    let isDepositOrder = false
+    let depositTotal = finalTotal
+    let balancePending = 0
+
+    if (anyHasDeposit && storeConfig.deposit_payments) {
+      const sumSenaProductos = verifiedSnapshotItems.reduce((acc, it) => acc + (it.deposit_amount ?? it.subtotal), 0)
+      if (sumSenaProductos < subtotalProductos) {
+        isDepositOrder = true
+        // El anticipo incluye costo de envío y recargo proporcional de MP sobre la seña
+        const depositMpRecargo = (metodoPago === 'mercadopago' && mpRecargoPct > 0)
+          ? Number(((sumSenaProductos * mpRecargoPct) / 100).toFixed(2))
+          : 0
+        depositTotal = Number((sumSenaProductos + costoEnvio + depositMpRecargo).toFixed(2))
+        balancePending = Number((finalTotal - depositTotal).toFixed(2))
+      }
+    }
+
     // Formatear dirección legible combinada si no vino explícita
     let resolvedDireccion = cleanDireccion
     if (!resolvedDireccion && direccionEstructurada) {
@@ -459,6 +495,10 @@ export async function POST(req: Request) {
         items: verifiedSnapshotItems,
         total: finalTotal,
         costo_envio: Number(costoEnvio.toFixed(2)),
+        is_deposit: isDepositOrder,
+        deposit_amount: depositTotal,
+        balance_pending: balancePending,
+        balance_paid: false,
         estado_pedido: 'nuevo',
         estado_pago: 'pendiente', // Forzado estrictamente a pendiente
         stock_descontado: false, // Forzado estrictamente a false

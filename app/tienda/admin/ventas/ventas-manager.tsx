@@ -131,6 +131,9 @@ export default function VentasManager({
   const [selectedShipment, setSelectedShipment] = useState<any | null>(null)
   const [loadingShipment, setLoadingShipment] = useState(false)
   const [shippingActionLoading, setShippingActionLoading] = useState(false)
+  const [generatingBalanceLink, setGeneratingBalanceLink] = useState(false)
+  const [balanceLink, setBalanceLink] = useState<string | null>(null)
+  const [balanceCopied, setBalanceCopied] = useState(false)
 
   // Modal de Nueva Venta Manual
   const [isNewSaleOpen, setIsNewSaleOpen] = useState(false)
@@ -455,6 +458,44 @@ export default function VentasManager({
       setModalFeedback({ type: 'error', text: err?.message || 'Error al cancelar envío.' })
     } finally {
       setShippingActionLoading(false)
+    }
+  }
+
+  const handleGenerateBalanceLink = async (orderId: string) => {
+    try {
+      setGeneratingBalanceLink(true)
+      const res = await fetch(`/api/tienda/admin/orders/${orderId}/balance-preference`, {
+        method: 'POST',
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'No se pudo generar el link')
+      setBalanceLink(data.initPoint)
+    } catch (e: any) {
+      alert(e.message || 'Error al generar link')
+    } finally {
+      setGeneratingBalanceLink(false)
+    }
+  }
+
+  const handleMarkBalancePaid = async (orderId: string) => {
+    if (!confirm('¿Confirmas que el saldo restante fue cobrado (por transferencia, efectivo u otro medio)?')) return
+    try {
+      const res = await fetch(`/api/tienda/admin/orders/${orderId}/mark-balance-paid`, {
+        method: 'POST',
+      })
+      if (!res.ok) throw new Error('No se pudo actualizar')
+      if (selectedOrder) {
+        const updated: Order = {
+          ...selectedOrder,
+          balance_paid: true,
+          balance_pending: 0,
+          estado_pago: 'aprobado',
+        }
+        setSelectedOrder(updated)
+        setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)))
+      }
+    } catch (e: any) {
+      alert(e.message || 'Error al marcar saldo')
     }
   }
 
@@ -1576,6 +1617,84 @@ export default function VentasManager({
                   ${Number(selectedOrder.total).toLocaleString('es-AR')}
                 </span>
               </div>
+
+              {/* Desglose de Seña si aplica */}
+              {selectedOrder.is_deposit && (
+                <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20 text-xs space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-amber-800 dark:text-amber-300">
+                      Seña {selectedOrder.estado_pago === 'sena_pagada' ? 'Abonada' : 'Inicial'}:
+                    </span>
+                    <span className="font-bold">
+                      ${Number(selectedOrder.deposit_amount || 0).toLocaleString('es-AR')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      Saldo Pendiente:
+                    </span>
+                    <span className="font-bold text-amber-600 dark:text-amber-400">
+                      ${Number(selectedOrder.balance_pending || 0).toLocaleString('es-AR')}
+                    </span>
+                  </div>
+                  <div className="pt-2 border-t border-amber-500/20 flex flex-wrap gap-2 items-center justify-between">
+                    <span className="text-[11px] font-medium">
+                      Estado del saldo:{' '}
+                      <strong className={selectedOrder.balance_paid ? 'text-emerald-600' : 'text-amber-600'}>
+                        {selectedOrder.balance_paid ? 'Cobrado' : 'Pendiente de cobro'}
+                      </strong>
+                    </span>
+
+                    {!selectedOrder.balance_paid && Number(selectedOrder.balance_pending) > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleGenerateBalanceLink(selectedOrder.id)}
+                          disabled={generatingBalanceLink}
+                          className="min-h-[36px] px-3 py-1.5 rounded-lg bg-amber-500 text-slate-900 font-semibold text-xs hover:bg-amber-400 transition-colors flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <CreditCard className="w-3.5 h-3.5" />
+                          <span>{generatingBalanceLink ? 'Generando...' : 'Link de MP por saldo'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMarkBalancePaid(selectedOrder.id)}
+                          className="min-h-[36px] px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        >
+                          Marcar saldo cobrado
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {balanceLink && (
+                    <div className="pt-2 border-t border-amber-500/20 space-y-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                        Link de Mercado Pago para el comprador:
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={balanceLink}
+                          className="flex-1 px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(balanceLink)
+                            setBalanceCopied(true)
+                            setTimeout(() => setBalanceCopied(false), 2000)
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-semibold cursor-pointer"
+                        >
+                          {balanceCopied ? '¡Copiado!' : 'Copiar'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Notas del Comprador */}

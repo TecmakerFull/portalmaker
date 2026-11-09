@@ -157,6 +157,24 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
   const mpRecargoMonto = metodoPago === 'mercadopago' && mpRecargoPct > 0 ? (totalAmount * mpRecargoPct) / 100 : 0
   const finalTotal = totalAmount + costoEnvio + mpRecargoMonto
 
+  // Cálculo de seña / pago parcial (Regla de carrito: suma de señas + 100% de productos sin seña)
+  const senaSubtotal = items.reduce((acc, it) => {
+    if (it.depositEnabled && it.depositValue && it.depositValue > 0) {
+      if (it.depositType === 'percent') {
+        const pct = Math.min(Math.max(it.depositValue, 1), 100)
+        return acc + (it.unitPrice * it.quantity * pct) / 100
+      } else if (it.depositType === 'fixed') {
+        return acc + Math.min(it.depositValue * it.quantity, it.unitPrice * it.quantity)
+      }
+    }
+    return acc + it.unitPrice * it.quantity
+  }, 0)
+
+  const hasSena = senaSubtotal < totalAmount
+  const senaRecargoMp = metodoPago === 'mercadopago' && mpRecargoPct > 0 ? (senaSubtotal * mpRecargoPct) / 100 : 0
+  const senaTotalAPagar = hasSena ? Number((senaSubtotal + costoEnvio + senaRecargoMp).toFixed(2)) : finalTotal
+  const saldoPendiente = hasSena ? Number((finalTotal - senaTotalAPagar).toFixed(2)) : 0
+
   // Cotizar envíos en tiempo real
   const handleQuoteShipping = async (cpToQuote?: string) => {
     const cp = (cpToQuote || codigoPostal).trim()
@@ -1548,8 +1566,21 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
               </div>
             )}
 
+            {hasSena && (
+              <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs space-y-1.5 my-2">
+                <div className="flex justify-between items-center font-bold text-amber-800 dark:text-amber-300">
+                  <span>Anticipo / Seña a pagar ahora:</span>
+                  <span className="text-sm">${senaTotalAPagar.toLocaleString('es-AR')}</span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
+                  <span>Saldo a liquidar al retirar o recibir:</span>
+                  <span className="font-bold text-slate-900 dark:text-white">${saldoPendiente.toLocaleString('es-AR')}</span>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between items-baseline pt-2 border-t border-[var(--color-borde)]">
-              <span className="text-sm font-semibold opacity-80">Total a pagar:</span>
+              <span className="text-sm font-semibold opacity-80">{hasSena ? 'Total de la compra:' : 'Total a pagar:'}</span>
               <span className="text-2xl sm:text-3xl font-bold text-[var(--color-primario-legible)] font-[var(--font-heading)]">
                 ${finalTotal.toLocaleString('es-AR')}
               </span>
