@@ -1343,12 +1343,14 @@ grant all on store_mp_credentials to service_role;
 -- =============================================================================
 -- 26. PROCESS_APPROVED_PAYMENT — Procesamiento atómico e idempotente de pagos
 -- =============================================================================
+drop function if exists public.process_approved_payment;
+
 create or replace function process_approved_payment(
   p_order_id uuid,
   p_payment_id text,
-  p_net_received numeric,
+  p_amount numeric,
   p_fee numeric,
-  p_amount numeric default null,
+  p_net_received numeric,
   p_currency text default 'ARS'
 )
 returns jsonb
