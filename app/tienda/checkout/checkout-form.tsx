@@ -146,7 +146,8 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
   // Por defecto se preselecciona 'transferencia' si la tienda la tiene activa;
   // de lo contrario efectivo (o acordar), manteniendo Mercado Pago al final para no mostrar recargo de entrada.
   const [metodoPago, setMetodoPago] = useState<'transferencia' | 'efectivo' | 'mercadopago' | 'acordar'>(() => {
-    if (store.transferencia_activa) return 'transferencia'
+    if (isFeatureAllowed(store, 'transferencia_bancaria') && store.transferencia_activa) return 'transferencia'
+    if (isFeatureAllowed(store, 'mercado_pago') && store.mp_connected) return 'mercadopago'
     return 'efectivo'
   })
 

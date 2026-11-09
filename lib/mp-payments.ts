@@ -354,6 +354,17 @@ export async function processMpPayment(params: {
       }
     }
 
+    // Guardar el marketplace_fee efectivamente aplicado según la respuesta oficial de Mercado Pago
+    if (mpFeePortal >= 0) {
+      await supabaseAdmin
+        .from('orders')
+        .update({
+          marketplace_fee_applied: mpFeePortal,
+          mp_fee_portalmaker: mpFeePortal,
+        })
+        .eq('id', order.id)
+    }
+
     // Ejecutar la RPC atómica process_approved_payment
     const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc('process_approved_payment', {
       p_order_id: order.id,
@@ -390,46 +401,82 @@ export async function processMpPayment(params: {
       })
     }
 
-    // Enviar email de venta confirmada solo en la primera aprobación exitosa
-    if (rpcResult?.first_time && rpcResult?.status === 'aprobado') {
-      void Promise.resolve(
-        supabaseAdmin.from('order_events').insert([
-          {
-            order_id: order.id,
-            store_id: store.id,
-            tipo: 'estado_pago',
-            de: 'pendiente',
-            a: 'aprobado',
-            actor: 'webhook',
-          },
-          {
-            order_id: order.id,
-            store_id: store.id,
-            tipo: 'estado_pedido',
-            de: 'pendiente',
-            a: 'confirmado',
-            actor: 'webhook',
-          },
-        ])
-      ).catch((e: unknown) => console.error('Error registrando order_events de pago aprobado:', e))
+    // Eventos y notificaciones en aprobación de pago o seña
+    if (rpcResult?.first_time) {
+      if (rpcResult.status === 'sena_pagada') {
+        void Promise.resolve(
+          supabaseAdmin.from('order_events').insert([
+            {
+              order_id: order.id,
+              store_id: store.id,
+              tipo: 'estado_pago',
+              de: 'pendiente',
+              a: 'sena_pagada',
+              actor: 'webhook',
+            },
+            {
+              order_id: order.id,
+              store_id: store.id,
+              tipo: 'estado_pedido',
+              de: 'nuevo',
+              a: 'en_produccion',
+              actor: 'webhook',
+            },
+          ])
+        ).catch((e: unknown) => console.error('Error registrando order_events de seña pagada:', e))
+      } else if (rpcResult.balance_paid) {
+        void Promise.resolve(
+          supabaseAdmin.from('order_events').insert([
+            {
+              order_id: order.id,
+              store_id: store.id,
+              tipo: 'estado_pago',
+              de: 'sena_pagada',
+              a: 'aprobado',
+              actor: 'webhook',
+            },
+          ])
+        ).catch((e: unknown) => console.error('Error registrando order_events de saldo pagado:', e))
+      } else if (rpcResult.status === 'aprobado') {
+        void Promise.resolve(
+          supabaseAdmin.from('order_events').insert([
+            {
+              order_id: order.id,
+              store_id: store.id,
+              tipo: 'estado_pago',
+              de: 'pendiente',
+              a: 'aprobado',
+              actor: 'webhook',
+            },
+            {
+              order_id: order.id,
+              store_id: store.id,
+              tipo: 'estado_pedido',
+              de: 'pendiente',
+              a: 'confirmado',
+              actor: 'webhook',
+            },
+          ])
+        ).catch((e: unknown) => console.error('Error registrando order_events de pago aprobado:', e))
 
-      // Seña de un turno: se confirma el turno y se mandan sus propios emails.
-      // No aplica el email de "venta pagada" ni la automatización de envíos.
-      // Se espera (no queda suelto) para que el webhook no termine antes de confirmar.
-      const eraTurno = await confirmarTurnoPorPago(order.id, store).catch((e) => {
-        console.error('Error confirmando turno por pago de seña:', e)
-        return false
-      })
+        // Seña de un turno: se confirma el turno y se mandan sus propios emails.
+        // No aplica el email de "venta pagada" ni la automatización de envíos.
+        // Se espera (no queda suelto) para que el webhook no termine antes de confirmar.
+        const eraTurno = await confirmarTurnoPorPago(order.id, store).catch((e) => {
+          console.error('Error confirmando turno por pago de seña:', e)
+          return false
+        })
 
-      if (!eraTurno) {
-        sendOrderPaidNotification({ store, order }).catch((e) =>
-          console.error('Error enviando email de orden pagada:', e)
-        )
+        if (!eraTurno) {
+          sendOrderPaidNotification({ store, order }).catch((e) =>
+            console.error('Error enviando email de orden pagada:', e)
+          )
 
-        // Automatización Logística Post-Pago (Fase 5): emisión de envío sin demorar la respuesta de MP
-        handlePostPaymentShipping(order.id, store).catch((e) =>
-          console.error('Error en post-payment shipping automation:', e)
-        )
+          // Automatización Logística Post-Pago (Fase 5): emisión de envío sin demorar la respuesta de MP
+          handlePostPaymentShipping(order.id, store).catch((e) =>
+            console.error('Error en post-payment shipping automation:', e)
+          )
+        }
       }
     }
 

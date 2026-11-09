@@ -4,6 +4,7 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/sup
 import { sincronizarClienteTienda } from '@/lib/booking/customers'
 import type { Store } from '@/types/database'
 import { checkRateLimit, getClientIp, verifyTurnstileToken, isTurnstileConfigured } from '@/lib/rate-limit'
+import { getEffectiveStoreConfig } from '@/lib/config/store-config'
 
 // =============================================================================
 // PORTALMAKER — Endpoint Oficial de Creación de Pedidos (H1, P1, Q, X)
@@ -207,17 +208,45 @@ export async function POST(req: Request) {
       }
     }
 
-    const isCheckoutActive = Boolean(store.checkout_activo || store.modo_operacion === 'tienda')
-    if (!isCheckoutActive) {
-      return NextResponse.json({ error: 'El checkout se encuentra deshabilitado para esta tienda' }, { status: 403 })
+    // Configuración efectiva de la tienda (Plan + Overrides con única fuente de verdad)
+    const storeConfig = await getEffectiveStoreConfig(store.id)
+
+    // Validación dura de banderas de checkout y métodos de pago
+    if (!storeConfig.online_checkout) {
+      return NextResponse.json(
+        { error: 'El checkout online se encuentra deshabilitado para el plan de esta tienda' },
+        { status: 403 }
+      )
     }
 
-    if (metodoPago === 'mercadopago' && !store.mp_connected) {
-      return NextResponse.json({ error: 'Mercado Pago no está habilitado en esta tienda' }, { status: 400 })
+    if (metodoPago === 'mercadopago') {
+      if (!storeConfig.mercadopago) {
+        return NextResponse.json(
+          { error: 'Mercado Pago no está habilitado para el plan de esta tienda' },
+          { status: 403 }
+        )
+      }
+      if (!store.mp_connected) {
+        return NextResponse.json(
+          { error: 'La tienda aún no ha vinculado su cuenta de Mercado Pago' },
+          { status: 400 }
+        )
+      }
     }
 
-    if (metodoPago === 'transferencia' && !store.transferencia_activa) {
-      return NextResponse.json({ error: 'El pago por transferencia no está habilitado en esta tienda' }, { status: 400 })
+    if (metodoPago === 'transferencia') {
+      if (!storeConfig.bank_transfer) {
+        return NextResponse.json(
+          { error: 'El pago por transferencia bancaria no está habilitado para el plan de esta tienda' },
+          { status: 403 }
+        )
+      }
+      if (!store.transferencia_activa) {
+        return NextResponse.json(
+          { error: 'El pago por transferencia no está activado en esta tienda' },
+          { status: 400 }
+        )
+      }
     }
 
     // 3. Reconciliar ítems agrupados y calcular precios oficiales desde la base de datos (NUNCA del cliente)
@@ -396,7 +425,8 @@ export async function POST(req: Request) {
     let totalPedido = subtotalProductos + costoEnvio
 
     // Recargo por Mercado Pago si el comprador eligió ese medio (sobre subtotal productos)
-    const mpRecargoPct = store.mp_connected ? Number(store.mp_recargo_porcentaje) || 0 : 0
+    // Se aplica solo si el plan/override de la tienda tiene mp_surcharge = true
+    const mpRecargoPct = (store.mp_connected && storeConfig.mp_surcharge) ? Number(store.mp_recargo_porcentaje) || 0 : 0
     let montoRecargo = 0
     if (metodoPago === 'mercadopago' && mpRecargoPct > 0) {
       montoRecargo = Number(((subtotalProductos * mpRecargoPct) / 100).toFixed(2))
@@ -438,8 +468,10 @@ export async function POST(req: Request) {
         mp_payment_id: null,
         mp_merchant_order_id: null,
         mp_fee_portalmaker: 0.00,
+        marketplace_fee_applied: 0.00,
+        fee_source: storeConfig.commission_source,
         mp_net_received: 0.00,
-        comision_portalmaker_pct: Number(store.comision_portalmaker) || 0.00,
+        comision_portalmaker_pct: Number(storeConfig.commission_pct) || 0.00,
         mp_recargo_pct: mpRecargoPct,
         // Metadatos estructurados de envío (Fase 4)
         envio_calle: direccionEstructurada?.calle?.trim() || null,

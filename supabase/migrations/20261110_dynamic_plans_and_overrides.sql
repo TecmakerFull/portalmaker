@@ -280,3 +280,155 @@ $$;
 
 revoke all on function public.get_effective_store_config(uuid) from public, anon;
 grant execute on function public.get_effective_store_config(uuid) to authenticated, anon, service_role;
+
+-- 10. RPC FUNCTION: PROCESS_APPROVED_PAYMENT CON SOPORTE DE SEÑA Y SALDO PENDIENTE
+create or replace function public.process_approved_payment(
+  p_order_id uuid,
+  p_payment_id text,
+  p_net_received numeric,
+  p_fee numeric,
+  p_amount numeric default null,
+  p_currency text default 'ARS'
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_order record;
+  v_item jsonb;
+  v_qty int;
+  v_variant_id uuid;
+  v_product_id uuid;
+  v_expected_amount numeric;
+  v_nuevo_estado text := 'aprobado';
+  v_is_balance_payment boolean := false;
+begin
+  -- 1. Consultar el pedido actual
+  select id, store_id, total, items, stock_descontado, estado_pago,
+         is_deposit, deposit_amount, balance_pending, balance_paid
+  into v_order
+  from public.orders
+  where id = p_order_id;
+
+  if v_order.id is null then
+    return jsonb_build_object('success', false, 'error', 'order_not_found');
+  end if;
+
+  -- 2. Si ya estaba aprobado y no es pago de saldo pendiente, responder idempotentemente
+  if v_order.estado_pago = 'aprobado' and (coalesce(v_order.is_deposit, false) = false or coalesce(v_order.balance_paid, false) = true) then
+    return jsonb_build_object(
+      'success', true,
+      'already_processed', true,
+      'first_time', false,
+      'status', 'aprobado'
+    );
+  end if;
+
+  -- Determinar monto esperado según si es seña, saldo o pago regular
+  if coalesce(v_order.is_deposit, false) = true then
+    if v_order.estado_pago = 'sena_pagada' or (v_order.estado_pago = 'aprobado' and coalesce(v_order.balance_paid, false) = false) then
+      v_is_balance_payment := true;
+      v_expected_amount := coalesce(v_order.balance_pending, v_order.total - coalesce(v_order.deposit_amount, 0));
+      v_nuevo_estado := 'aprobado';
+    else
+      v_expected_amount := coalesce(v_order.deposit_amount, v_order.total);
+      v_nuevo_estado := 'sena_pagada';
+    end if;
+  else
+    v_expected_amount := v_order.total;
+    v_nuevo_estado := 'aprobado';
+  end if;
+
+  -- 3. Validar moneda y monto pagado
+  if (p_currency is not null and upper(trim(p_currency)) <> 'ARS') or
+     (p_amount is not null and p_amount < (v_expected_amount - 1.00)) then
+    update public.orders
+    set
+      estado_pago = 'revision',
+      mp_payment_id = coalesce(p_payment_id, mp_payment_id),
+      observaciones_admin = concat(
+        coalesce(observaciones_admin || E'\n', ''),
+        'Revisión requerida (RPC): Moneda recibida: ', coalesce(p_currency, 'null'),
+        ', Monto recibido: $', coalesce(p_amount::text, 'null'),
+        ' vs Esperado: $', v_expected_amount::text
+      ),
+      updated_at = now()
+    where id = p_order_id and estado_pago is distinct from 'aprobado';
+
+    return jsonb_build_object(
+      'success', true,
+      'status', 'revision',
+      'first_time', true,
+      'already_processed', false,
+      'order_id', v_order.id,
+      'store_id', v_order.store_id
+    );
+  end if;
+
+  -- 4. Actualizar pedido
+  if v_is_balance_payment then
+    update public.orders
+    set
+      estado_pago = 'aprobado',
+      balance_paid = true,
+      balance_mp_payment_id = p_payment_id,
+      balance_pending = 0.00,
+      mp_net_received = coalesce(mp_net_received, 0) + p_net_received,
+      mp_fee_portalmaker = coalesce(mp_fee_portalmaker, 0) + p_fee,
+      marketplace_fee_applied = coalesce(marketplace_fee_applied, 0) + p_fee,
+      updated_at = now()
+    where id = p_order_id;
+  else
+    update public.orders
+    set
+      estado_pago = v_nuevo_estado,
+      mp_payment_id = p_payment_id,
+      mp_net_received = p_net_received,
+      mp_fee_portalmaker = p_fee,
+      marketplace_fee_applied = p_fee,
+      updated_at = now()
+    where id = p_order_id;
+  end if;
+
+  -- 5. Descontar stock atómicamente si no estaba descontado aún
+  if not coalesce(v_order.stock_descontado, false) then
+    if v_order.items is not null and jsonb_typeof(v_order.items) = 'array' then
+      for v_item in select * from jsonb_array_elements(v_order.items)
+      loop
+        v_qty := coalesce((v_item->>'cantidad')::int, 0);
+        if v_qty > 0 then
+          if (v_item->>'variant_id') is not null and (v_item->>'variant_id') <> '' and (v_item->>'variant_id') <> 'null' then
+            v_variant_id := (v_item->>'variant_id')::uuid;
+            update public.product_variants
+            set stock = greatest(stock - v_qty, 0)
+            where id = v_variant_id and stock is not null;
+          elsif (v_item->>'product_id') is not null and (v_item->>'product_id') <> '' and (v_item->>'product_id') <> 'null' then
+            v_product_id := (v_item->>'product_id')::uuid;
+            update public.products
+            set stock = greatest(stock - v_qty, 0)
+            where id = v_product_id and gestiona_stock = true and stock is not null;
+          end if;
+        end if;
+      end loop;
+    end if;
+
+    update public.orders set stock_descontado = true where id = p_order_id;
+  end if;
+
+  return jsonb_build_object(
+    'success', true,
+    'first_time', true,
+    'already_processed', false,
+    'status', v_nuevo_estado,
+    'balance_paid', v_is_balance_payment,
+    'order_id', v_order.id,
+    'store_id', v_order.store_id
+  );
+end;
+$$;
+
+revoke all on function public.process_approved_payment(uuid, text, numeric, numeric, numeric, text) from public, anon, authenticated;
+grant execute on function public.process_approved_payment(uuid, text, numeric, numeric, numeric, text) to service_role;
+

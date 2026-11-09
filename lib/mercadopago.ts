@@ -344,20 +344,37 @@ export function verifyMpWebhookSignature(
 export const COMISION_BASE: 'total' | 'productos' = 'total'
 
 /**
+ * Calcula la comisión de Portalmaker (marketplace_fee) directamente sobre el total cobrado por MP,
+ * redondeando a 2 decimales según la especificación oficial.
+ */
+export function calcularMarketplaceFeeSobreTotal(montoCobrado: number, commissionPct: number): number {
+  if (commissionPct <= 0 || montoCobrado <= 0) return 0
+  const fee = Math.round(montoCobrado * (commissionPct / 100) * 100) / 100
+  return Math.max(0, fee)
+}
+
+/**
  * AB3: Centraliza el cálculo de la comisión de Portalmaker (marketplace_fee) para Checkout Pro.
  * @param items - Lista de items validados que componen el cobro (incluyendo recargo o envío si aplican)
- * @param store - Tienda con el campo comision_portalmaker configurado
+ * @param store - Tienda o configuración efectiva con la comisión
+ * @param options - Opciones adicionales (ej. sobreTotal para calcular sobre el monto completo de la preferencia)
  */
 export function calcularMarketplaceFee(
   items: Array<{ id: string; quantity: number; unit_price: number }>,
-  store: { comision_portalmaker?: number | null; envio_comision_incluye_envio?: boolean | null }
+  store: { comision_portalmaker?: number | null; envio_comision_incluye_envio?: boolean | null },
+  options?: { sobreTotal?: boolean }
 ): number {
   const comisionPct = Number(store?.comision_portalmaker) || 0
   if (comisionPct <= 0 || !Array.isArray(items) || items.length === 0) return 0
 
+  if (options?.sobreTotal) {
+    const totalCobro = items.reduce((acc, it) => acc + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0)
+    return calcularMarketplaceFeeSobreTotal(totalCobro, comisionPct)
+  }
+
   const incluyeEnvio = Boolean(store?.envio_comision_incluye_envio)
 
-  // Recargo MP siempre se excluye de la comisión
+  // Recargo MP se excluye si no es sobreTotal
   // Costo de envío se excluye a menos que envio_comision_incluye_envio sea true
   const baseCalculo = items
     .filter((it) => {

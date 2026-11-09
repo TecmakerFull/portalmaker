@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
-import { getValidMpAccessToken, getSafeReturnOrigin, calcularMarketplaceFee } from '@/lib/mercadopago'
+import { getValidMpAccessToken, getSafeReturnOrigin, calcularMarketplaceFee, calcularMarketplaceFeeSobreTotal } from '@/lib/mercadopago'
+import { getEffectiveStoreConfig } from '@/lib/config/store-config'
 
 // =============================================================================
 // PORTALMAKER — Mercado Pago: Crear Preferencia de Pago Checkout Pro
@@ -72,6 +73,15 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: 'La tienda no tiene una cuenta de Mercado Pago vinculada' },
         { status: 400 }
+      )
+    }
+
+    // Configuración efectiva en servidor (única fuente de verdad)
+    const storeConfig = await getEffectiveStoreConfig(store.id)
+    if (!storeConfig.mercadopago) {
+      return NextResponse.json(
+        { error: 'Mercado Pago no está habilitado para el plan de esta tienda' },
+        { status: 403 }
       )
     }
 
@@ -167,9 +177,10 @@ export async function POST(req: Request) {
     }
 
     // Ronda 7: El recargo sale del snapshot order.mp_recargo_pct (lo que vio el comprador)
-    const recargoPct = order.mp_recargo_pct != null
+    // Respetando storeConfig.mp_surcharge
+    const recargoPct = (storeConfig.mp_surcharge && order.mp_recargo_pct != null)
       ? Number(order.mp_recargo_pct)
-      : (Number(store.mp_recargo_porcentaje) || 0)
+      : (storeConfig.mp_surcharge ? (Number(store.mp_recargo_porcentaje) || 0) : 0)
 
     if (recargoPct > 0) {
       const subtotalProductos = validatedItems.reduce((acc, it) => acc + it.quantity * it.unit_price, 0)
@@ -230,12 +241,13 @@ export async function POST(req: Request) {
       }
     }
 
-    // D3c, AB3: Comisión de Portalmaker (marketplace_fee) calculada mediante helper centralizado
-    const comisionPortalmakerPct = Number(store.comision_portalmaker) || 0
+    // D3c, AB3: Comisión de Portalmaker (marketplace_fee) calculada con getEffectiveStoreConfig
+    // Calculado sobre el monto total cobrado por MP (incluido recargo)
+    const comisionPortalmakerPct = Number(storeConfig.commission_pct) || 0
     let marketplaceFee = 0
 
     if (comisionPortalmakerPct > 0) {
-      marketplaceFee = calcularMarketplaceFee(validatedItems, store)
+      marketplaceFee = calcularMarketplaceFeeSobreTotal(totalCobro, comisionPortalmakerPct)
 
       // C6, AB2: Salvaguarda si la comisión supera el total con warning explícito
       if (marketplaceFee >= totalCobro) {
@@ -343,7 +355,9 @@ export async function POST(req: Request) {
         mp_init_point: selectedInitPoint,
         mp_preference_created_at: new Date().toISOString(),
         mp_fee_portalmaker: marketplaceFee,
+        marketplace_fee_applied: marketplaceFee,
         comision_portalmaker_pct: comisionPortalmakerPct,
+        fee_source: storeConfig.commission_source,
         mp_recargo_pct: recargoPct,
         updated_at: new Date().toISOString(),
       })
