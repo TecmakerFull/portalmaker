@@ -223,6 +223,11 @@ export interface Product {
   stock: number | null;
   stock_minimo: number;
 
+  // Seña / Pago parcial
+  deposit_enabled?: boolean;
+  deposit_type?: 'percent' | 'fixed' | null;
+  deposit_value?: number | null;
+
   tiempo_fabricacion_estimado: string | null;
 
   visible: boolean;
@@ -325,7 +330,7 @@ export interface Order {
   total: number;
   costo_envio: number;
   estado_pedido: 'nuevo' | 'en_produccion' | 'despachado' | 'entregado' | 'cancelado';
-  estado_pago: 'pendiente' | 'aprobado' | 'rechazado' | 'revision' | 'reembolsado' | 'contracargo';
+  estado_pago: 'pendiente' | 'aprobado' | 'rechazado' | 'revision' | 'reembolsado' | 'contracargo' | 'sena_pagada';
   metodo_pago: string | null;
   zona_envio_id: UUID | null;
   // Dirección estructurada de envío (la columna direccion_entrega se mantiene como texto legible)
@@ -359,6 +364,18 @@ export interface Order {
   mp_net_received?: number;
   comision_portalmaker_pct?: number;
   mp_recargo_pct?: number;
+
+  // Snapshots de comisión dinámica y marketplace_fee
+  marketplace_fee_applied?: number | null;
+  fee_source?: 'plan' | 'override' | null;
+
+  // Seña / Pago parcial
+  is_deposit?: boolean;
+  deposit_amount?: number;
+  balance_pending?: number;
+  balance_paid?: boolean;
+  balance_mp_preference_id?: string | null;
+  balance_mp_payment_id?: string | null;
 
   observaciones_admin: string | null;
   created_at: Timestamp;
@@ -910,4 +927,53 @@ export interface ShipmentRecord {
   raw?: Record<string, unknown> | null;
   created_at: Timestamp;
   updated_at: Timestamp;
+}
+
+// =============================================================================
+// PLANES DINÁMICOS Y OVERRIDES (2026-11-10)
+// =============================================================================
+
+export interface Plan {
+  id: string; // 'free' | 'starter' | 'maker_pro' | 'enterprise' | 'bonificado'
+  name: string;
+  description: string | null;
+  price_ars: number;
+  commission_pct: number;
+  max_active_products: number | null;
+  whatsapp_orders: boolean;
+  online_checkout: boolean;
+  mercadopago: boolean;
+  deposit_payments: boolean;
+  mp_surcharge: boolean;
+  bank_transfer: boolean;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface StorePlanOverride {
+  store_id: UUID;
+  commission_pct: number | null;
+  max_active_products: number | null;
+  whatsapp_orders: boolean | null;
+  online_checkout: boolean | null;
+  mercadopago: boolean | null;
+  deposit_payments: boolean | null;
+  mp_surcharge: boolean | null;
+  bank_transfer: boolean | null;
+  override_until: Timestamp | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface ConfigAuditLog {
+  id: UUID;
+  user_id: UUID | null;
+  user_email: string | null;
+  entity_type: 'plan' | 'store_override' | 'store_plan';
+  entity_id: string;
+  variable_name: string;
+  old_value: string | null;
+  new_value: string | null;
+  metadata: Record<string, unknown>;
+  created_at: Timestamp;
 }

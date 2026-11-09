@@ -2250,3 +2250,223 @@ alter table public.product_reviews
   check (num_nonnulls(product_id, service_id) = 1);
 
 create index if not exists idx_product_reviews_service on public.product_reviews(service_id) where service_id is not null;
+
+
+-- =============================================================================
+-- PLANES DINÁMICOS, OVERRIDES POR TIENDA Y AUDITORÍA (2026-11-10)
+-- Copia de supabase/migrations/20261110_dynamic_plans_and_overrides.sql
+-- =============================================================================
+create table if not exists public.plans (
+  id text primary key,
+  name text not null,
+  description text,
+  price_ars numeric(12,2) not null default 0,
+  commission_pct numeric(5,2) not null default 0,
+  max_active_products integer,
+  whatsapp_orders boolean not null default true,
+  online_checkout boolean not null default true,
+  mercadopago boolean not null default true,
+  deposit_payments boolean not null default true,
+  mp_surcharge boolean not null default true,
+  bank_transfer boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.store_plan_overrides (
+  store_id uuid primary key references public.stores(id) on delete cascade,
+  commission_pct numeric(5,2) check (commission_pct is null or (commission_pct >= 0 and commission_pct <= 20)),
+  max_active_products integer check (max_active_products is null or max_active_products >= 0),
+  whatsapp_orders boolean,
+  online_checkout boolean,
+  mercadopago boolean,
+  deposit_payments boolean,
+  mp_surcharge boolean,
+  bank_transfer boolean,
+  override_until timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.config_audit_log (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  user_email text,
+  entity_type text not null check (entity_type in ('plan', 'store_override', 'store_plan')),
+  entity_id text not null,
+  variable_name text not null,
+  old_value text,
+  new_value text,
+  metadata jsonb default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_config_audit_entity on public.config_audit_log(entity_type, entity_id);
+create index if not exists idx_config_audit_created on public.config_audit_log(created_at desc);
+
+alter table public.products
+  add column if not exists deposit_enabled boolean not null default false,
+  add column if not exists deposit_type text check (deposit_type is null or deposit_type in ('percent', 'fixed')),
+  add column if not exists deposit_value numeric(12,2) check (deposit_value is null or deposit_value >= 0);
+
+alter table public.orders
+  add column if not exists marketplace_fee_applied numeric(12,2),
+  add column if not exists fee_source text check (fee_source is null or fee_source in ('plan', 'override')),
+  add column if not exists is_deposit boolean not null default false,
+  add column if not exists deposit_amount numeric(12,2) default 0,
+  add column if not exists balance_pending numeric(12,2) default 0,
+  add column if not exists balance_paid boolean not null default false,
+  add column if not exists balance_mp_preference_id text,
+  add column if not exists balance_mp_payment_id text;
+
+alter table public.orders drop constraint if exists orders_estado_pago_check;
+alter table public.orders
+  add constraint orders_estado_pago_check
+  check (estado_pago in ('pendiente', 'aprobado', 'rechazado', 'revision', 'reembolsado', 'contracargo', 'sena_pagada'));
+
+alter table public.plans enable row level security;
+alter table public.store_plan_overrides enable row level security;
+alter table public.config_audit_log enable row level security;
+
+drop policy if exists "plans_read_public" on public.plans;
+create policy "plans_read_public" on public.plans
+  for select to anon, authenticated
+  using (true);
+
+drop policy if exists "plans_write_superadmin" on public.plans;
+create policy "plans_write_superadmin" on public.plans
+  for all to authenticated
+  using (public.is_platform_admin())
+  with check (public.is_platform_admin());
+
+grant select on public.plans to anon, authenticated;
+grant all on public.plans to service_role;
+
+drop policy if exists "overrides_superadmin_all" on public.store_plan_overrides;
+create policy "overrides_superadmin_all" on public.store_plan_overrides
+  for all to authenticated
+  using (public.is_platform_admin())
+  with check (public.is_platform_admin());
+
+revoke all on public.store_plan_overrides from anon, public;
+grant all on public.store_plan_overrides to service_role;
+
+drop policy if exists "audit_log_superadmin_read" on public.config_audit_log;
+create policy "audit_log_superadmin_read" on public.config_audit_log
+  for select to authenticated
+  using (public.is_platform_admin());
+
+revoke all on public.config_audit_log from anon, public;
+grant all on public.config_audit_log to service_role;
+
+create or replace function public.get_effective_store_config(p_store_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_store record;
+  v_plan record;
+  v_override record;
+  v_is_override_active boolean := false;
+  v_has_override boolean := false;
+begin
+  select id, plan into v_store from public.stores where id = p_store_id;
+  if not found then
+    return null;
+  end if;
+
+  select * into v_plan from public.plans where id = coalesce(v_store.plan, 'free');
+  if not found then
+    select * into v_plan from public.plans where id = 'free';
+  end if;
+
+  select * into v_override from public.store_plan_overrides where store_id = p_store_id;
+  if found then
+    v_has_override := true;
+    if v_override.override_until is null or v_override.override_until > now() then
+      v_is_override_active := true;
+    end if;
+  end if;
+
+  return jsonb_build_object(
+    'store_id', p_store_id,
+    'plan_id', v_plan.id,
+    'plan_name', v_plan.name,
+    'commission_pct', case
+      when v_is_override_active and v_override.commission_pct is not null then v_override.commission_pct
+      else v_plan.commission_pct
+    end,
+    'commission_source', case
+      when v_is_override_active and v_override.commission_pct is not null then 'override'
+      else 'plan'
+    end,
+    'max_active_products', case
+      when v_is_override_active and v_override.max_active_products is not null then v_override.max_active_products
+      else v_plan.max_active_products
+    end,
+    'max_active_products_source', case
+      when v_is_override_active and v_override.max_active_products is not null then 'override'
+      else 'plan'
+    end,
+    'whatsapp_orders', case
+      when v_is_override_active and v_override.whatsapp_orders is not null then v_override.whatsapp_orders
+      else v_plan.whatsapp_orders
+    end,
+    'whatsapp_orders_source', case
+      when v_is_override_active and v_override.whatsapp_orders is not null then 'override'
+      else 'plan'
+    end,
+    'online_checkout', case
+      when v_is_override_active and v_override.online_checkout is not null then v_override.online_checkout
+      else v_plan.online_checkout
+    end,
+    'online_checkout_source', case
+      when v_is_override_active and v_override.online_checkout is not null then 'override'
+      else 'plan'
+    end,
+    'mercadopago', case
+      when v_is_override_active and v_override.mercadopago is not null then v_override.mercadopago
+      else v_plan.mercadopago
+    end,
+    'mercadopago_source', case
+      when v_is_override_active and v_override.mercadopago is not null then 'override'
+      else 'plan'
+    end,
+    'deposit_payments', case
+      when v_is_override_active and v_override.deposit_payments is not null then v_override.deposit_payments
+      else v_plan.deposit_payments
+    end,
+    'deposit_payments_source', case
+      when v_is_override_active and v_override.deposit_payments is not null then 'override'
+      else 'plan'
+    end,
+    'mp_surcharge', case
+      when v_is_override_active and v_override.mp_surcharge is not null then v_override.mp_surcharge
+      else v_plan.mp_surcharge
+    end,
+    'mp_surcharge_source', case
+      when v_is_override_active and v_override.mp_surcharge is not null then 'override'
+      else 'plan'
+    end,
+    'bank_transfer', case
+      when v_is_override_active and v_override.bank_transfer is not null then v_override.bank_transfer
+      else v_plan.bank_transfer
+    end,
+    'bank_transfer_source', case
+      when v_is_override_active and v_override.bank_transfer is not null then 'override'
+      else 'plan'
+    end,
+    'override_until', case when v_has_override then v_override.override_until else null end,
+    'is_override_expired', case
+      when v_has_override and v_override.override_until is not null and v_override.override_until <= now() then true
+      else false
+    end
+  );
+end;
+$$;
+
+revoke all on function public.get_effective_store_config(uuid) from public, anon;
+grant execute on function public.get_effective_store_config(uuid) to authenticated, anon, service_role;
+
