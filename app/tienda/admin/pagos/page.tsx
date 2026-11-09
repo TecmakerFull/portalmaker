@@ -5,6 +5,7 @@
 import { notFound } from 'next/navigation'
 import { getTenantStore, isStoreAdmin } from '@/lib/tenant'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
+import { getEffectiveStoreConfig } from '@/lib/config/store-config'
 import type { Store } from '@/types/database'
 import PagosForm from './pagos-form'
 
@@ -36,9 +37,20 @@ export default async function PagosAdminPage() {
   const storeEfectiva = (fullStore as Store) || store
   const tenantQuery = context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''
 
+  // Obtener configuración efectiva (única fuente de verdad)
+  const storeConfig = await getEffectiveStoreConfig(store.id)
+
   return (
     <div className="w-full space-y-6">
-      <PagosForm store={storeEfectiva} tenantQuery={tenantQuery} />
+      <PagosForm
+        store={storeEfectiva}
+        tenantQuery={tenantQuery}
+        storeConfig={{
+          mercadopago: storeConfig.mercadopago,
+          bank_transfer: storeConfig.bank_transfer,
+          mp_surcharge: storeConfig.mp_surcharge,
+        }}
+      />
     </div>
   )
 }

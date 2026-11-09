@@ -11,9 +11,10 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import {
   getPlanConfig,
   PLANS_CONFIG,
-  SUBSCRIPTION_MATRIX,
+  buildSubscriptionMatrix,
   type PlanKey,
 } from '@/lib/plans'
+import { getEffectiveStoreConfig } from '@/lib/config/store-config'
 import {
   Check,
   X as XIcon,
@@ -54,17 +55,29 @@ export default async function TiendaSuscripcionPage() {
   const store = storeData || publicStore
   const productCount = store.products?.[0]?.count ?? 0
   const currentPlan = getPlanConfig(store.plan)
+  const storeConfig = await getEffectiveStoreConfig(store.id)
+
+  // Cargar planes dinámicos de la base de datos
+  const { data: dbPlans } = await supabaseAdmin.from('plans').select('*')
+  const plansMap = (dbPlans || []).reduce((acc: any, pl: any) => {
+    acc[pl.id] = pl
+    return acc
+  }, {})
+  const dynamicMatrix = buildSubscriptionMatrix(plansMap)
 
   // Detectar beneficios manuales del superadmin (overrides sobre el plan estándar)
   const manualOverrides: string[] = []
-  if (store.limite_productos && store.limite_productos > currentPlan.limiteProductos) {
-    manualOverrides.push(`Límite ampliado a ${store.limite_productos} productos (estándar: ${currentPlan.limiteProductos})`)
+  if (storeConfig.commission_source === 'override') {
+    manualOverrides.push(`Comisión de plataforma personalizada: ${storeConfig.commission_pct}%`)
   }
-  if (currentPlan.key === 'free' && (store.checkout_activo || store.modo_operacion === 'tienda')) {
-    manualOverrides.push('Checkout y carrito online habilitado especialmente')
+  if (storeConfig.max_active_products_source === 'override') {
+    manualOverrides.push(`Límite de productos activos personalizado: ${storeConfig.max_active_products ?? 'Ilimitado'}`)
   }
-  if (currentPlan.key === 'free' && store.envios_activo) {
-    manualOverrides.push('Módulo de envíos habilitado especialmente')
+  if (storeConfig.bank_transfer_source === 'override' && storeConfig.bank_transfer) {
+    manualOverrides.push('Transferencia bancaria en checkout habilitada especialmente')
+  }
+  if (storeConfig.deposit_payments_source === 'override' && storeConfig.deposit_payments) {
+    manualOverrides.push('Cobro de señas y pagos parciales habilitado especialmente')
   }
   if (currentPlan.nivel < 3 && Boolean(store.custom_domain)) {
     manualOverrides.push(`Dominio propio activo (${store.custom_domain})`)
@@ -223,7 +236,7 @@ export default async function TiendaSuscripcionPage() {
             </thead>
 
             <tbody className="divide-y divide-[var(--color-borde)] text-xs">
-              {SUBSCRIPTION_MATRIX.map((category) => (
+              {dynamicMatrix.map((category) => (
                 <>
                   {/* Encabezado de Categoría */}
                   <tr key={category.nombre} className="bg-black/[0.03] dark:bg-white/[0.03]">

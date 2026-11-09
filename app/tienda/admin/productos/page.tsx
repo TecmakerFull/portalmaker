@@ -5,6 +5,7 @@
 import { notFound } from 'next/navigation'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getEffectiveStoreConfig } from '@/lib/config/store-config'
 import ProductosTable from './productos-table'
 
 export default async function AdminProductosPage() {
@@ -18,6 +19,7 @@ export default async function AdminProductosPage() {
   const tenantQuery = context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''
 
   const supabase = await createSupabaseServerClient()
+  const storeConfig = await getEffectiveStoreConfig(store.id)
 
   // 1. Obtener productos de la tienda con variantes y categoría
   const { data: products } = await supabase
@@ -44,6 +46,7 @@ export default async function AdminProductosPage() {
         initialProducts={productList}
         categories={categoryList}
         tenantQuery={tenantQuery}
+        maxActiveProducts={storeConfig.max_active_products}
       />
     </div>
   )

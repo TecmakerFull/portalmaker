@@ -76,6 +76,7 @@ interface ProductosTableProps {
   initialProducts: ProductWithRelations[]
   categories: Category[]
   tenantQuery: string
+  maxActiveProducts?: number | null
 }
 
 export default function ProductosTable({
@@ -83,6 +84,7 @@ export default function ProductosTable({
   initialProducts,
   categories,
   tenantQuery,
+  maxActiveProducts,
 }: ProductosTableProps) {
   const router = useRouter()
   const supabase = createSupabaseBrowserClient()
@@ -111,9 +113,11 @@ export default function ProductosTable({
   const [editingVariants, setEditingVariants] = useState<ProductVariant[]>([])
   const [loadingModalData, setLoadingModalData] = useState(false)
 
-  // Límite de productos configurado por plan
-  const productLimit = store.limite_productos ?? 50
-  const isLimitReached = products.length >= productLimit
+  // Límite de productos activos configurado por plan u override
+  const effectiveMaxProducts =
+    maxActiveProducts !== undefined ? maxActiveProducts : (store.limite_productos ?? 50)
+  const activeProductsCount = products.filter((p) => p.visible).length
+  const isLimitReached = effectiveMaxProducts !== null && activeProductsCount >= effectiveMaxProducts
 
   // Estado de feedback de guardado rápido: { [key]: boolean }
   const [savingField, setSavingField] = useState<{ [key: string]: boolean }>({})
@@ -421,11 +425,14 @@ export default function ProductosTable({
       ? 'Plan Bonificado'
       : 'Plan Maker Pro'
 
-  const usagePercent = Math.min(100, Math.round((products.length / productLimit) * 100))
-  const isNearLimit = usagePercent >= 80 && !isLimitReached
+  const usagePercent =
+    effectiveMaxProducts !== null
+      ? Math.min(100, Math.round((activeProductsCount / effectiveMaxProducts) * 100))
+      : 0
+  const isNearLimit = effectiveMaxProducts !== null && usagePercent >= 80 && !isLimitReached
 
   const superadminWaMsg = encodeURIComponent(
-    `Hola Portalmaker! Me comunico desde mi tienda "${store.nombre}" (${store.slug}). Quisiera solicitar una ampliación del límite de productos o cambiar de plan. Actualmente tengo ${products.length}/${productLimit} productos cargados.`
+    `Hola Portalmaker! Me comunico desde mi tienda "${store.nombre}" (${store.slug}). Quisiera solicitar una ampliación del límite de productos o cambiar de plan. Actualmente tengo ${activeProductsCount} productos activos.`
   )
   const superadminWaUrl = `https://wa.me/5491136450073?text=${superadminWaMsg}`
 
@@ -490,24 +497,28 @@ export default function ProductosTable({
 
           <div className="flex items-center gap-2 text-xs font-semibold">
             <span className={isLimitReached ? 'text-red-600 dark:text-red-400 font-bold' : 'text-slate-700 dark:text-slate-300'}>
-              {products.length} de {productLimit} productos ({usagePercent}%)
+              {effectiveMaxProducts !== null
+                ? `${activeProductsCount} de ${effectiveMaxProducts} productos activos (${usagePercent}%)`
+                : `${activeProductsCount} productos activos (Catálogo Ilimitado)`}
             </span>
           </div>
         </div>
 
         {/* Barra de progreso interactiva */}
-        <div className="w-full h-2.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden relative">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${
-              isLimitReached
-                ? 'bg-red-500'
-                : usagePercent >= 80
-                ? 'bg-amber-500'
-                : 'bg-emerald-500'
-            }`}
-            style={{ width: `${usagePercent}%` }}
-          />
-        </div>
+        {effectiveMaxProducts !== null && (
+          <div className="w-full h-2.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden relative">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${
+                isLimitReached
+                  ? 'bg-red-500'
+                  : usagePercent >= 80
+                  ? 'bg-amber-500'
+                  : 'bg-emerald-500'
+              }`}
+              style={{ width: `${usagePercent}%` }}
+            />
+          </div>
+        )}
 
         {/* Mensaje de estado & Botón de solicitar ampliación */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 mt-1 text-xs">
@@ -515,15 +526,21 @@ export default function ProductosTable({
             {isLimitReached ? (
               <p className="text-red-700 dark:text-red-300 font-medium flex items-center gap-1.5">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                <span>Has alcanzado el límite máximo de {productLimit} productos de tu plan actual.</span>
+                <span>
+                  Has alcanzado el límite de {effectiveMaxProducts} productos activos. No despublicamos tus productos anteriores, pero para publicar nuevos debés pausar ítems o mejorar tu plan.
+                </span>
               </p>
             ) : isNearLimit ? (
               <p className="text-amber-700 dark:text-amber-300 font-medium">
-                Te quedan {productLimit - products.length} productos disponibles para publicar.
+                Te quedan {(effectiveMaxProducts ?? 0) - activeProductsCount} productos disponibles para publicar.
+              </p>
+            ) : effectiveMaxProducts !== null ? (
+              <p className="opacity-70">
+                Dispones de {effectiveMaxProducts - activeProductsCount} productos más en tu plan actual.
               </p>
             ) : (
               <p className="opacity-70">
-                Dispones de {productLimit - products.length} productos más en tu plan actual.
+                Tenés catálogo ilimitado en tu plan actual.
               </p>
             )}
           </div>
@@ -1576,10 +1593,10 @@ export default function ProductosTable({
                 Límite de Productos Alcanzado
               </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                Tu tienda actualmente está en el <strong>{planLabel}</strong> con un cupo de <strong>{productLimit} productos</strong> ({products.length} ya cargados).
+                Tu tienda actualmente está en el <strong>{planLabel}</strong> con un cupo de <strong>{effectiveMaxProducts} productos activos</strong> ({activeProductsCount} activos).
               </p>
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                Para publicar nuevos productos, puedes solicitar una ampliación de tu plan por WhatsApp o eliminar productos que ya no comercialices.
+                No despublicamos tus productos anteriores, pero para publicar nuevos productos podés pausar ítems existentes o solicitar una ampliación de tu plan.
               </p>
             </div>
 
