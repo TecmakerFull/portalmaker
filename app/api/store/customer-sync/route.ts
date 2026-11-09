@@ -37,7 +37,12 @@ export async function POST(req: Request) {
   const actualizar = body?.actualizar === true
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>
 
-  const nombre = clean(body?.nombre, 100) || clean(meta.nombre, 100) || null
+  const nombre =
+    clean(body?.nombre, 100) ||
+    clean(meta.nombre, 100) ||
+    clean(meta.full_name, 100) ||
+    clean(meta.name, 100) ||
+    null
   // Con `actualizar` el teléfono vacío significa "borrarlo"; sin eso se toma lo que
   // haya en el perfil de la cuenta.
   const telefono = actualizar ? clean(body?.telefono, 30) : clean(body?.telefono, 30) || clean(meta.telefono, 30) || null
