@@ -171,6 +171,8 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
   }, 0)
 
   const hasSena = senaSubtotal < totalAmount
+  const [pagoModalidad, setPagoModalidad] = useState<'sena' | 'total'>('sena')
+  const isPayingSena = hasSena && pagoModalidad === 'sena'
   const senaRecargoMp = metodoPago === 'mercadopago' && mpRecargoPct > 0 ? (senaSubtotal * mpRecargoPct) / 100 : 0
   const senaTotalAPagar = hasSena ? Number((senaSubtotal + costoEnvio + senaRecargoMp).toFixed(2)) : finalTotal
   const saldoPendiente = hasSena ? Number((finalTotal - senaTotalAPagar).toFixed(2)) : 0
@@ -432,6 +434,7 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
           direccionEntrega: fullShippingAddress,
           metodoPago,
           notas: notas.trim() || null,
+          pago_modalidad: isPayingSena ? 'sena' : 'total',
           items: items.map((it) => ({
             productId: it.productId,
             variantId: it.variantId || null,
@@ -567,6 +570,14 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
         ``,
         `*TOTAL:* $${totalAmount.toLocaleString('es-AR')}`,
       ]
+
+      if (isPayingSena) {
+        waMsgLines.push(
+          `*Modalidad:* Seña / Anticipo`,
+          `*Seña inicial:* $${senaTotalAPagar.toLocaleString('es-AR')}`,
+          `*Saldo al retirar/recibir:* $${saldoPendiente.toLocaleString('es-AR')}`
+        )
+      }
 
       if (metodoPago === 'transferencia') {
         waMsgLines.push(``, `*(Te adjunto a continuación el comprobante de la transferencia)*`)
@@ -1567,6 +1578,55 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
             )}
 
             {hasSena && (
+              <div className="space-y-2 my-3">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  ¿Cómo preferís abonar?
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPagoModalidad('sena')}
+                    className={`min-h-[48px] p-3 rounded-xl border text-left flex flex-col justify-between transition-colors cursor-pointer ${
+                      isPayingSena
+                        ? 'border-amber-500 bg-amber-500/10 text-amber-900 dark:text-amber-200'
+                        : 'border-[var(--color-borde)] hover:border-amber-500/50 bg-black/[0.02] dark:bg-white/[0.02]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-xs">Pagar seña</span>
+                      <span className="font-bold text-sm text-amber-700 dark:text-amber-300">
+                        ${senaTotalAPagar.toLocaleString('es-AR')}
+                      </span>
+                    </div>
+                    <span className="text-[11px] opacity-75 mt-1">
+                      Saldo restante: ${saldoPendiente.toLocaleString('es-AR')}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPagoModalidad('total')}
+                    className={`min-h-[48px] p-3 rounded-xl border text-left flex flex-col justify-between transition-colors cursor-pointer ${
+                      !isPayingSena
+                        ? 'border-[var(--color-primario)] bg-[var(--color-primario)]/10 text-[var(--color-primario-legible)]'
+                        : 'border-[var(--color-borde)] hover:border-[var(--color-primario)]/50 bg-black/[0.02] dark:bg-white/[0.02]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-xs">Pago total (100%)</span>
+                      <span className="font-bold text-sm">
+                        ${finalTotal.toLocaleString('es-AR')}
+                      </span>
+                    </div>
+                    <span className="text-[11px] opacity-75 mt-1">
+                      Abonás el monto completo ahora
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {isPayingSena && (
               <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs space-y-1.5 my-2">
                 <div className="flex justify-between items-center font-bold text-amber-800 dark:text-amber-300">
                   <span>Anticipo / Seña a pagar ahora:</span>
@@ -1580,7 +1640,7 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
             )}
 
             <div className="flex justify-between items-baseline pt-2 border-t border-[var(--color-borde)]">
-              <span className="text-sm font-semibold opacity-80">{hasSena ? 'Total de la compra:' : 'Total a pagar:'}</span>
+              <span className="text-sm font-semibold opacity-80">{isPayingSena ? 'Total de la compra:' : 'Total a pagar:'}</span>
               <span className="text-2xl sm:text-3xl font-bold text-[var(--color-primario-legible)] font-[var(--font-heading)]">
                 ${finalTotal.toLocaleString('es-AR')}
               </span>
@@ -1614,12 +1674,20 @@ export default function CheckoutForm({ store, tieneTarifasEnvio = false, tenantQ
               ) : metodoPago === 'mercadopago' ? (
                 <>
                   <CreditCard className="w-4 h-4 shrink-0" />
-                  <span>Pagar con Mercado Pago</span>
+                  <span>
+                    {isPayingSena
+                      ? `Pagar seña de $${senaTotalAPagar.toLocaleString('es-AR')} con Mercado Pago`
+                      : 'Pagar con Mercado Pago'}
+                  </span>
                 </>
               ) : (
                 <>
                   <WhatsAppIcon className="w-4 h-4 shrink-0" />
-                  <span>Confirmar y Enviar por WhatsApp</span>
+                  <span>
+                    {isPayingSena
+                      ? `Confirmar con seña ($${senaTotalAPagar.toLocaleString('es-AR')}) por WhatsApp`
+                      : 'Confirmar y Enviar por WhatsApp'}
+                  </span>
                 </>
               )}
             </button>

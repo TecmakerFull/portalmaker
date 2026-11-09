@@ -37,7 +37,7 @@ export default async function AdminAgendaPage() {
   const [{ data: turnos }, { data: services }, { data: espera }] = await Promise.all([
     supabase
       .from('bookings')
-      .select('*')
+      .select('*, order:orders(id, estado_pago, is_deposit, deposit_amount, balance_pending, balance_paid, total)')
       .eq('store_id', store.id)
       .gte('starts_at', desde)
       .lte('starts_at', hasta)

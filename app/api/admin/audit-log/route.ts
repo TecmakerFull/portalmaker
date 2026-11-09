@@ -38,3 +38,4 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ logs: logs || [] })
 }
+

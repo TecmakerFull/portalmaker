@@ -478,7 +478,7 @@ export default function VentasManager({
   }
 
   const handleMarkBalancePaid = async (orderId: string) => {
-    if (!confirm('¿Confirmas que el saldo restante fue cobrado (por transferencia, efectivo u otro medio)?')) return
+    if (!confirm('¿Confirmas que el saldo restante fue cobrado y deseas marcar el pedido como pagado total?')) return
     try {
       const res = await fetch(`/api/tienda/admin/orders/${orderId}/mark-balance-paid`, {
         method: 'POST',
@@ -495,7 +495,7 @@ export default function VentasManager({
         setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)))
       }
     } catch (e: any) {
-      alert(e.message || 'Error al marcar saldo')
+      alert(e.message || 'Error al marcar como pagado total')
     }
   }
 
@@ -1640,8 +1640,8 @@ export default function VentasManager({
                   <div className="pt-2 border-t border-amber-500/20 flex flex-wrap gap-2 items-center justify-between">
                     <span className="text-[11px] font-medium">
                       Estado del saldo:{' '}
-                      <strong className={selectedOrder.balance_paid ? 'text-emerald-600' : 'text-amber-600'}>
-                        {selectedOrder.balance_paid ? 'Cobrado' : 'Pendiente de cobro'}
+                      <strong className={selectedOrder.balance_paid ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>
+                        {selectedOrder.balance_paid ? 'Cobrado (Pagado total)' : 'Pendiente de cobro'}
                       </strong>
                     </span>
 
@@ -1651,7 +1651,7 @@ export default function VentasManager({
                           type="button"
                           onClick={() => handleGenerateBalanceLink(selectedOrder.id)}
                           disabled={generatingBalanceLink}
-                          className="min-h-[36px] px-3 py-1.5 rounded-lg bg-amber-500 text-slate-900 font-semibold text-xs hover:bg-amber-400 transition-colors flex items-center gap-1.5 cursor-pointer"
+                          className="min-h-[44px] px-3.5 py-2 rounded-xl bg-amber-500 text-slate-900 font-semibold text-xs hover:bg-amber-400 transition-colors flex items-center gap-1.5 cursor-pointer"
                         >
                           <CreditCard className="w-3.5 h-3.5" />
                           <span>{generatingBalanceLink ? 'Generando...' : 'Link de MP por saldo'}</span>
@@ -1659,9 +1659,9 @@ export default function VentasManager({
                         <button
                           type="button"
                           onClick={() => handleMarkBalancePaid(selectedOrder.id)}
-                          className="min-h-[36px] px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                          className="min-h-[44px] px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                         >
-                          Marcar saldo cobrado
+                          Marcar como pagado total
                         </button>
                       </div>
                     )}

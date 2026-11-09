@@ -781,6 +781,7 @@ export interface Booking {
   origen: 'web' | 'manual';
   public_token: UUID;
   order_id: UUID | null;
+  order?: Partial<Order> | null;
   cancelado_por: 'cliente' | 'tienda' | null;
   cancelado_at: Timestamp | null;
   pendiente_expira_at: Timestamp | null;

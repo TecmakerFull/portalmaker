@@ -54,3 +54,4 @@ describe('Configuración Efectiva de Tiendas', () => {
     assert.equal(isExpired, true)
   })
 })
+

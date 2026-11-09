@@ -453,12 +453,14 @@ export async function POST(req: Request) {
 
     // Regla de carrito para seña:
     // La seña total es la suma de las señas de los productos que la tengan más el 100% de los que no la tengan.
+    // Si el comprador elige explícitamente pago total (pago_modalidad: 'total'), no se fracciona el cobro.
+    const pagoModalidad = body.pago_modalidad === 'total' ? 'total' : 'sena'
     const anyHasDeposit = verifiedSnapshotItems.some((it) => it.deposit_enabled)
     let isDepositOrder = false
     let depositTotal = finalTotal
     let balancePending = 0
 
-    if (anyHasDeposit && storeConfig.deposit_payments) {
+    if (anyHasDeposit && storeConfig.deposit_payments && pagoModalidad !== 'total') {
       const sumSenaProductos = verifiedSnapshotItems.reduce((acc, it) => acc + (it.deposit_amount ?? it.subtotal), 0)
       if (sumSenaProductos < subtotalProductos) {
         isDepositOrder = true

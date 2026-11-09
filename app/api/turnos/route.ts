@@ -125,6 +125,7 @@ export async function POST(req: Request) {
       // Turno asignado desde la lista de espera: puede pedir seña, con más plazo para pagarla
       cobrarSena: Boolean(asignadoDeEspera) && body?.cobrarSena === true,
       retencionMinutos: asignadoDeEspera ? SENA_MINUTOS_ASIGNADO : undefined,
+      pagoModalidad: body?.pagoModalidad === 'total' ? 'total' : 'sena',
     })
 
     const { settings } = await getBookingConfig(store)

@@ -172,6 +172,40 @@ export default function AgendaManager({
     )
   }
 
+  const marcarSaldoPagadoTotal = async (bookingId: string, orderId: string) => {
+    if (!confirm('¿Confirmas que el saldo restante fue cobrado y deseas marcar el turno como pagado total?')) return
+    setAccionando(bookingId)
+    setError(null)
+    setAviso(null)
+    try {
+      const res = await fetch(`/api/tienda/admin/orders/${orderId}/mark-balance-paid`, {
+        method: 'POST',
+      })
+      if (!res.ok) throw new Error('No se pudo actualizar el pago')
+      setTurnos((prev) =>
+        prev.map((t) => {
+          if (t.id !== bookingId) return t
+          return {
+            ...t,
+            order: t.order
+              ? {
+                  ...t.order,
+                  balance_paid: true,
+                  balance_pending: 0,
+                  estado_pago: 'aprobado',
+                }
+              : undefined,
+          }
+        })
+      )
+      setAviso('Saldo registrado: el turno quedó marcado como pagado total.')
+    } catch (e: any) {
+      setError(e.message || 'Error al marcar saldo como pagado')
+    } finally {
+      setAccionando(null)
+    }
+  }
+
   // ------------------------------------------------------------ Carga manual
   const [manual, setManual] = useState<null | {
     serviceId: string
@@ -514,7 +548,28 @@ export default function AgendaManager({
                   <p className="text-xs opacity-70 truncate">{t.servicio_nombre}{t.origen === 'manual' ? ' · cargado por vos' : ''}</p>
                   {t.notas_cliente && <p className="text-xs mt-1 opacity-80">Nota: {t.notas_cliente}</p>}
                 </div>
-                <span className={`shrink-0 text-[11px] px-2 py-1 rounded-full font-semibold border ${estado.clase}`}>{estado.label}</span>
+                <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end">
+                  {t.order && (
+                    <>
+                      {t.order.is_deposit ? (
+                        t.order.balance_paid || Number(t.order.balance_pending) === 0 ? (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                            Pagado total
+                          </span>
+                        ) : (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30">
+                            Seña pagada · Saldo: ${Number(t.order.balance_pending).toLocaleString('es-AR')}
+                          </span>
+                        )
+                      ) : t.order.estado_pago === 'aprobado' ? (
+                        <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                          Pagado total
+                        </span>
+                      ) : null}
+                    </>
+                  )}
+                  <span className={`text-[11px] px-2 py-1 rounded-full font-semibold border ${estado.clase}`}>{estado.label}</span>
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-2 mt-3">
@@ -522,6 +577,16 @@ export default function AgendaManager({
                   <a href={wa} target="_blank" rel="noopener noreferrer" className="min-h-11 px-3 rounded-xl border border-[var(--color-borde)] text-xs font-semibold inline-flex items-center gap-1.5 hover:bg-black/5 dark:hover:bg-white/5">
                     <Phone className="w-4 h-4" /> WhatsApp
                   </a>
+                )}
+                {t.order && t.order.is_deposit && !t.order.balance_paid && Number(t.order.balance_pending) > 0 && t.order_id && (
+                  <button
+                    type="button"
+                    disabled={accionando === t.id}
+                    onClick={() => marcarSaldoPagadoTotal(t.id, t.order_id!)}
+                    className="min-h-11 px-3 rounded-xl border border-amber-500/40 text-amber-800 dark:text-amber-300 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-amber-500/10 disabled:opacity-50"
+                  >
+                    <Check className="w-4 h-4" /> Marcar como pagado total
+                  </button>
                 )}
                 {t.estado === 'pendiente' && (
                   <button type="button" disabled={accionando === t.id} onClick={() => cambiarEstado(t, 'confirmado')} className="min-h-11 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50">

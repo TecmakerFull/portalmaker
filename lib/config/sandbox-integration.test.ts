@@ -162,7 +162,7 @@ describe('Pruebas Sandbox: Sistema Integral de Planes, Comisiones, Overrides y S
       // Regla de carrito de Portalmaker:
       // Seña total = suma de señas de productos con seña + 100% de productos sin seña
       const depositAmount = items.reduce((acc, it) => {
-        if (it.deposit_enabled) {
+        if (it.deposit_enabled && it.deposit_value != null) {
           return acc + (it.subtotal * (it.deposit_value / 100))
         }
         return acc + it.subtotal
@@ -256,8 +256,8 @@ describe('Pruebas Sandbox: Sistema Integral de Planes, Comisiones, Overrides y S
       }> = []
 
       // Simulación de cambio de comisión en plan
-      const oldPlanComm = '2.00'
-      const newPlanComm = '1.50'
+      const oldPlanComm: string = '2.00'
+      const newPlanComm: string = '1.50'
       if (oldPlanComm !== newPlanComm) {
         auditLogMock.push({
           target_type: 'plan',
@@ -291,3 +291,4 @@ describe('Pruebas Sandbox: Sistema Integral de Planes, Comisiones, Overrides y S
     })
   })
 })
+
