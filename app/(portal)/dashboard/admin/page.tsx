@@ -19,7 +19,7 @@ import {
   Truck,
   AlertTriangle,
 } from 'lucide-react'
-import SuperadminTiendasList from './tiendas-list'
+import SuperadminDashboardTabs from './superadmin-dashboard-tabs'
 import NuevaTiendaModal from './nueva-tienda-modal'
 
 export default async function SuperadminDashboardPage() {
@@ -278,17 +278,8 @@ export default async function SuperadminDashboardPage() {
           </div>
         )}
 
-        {/* Listado y Gestión Avanzada de Cuentas */}
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-lg font-bold">Cuentas y Empresas Clientes</h2>
-            <p className="text-xs opacity-70 mt-0.5">
-              Relevamiento de planes, control de pagos, días de gracia y acceso administrativo
-            </p>
-          </div>
-
-          <SuperadminTiendasList initialStores={allStores} />
-        </div>
+        {/* Pestañas de Gestión: Tiendas, Planes y Auditoría */}
+        <SuperadminDashboardTabs initialStores={allStores} />
       </main>
     </div>
   )

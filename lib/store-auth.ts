@@ -1,4 +1,4 @@
-import { createSupabaseAdminClient } from '@/lib/supabase/server'
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server'
 import type { Store } from '@/types/database'
 import { emailIlikePattern } from '@/lib/sql-utils'
 
@@ -9,6 +9,59 @@ export interface StoreAuthResult {
   isCollaborator: boolean
   store: Store | null
   error?: string
+}
+
+/**
+ * Valida si la sesión actual pertenece a un superadmin registrado en platform_admins.
+ * Puede recibir el email explícito o leerlo de la sesión de Supabase Auth.
+ */
+export async function verifySuperadmin(userEmail?: string | null) {
+  let email = userEmail?.trim().toLowerCase()
+  let user: any = null
+
+  if (!email) {
+    const supabase = await createSupabaseServerClient()
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser()
+
+    if (!authUser?.email) {
+      return {
+        authorized: false,
+        error: 'Sesión no iniciada',
+        user: null,
+        email: null,
+        supabaseAdmin: null as any,
+      }
+    }
+    user = authUser
+    email = authUser.email.trim().toLowerCase()
+  }
+
+  const supabaseAdmin = createSupabaseAdminClient()
+  const { data: adminRow } = await supabaseAdmin
+    .from('platform_admins')
+    .select('id, email')
+    .ilike('email', emailIlikePattern(email))
+    .maybeSingle()
+
+  if (!adminRow) {
+    return {
+      authorized: false,
+      error: 'Acceso no autorizado: requiere permisos de superadmin',
+      user,
+      email,
+      supabaseAdmin: null as any,
+    }
+  }
+
+  return {
+    authorized: true,
+    user,
+    email,
+    adminId: adminRow.id,
+    supabaseAdmin,
+  }
 }
 
 /**
