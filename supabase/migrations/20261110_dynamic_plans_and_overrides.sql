@@ -282,7 +282,8 @@ revoke all on function public.get_effective_store_config(uuid) from public, anon
 grant execute on function public.get_effective_store_config(uuid) to authenticated, anon, service_role;
 
 -- 10. RPC FUNCTION: PROCESS_APPROVED_PAYMENT CON SOPORTE DE SEÑA Y SALDO PENDIENTE
-drop function if exists public.process_approved_payment;
+drop function if exists public.process_approved_payment(uuid, text, numeric, numeric);
+drop function if exists public.process_approved_payment(uuid, text, numeric, numeric, numeric, text);
 
 create or replace function public.process_approved_payment(
   p_order_id uuid,

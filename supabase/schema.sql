@@ -1343,7 +1343,8 @@ grant all on store_mp_credentials to service_role;
 -- =============================================================================
 -- 26. PROCESS_APPROVED_PAYMENT — Procesamiento atómico e idempotente de pagos
 -- =============================================================================
-drop function if exists public.process_approved_payment;
+drop function if exists public.process_approved_payment(uuid, text, numeric, numeric);
+drop function if exists public.process_approved_payment(uuid, text, numeric, numeric, numeric, text);
 
 create or replace function process_approved_payment(
   p_order_id uuid,
