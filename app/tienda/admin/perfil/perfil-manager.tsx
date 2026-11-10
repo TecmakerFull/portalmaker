@@ -38,13 +38,17 @@ import {
 } from 'lucide-react'
 import { getPlanConfig, isFeatureAllowed } from '@/lib/plans'
 import { AdminPageHeader } from '../components/admin-page-header'
+import PayPlanButton from '../components/pay-plan-button'
 
 export default function PerfilManager({
   store,
   tenantQuery,
+  billing,
 }: {
   store: Store
   tenantQuery: string
+  // Calculado en el servidor: solo viene si el usuario es dueño/superadmin y el plan se cobra.
+  billing?: { payablePlan: 'starter' | 'maker_pro' | 'enterprise'; statusLabel: string; needsPayment: boolean } | null
 }) {
   const router = useRouter()
   const supabase = createSupabaseBrowserClient()
@@ -655,6 +659,17 @@ export default function PerfilManager({
                 <span className="font-semibold">{diffDays} {diffDays === 1 ? 'día' : 'días'}</span>
               </div>
             </div>
+
+            {billing && (
+              <div className="space-y-2">
+                <p className="text-xs opacity-80">
+                  Estado de la cuenta: <span className="font-semibold">{billing.statusLabel}</span>
+                </p>
+                {billing.needsPayment && (
+                  <PayPlanButton storeId={store.id} targetPlan={billing.payablePlan} label="Pagar ahora con Mercado Pago" />
+                )}
+              </div>
+            )}
 
             <Link
               href={`/tienda/admin/suscripcion${tenantQuery}`}

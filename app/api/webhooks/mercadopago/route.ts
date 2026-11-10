@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyMpWebhookSignature } from '@/lib/mercadopago'
 import { processMpPayment, handleSellerTokenRevoked } from '@/lib/mp-payments'
+import { creditPlatformPayment } from '@/lib/subscriptions/server'
 
 // =============================================================================
 // PORTALMAKER — Webhook Oficial de Mercado Pago (Checkout Pro Marketplace)
@@ -51,7 +52,14 @@ export async function POST(req: Request) {
     } else {
       const xSignature = req.headers.get('x-signature')
       const xRequestId = req.headers.get('x-request-id')
-      const isValid = verifyMpWebhookSignature(xSignature, xRequestId, String(paymentId), webhookSecret)
+      let isValid = verifyMpWebhookSignature(xSignature, xRequestId, String(paymentId), webhookSecret)
+
+      // Si el token de cobro de planes pertenece a otra aplicación de MP, su firma usa
+      // otro secreto. Se acepta como alternativa solo si está configurado explícitamente.
+      const subsSecret = process.env.MP_SUBSCRIPTIONS_WEBHOOK_SECRET
+      if (!isValid && subsSecret) {
+        isValid = verifyMpWebhookSignature(xSignature, xRequestId, String(paymentId), subsSecret)
+      }
 
       if (!isValid) {
         console.warn(`Webhook MP: Firma HMAC inválida para pago ${paymentId}`)
@@ -61,6 +69,17 @@ export async function POST(req: Request) {
 
     // A1: Leer order_id inyectado en notification_url de la preferencia o buscar por external_reference
     const orderId = searchParams.get('order_id') || body?.order_id || null
+
+    // Cobro de planes de Portalmaker: los pagos de pedidos siempre llevan order_id en la
+    // notification_url, así que los que no lo traen (o traen kind=sub) se prueban primero
+    // contra la cuenta de la plataforma. 'kind' es solo una pista: lo que decide es el
+    // external_reference del pago consultado en la API de MP, nunca la query.
+    if (searchParams.get('kind') === 'sub' || !orderId) {
+      const sub = await creditPlatformPayment(String(paymentId))
+      if (sub.handled) {
+        return NextResponse.json({ status: sub.status, paymentId: String(paymentId) }, { status: sub.httpStatus })
+      }
+    }
 
     // Procesar el pago con el motor unificado de Mercado Pago (registra en mp_webhook_events y alerta)
     const result = await processMpPayment({

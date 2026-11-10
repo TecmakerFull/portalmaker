@@ -30,8 +30,19 @@ import {
 } from 'lucide-react'
 import WhatsAppIcon from '@/app/tienda/sections/whatsapp-icon'
 import { AdminPageHeader } from '../components/admin-page-header'
+import SubscriptionBillingCard from '../components/subscription-billing-card'
+import PayPlanButton from '../components/pay-plan-button'
+import { canManageBilling, getBillingSummary } from '@/lib/subscriptions/summary'
+import { canChooseTargetPlan, isBillablePlan } from '@/lib/subscriptions/billing'
 
-export default async function TiendaSuscripcionPage() {
+export default async function TiendaSuscripcionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ payment?: string }>
+}) {
+  const { payment: paymentParam } = await searchParams
+  const paymentResult = ['success', 'pending', 'failure'].includes(paymentParam ?? '') ? (paymentParam as string) : null
+
   const tenant = await getTenantStore()
   if (!tenant) notFound()
 
@@ -93,6 +104,10 @@ export default async function TiendaSuscripcionPage() {
 
   const planKeys: PlanKey[] = ['free', 'starter', 'maker_pro', 'enterprise']
 
+  // Montos, historial y pago solo para dueño o superadmin; colaboradores ven el plan.
+  const canPay = await canManageBilling(store)
+  const billingSummary = canPay ? await getBillingSummary(store) : null
+
   return (
     <div className="w-full max-w-5xl mx-auto space-y-8 pb-12">
       {/* Cabecera */}
@@ -110,6 +125,10 @@ export default async function TiendaSuscripcionPage() {
           </div>
         }
       />
+
+      {billingSummary && (
+        <SubscriptionBillingCard storeId={store.id} summary={billingSummary} paymentResult={paymentResult} />
+      )}
 
       {/* Banner de Overrides Manuales del Superadmin (si existen) */}
       {manualOverrides.length > 0 && (
@@ -189,6 +208,10 @@ export default async function TiendaSuscripcionPage() {
                   <span>Tu plan actual</span>
                 </div>
               ) : (
+                <div className="w-full space-y-2">
+                  {canPay && isBillablePlan(pKey) && canChooseTargetPlan(store.plan, pKey) && (
+                    <PayPlanButton storeId={store.id} targetPlan={pKey} label={`Elegir y pagar ${plan.nombre}`} variant={isPro ? 'primary' : 'secondary'} />
+                  )}
                 <a
                   href={`https://wa.me/5493415866464?text=${encodeURIComponent(
                     `Hola Portalmaker, me gustaría consultar para mejorar mi tienda "${store.nombre}" (${store.slug}) al plan ${plan.nombre}.`
@@ -202,8 +225,9 @@ export default async function TiendaSuscripcionPage() {
                   }`}
                 >
                   <WhatsAppIcon className="w-3.5 h-3.5" />
-                  <span>Mejorar a {plan.nombre}</span>
+                  <span>Consultar por WhatsApp</span>
                 </a>
+                </div>
               )}
             </div>
           )

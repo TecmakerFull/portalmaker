@@ -21,6 +21,7 @@ import {
 import type { SubscriptionPayment } from '@/types/database'
 import type { SuperadminStoreItem } from './tiendas-list'
 import StoreConfigOverridesManager from './store-config-overrides-manager'
+import { addMonthAnchored, isBillablePlan, todayArgentina } from '@/lib/subscriptions/billing'
 import {
   ArrowLeft,
   Store,
@@ -143,6 +144,7 @@ export default function SuperadminTiendaDetailFullpage({
   const [paymentPeriodoDesde, setPaymentPeriodoDesde] = useState<string>(new Date().toISOString().split('T')[0])
   const [paymentPeriodoHasta, setPaymentPeriodoHasta] = useState<string>('')
   const [paymentNotas, setPaymentNotas] = useState<string>('')
+  const [paymentPlan, setPaymentPlan] = useState<string>('starter')
   const [savingPayment, setSavingPayment] = useState(false)
 
   // Métricas en vivo
@@ -625,9 +627,32 @@ export default function SuperadminTiendaDetailFullpage({
     showToast(`Opciones y límites restablecidos al estándar del plan ${pConfig.nombre}. Guarda para aplicar.`)
   }
 
+  // Abre el formulario con valores sugeridos para evitar errores de carga: el período
+  // arranca donde termina el actual (o hoy si ya venció) y dura un mes.
+  const openPaymentForm = () => {
+    const today = todayArgentina()
+    const due = store.fecha_proximo_vencimiento
+    const from = due && due >= today && store.suscripcion_activa !== false ? due : today
+    setPaymentPeriodoDesde(from)
+    setPaymentPeriodoHasta(addMonthAnchored(from))
+    setPaymentFecha(today)
+    setPaymentMonto(Number(store.precio_mensual) || 0)
+    setPaymentPlan(isBillablePlan(store.plan) ? (store.plan as string) : 'starter')
+    setPaymentNotas('')
+    setShowNewPaymentForm(true)
+  }
+
   // Registrar un cobro / pago de suscripción
   const handleCreatePayment = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!paymentPeriodoDesde || !paymentPeriodoHasta || paymentPeriodoHasta <= paymentPeriodoDesde) {
+      alert('El nuevo vencimiento debe ser posterior al inicio del período.')
+      return
+    }
+    if (!(Number(paymentMonto) > 0)) {
+      alert('Ingresá el monto abonado.')
+      return
+    }
     setSavingPayment(true)
 
     try {
@@ -636,6 +661,7 @@ export default function SuperadminTiendaDetailFullpage({
       } = await supabase.auth.getUser()
 
       const paymentPayload = {
+        plan_pagado: paymentPlan,
         store_id: store.id,
         monto: Number(paymentMonto) || 0,
         metodo_pago: paymentMetodo,
@@ -654,21 +680,15 @@ export default function SuperadminTiendaDetailFullpage({
 
       if (insertError) throw insertError
 
-      // Actualizar también la fecha de vencimiento de la tienda
-      await supabase
-        .from('stores')
-        .update({
-          fecha_proximo_vencimiento: paymentPeriodoHasta,
-          suscripcion_activa: true,
-          estado_pago: 'al_dia',
-        })
-        .eq('id', store.id)
-
+      // El trigger de la base actualiza la tienda (solo adelanta el vencimiento, nunca lo
+      // acorta) y cierra las facturas pendientes de Mercado Pago. Se refleja igual en pantalla.
+      const currentDue = store.fecha_proximo_vencimiento
+      const newDue = currentDue && currentDue > paymentPeriodoHasta ? currentDue : paymentPeriodoHasta
       const updatedStore = {
         ...store,
-        fecha_proximo_vencimiento: paymentPeriodoHasta,
+        fecha_proximo_vencimiento: newDue,
         suscripcion_activa: true,
-        estado_pago: 'al_dia',
+        estado_pago: store.estado_pago === 'bonificado' ? 'bonificado' : 'al_dia',
       }
 
       onStoreUpdated(updatedStore)
@@ -1435,7 +1455,7 @@ export default function SuperadminTiendaDetailFullpage({
               {!showNewPaymentForm && (
                 <button
                   type="button"
-                  onClick={() => setShowNewPaymentForm(true)}
+                  onClick={openPaymentForm}
                   className="min-h-[44px] px-5 rounded-xl bg-[#FF5500] hover:bg-[#E04B00] text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
@@ -1508,9 +1528,27 @@ export default function SuperadminTiendaDetailFullpage({
                     <DatePicker value={paymentPeriodoHasta} onChange={setPaymentPeriodoHasta} />
                   </div>
 
+                  <div className="sm:col-span-2 lg:col-span-2">
+                    <label className="block font-medium mb-1.5 opacity-80">Plan abonado</label>
+                    <Select
+                      value={paymentPlan}
+                      onChange={(e) => setPaymentPlan(e.target.value)}
+                      className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                    >
+                      <option value="starter">Starter</option>
+                      <option value="maker_pro">Maker Pro</option>
+                      <option value="enterprise">Enterprise</option>
+                    </Select>
+                    {paymentPlan !== store.plan && (
+                      <p className="mt-1.5 text-[11px] text-amber-700 dark:text-amber-400">
+                        El plan abonado difiere del plan actual de la tienda. Este cobro no cambia el plan: hacelo desde la pestaña Suscripción.
+                      </p>
+                    )}
+                  </div>
+
                   <div className="sm:col-span-2 lg:col-span-4">
                     <label className="block font-medium mb-1.5 opacity-80">
-                      Detalle del Comprobante / Referencia
+                      Detalle del medio de pago (banco, comprobante, referencia)
                     </label>
                     <input
                       type="text"
@@ -1576,6 +1614,16 @@ export default function SuperadminTiendaDetailFullpage({
                           <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 font-semibold uppercase">
                             {p.metodo_pago || 'Pago'}
                           </span>
+                          {p.plan_pagado && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-400/15 font-semibold uppercase">
+                              {p.plan_pagado.replace('_', ' ')}
+                            </span>
+                          )}
+                          {p.estado === 'reembolsado' && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-700 dark:text-rose-400 font-semibold uppercase">
+                              Reembolsado
+                            </span>
+                          )}
                         </div>
                         <p className="text-[11px] opacity-70">
                           Período cubierto: {p.periodo_desde} al {p.periodo_hasta}

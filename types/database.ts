@@ -481,7 +481,47 @@ export interface SubscriptionPayment {
   comprobante_url: string | null;
   registrado_por: string | null;
   notas: string | null;
+  plan_pagado?: string | null;
+  mp_payment_id?: string | null;
+  invoice_id?: UUID | null;
+  estado?: 'aprobado' | 'reembolsado';
   created_at: Timestamp;
+}
+
+// =============================================================================
+// SUBSCRIPTION_INVOICES / MANDATES — Cobro de planes con Mercado Pago
+// =============================================================================
+export type BillablePlan = 'starter' | 'maker_pro' | 'enterprise';
+
+export interface SubscriptionInvoice {
+  id: UUID;
+  store_id: UUID;
+  target_plan: BillablePlan;
+  amount: number;
+  period_start: DateString;
+  period_end: DateString;
+  due_date: DateString;
+  status: 'pending' | 'paid' | 'expired' | 'cancelled' | 'refunded';
+  source: 'manual' | 'auto_debit';
+  billing_anchor_day: number | null;
+  mp_preference_id: string | null;
+  mp_init_point: string | null;
+  mp_payment_id: string | null;
+  paid_at: Timestamp | null;
+  created_at: Timestamp;
+}
+
+export interface SubscriptionMandate {
+  id: UUID;
+  store_id: UUID;
+  mp_preapproval_id: string | null;
+  status: 'pending' | 'authorized' | 'paused' | 'cancelled';
+  target_plan: BillablePlan;
+  amount: number;
+  payer_email: string;
+  billing_day: number | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
 }
 
 // =============================================================================

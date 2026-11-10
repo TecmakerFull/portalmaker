@@ -172,6 +172,10 @@ export interface PlatformAlertParams {
     | 'unrecognized_fee_type'
     | 'shipping_carrier_error'
     | 'shipping_pending_balance'
+    | 'subscription_amount_mismatch'
+    | 'subscription_overpaid'
+    | 'subscription_invoice_closed'
+    | 'subscription_refunded'
   store: Store | null
   order?: Order | null
   details: string
@@ -205,6 +209,10 @@ export async function notifyPlatformAlert({
     unrecognized_fee_type: 'ADVERTENCIA: Tipo de fee no reconocido en Mercado Pago',
     shipping_carrier_error: 'ALERTA LOGÍSTICA: Error al emitir envío con el transportista',
     shipping_pending_balance: 'Tu venta se cobró: falta cargar saldo en Zipnova para generar la etiqueta',
+    subscription_amount_mismatch: 'ALERTA: Pago de suscripción con monto distinto al esperado',
+    subscription_overpaid: 'AVISO: Pago de suscripción mayor al esperado',
+    subscription_invoice_closed: 'ALERTA: Pago recibido para una factura de suscripción cerrada',
+    subscription_refunded: 'ALERTA: Pago de suscripción reembolsado o con contracargo',
   }
 
   const subject = `[Portalmaker ${type.toUpperCase()}] ${alertTitles[type] || 'Alerta de Plataforma'} — ${store?.nombre || 'Portal'}`

@@ -9,6 +9,7 @@ import { Package, Palette, Store, ExternalLink, ArrowLeft, LogIn } from 'lucide-
 
 import AdminSidebar from './sidebar'
 import AdminAuthFallback from './admin-auth-fallback'
+import SubscriptionBanner from './components/subscription-banner'
 
 // Variables de estilo aisladas para el portal de administración.
 // Garantiza que la identidad de Portalmaker (Paleta 06 Industrial Yellow & Gray)
@@ -75,6 +76,7 @@ export default async function AdminLayout({
 
       {/* Contenedor del Contenido */}
       <div className="flex-1 flex flex-col min-w-0">
+        <SubscriptionBanner store={store} tenantQuery={tenantQuery} />
         <main className="flex-1 p-4 sm:p-6 md:p-8 w-full max-w-[1680px] mx-auto">
           {children}
         </main>
