@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyMpWebhookSignature } from '@/lib/mercadopago'
 import { processMpPayment, handleSellerTokenRevoked } from '@/lib/mp-payments'
 import { creditPlatformPayment } from '@/lib/subscriptions/server'
+import { creditAutoDebitPayment, handleAuthorizedPayment, isAutodebitEnabled, syncMandate } from '@/lib/subscriptions/autodebit'
 
 // =============================================================================
 // PORTALMAKER — Webhook Oficial de Mercado Pago (Checkout Pro Marketplace)
@@ -31,7 +32,9 @@ export async function POST(req: Request) {
 
     // A7: Filtrar por tipo de evento (solo procesar payment; ignorar merchant_order, etc.)
     const eventType = typeParam || 'payment'
-    if (eventType !== 'payment') {
+    // Tópicos del débito automático (suscripciones de MP). Con el flag apagado se ignoran.
+    const isSubscriptionTopic = eventType === 'subscription_preapproval' || eventType === 'subscription_authorized_payment'
+    if (eventType !== 'payment' && !isSubscriptionTopic) {
       return NextResponse.json({ status: 'ignored_non_payment_type', type: eventType }, { status: 200 })
     }
 
@@ -67,6 +70,19 @@ export async function POST(req: Request) {
       }
     }
 
+    // Débito automático: la firma ya fue validada arriba; el estado y los montos se
+    // consultan siempre en la API de MP, nunca se toman del cuerpo de la notificación.
+    if (isSubscriptionTopic) {
+      if (!isAutodebitEnabled()) {
+        return NextResponse.json({ status: 'ignored_autodebit_disabled' }, { status: 200 })
+      }
+      const r =
+        eventType === 'subscription_preapproval'
+          ? await syncMandate(String(paymentId))
+          : await handleAuthorizedPayment(String(paymentId))
+      return NextResponse.json({ status: r.status }, { status: r.httpStatus })
+    }
+
     // A1: Leer order_id inyectado en notification_url de la preferencia o buscar por external_reference
     const orderId = searchParams.get('order_id') || body?.order_id || null
 
@@ -78,6 +94,11 @@ export async function POST(req: Request) {
       const sub = await creditPlatformPayment(String(paymentId))
       if (sub.handled) {
         return NextResponse.json({ status: sub.status, paymentId: String(paymentId) }, { status: sub.httpStatus })
+      }
+      // Cobro recurrente del débito automático (external_reference = mandate_<id>).
+      if (sub.status === 'mandate_payment' && isAutodebitEnabled()) {
+        const auto = await creditAutoDebitPayment(sub.payment)
+        return NextResponse.json({ status: auto.status, paymentId: String(paymentId) }, { status: auto.httpStatus })
       }
     }
 

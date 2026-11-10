@@ -182,6 +182,8 @@ export interface PlatformPaymentResult {
   status: string
   httpStatus: number
   storeId?: string
+  /** Pago ya consultado en MP, para que el llamador no lo vuelva a pedir (ej. débito automático). */
+  payment?: any
 }
 
 export async function creditPlatformPayment(paymentId: string): Promise<PlatformPaymentResult> {
@@ -207,6 +209,8 @@ export async function creditPlatformPayment(paymentId: string): Promise<Platform
 
   const payment = await res.json()
   const ref = String(payment.external_reference ?? '')
+  // Cobros del débito automático: los resuelve autodebit.ts (se devuelve el pago ya consultado).
+  if (ref.startsWith('mandate_')) return { handled: false, status: 'mandate_payment', httpStatus: 200, payment }
   if (!ref.startsWith('sub_')) return { handled: false, status: 'not_subscription_payment', httpStatus: 200 }
 
   const invoiceId = ref.slice(4)
@@ -217,6 +221,21 @@ export async function creditPlatformPayment(paymentId: string): Promise<Platform
   if (!invoice) return { handled: true, status: 'invoice_not_found', httpStatus: 200 }
 
   const { data: store } = await admin.from('stores').select('*').eq('id', invoice.store_id).maybeSingle()
+
+  return applyPlatformPayment(payment, invoice as SubscriptionInvoice, store as Store | null)
+}
+
+/**
+ * Aplica un pago ya consultado en MP contra su factura: reversos, validaciones de
+ * moneda y monto, acreditación atómica por RPC y comprobante. Lo comparten el pago
+ * manual (Checkout Pro) y el débito automático.
+ */
+export async function applyPlatformPayment(
+  payment: any,
+  invoice: SubscriptionInvoice,
+  store: Store | null
+): Promise<PlatformPaymentResult> {
+  const admin = createSupabaseAdminClient()
 
   // Reembolsos y contracargos: se revierte el período y se avisa al equipo.
   if (payment.status === 'refunded' || payment.status === 'charged_back') {

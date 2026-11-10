@@ -25,6 +25,7 @@ import {
   todayArgentina,
 } from '@/lib/subscriptions/billing'
 import { reconcilePendingInvoices } from '@/lib/subscriptions/server'
+import { isAutodebitEnabled, reconcileMandatePayments, syncAllMandates } from '@/lib/subscriptions/autodebit'
 
 export const maxDuration = 60
 
@@ -178,6 +179,17 @@ export async function GET(req: Request) {
   } catch (err: any) {
     result.errores++
     console.error('cron/subscriptions: error en la reconciliación:', err?.message)
+  }
+
+  // Débito automático (si está habilitado): estado de las suscripciones y cobros recientes.
+  if (isAutodebitEnabled()) {
+    try {
+      await syncAllMandates()
+      result.reconciliadas += await reconcileMandatePayments()
+    } catch (err: any) {
+      result.errores++
+      console.error('cron/subscriptions: error en el débito automático:', err?.message)
+    }
   }
 
   return NextResponse.json({ ok: true, fecha: today, ...result })

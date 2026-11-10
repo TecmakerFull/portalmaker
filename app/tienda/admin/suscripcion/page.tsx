@@ -38,9 +38,9 @@ import { canChooseTargetPlan, isBillablePlan } from '@/lib/subscriptions/billing
 export default async function TiendaSuscripcionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ payment?: string }>
+  searchParams: Promise<{ payment?: string; autodebit?: string }>
 }) {
-  const { payment: paymentParam } = await searchParams
+  const { payment: paymentParam, autodebit: autodebitParam } = await searchParams
   const paymentResult = ['success', 'pending', 'failure'].includes(paymentParam ?? '') ? (paymentParam as string) : null
 
   const tenant = await getTenantStore()
@@ -127,7 +127,7 @@ export default async function TiendaSuscripcionPage({
       />
 
       {billingSummary && (
-        <SubscriptionBillingCard storeId={store.id} summary={billingSummary} paymentResult={paymentResult} />
+        <SubscriptionBillingCard storeId={store.id} summary={billingSummary} paymentResult={paymentResult} autodebitReturn={autodebitParam === 'return'} />
       )}
 
       {/* Banner de Overrides Manuales del Superadmin (si existen) */}

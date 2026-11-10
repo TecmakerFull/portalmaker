@@ -35,6 +35,8 @@ export interface BillingSummary {
     'id' | 'fecha_pago' | 'periodo_desde' | 'periodo_hasta' | 'plan_pagado' | 'metodo_pago' | 'mp_payment_id' | 'monto' | 'estado' | 'notas'
   >[]
   mandate: Pick<SubscriptionMandate, 'status' | 'amount' | 'target_plan'> | null
+  /** Flag de despliegue: el débito automático solo se ofrece si está habilitado. */
+  autodebitEnabled: boolean
 }
 
 /** Solo el dueño o el superadmin pueden ver montos, historial y pagar. */
@@ -112,5 +114,6 @@ export async function getBillingSummary(store: Store): Promise<BillingSummary> {
     renewalAmount,
     payments: (payments ?? []) as BillingSummary['payments'],
     mandate: (mandate as BillingSummary['mandate']) ?? null,
+    autodebitEnabled: process.env.SUBSCRIPTION_AUTODEBIT_ENABLED === 'true',
   }
 }

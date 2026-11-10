@@ -9,6 +9,7 @@ import type { BillingSummary } from '@/lib/subscriptions/summary'
 import { isBillablePlan } from '@/lib/subscriptions/billing'
 import { getPlanConfig } from '@/lib/plans'
 import PayPlanButton from './pay-plan-button'
+import AutodebitControls from './autodebit-controls'
 
 function fmtDate(iso: string | null): string {
   if (!iso) return '-'
@@ -61,10 +62,12 @@ export default function SubscriptionBillingCard({
   storeId,
   summary,
   paymentResult,
+  autodebitReturn,
 }: {
   storeId: string
   summary: BillingSummary
   paymentResult?: string | null
+  autodebitReturn?: boolean
 }) {
   const billablePlan = isBillablePlan(summary.planKey) ? summary.planKey : null
   const billable = billablePlan !== null
@@ -143,10 +146,26 @@ export default function SubscriptionBillingCard({
         </div>
       )}
 
-      {billablePlan && !needsPayment && !summary.exempt && (
+      {/* Con débito automático activo el mes siguiente ya se cobra solo: se evita ofrecer
+          adelantarlo a mano para no confundir ni duplicar cobros. */}
+      {billablePlan && !needsPayment && !summary.exempt && summary.mandate?.status !== 'authorized' && (
         <div className="sm:max-w-xs">
           <PayPlanButton storeId={storeId} targetPlan={billablePlan} label="Adelantar el próximo mes" variant="secondary" />
         </div>
+      )}
+
+      {autodebitReturn && (
+        <p role="status" className="text-xs rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3">
+          Volviste de Mercado Pago. Estamos confirmando la autorización del débito automático: en unos instantes vas a ver su estado actualizado.
+        </p>
+      )}
+
+      {summary.autodebitEnabled && billablePlan && !summary.exempt && (
+        <AutodebitControls
+          storeId={storeId}
+          status={summary.mandate?.status ?? 'none'}
+          amountLabel={summary.mandate ? fmtMoney(Number(summary.mandate.amount)) : null}
+        />
       )}
 
       <div className="space-y-3">
