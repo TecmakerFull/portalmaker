@@ -6,8 +6,10 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import { getStoreEffectiveLimit } from '@/lib/plans'
 import type { Store, StoreCollaborator } from '@/types/database'
 import {
   UserCheck,
@@ -49,6 +51,10 @@ export default function ColaboradoresManager({
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [copiedLink, setCopiedLink] = useState(false)
+
+  // Límite de colaboradores según el plan efectivo de la tienda (Free: 0, Starter: 1, Maker Pro: 3, Enterprise: 999)
+  const maxCollaborators = getStoreEffectiveLimit(store, 'max_colaboradores')
+  const isAtLimit = maxCollaborators < 999 && collaborators.length >= maxCollaborators
 
   // URL de acceso directo para compartir con el colaborador (vía portal central)
   const inviteLink = `https://portalmaker.ar/tienda/admin?tenant=${store.slug}`
@@ -110,6 +116,11 @@ export default function ColaboradoresManager({
 
     const cleanEmail = emailInput.trim().toLowerCase()
     if (!cleanEmail) return
+
+    if (isAtLimit) {
+      setErrorMsg(`Alcanzaste el límite de ${maxCollaborators} ${maxCollaborators === 1 ? 'colaborador' : 'colaboradores'} de tu plan actual.`)
+      return
+    }
 
     // Validar que no sea el mismo correo del dueño
     if (cleanEmail === store.admin_email.toLowerCase()) {
@@ -257,9 +268,14 @@ export default function ColaboradoresManager({
 
       {/* Formulario para agregar colaborador */}
       <div className="p-5 sm:p-6 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)] shadow-xs">
-        <h2 className="text-base sm:text-lg font-semibold mb-1 text-[var(--color-texto)]">
-          Invitar a un nuevo colaborador
-        </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+          <h2 className="text-base sm:text-lg font-semibold text-[var(--color-texto)]">
+            Invitar a un nuevo colaborador
+          </h2>
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 text-[var(--color-texto)] opacity-80 self-start sm:self-auto">
+            {collaborators.length} de {maxCollaborators >= 999 ? 'ilimitados' : maxCollaborators} en uso
+          </span>
+        </div>
         <p className="text-xs opacity-70 mb-5">
           Ingresa el correo de la persona a quien deseas dar acceso.
         </p>
@@ -278,7 +294,20 @@ export default function ColaboradoresManager({
           </div>
         )}
 
-        <form onSubmit={handleAddCollaborator} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+        {isAtLimit ? (
+          <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <p className="text-xs sm:text-sm text-[var(--color-texto)] opacity-85">
+              Alcanzaste el tope de <strong>{maxCollaborators} {maxCollaborators === 1 ? 'colaborador' : 'colaboradores'}</strong> incluido en tu plan actual.
+            </p>
+            <Link
+              href={`/tienda/admin/suscripcion${tenantQuery}`}
+              className="min-h-[44px] px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold inline-flex items-center justify-center shrink-0 transition-colors"
+            >
+              Mejorar Plan
+            </Link>
+          </div>
+        ) : (
+          <form onSubmit={handleAddCollaborator} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
           <div className="sm:col-span-6">
             <label className="block text-xs font-medium mb-1.5 opacity-80">
               Correo electrónico del colaborador
@@ -327,6 +356,7 @@ export default function ColaboradoresManager({
             </button>
           </div>
         </form>
+        )}
       </div>
 
       {/* Lista de Miembros con Acceso */}

@@ -32,6 +32,7 @@ import {
   Link2,
 } from 'lucide-react'
 import { compressImageFile } from '@/lib/image-compression'
+import { getStoreEffectiveLimit } from '@/lib/plans'
 import { AdminPageHeader } from '../components/admin-page-header'
 import Select from '@/components/native-select'
 
@@ -83,9 +84,12 @@ export default function BannersManager({
   // Master switch
   const [bannersActivo, setBannersActivo] = useState(store.banners_activo ?? false)
 
+  // Límite de slides según el plan efectivo de la tienda (Free: 1, Starter: 3, Maker Pro: 10, Enterprise: 999)
+  const maxSlides = getStoreEffectiveLimit(store, 'banners_max_slides') || 1
+
   // Mapear banners iniciales al formato de edición
   const mapInitialBanners = (list: Banner[]): SlideItem[] => {
-    return list.slice(0, 3).map((b, idx) => {
+    return list.slice(0, maxSlides).map((b, idx) => {
       let destinoTipo: 'producto' | 'categoria' | 'custom' = 'custom'
       let destinoValor = b.cta_url || ''
 
@@ -122,9 +126,9 @@ export default function BannersManager({
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  // Agregar nuevo slide (máximo 3)
+  // Agregar nuevo slide según el tope del plan
   const handleAddSlide = () => {
-    if (slides.length >= 3) return
+    if (slides.length >= maxSlides) return
     const newSlide: SlideItem = {
       imagen_url: '',
       titulo: '',
@@ -340,7 +344,13 @@ export default function BannersManager({
       {/* Header del Módulo */}
       <AdminPageHeader
         title="Banners & Carrusel Promocional"
-        description="Mostrá hasta 3 anuncios o novedades debajo del header con botones de acceso directo."
+        description={
+          maxSlides >= 999
+            ? 'Mostrá anuncios o novedades en carrusel debajo del header con botones de acceso directo.'
+            : maxSlides === 1
+              ? 'Mostrá 1 banner promocional debajo del header con botón de acceso directo.'
+              : `Mostrá hasta ${maxSlides} anuncios o novedades debajo del header con botones de acceso directo.`
+        }
         icon={ImageIcon}
         actions={
           <a
@@ -413,28 +423,36 @@ export default function BannersManager({
         </button>
       </div>
 
-      {/* 2. Lista de Slides (Máximo 3) */}
+      {/* 2. Lista de Slides según el plan */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-sm sm:text-base font-bold font-[var(--font-heading)] flex items-center gap-2">
               <span>Imágenes del Carrusel</span>
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-black/5 dark:bg-white/10 opacity-80">
-                {slides.length} de 3 configuradas
+                {slides.length} de {maxSlides >= 999 ? 'ilimitadas' : maxSlides} configuradas
               </span>
             </h2>
           </div>
 
-          {slides.length < 3 && (
+          {slides.length < maxSlides ? (
             <button
               type="button"
               onClick={handleAddSlide}
-              className="min-h-[44px] px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+              className="min-h-[44px] px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95 self-start sm:self-auto"
             >
               <Plus className="w-4 h-4" />
               <span>Agregar Slide</span>
             </button>
-          )}
+          ) : maxSlides < 999 ? (
+            <Link
+              href={`/tienda/admin/suscripcion${tenantQuery}`}
+              className="min-h-[44px] px-4 py-2 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-semibold transition-all flex items-center gap-1.5 self-start sm:self-auto"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Mejorar plan para agregar más slides</span>
+            </Link>
+          ) : null}
         </div>
 
         {slides.length === 0 ? (

@@ -39,6 +39,7 @@ import {
   formatCuit,
   isValidCuit,
 } from '@/lib/shipping-validators'
+import { isFeatureAllowed } from '@/lib/plans'
 import Select from '@/components/native-select'
 
 const PROVINCIAS = [
@@ -459,6 +460,7 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
   }
 
   const isZipnovaOk = settings?.providers.zipnova.status === 'ok'
+  const canCouriers = isFeatureAllowed(store, 'envios_couriers')
 
   // Datos tomados del taller (Contacto & Ubicación)
   const calleTaller = store.origen_calle || origenCalle || ''
@@ -796,7 +798,12 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
           </div>
 
           <div className="flex items-center gap-3">
-            {isZipnovaOk ? (
+            {!canCouriers ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                <Lock className="w-3.5 h-3.5" />
+                Plan Maker Pro
+              </span>
+            ) : isZipnovaOk ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 Conectado y verificado
@@ -814,122 +821,143 @@ export default function EnviosForm({ store, tenantQuery }: EnviosFormProps) {
           </div>
         </div>
 
-        {/* Mini Resumen / Guía Rápida para obtener la API Key */}
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 space-y-2.5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <span className="text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <Key className="w-3.5 h-3.5 text-amber-500" />
-              <span>Cómo obtener tus credenciales de Zipnova:</span>
-            </span>
-            <a
-              href="https://zipnova.com.ar"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 self-start sm:self-auto"
+        {!canCouriers ? (
+          <div className="p-5 sm:p-6 rounded-2xl border border-amber-500/30 bg-amber-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                Cotización en vivo y etiquetas con Zipnova disponible desde el Plan Maker Pro
+              </p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 max-w-xl leading-relaxed">
+                Tu plan actual incluye Zonas de Envío con tarifa fija y Retiro en el Local. Actualizá tu plan para conectar Correo Argentino, Andreani y OCA con cotización automática y generación de etiquetas PDF.
+              </p>
+            </div>
+            <Link
+              href={`/tienda/admin/suscripcion${effectiveQuery}`}
+              className="min-h-[44px] px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold inline-flex items-center justify-center shrink-0 transition-colors"
             >
-              <span>Ingresar a Zipnova</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+              Mejorar Plan
+            </Link>
           </div>
+        ) : (
+          <>
+            {/* Mini Resumen / Guía Rápida para obtener la API Key */}
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Cómo obtener tus credenciales de Zipnova:</span>
+                </span>
+                <a
+                  href="https://zipnova.com.ar"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 self-start sm:self-auto"
+                >
+                  <span>Ingresar a Zipnova</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
 
-          <ol className="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 list-decimal list-inside pl-1">
-            <li>
-              Iniciá sesión en{' '}
-              <a
-                href="https://zipnova.com.ar"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-emerald-600 dark:text-emerald-400 underline underline-offset-2"
-              >
-                zipnova.com.ar
-              </a>{' '}
-              (o creá tu cuenta comercial si aún no tenés una).
-            </li>
-            <li>
-              En el panel de Zipnova, andá a <strong>Configuración &gt; Integraciones</strong>.
-            </li>
-            <li>
-              En la sección <em>API: Integraciones personalizadas</em>, hacé clic en el botón <strong>Gestionar Credenciales y Webhooks</strong>.
-            </li>
-            <li>
-              Copiá tu <strong>API Key</strong> y tu <strong>API Secret</strong> generados y pegalos en los campos de abajo.
-            </li>
-            <li>
-              Hacé clic en <strong>Verificar y Vincular</strong>. Portalmaker validará la conexión en vivo contra los servidores de Zipnova.
-            </li>
-          </ol>
-        </div>
-
-        <form onSubmit={handleSaveZipnova} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>API Key</label>
-              <input
-                type="text"
-                value={zipnovaApiKey}
-                onChange={(e) => setZipnovaApiKey(e.target.value)}
-                placeholder="f609a95d-169e-4e03-aee0-..."
-                required
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>API Secret</label>
-              <input
-                type="password"
-                value={zipnovaSecretKey}
-                onChange={(e) => setZipnovaSecretKey(e.target.value)}
-                placeholder="5a26f172-9b3e-42eb-bc93-..."
-                required
-                className={inputClass}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>ID de Cuenta (opcional)</label>
-              <input
-                type="text"
-                value={zipnovaAccountId}
-                onChange={(e) => setZipnovaAccountId(e.target.value)}
-                placeholder="22112"
-                className={inputClass}
-              />
-            </div>
-            <div className="flex items-center h-full pt-4">
-              <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={zipnovaActivo}
-                  onChange={(e) => setZipnovaActivo(e.target.checked)}
-                  className="rounded border-slate-300 text-amber-500 focus:ring-amber-400 w-4 h-4 cursor-pointer"
-                />
-                <span>Habilitar cotizaciones automáticas con Zipnova</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-white/5">
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <Lock className="w-3.5 h-3.5" />
-              <span>Tus credenciales se cifran con AES-256-GCM y nunca se exponen al cliente.</span>
+              <ol className="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 list-decimal list-inside pl-1">
+                <li>
+                  Iniciá sesión en{' '}
+                  <a
+                    href="https://zipnova.com.ar"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-emerald-600 dark:text-emerald-400 underline underline-offset-2"
+                  >
+                    zipnova.com.ar
+                  </a>{' '}
+                  (o creá tu cuenta comercial si aún no tenés una).
+                </li>
+                <li>
+                  En el panel de Zipnova, andá a <strong>Configuración &gt; Integraciones</strong>.
+                </li>
+                <li>
+                  En la sección <em>API: Integraciones personalizadas</em>, hacé clic en el botón <strong>Gestionar Credenciales y Webhooks</strong>.
+                </li>
+                <li>
+                  Copiá tu <strong>API Key</strong> y tu <strong>API Secret</strong> generados y pegalos en los campos de abajo.
+                </li>
+                <li>
+                  Hacé clic en <strong>Verificar y Vincular</strong>. Portalmaker validará la conexión en vivo contra los servidores de Zipnova.
+                </li>
+              </ol>
             </div>
 
-            <button
-              type="submit"
-              disabled={verifyingZipnova}
-              className="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white font-semibold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
-            >
-              {verifyingZipnova ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              <span>Guardar y verificar</span>
-            </button>
-          </div>
-        </form>
+            <form onSubmit={handleSaveZipnova} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>API Key</label>
+                  <input
+                    type="text"
+                    value={zipnovaApiKey}
+                    onChange={(e) => setZipnovaApiKey(e.target.value)}
+                    placeholder="f609a95d-169e-4e03-aee0-..."
+                    required
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>API Secret</label>
+                  <input
+                    type="password"
+                    value={zipnovaSecretKey}
+                    onChange={(e) => setZipnovaSecretKey(e.target.value)}
+                    placeholder="5a26f172-9b3e-42eb-bc93-..."
+                    required
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>ID de Cuenta (opcional)</label>
+                  <input
+                    type="text"
+                    value={zipnovaAccountId}
+                    onChange={(e) => setZipnovaAccountId(e.target.value)}
+                    placeholder="22112"
+                    className={inputClass}
+                  />
+                </div>
+                <div className="flex items-center h-full pt-4">
+                  <label className="flex items-center gap-2.5 text-xs font-medium cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={zipnovaActivo}
+                      onChange={(e) => setZipnovaActivo(e.target.checked)}
+                      className="rounded border-slate-300 text-amber-500 focus:ring-amber-400 w-4 h-4 cursor-pointer"
+                    />
+                    <span>Habilitar cotizaciones automáticas con Zipnova</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-white/5">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Tus credenciales se cifran con AES-256-GCM y nunca se exponen al cliente.</span>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={verifyingZipnova}
+                  className="min-h-[44px] px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white font-semibold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {verifyingZipnova ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  <span>Guardar y verificar</span>
+                </button>
+              </div>
+            </form>
+          </>
+        )}
       </div>
 
       {/* SECCIÓN 3: Zonas de Envío Manuales (Tarifas personalizadas por Región o CP) */}

@@ -9,6 +9,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import PrecioServicio from '@/components/precio-servicio'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
@@ -80,10 +81,13 @@ const inputClass =
 export default function ServiciosManager({
   store,
   initialServices,
+  tenantQuery,
+  maxActiveServices = null,
 }: {
   store: Store
   initialServices: Service[]
   tenantQuery: string
+  maxActiveServices?: number | null
 }) {
   const router = useRouter()
   const supabase = createSupabaseBrowserClient()
@@ -92,6 +96,9 @@ export default function ServiciosManager({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [ok, setOk] = useState<string | null>(null)
+
+  const activeCount = services.filter((s) => s.visible).length
+  const isAtActiveLimit = maxActiveServices !== null && activeCount >= maxActiveServices
 
   const set = (patch: Partial<FormState>) => setForm((f) => (f ? { ...f, ...patch } : f))
 
@@ -122,6 +129,14 @@ export default function ServiciosManager({
     const precioOferta = Number(form.precioOferta.replace(',', '.')) || 0
     if (form.ofertaActiva && !(precioOferta > 0 && precioOferta < precio)) {
       setError('El precio de oferta tiene que ser mayor a 0 y menor al precio normal.')
+      return
+    }
+
+    // Validar límite de servicios activos del plan si se intenta publicar como visible
+    const existing = form.id ? services.find((s) => s.id === form.id) : null
+    const wouldIncreaseActive = form.visible && (!existing || !existing.visible)
+    if (wouldIncreaseActive && isAtActiveLimit) {
+      setError(`Alcanzaste el límite de ${maxActiveServices} servicios activos de tu plan. Podés guardarlo como oculto o mejorar tu plan.`)
       return
     }
 
@@ -179,6 +194,10 @@ export default function ServiciosManager({
   }
 
   const alternarVisible = async (s: Service) => {
+    if (!s.visible && isAtActiveLimit) {
+      setError(`Alcanzaste el límite de ${maxActiveServices} servicios activos de tu plan. Ocultá otro o mejorá tu plan.`)
+      return
+    }
     const { error: err } = await supabase.from('services').update({ visible: !s.visible }).eq('id', s.id)
     if (!err) setServices((list) => list.map((x) => (x.id === s.id ? { ...x, visible: !s.visible } : x)))
   }
@@ -197,18 +216,32 @@ export default function ServiciosManager({
     <div className="space-y-6">
       <AdminPageHeader
         title="Servicios"
-        description="Lo que tus clientes pueden reservar: nombre, duración y precio."
+        description={
+          maxActiveServices !== null
+            ? `Lo que tus clientes pueden reservar (${activeCount} de ${maxActiveServices} activos).`
+            : 'Lo que tus clientes pueden reservar: nombre, duración y precio.'
+        }
         icon={ClipboardList}
         actions={
           !form && (
-            <button
-              type="button"
-              onClick={() => setForm({ ...VACIO })}
-              className="min-h-11 px-4 rounded-xl bg-[#FACC15] hover:bg-[#EAB308] text-[#1F2937] text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              Nuevo servicio
-            </button>
+            <div className="flex items-center gap-2">
+              {isAtActiveLimit && (
+                <Link
+                  href={`/tienda/admin/suscripcion${tenantQuery}`}
+                  className="min-h-11 px-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-semibold inline-flex items-center"
+                >
+                  Mejorar Plan
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={() => setForm({ ...VACIO, visible: !isAtActiveLimit })}
+                className="min-h-11 px-4 rounded-xl bg-[#FACC15] hover:bg-[#EAB308] text-[#1F2937] text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                Nuevo servicio
+              </button>
+            </div>
           )
         }
       />

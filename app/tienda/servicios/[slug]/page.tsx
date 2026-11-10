@@ -9,6 +9,7 @@ import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getStoreSections } from '@/lib/store-sections'
 import { getStoreExtraSections } from '@/lib/store-extra-sections'
+import { isFeatureAllowed } from '@/lib/plans'
 import { getBookingConfig } from '@/lib/booking/setup'
 import { formatDuracion, precioVigente } from '@/lib/booking/format'
 import { calcularSena } from '@/lib/booking/sena'
@@ -153,13 +154,15 @@ export default async function ServicioPage({ params }: PageProps) {
           </div>
         </main>
 
-        <ServiceReviews
-          storeId={store.id}
-          serviceId={service.id}
-          serviceSlug={service.slug}
-          initialReviews={reseñas}
-          tenantQuery={tenantQuery}
-        />
+        {isFeatureAllowed(store, 'resenas') && (
+          <ServiceReviews
+            storeId={store.id}
+            serviceId={service.id}
+            serviceSlug={service.slug}
+            initialReviews={reseñas}
+            tenantQuery={tenantQuery}
+          />
+        )}
       </div>
 
       <StoreFooter store={store} tenantQuery={tenantQuery} />

@@ -13,7 +13,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import ProductGallery from './product-gallery'
 import ProductCard from '../../product-card'
 import { useCart } from '@/lib/cart-context'
-import { isStoreCheckoutActive } from '@/lib/plans'
+import { isStoreCheckoutActive, isFeatureAllowed } from '@/lib/plans'
 import { renderMarkdown } from '@/lib/markdown'
 import {
   MessageSquare,
@@ -232,6 +232,7 @@ export default function ProductDetailView({
   }
 
   const isCheckoutActive = isStoreCheckoutActive(store)
+  const canReviews = isFeatureAllowed(store, 'resenas')
 
   const handleAddToCart = (andOpenCart: boolean = true) => {
     // Si el producto tiene variantes, es obligatorio tener una seleccionada
@@ -429,31 +430,33 @@ export default function ProductDetailView({
               {product.nombre}
             </h1>
 
-            {/* Estrellas y Reseñas Dinámicas */}
-            <div className="mt-3 flex items-center gap-2 text-xs font-medium">
-              <div className="flex gap-0.5">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <Star
-                    key={n}
-                    className={`w-3.5 h-3.5 ${
-                      avgRating && n <= Math.round(Number(avgRating))
-                        ? 'fill-[var(--color-primario)] text-[var(--color-primario)]'
-                        : 'text-slate-300 dark:text-slate-700'
-                    }`}
-                  />
-                ))}
+            {/* Estrellas y Reseñas Dinámicas (solo si el plan habilita Reseñas) */}
+            {canReviews && (
+              <div className="mt-3 flex items-center gap-2 text-xs font-medium">
+                <div className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Star
+                      key={n}
+                      className={`w-3.5 h-3.5 ${
+                        avgRating && n <= Math.round(Number(avgRating))
+                          ? 'fill-[var(--color-primario)] text-[var(--color-primario)]'
+                          : 'text-slate-300 dark:text-slate-700'
+                      }`}
+                    />
+                  ))}
+                </div>
+                {avgRating ? (
+                  <>
+                    <span className="font-bold">{avgRating}</span>
+                    <span className="opacity-60">
+                      · {totalReviewsCount} {totalReviewsCount === 1 ? 'opinión' : 'opiniones'}
+                    </span>
+                  </>
+                ) : (
+                  <span className="opacity-60">Sin opiniones aún</span>
+                )}
               </div>
-              {avgRating ? (
-                <>
-                  <span className="font-bold">{avgRating}</span>
-                  <span className="opacity-60">
-                    · {totalReviewsCount} {totalReviewsCount === 1 ? 'opinión' : 'opiniones'}
-                  </span>
-                </>
-              ) : (
-                <span className="opacity-60">Sin opiniones aún</span>
-              )}
-            </div>
+            )}
           </div>
 
           {/* Precios */}
@@ -781,19 +784,21 @@ export default function ProductDetailView({
           >
             Datos técnicos
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'valoraciones'}
-            onClick={() => setActiveTab('valoraciones')}
-            className={`pb-4 text-xs sm:text-sm font-semibold transition-all relative cursor-pointer ${
-              activeTab === 'valoraciones'
-                ? 'text-[var(--color-primario-legible)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario-legible)]'
-                : 'opacity-60 hover:opacity-100'
-            }`}
-          >
-            Valoraciones ({totalReviewsCount})
-          </button>
+          {canReviews && (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'valoraciones'}
+              onClick={() => setActiveTab('valoraciones')}
+              className={`pb-4 text-xs sm:text-sm font-semibold transition-all relative cursor-pointer ${
+                activeTab === 'valoraciones'
+                  ? 'text-[var(--color-primario-legible)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[var(--color-primario-legible)]'
+                  : 'opacity-60 hover:opacity-100'
+              }`}
+            >
+              Valoraciones ({totalReviewsCount})
+            </button>
+          )}
           {faqsList.length > 0 && (
             <button
               type="button"
@@ -882,7 +887,7 @@ export default function ProductDetailView({
             </div>
           )}
 
-          {activeTab === 'valoraciones' && (
+          {canReviews && activeTab === 'valoraciones' && (
             <div className="max-w-2xl space-y-8">
               {/* Formulario para Dejar Reseña (Solo para usuarios registrados de la tienda) */}
               <div className="p-5 sm:p-6 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.01] dark:bg-white/[0.02] space-y-4">

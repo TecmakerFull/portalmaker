@@ -9,6 +9,7 @@ import { getTenantStore, isStoreAdmin } from '@/lib/tenant'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { encryptCarrierCredentials } from '@/lib/shipping/crypto'
 import { ZipnovaShippingProvider } from '@/lib/shipping/zipnova'
+import { isFeatureAllowed } from '@/lib/plans'
 
 async function resolveStoreFromReq(req: NextRequest): Promise<any | null> {
   const tenant = await getTenantStore()
@@ -120,6 +121,12 @@ export async function POST(req: NextRequest) {
 
     // 1. Guardar y verificar credenciales de Zipnova
     if (action === 'save_zipnova') {
+      if (!isFeatureAllowed(store, 'envios_couriers')) {
+        return NextResponse.json(
+          { error: 'La integración con couriers en vivo (Zipnova) está disponible a partir del Plan Maker Pro.' },
+          { status: 403 }
+        )
+      }
       const { apiKey, secretKey, accountId, activo } = body
 
       if (!apiKey || !secretKey) {
@@ -173,6 +180,12 @@ export async function POST(req: NextRequest) {
 
     // 2. Probar credenciales existentes de Zipnova
     if (action === 'verify_zipnova') {
+      if (!isFeatureAllowed(store, 'envios_couriers')) {
+        return NextResponse.json(
+          { error: 'La integración con couriers en vivo (Zipnova) está disponible a partir del Plan Maker Pro.' },
+          { status: 403 }
+        )
+      }
       const { data: record } = await supabase
         .from('store_shipping_providers')
         .select('*')
@@ -295,6 +308,12 @@ export async function POST(req: NextRequest) {
 
     // 6. Crear nueva zona de envío manual
     if (action === 'create_zone') {
+      if (!isFeatureAllowed(store, 'envios_zonas_fijas')) {
+        return NextResponse.json(
+          { error: 'Las zonas de envío con tarifa fija están disponibles a partir del Plan Starter.' },
+          { status: 403 }
+        )
+      }
       const { nombre, precio, plazo_texto, codigos_postales, activo } = body
       if (!nombre || precio === undefined || precio === null) {
         return NextResponse.json({ error: 'Nombre y precio son obligatorios' }, { status: 400 })

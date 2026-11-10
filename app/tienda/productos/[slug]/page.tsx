@@ -13,6 +13,7 @@ import StoreFooter from '../../sections/store-footer'
 import { getStoreSections } from '@/lib/store-sections'
 import { getStoreShareImage } from '@/lib/store-metadata'
 import { getStoreExtraSections } from '@/lib/store-extra-sections'
+import { isFeatureAllowed } from '@/lib/plans'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -224,7 +225,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
     },
   }
 
-  if (hasReviews && avgRating) {
+  if (isFeatureAllowed(store, 'resenas') && hasReviews && avgRating) {
     schemaJsonLd.aggregateRating = {
       '@type': 'AggregateRating',
       ratingValue: avgRating,

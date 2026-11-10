@@ -23,6 +23,7 @@ import type {
   NewsletterSettings,
 } from '@/types/database'
 import { DEFAULT_TRUST_ITEMS, DEFAULT_TRUST_ITEMS_SERVICIOS } from '@/lib/trust-icons'
+import { getStoreEffectiveLimit } from '@/lib/plans'
 
 export interface ResolvedStoreSections {
   top_bar: StoreSection<TopBarSettings, TopBarMessageItem[]>
@@ -416,6 +417,12 @@ export async function getStoreSections(
           resolvedHero.enabled = true
         }
       }
+    }
+
+    // Respetar el límite de slides del plan efectivo de la tienda en la portada pública
+    const maxSlides = getStoreEffectiveLimit(store, 'banners_max_slides') || 1
+    if (Array.isArray(resolvedHero.content) && resolvedHero.content.length > maxSlides) {
+      resolvedHero.content = resolvedHero.content.slice(0, maxSlides)
     }
 
     const allOrdered = [resolvedTopBar, resolvedHeader, resolvedNavbar, resolvedHero].sort(

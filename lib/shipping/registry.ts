@@ -9,16 +9,27 @@ import type { CarrierProvider, ShippingProviderType } from './types'
 import { decryptCarrierCredentials } from './crypto'
 import { ManualShippingProvider } from './manual'
 import { ZipnovaShippingProvider, type ZipnovaCredentials } from './zipnova'
-import type { ShippingZone } from '@/types/database'
+import { isFeatureAllowed } from '@/lib/plans'
+import type { ShippingZone, Store } from '@/types/database'
 
 /**
- * Obtiene las instancias de CarrierProvider activos configurados para una tienda dada.
+ * Obtiene las instancias de CarrierProvider activos configurados para una tienda dada,
+ * respetando las funcionalidades habilitadas en su plan (envios_zonas_fijas / envios_couriers).
  */
 export async function getActiveStoreShippingProviders(
   storeId: string
 ): Promise<CarrierProvider[]> {
   const supabase = createSupabaseAdminClient()
   const providers: CarrierProvider[] = []
+
+  const { data: storeRow } = await supabase
+    .from('stores')
+    .select('id, plan, features_override')
+    .eq('id', storeId)
+    .maybeSingle()
+
+  const canManualZones = storeRow ? isFeatureAllowed(storeRow as Store, 'envios_zonas_fijas') : true
+  const canCouriers = storeRow ? isFeatureAllowed(storeRow as Store, 'envios_couriers') : true
 
   // 1. Obtener registros activos en store_shipping_providers
   const { data: dbProviders } = await supabase
@@ -32,7 +43,7 @@ export async function getActiveStoreShippingProviders(
   )
 
   // 2. Si el proveedor manual está activo (o si no hay configuración explícita pero tiene zonas creadas)
-  if (activeTypes.has('manual') || !dbProviders || dbProviders.length === 0) {
+  if (canManualZones && (activeTypes.has('manual') || !dbProviders || dbProviders.length === 0)) {
     const { data: zones } = await supabase
       .from('shipping_zones')
       .select('*')
@@ -45,7 +56,7 @@ export async function getActiveStoreShippingProviders(
   }
 
   // 3. Proveedores externos (Zipnova, etc.)
-  if (dbProviders && dbProviders.length > 0) {
+  if (canCouriers && dbProviders && dbProviders.length > 0) {
     for (const record of dbProviders) {
       if (!record.activo) continue
 

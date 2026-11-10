@@ -5,6 +5,7 @@
 import { notFound } from 'next/navigation'
 import { getTenantStore, isStoreAdmin } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getEffectiveStoreConfig } from '@/lib/config/store-config'
 import ServiciosManager from './servicios-manager'
 import type { Service } from '@/types/database'
 
@@ -20,16 +21,24 @@ export default async function AdminServiciosPage() {
 
   // RLS: el dueño y sus colaboradores ven todos los servicios, incluso los ocultos.
   const supabase = await createSupabaseServerClient()
-  const { data: services } = await supabase
-    .from('services')
-    .select('*')
-    .eq('store_id', store.id)
-    .order('orden', { ascending: true })
-    .order('created_at', { ascending: true })
+  const [{ data: services }, storeConfig] = await Promise.all([
+    supabase
+      .from('services')
+      .select('*')
+      .eq('store_id', store.id)
+      .order('orden', { ascending: true })
+      .order('created_at', { ascending: true }),
+    getEffectiveStoreConfig(store.id),
+  ])
 
   return (
     <div className="w-full space-y-6">
-      <ServiciosManager store={store} initialServices={(services as Service[]) ?? []} tenantQuery={tenantQuery} />
+      <ServiciosManager
+        store={store}
+        initialServices={(services as Service[]) ?? []}
+        tenantQuery={tenantQuery}
+        maxActiveServices={storeConfig.max_active_products}
+      />
     </div>
   )
 }
