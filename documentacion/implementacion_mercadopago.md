@@ -10,7 +10,7 @@
 Portalmaker opera como un **Marketplace Multi-tenant**. Cada tienda (Maker) cobra directamente en su propia cuenta de Mercado Pago mediante el protocolo **OAuth 2.0**:
 
 * **Cobro Directo**: El dinero del comprador ingresa de forma instantánea a la cuenta del vendedor.
-* **Comisión de la Plataforma (`marketplace_fee`)**: Portalmaker retiene automáticamente el 2% de cada transacción (configurable por tienda por el superadmin mediante la columna `stores.comision_portalmaker`).
+* **Comisión de la Plataforma (`marketplace_fee`)**: Portalmaker retiene automáticamente un porcentaje de cada transacción con Mercado Pago. El valor sale de la configuración efectiva de la tienda (`getEffectiveStoreConfig`): la comisión de su plan en la tabla `plans` (Free 3%, Starter 2%, Maker Pro 1%, Enterprise 0%) o, si el superadmin le definió una excepción, la de `store_plan_overrides`.
 * **Recargo Opcional al Comprador**: Cada taller puede definir un recargo (0% a 15%) sobre el total si desea transferir el costo del procesamiento al comprador (`stores.mp_recargo_porcentaje`).
 * **Multi-tienda Aislada**: Las credenciales de acceso de cada vendedor (`mp_access_token`, `mp_refresh_token`) se almacenan de forma segura en una tabla protegida (`store_mp_credentials`) accesible únicamente mediante el backend (`service_role`), sin que jamás queden expuestas en el navegador ni a otros usuarios.
 

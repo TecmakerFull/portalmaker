@@ -39,19 +39,78 @@ import {
 } from 'lucide-react'
 import { AdminPageHeader } from '../components/admin-page-header'
 import type { Store } from '@/types/database'
+import { getPlanConfig, PLANS_CONFIG, type PlanLimits } from '@/lib/plans'
+
+const NOMBRES_PLAN = { free: 'Free', starter: 'Starter', maker_pro: 'Maker Pro', enterprise: 'Enterprise' } as const
+const ORDEN_PLANES = ['free', 'starter', 'maker_pro', 'enterprise'] as const
+
+/** Plan mínimo que cumple la condición, leído de la configuración real de los planes. */
+function planMinimo(ok: (p: PlanLimits) => boolean): (typeof ORDEN_PLANES)[number] | null {
+  return ORDEN_PLANES.find((k) => ok(PLANS_CONFIG[k])) ?? null
+}
+
+/** "Disponible en todos los planes" o "Disponible desde plan Starter"; con nombre, "Transferencias: desde plan Starter". */
+function etiquetaPlan(ok: (p: PlanLimits) => boolean, nombre?: string): string {
+  const k = planMinimo(ok)
+  const texto = k === 'free' ? 'todos los planes' : k ? `desde plan ${NOMBRES_PLAN[k]}` : 'consultar disponibilidad'
+  return nombre ? `${nombre}: ${texto}` : `Disponible ${k === 'free' ? 'en ' : ''}${texto}`
+}
+
+const siempre = () => true
+
+// Plan mínimo de cada paso de la guía (por número de paso). Todo sale de PLANS_CONFIG:
+// si cambia el plan en lib/plans.ts, la guía se actualiza sola.
+const PLAN_POR_PASO: Record<number, string[]> = {
+  1: [etiquetaPlan(siempre)], // Logo, colores y WhatsApp
+  2: [etiquetaPlan(siempre)], // Categorías
+  3: [etiquetaPlan(siempre)], // Productos y variantes
+  4: [etiquetaPlan((p) => p.bannersMaxSlides > 0)], // Banners
+  5: [etiquetaPlan((p) => p.paginasInstitucionales)], // Sobre nosotros
+  6: [etiquetaPlan((p) => p.mercadoPagoHabilitado, 'Mercado Pago'), etiquetaPlan((p) => p.transferenciaBancaria, 'Transferencias')],
+  7: [etiquetaPlan((p) => p.enviosZonasFijas, 'Tarifas fijas'), etiquetaPlan((p) => p.enviosCouriersEnVivo, 'Couriers en vivo')],
+  8: [etiquetaPlan(siempre)], // Encender la tienda
+  9: [etiquetaPlan((p) => p.maxColaboradoresExtra > 0)], // Colaboradores
+  10: [etiquetaPlan((p) => p.crmClientes)], // Clientes y CRM
+  11: [etiquetaPlan((p) => p.resenasProductos)], // Reseñas
+  12: [etiquetaPlan(siempre)], // Suscriptores / newsletter
+  13: [etiquetaPlan((p) => p.dominioPropio)], // Dominio propio
+  14: [etiquetaPlan(siempre)], // Servicios, horarios y turnos
+}
+
+const fmtPct = (n: number) => `${Number.isInteger(n) ? n : n.toLocaleString('es-AR')}%`
 
 export default function GuiaView({
   store,
   tenantQuery,
+  commission,
+  planCommissions,
 }: {
   store: Store
   tenantQuery: string
+  // Comisión efectiva de ESTA tienda (plan o excepción) y comisión de cada plan.
+  commission: { pct: number; source: 'plan' | 'override' }
+  planCommissions: Record<'free' | 'starter' | 'maker_pro' | 'enterprise', number>
 }) {
   const [copiedLink, setCopiedLink] = useState(false)
   const [expandedStep, setExpandedStep] = useState<number | null>(3) // Paso 3 abierto por defecto
   const [filterCategory, setFilterCategory] = useState<'todos' | 'tienda' | 'avanzado'>('todos')
 
   const storeUrl = `https://${store.slug}.portalmaker.ar`
+
+  // Comisión de Portalmaker en ventas con Mercado Pago, según el plan real de la tienda.
+  const planNombre = getPlanConfig(store.plan).nombre
+  const tablaComisiones = (['free', 'starter', 'maker_pro', 'enterprise'] as const)
+    .map((k) => `${NOMBRES_PLAN[k]} ${fmtPct(planCommissions[k])}`)
+    .join(', ')
+  const comisionPropia =
+    commission.source === 'override'
+      ? commission.pct > 0
+        ? `Tu tienda tiene una comisión acordada con Portalmaker del ${fmtPct(commission.pct)} por cada venta cobrada con Mercado Pago.`
+        : 'Tu tienda tiene un acuerdo con Portalmaker: no se cobra comisión por tus ventas con Mercado Pago.'
+      : commission.pct > 0
+        ? `Con tu plan ${planNombre}, Portalmaker retiene el ${fmtPct(commission.pct)} de cada venta cobrada con Mercado Pago y el resto es tuyo.`
+        : `Con tu plan ${planNombre}, Portalmaker no cobra comisión por tus ventas con Mercado Pago.`
+  const textoDinero = `La plata entra directo a tu propia cuenta de Mercado Pago en el momento del pago. ${comisionPropia} La comisión depende del plan (${tablaComisiones}) y se aplica solo a los cobros con Mercado Pago: las transferencias bancarias directas no pagan comisión a Portalmaker. Mercado Pago descuenta además su propio costo de procesamiento, que depende de tu cuenta y del medio de pago.`
 
   const handleCopy = () => {
     navigator.clipboard.writeText(storeUrl)
@@ -234,7 +293,7 @@ export default function GuiaView({
         },
         {
           sub: '2. ¿A dónde va el dinero y cuál es la comisión?',
-          desc: 'La plata entra directo a tu propia cuenta de Mercado Pago en el acto. Portalmaker únicamente retiene una comisión mínima del 2% por cada venta exitosa (el 98% restante es todo tuyo).',
+          desc: textoDinero,
         },
         {
           sub: '3. Recargo opcional al comprador',
@@ -591,9 +650,19 @@ export default function GuiaView({
                       </span>
                     </div>
 
-                    <h2 className="text-base sm:text-lg font-semibold text-[var(--color-texto)] leading-snug">
-                      {step.title}
-                    </h2>
+                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                      <h2 className="text-base sm:text-lg font-semibold text-[var(--color-texto)] leading-snug">
+                        {step.title}
+                      </h2>
+                      {(PLAN_POR_PASO[step.num] ?? []).map((etiqueta) => (
+                        <span
+                          key={etiqueta}
+                          className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-[var(--color-borde)] bg-black/5 dark:bg-white/10 text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                        >
+                          {etiqueta}
+                        </span>
+                      ))}
+                    </div>
 
                     <p className="text-xs opacity-70 line-clamp-1 max-w-xl">
                       {step.summary}

@@ -196,7 +196,7 @@ No necesitas saber nada de computación ni programar nada raro. Enlazar tu cuent
 * **El dinero va directo a tu cuenta**: No pasa por intermediarios raros ni tienes que esperar días para pedir retiros. Cuando alguien paga, la plata entra al instante en tu Mercado Pago personal o de tu negocio.
 * **Aviso al instante por email**: Apenas entra el pago, recibes un correo con los datos del comprador y lo que pidió, para que puedas poner manos a la obra en tu taller.
 * **Comisión y Recargo**: 
-  * Por cada venta, Portalmaker solo deduce un 2% de comisión del portal por el servicio de la plataforma.
+  * La comisión de Portalmaker depende de tu plan y se aplica solo a las ventas cobradas con Mercado Pago: Free 3%, Starter 2%, Maker Pro 1% y Enterprise 0% (valores vigentes a noviembre de 2026; pueden cambiar). Si tenés una comisión acordada con el portal, esa es la que vale. Las transferencias bancarias directas no pagan comisión. Mercado Pago descuenta además su propio costo de procesamiento.
   * Si tú no quieres absorber el costo de las comisiones de tarjeta, tienes una opción llamada **"Recargo al comprador"** (por ejemplo, poner 10%). Si la usas, el sistema le suma ese porcentaje automáticamente al total del cliente al momento de pagar con Mercado Pago. Si lo dejas en 0%, el cliente paga el precio normal de lista.
 * **¿Quieres desconectar tu cuenta algún día?**: En la misma pantalla tienes un botón para desvincularla en un solo toque cuando tú lo decidas.
 
