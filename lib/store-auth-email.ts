@@ -19,6 +19,15 @@ export interface StoreBranding {
   color_primario: string | null
 }
 
+/** Identidad del portal para correos de acceso que no pertenecen a ninguna tienda (login del portal). */
+export const PORTAL_BRANDING: StoreBranding = {
+  id: 'portal',
+  nombre: 'Portalmaker',
+  slug: 'portal',
+  logo_url: null,
+  color_primario: '#FF5500',
+}
+
 export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -112,7 +121,7 @@ export function buildStoreAuthEmail(params: {
       Si no lo solicitaste, puedes ignorar este mensaje con tranquilidad.
     </div>
   </div>
-  <div class="footer">Enviado por <strong>${storeName}</strong> vía Portalmaker</div>
+  <div class="footer">${params.store.id === 'portal' ? 'Enviado por <strong>Portalmaker</strong>' : `Enviado por <strong>${storeName}</strong> vía Portalmaker`}</div>
 </body>
 </html>`
 

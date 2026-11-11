@@ -487,31 +487,25 @@ export default function CuentaClient({ store, tenantQuery, zonaHoraria = 'Americ
           ? `${portalBase}/auth/callback?store_origin=${encodeURIComponent(origin)}&next=${encodeURIComponent(storeAccountPath)}`
           : `${origin}/auth/callback?next=${encodeURIComponent(storeAccountPath)}`
 
-        try {
-          const res = await fetch('/api/auth/store-recover', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: cleanEmail,
-              storeName: store.nombre,
-              storeSlug: store.slug,
-              redirectTo: resetRedirect,
-            }),
-          })
-          const resJson = await res.json()
-          if (!res.ok) {
-            throw new Error(resJson.error || 'Error al solicitar recuperación')
-          }
-        } catch (apiErr) {
-          // Fallback a llamada directa de Supabase si la API interna tuviera algún problema
-          const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        // Siempre por el servidor: aplica límite de solicitudes y no revela si el correo existe.
+        // No hay respaldo directo a Supabase porque saltearía ese límite.
+        const res = await fetch('/api/auth/store-recover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: cleanEmail,
+            storeName: store.nombre,
+            storeSlug: store.slug,
             redirectTo: resetRedirect,
-          })
-          if (error) throw error
+          }),
+        })
+        const resJson = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          throw new Error(resJson.error || 'No pudimos procesar la solicitud. Intenta de nuevo en unos minutos.')
         }
 
         setAuthSuccess(
-          `Se enviaron instrucciones de recuperación a ${cleanEmail} para tu cuenta en ${store.nombre}. Revisa tu bandeja de entrada o correo no deseado.`
+          `Si ${cleanEmail} tiene una cuenta en ${store.nombre}, te enviamos las instrucciones para recuperarla. Revisa tu bandeja de entrada o correo no deseado.`
         )
       } else if (authMode === 'reset') {
         // Guardar nueva contraseña

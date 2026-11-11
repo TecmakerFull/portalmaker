@@ -61,6 +61,24 @@ function mensajeDeError(err: unknown, porDefecto: string): string {
   return msg || porDefecto
 }
 
+/**
+ * Pide el enlace de recuperación al servidor (con límite de solicitudes). La respuesta es la
+ * misma exista o no el correo; solo se lanza error por formato inválido, límite o falla real.
+ */
+async function requestPortalRecovery(email: string, redirectTo: string): Promise<void> {
+  const res = await fetch('/api/auth/portal-recover', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, redirectTo }),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    const err = new Error(data.error || 'No pudimos procesar la solicitud.') as Error & { status?: number }
+    err.status = res.status
+    throw err
+  }
+}
+
 function LoginFormContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -159,12 +177,7 @@ function LoginFormContent() {
         const callbackUrl = new URL('/auth/callback', window.location.origin)
         callbackUrl.searchParams.set('next', nextParam ? `/actualizar-password?next=${encodeURIComponent(nextParam)}` : '/actualizar-password')
 
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: callbackUrl.toString(),
-        })
-
-        if (error) throw error
-
+        await requestPortalRecovery(email, callbackUrl.toString())
         setResetEmailSent(true)
       }
     } catch (err: unknown) {
@@ -210,11 +223,8 @@ function LoginFormContent() {
     callbackUrl.searchParams.set('next', nextParam ? `/actualizar-password?next=${encodeURIComponent(nextParam)}` : '/actualizar-password')
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: callbackUrl.toString(),
-      })
-      if (error) throw error
-      setSuccessMsg('¡Enlace de recuperación reenviado! Revisa tu casilla.')
+      await requestPortalRecovery(email, callbackUrl.toString())
+      setSuccessMsg('Listo. Si el correo está registrado, vas a recibir un nuevo enlace.')
     } catch (err: unknown) {
       setErrorMsg(mensajeDeError(err, 'No se pudo reenviar el enlace.'))
     } finally {
@@ -341,11 +351,11 @@ function LoginFormContent() {
 
             <div className="space-y-2">
               <h2 className="text-xl sm:text-2xl font-bold font-[var(--font-portal-heading)]">
-                Enlace de recuperación enviado
+                Revisá tu correo
               </h2>
               <p className="text-xs sm:text-sm opacity-80 leading-relaxed">
-                Enviamos las instrucciones a{' '}
-                <strong className="text-[var(--color-texto)] font-semibold">{email}</strong> para restablecer tu contraseña.
+                Si{' '}
+                <strong className="text-[var(--color-texto)] font-semibold">{email}</strong> está registrado, te enviamos las instrucciones para restablecer tu contraseña.
               </p>
               <p className="text-xs opacity-60">
                 Abre el enlace que recibiste para crear una nueva clave de acceso.
