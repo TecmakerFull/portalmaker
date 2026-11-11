@@ -136,6 +136,10 @@ export default function SuperadminTiendaDetailFullpage({
   const [storePayments, setStorePayments] = useState<SubscriptionPayment[]>([])
   const [loadingPayments, setLoadingPayments] = useState(false)
 
+  // Débito automático (suscripción de Mercado Pago) de la tienda
+  const [mandate, setMandate] = useState<{ status: string; amount: number; target_plan: string } | null>(null)
+  const [cancellingAutodebit, setCancellingAutodebit] = useState(false)
+
   // Estado del formulario para registrar nuevo pago
   const [showNewPaymentForm, setShowNewPaymentForm] = useState(false)
   const [paymentMonto, setPaymentMonto] = useState<number>(0)
@@ -286,6 +290,13 @@ export default function SuperadminTiendaDetailFullpage({
 
         if (error) throw error
         setStorePayments((data as SubscriptionPayment[]) || [])
+
+        const { data: md } = await supabase
+          .from('subscription_mandates')
+          .select('status, amount, target_plan')
+          .eq('store_id', store.id)
+          .maybeSingle()
+        setMandate(md ?? null)
       } catch (e) {
         console.error('Error cargando pagos de suscripción:', e)
       } finally {
@@ -385,6 +396,26 @@ export default function SuperadminTiendaDetailFullpage({
   }
 
   // Guardar cambios en el formulario de configuración
+  // Cancela el débito automático de la tienda (la baja la hace el servidor contra Mercado Pago).
+  const cancelAutodebit = async (silent = false) => {
+    setCancellingAutodebit(true)
+    try {
+      const res = await fetch('/api/admin/subscriptions/autodebit/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storeId: store.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'No se pudo cancelar el débito automático.')
+      setMandate((prev) => (prev ? { ...prev, status: 'cancelled' } : prev))
+      if (!silent) showToast('Débito automático cancelado.')
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setCancellingAutodebit(false)
+    }
+  }
+
   const handleSaveSubEdit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSavingSubEdit(true)
@@ -481,6 +512,12 @@ export default function SuperadminTiendaDetailFullpage({
       const updated = { ...store, ...updateData, notas_admin: notasLimpias } as SuperadminStoreItem
       onStoreUpdated(updated)
       showToast('Configuraciones de la tienda actualizadas exitosamente')
+
+      // Una tienda que pasa a Free o Bonificado no puede seguir con cobros automáticos.
+      if (mandate && mandate.status !== 'cancelled' && subEditForm.plan && !isBillablePlan(subEditForm.plan)) {
+        await cancelAutodebit(true)
+        showToast('Se canceló también el débito automático de la tienda.')
+      }
     } catch (err: any) {
       alert('Error al guardar datos: ' + err.message)
     } finally {
@@ -1439,6 +1476,33 @@ export default function SuperadminTiendaDetailFullpage({
                 </span>
               </div>
             </div>
+
+            {/* Débito automático del cliente */}
+            {mandate && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)]">
+                <div className="text-xs space-y-0.5">
+                  <h3 className="font-semibold text-sm">Débito automático</h3>
+                  <p className="opacity-70">
+                    Estado: <span className="font-semibold">{{ authorized: 'Activo', pending: 'Pendiente de autorización', paused: 'Pausado', cancelled: 'Cancelado' }[mandate.status] ?? mandate.status}</span>
+                    {' - '}
+                    {formatMoney(Number(mandate.amount) || 0)} por mes
+                  </p>
+                </div>
+                {mandate.status !== 'cancelled' && (
+                  <button
+                    type="button"
+                    disabled={cancellingAutodebit}
+                    onClick={() => {
+                      if (window.confirm('¿Cancelar el débito automático de esta tienda? La tienda vuelve a pago manual y conserva el período ya pagado.')) cancelAutodebit()
+                    }}
+                    className="min-h-[44px] px-4 rounded-xl border border-[var(--color-borde)] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  >
+                    {cancellingAutodebit && <Loader2 className="w-4 h-4 animate-spin" />}
+                    <span>Cancelar débito automático</span>
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Cabecera de la sección con botón registrar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-[var(--color-superficie)] border border-[var(--color-borde)]">

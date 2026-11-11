@@ -25,7 +25,7 @@ import {
   todayArgentina,
 } from '@/lib/subscriptions/billing'
 import { reconcilePendingInvoices } from '@/lib/subscriptions/server'
-import { isAutodebitEnabled, reconcileMandatePayments, syncAllMandates } from '@/lib/subscriptions/autodebit'
+import { isAutodebitEnabled, reconcileMandatePayments, reconcileMandatesWithStores, syncAllMandates } from '@/lib/subscriptions/autodebit'
 
 export const maxDuration = 60
 
@@ -179,6 +179,15 @@ export async function GET(req: Request) {
   } catch (err: any) {
     result.errores++
     console.error('cron/subscriptions: error en la reconciliación:', err?.message)
+  }
+
+  // Red de seguridad: se corre aunque el flag esté apagado, para que un débito ya creado
+  // nunca siga cobrando a una tienda que pasó a Free o Bonificado.
+  try {
+    await reconcileMandatesWithStores()
+  } catch (err: any) {
+    result.errores++
+    console.error('cron/subscriptions: error alineando débitos con los planes:', err?.message)
   }
 
   // Débito automático (si está habilitado): estado de las suscripciones y cobros recientes.

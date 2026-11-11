@@ -268,6 +268,19 @@ export async function creditAutoDebitPayment(payment: any, knownMandate?: Subscr
   }
   if (!store) return { handled: true, status: 'store_not_found', httpStatus: 200 }
 
+  // Una tienda que pasó a Free o Bonificado no debería tener débito activo: si igual hubo un
+  // cobro, no se toca el plan, se cancela la suscripción y se avisa para reembolsar a mano.
+  if (!isBillablePlan(store.plan)) {
+    await notifyPlatformAlert({
+      type: 'subscription_invoice_closed',
+      store: store as Store,
+      details: `Cobro automático ${paymentId} de $${payment.transaction_amount} para una tienda con plan ${store.plan}. Se canceló el débito; reembolsar el pago.`,
+      paymentId,
+    })
+    await cancelMandate(store.id).catch((e) => console.error('autodebit: cancelación falló:', e?.message))
+    return { handled: true, status: 'plan_not_billable', httpStatus: 200, storeId: store.id }
+  }
+
   // Idempotencia previa: un cobro ya acreditado no genera otra factura.
   const { data: already } = await admin.from('subscription_payments').select('id').eq('mp_payment_id', paymentId).maybeSingle()
   if (already) return { handled: true, status: 'already_processed', httpStatus: 200, storeId: mandate.store_id }
@@ -289,7 +302,8 @@ export async function creditAutoDebitPayment(payment: any, knownMandate?: Subscr
     .from('subscription_invoices')
     .insert({
       store_id: store.id,
-      target_plan: mandate.target_plan,
+      // Si el equipo cambió el plan a mano, manda el plan actual: nunca se degrada por un cobro viejo.
+      target_plan: store.plan,
       amount: mandate.amount,
       period_start: next.periodFrom,
       period_end: next.newDue,
@@ -401,4 +415,36 @@ export async function reconcileMandatePayments(): Promise<number> {
     }
   }
   return credited
+}
+
+/**
+ * Red de seguridad diaria: mantiene el débito alineado con el plan de la tienda.
+ * - Plan Free o Bonificado (o tienda inexistente): se cancela la suscripción en MP, para que
+ *   un cambio de plan hecho desde el panel de superadmin nunca deje cobros activos.
+ * - Plan pago con monto o plan distinto al de la suscripción: se actualiza el monto en MP.
+ */
+export async function reconcileMandatesWithStores(): Promise<{ cancelled: number; updated: number }> {
+  const admin = createSupabaseAdminClient()
+  const { data: mandates } = await admin
+    .from('subscription_mandates')
+    .select('store_id, status')
+    .in('status', ['pending', 'authorized', 'paused'])
+    .limit(200)
+
+  let cancelled = 0
+  let updated = 0
+  for (const m of mandates ?? []) {
+    try {
+      const { data: store } = await admin.from('stores').select('plan').eq('id', m.store_id).maybeSingle()
+      if (!store || !isBillablePlan(store.plan)) {
+        if ((await cancelMandate(m.store_id)).cancelled) cancelled++
+      } else {
+        await syncMandateToStorePlan(m.store_id)
+        updated++
+      }
+    } catch (e: any) {
+      console.error(`autodebit: reconciliación con la tienda ${m.store_id} falló:`, e?.message)
+    }
+  }
+  return { cancelled, updated }
 }

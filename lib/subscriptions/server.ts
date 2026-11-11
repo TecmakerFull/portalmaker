@@ -334,6 +334,19 @@ export async function applyPlatformPayment(
     }
   }
 
+  // Si el pago cambió el plan y la tienda tiene débito automático, la misma suscripción de MP
+  // pasa a cobrar el monto del plan nuevo (no se crea otra ni se da de baja la anterior).
+  // Import diferido: autodebit.ts importa este módulo y un import estático sería circular.
+  if (rpc.plan_changed) {
+    try {
+      const { syncMandateToStorePlan } = await import('@/lib/subscriptions/autodebit')
+      await syncMandateToStorePlan(invoice.store_id)
+    } catch (e: any) {
+      // El cron diario lo reintenta: no se frena la acreditación del pago.
+      console.error('No se pudo actualizar el monto del débito automático:', e?.message)
+    }
+  }
+
   return { handled: true, status: 'credited', httpStatus: 200, storeId: invoice.store_id }
 }
 
