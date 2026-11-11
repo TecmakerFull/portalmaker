@@ -6,6 +6,7 @@ import type { Metadata } from 'next'
 import PrecioServicio from '@/components/precio-servicio'
 import { notFound } from 'next/navigation'
 import { getTenantStore } from '@/lib/tenant'
+import StorePausedScreen from '@/app/tienda/store-paused-screen'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getStoreSections } from '@/lib/store-sections'
 import { getStoreExtraSections } from '@/lib/store-extra-sections'
@@ -46,6 +47,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params
   const tenant = await getTenantStore()
   if (!tenant) return {}
+  // Tienda pausada: no se expone el contenido del servicio en SEO ni vistas previas.
+  if (tenant.store.suscripcion_activa === false) return {}
   const { service } = await getService(slug)
   if (!service) return {}
 
@@ -69,6 +72,8 @@ export default async function ServicioPage({ params }: PageProps) {
 
   const { store, context } = tenant
   if ((store.tipo_negocio ?? 'productos') === 'productos') notFound()
+  // Tienda pausada: no se muestra el catálogo ni se permite iniciar compras o reservas.
+  if (store.suscripcion_activa === false) return <StorePausedScreen store={store} />
 
   const tenantQuery = context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''
   const { service } = await getService(slug)

@@ -3,11 +3,11 @@
 // "El portal del Maker" | portalmaker.com.ar
 // =============================================================================
 
+import StorePausedScreen from './store-paused-screen'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getTenantStore } from '@/lib/tenant'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import ThemeToggle from './theme-toggle'
 import StorefrontHeaderFlow from './sections/storefront-header-flow'
 import HeroBanners from './sections/hero-banners'
 import TrustFeatures from './sections/trust-features'
@@ -19,7 +19,6 @@ import { getStoreSections } from '@/lib/store-sections'
 import { getStoreExtraSections } from '@/lib/store-extra-sections'
 import ServicesCatalog from './sections/services-catalog'
 import type { Service } from '@/types/database'
-import { MessageSquare, Package } from 'lucide-react'
 
 interface TiendaPageProps {
   searchParams?: Promise<{
@@ -103,58 +102,9 @@ export default async function TiendaPage({ searchParams }: TiendaPageProps) {
   const productList = products ?? []
   const categoryList = categories ?? []
 
-  // Link general de WhatsApp
-  const cleanPhone = store.whatsapp_numero ? store.whatsapp_numero.replace(/[^0-9]/g, '') : null
-  const generalWhatsappUrl = cleanPhone
-    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hola ${store.nombre}! Vengo de ver tu tienda online.`)}`
-    : null
-
-  // Si la tienda está apagada (modo mantenimiento / en construcción)
+  // Tienda pausada (falta de pago o apagada por el equipo): pantalla pública neutra.
   if (!store.suscripcion_activa) {
-    return (
-      <div className="min-h-screen bg-[var(--color-fondo)] text-[var(--color-texto)] font-[var(--font-body)] flex flex-col justify-between transition-colors duration-200">
-        <header className="border-b border-black/10 dark:border-white/10 p-4 sm:p-6 flex items-center justify-between max-w-6xl w-full mx-auto">
-          <h1 className="text-xl sm:text-2xl font-bold font-[var(--font-heading)] text-[var(--color-primario)]">
-            {store.nombre}
-          </h1>
-          <ThemeToggle />
-        </header>
-
-        <main className="max-w-lg mx-auto p-6 text-center space-y-6">
-          <div className="w-16 h-16 rounded-3xl bg-[var(--color-primario)]/15 text-[var(--color-primario-legible)] flex items-center justify-center mx-auto shadow-xs">
-            <Package className="w-8 h-8" />
-          </div>
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 mb-3 inline-block">
-              Tienda en Preparación
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold font-[var(--font-heading)] mt-1">
-              ¡Volvemos muy pronto!
-            </h2>
-            <p className="text-sm opacity-70 mt-2 leading-relaxed">
-              Estamos actualizando el catálogo con nuevos productos.
-              Si precisás realizar un encargo urgente, podés contactarnos directamente por WhatsApp.
-            </p>
-          </div>
-
-          {generalWhatsappUrl && (
-            <a
-              href={generalWhatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="min-h-[48px] px-6 py-3 rounded-2xl bg-[var(--color-primario)] text-[var(--color-primario-texto)] text-sm font-bold hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-2 shadow-sm"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span>Contactar por WhatsApp</span>
-            </a>
-          )}
-        </main>
-
-        <footer className="border-t border-black/10 dark:border-white/10 py-6 text-center text-xs opacity-50">
-          <p>© {new Date().getFullYear()} {store.nombre} — Desarrollado sobre Portalmaker</p>
-        </footer>
-      </div>
-    )
+    return <StorePausedScreen store={store} />
   }
 
   return (

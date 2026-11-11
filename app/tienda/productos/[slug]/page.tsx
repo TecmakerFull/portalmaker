@@ -6,6 +6,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getTenantStore } from '@/lib/tenant'
+import StorePausedScreen from '@/app/tienda/store-paused-screen'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import StorefrontHeaderFlow from '../../sections/storefront-header-flow'
 import ProductDetailView from './product-detail-view'
@@ -25,6 +26,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const tenant = await getTenantStore()
   if (!tenant) return {}
   const { store } = tenant
+  // Tienda pausada: no se expone el contenido del producto en SEO ni vistas previas.
+  if (store.suscripcion_activa === false) return {}
 
   const supabase = await createSupabaseServerClient()
   const { data: product } = await supabase
@@ -95,6 +98,8 @@ export default async function ProductoDetallePage({ params }: PageProps) {
 
   const { store, context } = tenant
   const tenantQuery = context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''
+  // Tienda pausada: no se muestra el catálogo ni se permite iniciar compras o reservas.
+  if (store.suscripcion_activa === false) return <StorePausedScreen store={store} />
 
   const supabase = await createSupabaseServerClient()
 

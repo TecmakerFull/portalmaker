@@ -6,6 +6,7 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getTenantStore } from '@/lib/tenant'
+import StorePausedScreen from '@/app/tienda/store-paused-screen'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { isStoreCheckoutActive } from '@/lib/plans'
 import ThemeToggle from '@/app/tienda/theme-toggle'
@@ -22,6 +23,8 @@ export default async function TiendaCheckoutPage() {
 
   const { store, context } = tenant
   const tenantQuery = context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''
+  // Tienda pausada: no se muestra el catálogo ni se permite iniciar compras o reservas.
+  if (store.suscripcion_activa === false) return <StorePausedScreen store={store} />
 
   // Si el Superadmin o el plan deshabilitó el checkout online, no permitir acceso
   if (!isStoreCheckoutActive(store)) {

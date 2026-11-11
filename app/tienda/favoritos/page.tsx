@@ -5,6 +5,7 @@
 
 import { notFound } from 'next/navigation'
 import { getTenantStore } from '@/lib/tenant'
+import StorePausedScreen from '@/app/tienda/store-paused-screen'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import StorefrontHeaderFlow from '../sections/storefront-header-flow'
 import StoreFooter from '../sections/store-footer'
@@ -20,6 +21,8 @@ export default async function TiendaFavoritosPage() {
 
   const { store, context } = tenant
   const tenantQuery = context.resolved_by === 'query-param-dev' ? `?tenant=${store.slug}` : ''
+  // Tienda pausada: no se muestra el catálogo ni se permite iniciar compras o reservas.
+  if (store.suscripcion_activa === false) return <StorePausedScreen store={store} />
 
   const supabase = await createSupabaseServerClient()
 

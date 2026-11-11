@@ -28,6 +28,10 @@ export async function POST(req: Request) {
   if ((store.tipo_negocio ?? 'productos') === 'productos') {
     return NextResponse.json({ error: 'Esta tienda no ofrece turnos' }, { status: 400 })
   }
+  // Tienda pausada: no se abren nuevas reservas ni listas de espera.
+  if (store.suscripcion_activa === false) {
+    return NextResponse.json({ error: 'La tienda se encuentra temporalmente inactiva' }, { status: 403 })
+  }
 
   const supabase = await createSupabaseServerClient()
   const {

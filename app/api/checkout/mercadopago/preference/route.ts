@@ -76,6 +76,11 @@ export async function POST(req: Request) {
       )
     }
 
+    // Tienda pausada: no se generan nuevos links de pago, ni siquiera para pedidos ya creados.
+    if (store.suscripcion_activa === false) {
+      return NextResponse.json({ error: 'La tienda se encuentra temporalmente inactiva' }, { status: 403 })
+    }
+
     // Configuración efectiva en servidor (única fuente de verdad)
     const storeConfig = await getEffectiveStoreConfig(store.id)
     if (!storeConfig.mercadopago) {
